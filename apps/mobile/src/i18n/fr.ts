@@ -25,6 +25,7 @@ export const fr = {
   'otp.error': 'Ce code ne correspond pas. Réessaie doucement.',
   'otp.missingPhone': 'Reprenons depuis ton numéro.',
   'otp.backToPhone': 'Saisir mon numéro',
+  'otp.namePrompt': 'Ton prénom',
 
   'contacts.title': 'Qui compte pour toi ?',
   'contacts.hint': 'Rien ne quitte ton téléphone. Les numéros sont hachés localement.',

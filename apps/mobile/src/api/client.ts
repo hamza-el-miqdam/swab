@@ -10,7 +10,7 @@
  */
 import { getAccessToken } from '../lib/session';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export class ApiError extends Error {
   constructor(
@@ -36,7 +36,12 @@ export interface OtpRequestBody {
   phoneHash: string;
 }
 
-export async function requestOtp(body: OtpRequestBody): Promise<void> {
+export interface OtpRequestResponse {
+  /** POC only: the API returns the code in non-production (no SMS provider yet, OQ-IDT-1). */
+  devCode?: string;
+}
+
+export async function requestOtp(body: OtpRequestBody): Promise<OtpRequestResponse> {
   const res = await fetch(`${BASE_URL}/auth/otp/request`, {
     method: 'POST',
     headers: await buildHeaders(),
@@ -45,6 +50,8 @@ export async function requestOtp(body: OtpRequestBody): Promise<void> {
   if (!res.ok) {
     throw new ApiError(res.status, 'otp request failed');
   }
+  const parsed = (await res.json()) as { devCode?: string };
+  return parsed.devCode !== undefined ? { devCode: parsed.devCode } : {};
 }
 
 export interface OtpVerifyBody {
