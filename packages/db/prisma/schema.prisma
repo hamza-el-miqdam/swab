@@ -1,0 +1,172 @@
+// Swab schema v0.1 — copied from swab-domain-spec.md §4, single writer: Data & Schema Steward.
+// Naming: camelCase fields / PascalCase models in Prisma, explicit @map/@@map to snake_case in Postgres.
+// Vanilla Postgres only (no Neon-specific extensions) — AWS portability is a hard requirement.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String        @id @default(cuid())
+  phoneHash   String        @unique @map("phone_hash") // E.164 hashed client-side — contact discovery without storing raw numbers (G1: no plaintext phone/email columns, ever)
+  displayName String        @map("display_name")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  vault       Vault?
+  devices     Device[]
+  linksOut    ContactLink[] @relation("owner")
+  linksIn     ContactLink[] @relation("target")
+  envies      Envie[]
+  matchesA    Match[]       @relation("userA")
+  matchesB    Match[]       @relation("userB")
+  proposals   Proposal[]
+
+  @@map("users")
+}
+
+/// Encrypted client-side; server stores an opaque blob (classification axes,
+/// filter rules, subgroups, relation history). Key never leaves the device.
+/// Privacy invariant (G1 / DAT rule 1): stays Bytes forever — no jsonb mirror, no indexing, no parsing.
+model Vault {
+  userId    String   @id @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blob      Bytes
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("vaults")
+}
+
+model Device {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushToken String?  @map("push_token")
+  platform  Platform
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("devices")
+}
+
+/// Edge only — HOW the owner classifies the target lives in the owner's Vault.
+model ContactLink {
+  id               String   @id @default(cuid())
+  ownerId          String   @map("owner_id")
+  owner            User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  targetId         String?  @map("target_id") // null until the invited person joins
+  target           User?    @relation("target", fields: [targetId], references: [id], onDelete: SetNull)
+  invitedPhoneHash String?  @map("invited_phone_hash") // discovery handle while target is null
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // One edge per (owner, target); arbiter for duplicate link attempts.
+  @@unique([ownerId, targetId])
+  // Query pattern: resolve pending invites when a new user registers (IDT-07).
+  @@index([invitedPhoneHash])
+  @@map("contact_links")
+}
+
+model Envie {
+  id         String           @id @default(cuid())
+  authorId   String           @map("author_id")
+  author     User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  verb       String // « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed
+  category   String // client-suggested normalized category — matching key
+  status     EnvieStatus      @default(ACTIVE)
+  expiresAt  DateTime         @map("expires_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  recipients EnvieRecipient[]
+  matchesA   Match[]          @relation("envieA")
+  matchesB   Match[]          @relation("envieB")
+
+  // Query pattern: reciprocal-candidate lookup on envie creation (hot path) + expiry sweep.
+  @@index([category, status, expiresAt])
+  @@map("envies")
+}
+
+/// Final resolved list only — scope names and filter reasons never reach the server.
+model EnvieRecipient {
+  envieId     String   @map("envie_id")
+  envie       Envie    @relation(fields: [envieId], references: [id], onDelete: Cascade)
+  recipientId String   @map("recipient_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@id([envieId, recipientId])
+  // Query pattern: "which active envies am I a recipient of?" during match computation.
+  @@index([recipientId])
+  @@map("envie_recipients")
+}
+
+model Match {
+  id         String     @id @default(cuid())
+  envieAId   String     @map("envie_a_id")
+  envieA     Envie      @relation("envieA", fields: [envieAId], references: [id], onDelete: Cascade)
+  envieBId   String     @map("envie_b_id")
+  envieB     Envie      @relation("envieB", fields: [envieBId], references: [id], onDelete: Cascade)
+  userAId    String     @map("user_a_id")
+  userA      User       @relation("userA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId    String     @map("user_b_id")
+  userB      User       @relation("userB", fields: [userBId], references: [id], onDelete: Cascade)
+  state      MatchState @default(OPEN)
+  notifiedAt DateTime?  @map("notified_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  proposals  Proposal[]
+
+  // Reciprocity-race arbiter (DAT rule 5): concurrent envie creation may both detect
+  // the pair — this constraint guarantees a single match row.
+  @@unique([envieAId, envieBId])
+  @@map("matches")
+}
+
+model Proposal {
+  id         String        @id @default(cuid())
+  matchId    String        @map("match_id")
+  match      Match         @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  proposerId String        @map("proposer_id")
+  proposer   User          @relation(fields: [proposerId], references: [id], onDelete: Cascade)
+  place      String?
+  timeslot   DateTime?
+  state      ProposalState @default(PENDING)
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@map("proposals")
+}
+
+enum Platform {
+  IOS
+  ANDROID
+  WEB
+
+  @@map("platform")
+}
+
+enum EnvieStatus {
+  ACTIVE
+  EXPIRED
+  WITHDRAWN
+
+  @@map("envie_status")
+}
+
+// PASSED is private to the passer — the counterpart's reads are bit-identical either way.
+enum MatchState {
+  OPEN
+  PROPOSED
+  SCHEDULED
+  PASSED
+  EXPIRED
+
+  @@map("match_state")
+}
+
+enum ProposalState {
+  PENDING
+  ACCEPTED
+  DECLINED
+  LAPSED
+
+  @@map("proposal_state")
+}

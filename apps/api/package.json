@@ -1,0 +1,28 @@
+{
+  "name": "@repo/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "openapi:emit": "echo 'TODO(backend rule 1): generate OpenAPI 3.1 from the Zod route schemas via @fastify/swagger and write apps/api/openapi.json — deferred to keep this PR small' && exit 0",
+    "openapi:check": "echo 'TODO(backend rule 1): CI diff gate — fail if committed openapi.json differs from the generated spec' && exit 0"
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "^10.3.0",
+    "@repo/db": "workspace:*",
+    "fastify": "^5.4.0",
+    "pino": "^9.7.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@vitest/coverage-v8": "^3.2.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
