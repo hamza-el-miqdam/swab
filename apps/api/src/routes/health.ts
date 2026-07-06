@@ -4,7 +4,7 @@ import { sendProblem } from "../lib/problem.js";
 
 export function registerHealthRoutes(app: FastifyInstance, deps: { dbHealth: DbHealthCheck }): void {
   // Liveness — no dependencies, by contract (G3).
-  app.get("/health", async () => ({ status: "ok" }));
+  app.get("/health", () => ({ status: "ok" }));
 
   // Readiness — checks DB connectivity via @repo/db dbHealth() (G3 / DAT rule 7).
   app.get("/ready", async (req, reply) => {

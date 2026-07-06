@@ -12,7 +12,7 @@ const fetchMock = jest.fn();
 beforeEach(() => {
   __resetVaultForTests();
   fetchMock.mockReset();
-  global.fetch = fetchMock as unknown as typeof fetch;
+  global.fetch = fetchMock;
 });
 
 describe('ONB-05 / G1 / mobile rule 2 — classification never leaves the device in clear', () => {

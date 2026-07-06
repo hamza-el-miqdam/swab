@@ -5,7 +5,8 @@
  */
 import * as Crypto from 'expo-crypto';
 
-const SALT = process.env.EXPO_PUBLIC_PHONE_HASH_SALT ?? 'swab-poc-phone-salt-v1';
+// String(): process.env is untyped (any) under the Expo/RN type setup.
+const SALT = String(process.env.EXPO_PUBLIC_PHONE_HASH_SALT ?? 'swab-poc-phone-salt-v1');
 
 /** Best-effort E.164 normalization: keep a leading +, strip everything else. */
 export function normalizePhone(raw: string): string {

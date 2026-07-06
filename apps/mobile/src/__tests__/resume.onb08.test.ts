@@ -8,7 +8,7 @@
 type StateModule = typeof import('../onboarding/state');
 
 function loadState(): StateModule {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   return require('../onboarding/state') as StateModule;
 }
 

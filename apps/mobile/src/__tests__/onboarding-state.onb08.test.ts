@@ -11,7 +11,7 @@ import {
   setDevCode,
   setPendingPhoneHash,
 } from '../onboarding/signup';
-import { ONBOARDING_STEPS, routeForStep, type OnboardingStep } from '../onboarding/state';
+import { ONBOARDING_STEPS, routeForStep } from '../onboarding/state';
 
 type StateModule = typeof import('../onboarding/state');
 
@@ -29,7 +29,7 @@ describe('ONB-08 routeForStep', () => {
 
   it('covers every declared step (the mapping is total)', () => {
     for (const step of ONBOARDING_STEPS) {
-      expect(routeForStep(step as OnboardingStep)).toMatch(/^\//u);
+      expect(routeForStep(step)).toMatch(/^\//u);
     }
   });
 });
@@ -38,14 +38,14 @@ describe('ONB-08 getStep hardening', () => {
   it('falls back to welcome when storage holds an unknown value', async () => {
     await kvSet('onboarding.step.v1', 'not-a-step');
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const fresh = require('../onboarding/state') as StateModule;
     await expect(fresh.getStep()).resolves.toBe('welcome');
   });
 
   it('serves the cached step without re-reading storage', async () => {
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const fresh = require('../onboarding/state') as StateModule;
     await fresh.setStep('contacts');
     await kvSet('onboarding.step.v1', 'done'); // behind the cache's back

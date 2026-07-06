@@ -10,7 +10,8 @@
  */
 import { getAccessToken } from '../lib/session';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
+// String(): process.env is untyped (any) under the Expo/RN type setup.
+const BASE_URL = String(process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001');
 
 export class ApiError extends Error {
   constructor(

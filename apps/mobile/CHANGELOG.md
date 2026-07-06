@@ -4,6 +4,11 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G4.7).
 
+## 2026-07-06 — Real ESLint (Expo preset + repo base) replaces the `exit 0` stub
+
+- `eslint.config.mjs` composes `eslint-config-expo/flat` with the root config; `lint` script now runs `eslint .`. New devDeps: `eslint@^9` (required — see root changelog gotcha), `eslint-config-expo@^57`.
+- Lint-driven cleanups, no behavior change: `String()` around the untyped `process.env.EXPO_PUBLIC_*` reads (`src/api/client.ts`, `src/lib/phoneHash.ts`), removed redundant type assertions and stale `no-var-requires` directives in tests, justified disable for the mount-time load effect in `app/onboarding/calibrate.tsx`.
+
 ## 2026-07-06 — [VLT-01] Fix vault re-render bug + test/typecheck gate repair
 
 - **Bug fix:** `src/vault/vault.ts` `getContacts()` returned the internal mutable cache array; after `setRing` mutated it in place, React saw the same reference and skipped re-renders — ring placements never appeared. Now returns a fresh array with shallow-copied entries. Regression test included.
