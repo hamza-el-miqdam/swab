@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+.turbo
+**/.turbo
+dist
+**/dist
+.next
+.expo
+coverage
+blueprints
+docs
+agents
+*.md
+.env
+.env.*
+.git
+apps/mobile
