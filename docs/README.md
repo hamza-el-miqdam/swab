@@ -2,6 +2,7 @@
 
 | Doc | Purpose | Primary readers |
 |---|---|---|
+| [STATUS.md](./STATUS.md) | **What is done** — module + infra implementation status | Everyone — the project dashboard |
 | [product-overview.md](./product-overview.md) | Vision, ethos, personas, glossary, MVP scope | Everyone — read first |
 | [specs/FS-01 … FS-07](./specs/) | Functional specifications, one per module | Architect + implementing agents |
 | [agent-playbook.md](./agent-playbook.md) | How agents turn specs into shipped code | All agents + orchestrator |
