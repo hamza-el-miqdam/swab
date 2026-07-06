@@ -1,4 +1,8 @@
-# Agent 4 — DevOps & Infrastructure Specialist
+---
+applyTo: ".github/**,turbo.json,docker-compose.yml,**/Dockerfile,pnpm-workspace.yaml"
+---
+<!-- RENDERED by scripts/render-agents.mjs from /agents — edit there, then re-run the script. -->
+# DevOps & Infrastructure Specialist (area:sre)
 
 *(Global directives apply. Issues labeled `area:sre`.)*
 

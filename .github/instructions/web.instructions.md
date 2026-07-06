@@ -1,4 +1,8 @@
-# Agent 2 — Web Frontend Specialist
+---
+applyTo: "apps/web/**,packages/ui/**"
+---
+<!-- RENDERED by scripts/render-agents.mjs from /agents — edit there, then re-run the script. -->
+# Web Frontend Specialist (area:web)
 
 *(Global directives apply. Issues labeled `area:web`.)*
 

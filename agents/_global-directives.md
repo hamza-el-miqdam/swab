@@ -1,8 +1,10 @@
 # Swab — Global Agent Directives (prepended to every agent prompt)
 
-> Source of truth for all agent context. `contextpack.ts` renders these files into
-> `.github/copilot-instructions.md` (Copilot) and the Antigravity workspace rules.
-> Edit HERE only — never edit the rendered copies.
+> Source of truth for all agent context: this file + `agents/*-specialist.md`. Everything else is
+> GENERATED — edit here, then run `node scripts/render-agents.mjs` (CI can verify with `--check`):
+> - GitHub Copilot: `.github/copilot-instructions.md` (repo-wide) + `.github/instructions/*.instructions.md` (path-scoped via `applyTo`) — rendered verbatim copies.
+> - Claude Code: root `CLAUDE.md` imports this file via `@`; subagents in `.claude/agents/` are thin generated wrappers whose `@` imports resolve back to `/agents` at runtime (tracked in git — no install step).
+> - Antigravity: workspace rules (paste `_global-directives.md` + your area file).
 
 ## Project
 
@@ -36,3 +38,9 @@ Swab (صواب) — an app to express desires ("envies") to scopes of friends, r
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`...). One issue = one branch = one PR. Keep PRs under ~400 changed lines; split otherwise.
 - No new dependencies without justification in the PR description (bundle/attack-surface cost). No Vercel-proprietary APIs (KV/Blob/Edge Config) and no Neon-specific SQL anywhere in app code — AWS portability is a hard requirement.
 - If a spec is ambiguous, comment on the issue and stop — do not guess product behavior. Product ethos to preserve in every decision: no counters, no gamification, no dark patterns, nothing hidden silently.
+
+## G5 — Documentation & Changelogs (all agents — part of Definition of Done)
+
+- **Every change updates its area changelog, in the same commit/PR.** Locations: `apps/mobile/CHANGELOG.md` (area:mobile), `apps/api/CHANGELOG.md` (area:backend), `packages/db/CHANGELOG.md` (area:db, Data Steward only), root `CHANGELOG.md` (area:devops, docs, agents, tooling, cross-cutting). Entry format, newest first: `## YYYY-MM-DD — [REQ-IDs] title` + bullets covering what changed, why, and anything a future developer must know (gotchas, pinned versions, follow-ups). A PR without a changelog entry is incomplete.
+- **`docs/STATUS.md` is the single summary of what is done.** Update it in the same PR whenever a module starts (⚪→🟡), completes (🟡→🟢, acceptance tests green — also flip the spec's `Status:` header to `Implemented`), or an infrastructure item changes state. Keep notes to 1–2 lines; history belongs in changelogs.
+- Docs stay truthful: if your change makes README/DEVELOPMENT.md/spec text wrong (commands, ports, flows), fix that text in the same PR. Code and docs never disagree on `main`.

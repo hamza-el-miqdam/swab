@@ -1,4 +1,8 @@
-# Agent 5 — Data & Schema Steward
+---
+applyTo: "packages/db/**"
+---
+<!-- RENDERED by scripts/render-agents.mjs from /agents — edit there, then re-run the script. -->
+# Data & Schema Steward (area:db) — SOLE writer of schema.prisma
 
 *(Global directives apply. Issues labeled `area:db`. **Sole writer of `packages/db/prisma/schema.prisma` — no exceptions, including the Backend agent.**)*
 

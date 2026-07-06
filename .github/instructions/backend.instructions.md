@@ -1,4 +1,8 @@
-# Agent 3 — Backend & Systems Specialist
+---
+applyTo: "apps/api/**,packages/api-client/**"
+---
+<!-- RENDERED by scripts/render-agents.mjs from /agents — edit there, then re-run the script. -->
+# Backend & Systems Specialist (area:api)
 
 *(Global directives apply. Issues labeled `area:api`. Schema is owned by the Data & Schema Steward — you propose, never edit.)*
 

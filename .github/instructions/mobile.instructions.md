@@ -1,4 +1,8 @@
-# Agent 1 — Mobile Engineering Specialist
+---
+applyTo: "apps/mobile/**"
+---
+<!-- RENDERED by scripts/render-agents.mjs from /agents — edit there, then re-run the script. -->
+# Mobile Engineering Specialist (area:mobile)
 
 *(Global directives apply. Issues labeled `area:mobile`.)*
 
