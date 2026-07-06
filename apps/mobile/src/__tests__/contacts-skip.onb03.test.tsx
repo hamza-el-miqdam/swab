@@ -8,20 +8,20 @@ import * as Contacts from 'expo-contacts';
 import ContactsStep from '../../app/onboarding/contacts';
 import { fr } from '../i18n/fr';
 
-const push = jest.fn();
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push, replace: jest.fn() }),
+  useRouter: () => ({ push: mockPush, replace: jest.fn() }),
 }));
 
 describe('ONB-03 contacts step', () => {
   beforeEach(() => {
-    push.mockReset();
+    mockPush.mockReset();
   });
 
   it('« Passer » advances the flow with zero contacts and no nag', async () => {
     render(<ContactsStep />);
     fireEvent.press(screen.getByText(fr['contacts.skip']));
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/onboarding/calibrate'));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/onboarding/calibrate'));
   });
 
   it('permission denial shows the calm fallback and keeps manual add available', async () => {
@@ -31,6 +31,30 @@ describe('ONB-03 contacts step', () => {
     await waitFor(() => expect(screen.getByText(fr['contacts.denied'])).toBeTruthy());
     // manual path is intact
     expect(screen.getByPlaceholderText(fr['contacts.manualPlaceholder'])).toBeTruthy();
+  });
+
+  it('granted import lists device contacts; picking them fills the added line', async () => {
+    (Contacts.requestPermissionsAsync as jest.Mock).mockResolvedValueOnce({
+      status: 'granted',
+    });
+    (Contacts.getContactsAsync as jest.Mock).mockResolvedValueOnce({
+      data: [
+        { name: 'Lina', phoneNumbers: [{ number: '+33 6 99 88 77 66' }] },
+        { name: '', phoneNumbers: [] }, // nameless entries are filtered out
+        { name: 'Yassine' }, // no number: added without a hash
+      ],
+    });
+    render(<ContactsStep />);
+
+    fireEvent.press(screen.getByText(fr['contacts.import']));
+    fireEvent.press(await screen.findByText('Lina'));
+    fireEvent.press(await screen.findByText('Yassine'));
+
+    // both picked contacts appear in the added line, CTA becomes « Continuer »
+    await waitFor(() => expect(screen.getByText('Lina · Yassine')).toBeTruthy());
+    expect(screen.getByText(fr['contacts.continue'])).toBeTruthy();
+    fireEvent.press(screen.getByText(fr['contacts.continue']));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/onboarding/calibrate'));
   });
 
   it('manual add moves the CTA from « Passer » to « Continuer »', async () => {

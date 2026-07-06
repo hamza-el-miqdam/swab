@@ -60,7 +60,10 @@ async function persist(data: VaultData): Promise<void> {
 }
 
 export async function getContacts(): Promise<readonly VaultContact[]> {
-  return (await hydrate()).contacts;
+  // Fresh array + shallow-fresh entries: callers must never hold a live
+  // reference into the cache, and React state updates need a new identity
+  // after each mutation (same-reference setState skips the re-render).
+  return (await hydrate()).contacts.map((c) => ({ ...c }));
 }
 
 export async function addContact(input: {

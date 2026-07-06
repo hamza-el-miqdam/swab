@@ -4,6 +4,12 @@
     "strict": true,
     "jsx": "react-jsx"
   },
-  "include": ["app", "src", "test", "expo-env.d.ts", ".expo/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "app",
+    "src",
+    "test"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

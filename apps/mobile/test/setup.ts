@@ -2,8 +2,12 @@
  * Global test doubles for Expo native modules. Backing stores live on
  * globalThis so jest.resetModules() (used to simulate process restarts in
  * ONB-08 tests) does not wipe "disk" state — matching real device behavior.
+ *
+ * Names referenced inside jest.mock() factories are `mock`-prefixed:
+ * jest.mock calls are hoisted above imports, and babel-plugin-jest-hoist
+ * only allows out-of-scope variables with that prefix.
  */
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash as mockCreateHash, randomUUID as mockRandomUUID } from 'node:crypto';
 
 interface Stores {
   kv: Map<string, string>;
@@ -12,38 +16,38 @@ interface Stores {
 
 const g = globalThis as typeof globalThis & { __swabTestStores?: Stores };
 g.__swabTestStores ??= { kv: new Map(), secure: new Map() };
-const stores = g.__swabTestStores;
+const mockStores = g.__swabTestStores;
 
 export function resetTestStores(): void {
-  stores.kv.clear();
-  stores.secure.clear();
+  mockStores.kv.clear();
+  mockStores.secure.clear();
 }
 
 jest.mock('expo-sqlite', () => ({
   openDatabaseAsync: async () => ({
     execAsync: async () => undefined,
     getFirstAsync: async (_sql: string, key: string) => {
-      const value = stores.kv.get(key);
+      const value = mockStores.kv.get(key);
       return value === undefined ? null : { value };
     },
     runAsync: async (_sql: string, key: string, value: string) => {
-      stores.kv.set(key, value);
+      mockStores.kv.set(key, value);
     },
   }),
 }));
 
 jest.mock('expo-secure-store', () => ({
-  getItemAsync: async (key: string) => stores.secure.get(key) ?? null,
+  getItemAsync: async (key: string) => mockStores.secure.get(key) ?? null,
   setItemAsync: async (key: string, value: string) => {
-    stores.secure.set(key, value);
+    mockStores.secure.set(key, value);
   },
 }));
 
 jest.mock('expo-crypto', () => ({
-  randomUUID: () => randomUUID(),
+  randomUUID: () => mockRandomUUID(),
   CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
   digestStringAsync: async (_alg: string, data: string) =>
-    createHash('sha256').update(data).digest('hex'),
+    mockCreateHash('sha256').update(data).digest('hex'),
 }));
 
 jest.mock('expo-contacts', () => ({
