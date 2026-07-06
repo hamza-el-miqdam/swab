@@ -4,6 +4,14 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-06 — Repo-wide ESLint (flat config): `lint` is now a real gate
+
+- Root `eslint.config.mjs`: typescript-eslint `recommendedTypeChecked` (type-aware via `projectService`, off each package's own tsconfig) + `eslint-config-prettier` last (Prettier stays the formatter). Bug-catching extras: `eqeqeq`, `no-console` (G3: pino only), `switch-exhaustiveness-check`. Test files relax `require-await`, `no-require-imports` (jest fresh-module pattern) and the `no-unsafe-*` family (jest mocks are any-typed).
+- `apps/mobile/eslint.config.mjs` composes `eslint-config-expo/flat` (React/RN/react-hooks rules) with the root base. ESLint 9 resolves configs from each package's cwd upward, so api/db use the root file directly.
+- All three packages now run `eslint .` as their `lint` script — the mobile stub (`exit 0`) is gone. `turbo.json` gained `globalDependencies: ["eslint.config.mjs"]` so config edits invalidate lint caches.
+- New root devDependencies (justification: repo-wide lint tooling): `eslint@^9`, `@eslint/js@^9`, `typescript-eslint@^8`, `eslint-config-prettier`; `apps/mobile` adds `eslint@^9` + `eslint-config-expo@^57`.
+- **Gotcha (pnpm):** mobile MUST declare `eslint` itself — without it, pnpm's auto-install-peers satisfied `eslint-config-expo`'s peer with eslint@10, producing a second `@typescript-eslint/eslint-plugin` instance and a "Cannot redefine plugin" ConfigError. Keep the eslint majors aligned across root and mobile.
+
 ## 2026-07-06 — Agent prompts consolidated to one source + render script
 
 - `agents/*.md` is now the ONLY editable location for agent behavior. `scripts/render-agents.mjs` generates all tool copies: `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` (verbatim renders for Copilot) and `.claude/agents/*.md` (thin wrappers whose `@` imports resolve back to `agents/` at runtime for Claude Code).

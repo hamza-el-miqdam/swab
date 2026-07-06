@@ -47,7 +47,7 @@ export default function ContactsStep(): React.JSX.Element {
         .slice(0, 50)
         .map((c) => {
           const phone = c.phoneNumbers?.[0]?.number;
-          return { name: c.name as string, ...(phone !== undefined ? { phone } : {}) };
+          return { name: c.name, ...(phone !== undefined ? { phone } : {}) };
         }),
     );
   };

@@ -56,13 +56,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     sendProblem(reply, 404, "Not Found", `${req.method} ${req.url} does not exist.`);
   });
 
-  app.setErrorHandler((err, req, reply) => {
+  app.setErrorHandler((err: unknown, req, reply) => {
     // RFC 7807 everywhere; request bodies are never echoed into errors (G1/G3).
-    const status = typeof err.statusCode === "number" ? err.statusCode : 500;
+    // Fastify 5.9 types err as unknown — narrow before touching FastifyError fields.
+    const e = err instanceof Error ? (err as Error & { statusCode?: unknown; code?: unknown }) : null;
+    const status = typeof e?.statusCode === "number" ? e.statusCode : 500;
     if (status >= 500) {
-      req.log.error({ err: { message: err.message, code: err.code } }, "request failed");
+      req.log.error({ err: { message: e?.message, code: e?.code } }, "request failed");
     }
-    sendProblem(reply, status, status >= 500 ? "Internal Server Error" : err.message);
+    sendProblem(reply, status, status >= 500 || e === null ? "Internal Server Error" : e.message);
   });
 
   const otpStore = deps.otpStore ?? new OtpStore();

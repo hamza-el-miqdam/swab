@@ -63,6 +63,7 @@ export default function Calibrate(): React.JSX.Element {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time load from the vault; setState runs after await, not synchronously
     void refresh();
   }, []);
 
