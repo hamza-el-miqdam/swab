@@ -16,5 +16,10 @@
     "prettier": "^3.5.0",
     "turbo": "^2.5.0",
     "typescript": "^5.8.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "react-native-quick-base64": "2.2.2"
+    }
   }
 }
