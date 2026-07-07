@@ -4,6 +4,12 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G4.7).
 
+## 2026-07-07 — [ONB-02/IDT-01] Fix `.env.example` API URL that dead-ended emulator onboarding
+
+- `EXPO_PUBLIC_API_URL` example pointed at `http://localhost:3000` — wrong port (API listens on **3001**) and wrong host for the Android emulator. Anyone who copied `.env.example` to `.env` had every `/auth/otp/request` fail, so the on-screen dev OTP (« Code (dev): … », the no-SMS-provider bypass, OQ-IDT-1) never appeared and signup was blocked.
+- Fixed to `http://localhost:3001` with comments: Android emulators must use `http://10.0.2.2:3001` (the emulator's alias for the host's localhost, per ANDROID_SETUP.md step 5).
+- ⚠️ `EXPO_PUBLIC_*` vars are baked at bundle time — after editing `.env`, restart the dev server with `npx expo start -c` (or rerun `npx expo run:android`).
+
 ## 2026-07-06 — Real ESLint (Expo preset + repo base) replaces the `exit 0` stub
 
 - `eslint.config.mjs` composes `eslint-config-expo/flat` with the root config; `lint` script now runs `eslint .`. New devDeps: `eslint@^9` (required — see root changelog gotcha), `eslint-config-expo@^57`.
