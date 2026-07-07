@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { ETATS, RESSENTIS, RING_LABEL, RINGS } from '../../src/domain/taxonomies';
 import { t } from '../../src/i18n/fr';
 import { setStep } from '../../src/onboarding/state';
 import { colors, spacing } from '../../src/theme';
@@ -24,16 +25,6 @@ import {
   type IntimacyRing,
   type VaultContact,
 } from '../../src/vault/vault';
-
-const RINGS: readonly IntimacyRing[] = [1, 2, 3, 4];
-const RING_LABEL: Record<IntimacyRing, string> = {
-  1: t('ring.1'),
-  2: t('ring.2'),
-  3: t('ring.3'),
-  4: t('ring.4'),
-};
-const ETATS = [t('etat.available'), t('etat.busy'), t('etat.away')] as const;
-const RESSENTIS = [t('ressenti.light'), t('ressenti.precious'), t('ressenti.paused')] as const;
 
 const MAP_SIZE = 320;
 

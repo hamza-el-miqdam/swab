@@ -4,7 +4,7 @@
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 
-_Last updated: 2026-07-06_
+_Last updated: 2026-07-07_
 
 ## Modules (functional specs)
 
@@ -13,7 +13,7 @@ _Last updated: 2026-07-06_
 | FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth (`/auth/otp`), JWT sessions, opaque vault store (`/vault`, versioned), `/health` + `/ready`. Mobile vault client done (AES-256-GCM on-device, SecureStore key). **Missing:** contact discovery endpoint, web invite landing. |
 | FS-01 | Onboarding | 🟢 Implemented | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Test names carry ONB-02/03/04/07/08. Dev-mode OTP returned in API response (no SMS provider yet). |
 | FS-02 | Relationship Map | ⚪ Not started | Mobile | Depends on FS-01 ✅, FS-07 🟡. |
-| FS-03 | Contact Card | ⚪ Not started | Mobile | Depends on FS-02. |
+| FS-03 | Contact Card | 🟡 In progress | Mobile | Fiche implemented standalone (`app/contact/[id].tsx`, FCH-01..08 tests green); MAP-04 reverse transition + real entry point pending FS-02. |
 | FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | Pure on-device domain module. |
 | FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | The only two-agent spec; OpenAPI seam not yet drafted. |
 | FS-06 | Filtering rules | ⚪ Not started | Mobile | Rules live in the vault. |

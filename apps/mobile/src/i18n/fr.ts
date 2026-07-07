@@ -56,9 +56,19 @@ export const fr = {
   'etat.available': 'disponible',
   'etat.busy': 'occupé',
   'etat.away': 'ailleurs',
+  // FCH-06: « en pause » is a blueprint-attested ÉTAT value (it also exists
+  // as a ressenti — the two axes share the wording, not the meaning).
+  'etat.paused': 'en pause',
   'ressenti.light': 'léger',
   'ressenti.precious': 'précieux',
   'ressenti.paused': 'en pause',
+
+  // OQ-FCH-1: placeholder rôles·contexte vocabulary, pending the real
+  // taxonomy from the Architect + Hamza. Data-driven via domain/taxonomies.
+  'role.friend': 'ami·e',
+  'role.family': 'famille',
+  'role.colleague': 'collègue',
+  'role.neighbor': 'voisin·e',
 
   'done.title': 'Voilà, c’est posé.',
   'done.subtitle': 'Ta carte est prête.',
@@ -67,6 +77,28 @@ export const fr = {
 
   'carte.title': 'Ta carte',
   'carte.placeholder': 'La carte des relations arrive avec FS-02. Tes placements sont déjà là, chiffrés sur ton téléphone.',
+  'carte.fiches': 'Tes fiches',
+
+  // FS-03 — Fiche contact. Tu déclares, swab ne devine pas.
+  'fiche.back': 'Retour',
+  'fiche.notFound': 'Cette fiche n’est pas disponible.',
+  'fiche.ringTitle': 'Intimité',
+  'fiche.rolesTitle': 'Rôles · contexte',
+  'fiche.etatTitle': 'État',
+  'fiche.ressentiTitle': 'Ressenti',
+  // FCH-06: FS-06 filter consequence for the current état, verbatim.
+  'fiche.consequence.paused': 'en pause → exclu par défaut à l’envoi',
+  'fiche.historyTitle': 'Ce qui a bougé',
+  'fiche.historyEmpty': 'Rien n’a bougé ces douze derniers mois.',
+  'fiche.history.reconfirm': 'Confirmé — c’est toujours ça',
+  'fiche.history.match': 'Une envie partagée',
+  // FCH-05: discreet re-tag invitation — never modal, never blocking.
+  'fiche.retag.prompt': 'Ça fait un moment. C’est toujours ça ?',
+  'fiche.retag.confirm': 'C’est toujours ça',
+  'fiche.retag.later': 'À revoir plus tard',
+  // FCH-08: pending contact — axes editable, envies inactive until they join.
+  'fiche.pending': 'Pas encore sur swab',
+  'fiche.envieInactive': 'Les envies s’activeront quand cette personne aura rejoint swab.',
 } as const;
 
 export type I18nKey = keyof typeof fr;
