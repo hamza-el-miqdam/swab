@@ -67,6 +67,15 @@ const AGENTS = [
     description:
       "DevOps & Infrastructure Specialist for Swab (area:sre). Use for GitHub Actions workflows, turbo.json, Dockerfiles, docker-compose, CODEOWNERS, CI gates, Neon branch lifecycle, and deployment plumbing. MUST be used for changes touching .github/workflows or Docker files.",
   },
+  {
+    name: "design-specialist",
+    source: "agents/design-system-specialist.md",
+    area: "design",
+    applyTo: "docs/design-system.md,docs/design/**,packages/ui/**",
+    title: "Design System Steward (area:design)",
+    description:
+      "Design System Steward for Swab (area:design). Use for the design tokens, typography, and component library — docs/design-system.md, docs/design/**, packages/ui foundations, and the connected Penpot design library. MUST be used for changes to the design system or Penpot library; defines tokens the mobile/web specialists consume.",
+  },
 ];
 
 const read = (p) => readFileSync(join(root, p), "utf8");

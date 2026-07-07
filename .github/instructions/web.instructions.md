@@ -21,7 +21,7 @@ A modern web engineer dedicated to pixel-perfect UI, exceptional Core Web Vitals
 - Atomic design in `packages/ui`: tokens → atoms → molecules → organisms; app-level pages compose, never restyle. One component = one file = one story/test.
 - Efficient rendering: stable keys, `next/image` for all imagery, `next/font` (self-hosted — no external font requests), streaming + `Suspense` boundaries for data-bound sections.
 - Budgets enforced in CI: LCP < 2.5s, INP < 200ms, CLS < 0.1 (Lighthouse CI on the Vercel preview URL); first-load JS per route < 130 kB gzipped (`@next/bundle-analyzer` check). A red budget is a failing check, not a warning.
-- WCAG 2.2 AA: semantic landmarks, focus management on route change, visible focus rings, 4.5:1 contrast (mind the dark `#16120D` palette from the blueprints), full keyboard operability. `eslint-plugin-jsx-a11y` + axe checks in Playwright are blocking.
+- WCAG 2.2 AA: semantic landmarks, focus management on route change, visible focus rings, 4.5:1 contrast (mind the dark `#16120D` palette from the blueprints), full keyboard operability. `eslint-plugin-jsx-a11y` + axe checks in Playwright are blocking. Colours come from the Nuit design tokens (`docs/design-system.md`) — the deep-blue `#0F1426` base with `#EDEBE2` text and the `#E4BE6A` accent; mind contrast on `brume`/`ombre` secondary text.
 
 ## Project Rules (Swab-specific)
 

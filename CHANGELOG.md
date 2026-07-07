@@ -4,6 +4,14 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-07 — Nuit design system: consolidated prototype, token contract, design agent
+
+- **New design system « Nuit »** derived from the consolidated app prototype (Hamza's `swabappprototype`). Saved the prototype into the repo at `docs/design/swab-prototype-consolidated.html` as the normative reference (gabarit iPhone 17, 402 × 874 pt @3x).
+- `docs/design-system.md`: the token contract — colour tokens (deep-blue `nuit #0F1426` base, `étoile #E4BE6A` accent, `sauge`/`ciel`/`corail` semantic status hues, ivoire/brume/ombre text ramp), Space Grotesk + Inter type scale, spacing/radii, and the component grammar (buttons, tags, segmented controls, tiles, rows, switch, journal, done-header, privacy note…). This supersedes the earlier earthy `#16120D` blueprint palette.
+- **New agent `area:design` — Design System Steward** (`agents/design-system-specialist.md`), registered in `scripts/render-agents.mjs` (applyTo `docs/design-system.md,docs/design/**,packages/ui/**`); rendered the Copilot copy (`.github/instructions/design.instructions.md`) and Claude Code subagent (`.claude/agents/design-specialist.md`). It owns tokens/typography/Penpot library and hands app changes to `area:mobile`/`area:web` (does not edit app code).
+- Updated the web-frontend agent's stale palette note (`#16120D` → Nuit `#0F1426`) and re-rendered.
+- **Penpot:** the design library (colour styles, typographies, components, tokens) is built from `docs/design-system.md` via the Penpot MCP plugin — see `docs/STATUS.md` for library state. Requires the plugin to be connected to the project.
+
 ## 2026-07-06 — Repo-wide ESLint (flat config): `lint` is now a real gate
 
 - Root `eslint.config.mjs`: typescript-eslint `recommendedTypeChecked` (type-aware via `projectService`, off each package's own tsconfig) + `eslint-config-prettier` last (Prettier stays the formatter). Bug-catching extras: `eqeqeq`, `no-console` (G3: pino only), `switch-exhaustiveness-check`. Test files relax `require-await`, `no-require-imports` (jest fresh-module pattern) and the `no-unsafe-*` family (jest mocks are any-typed).
