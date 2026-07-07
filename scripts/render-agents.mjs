@@ -59,6 +59,15 @@ const AGENTS = [
       "Data & Schema Steward for Swab (area:db) — the ONLY agent allowed to edit packages/db/prisma/schema.prisma. Use for schema changes, migrations, seed data, and Prisma client packaging. MUST be used for any change under packages/db.",
   },
   {
+    name: "design-specialist",
+    source: "agents/design-specialist.md",
+    area: "design",
+    applyTo: "docs/design/**",
+    title: "Design System Specialist (area:design)",
+    description:
+      "Design System Specialist for Swab (area:design). Use for the charte graphique, design tokens, the Figma « swab — Design System » library, and any visual-identity decision (couleurs, typographie, motif, composants UI). MUST be used for changes touching docs/design.",
+  },
+  {
     name: "devops-specialist",
     source: "agents/devops-infrastructure-specialist.md",
     area: "devops",

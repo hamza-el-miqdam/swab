@@ -4,7 +4,7 @@
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 
-_Last updated: 2026-07-06_
+_Last updated: 2026-07-07_
 
 ## Modules (functional specs)
 
@@ -30,7 +30,8 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 | Mobile dev clients | 🟢 | iOS + Android via `expo run:*` (native crypto → Expo Go unsupported). Android SDK/emulator setup scripted in `scripts/`. |
 | CI | 🟡 | `ci.yml` skeleton exists. Missing: scope guard, privacy-audit job, coverage enforcement, OpenAPI diff gate. |
 | Lint (repo-wide ESLint) | 🟢 | Flat config: root `eslint.config.mjs` (type-aware typescript-eslint) + Expo preset in `apps/mobile`. All packages run `eslint .` — the mobile `exit 0` stub is gone. |
-| Agents (AIDD) | 🟢 | Single source of truth in `agents/`; `node scripts/render-agents.mjs` generates the Copilot (`.github/`) and Claude Code (`.claude/agents/`) copies (`--check` for CI). |
+| Agents (AIDD) | 🟢 | Single source of truth in `agents/`; `node scripts/render-agents.mjs` generates the Copilot (`.github/`) and Claude Code (`.claude/agents/`) copies (`--check` for CI). Now includes the design-specialist (area:design). |
+| Design system (charte + Figma) | 🟡 | Charte graphique v1.0 in `docs/design/`; Figma library foundations done (66 variables, 6 text styles). Missing: doc pages + components (Bouton, Chip, Avatar) — blocked on Figma MCP monthly quota, see `docs/design/README.md`. |
 | SMS provider (OTP) | ⚪ | Dev mode returns the code in the response; provider selection is an open question. |
 | Privacy audit (playbook §6) | ⚪ | Must run before any external tester and after every schema/API change. |
 

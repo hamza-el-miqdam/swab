@@ -4,6 +4,14 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-07 — Design system: charte graphique in-repo, Figma library foundations, design-specialist agent
+
+- Added `docs/design/charte-graphique.html` (Charte graphique & identité visuelle v1.0) as the visual-identity source of truth, plus `docs/design/README.md` documenting the token architecture and the Figma library.
+- Built the Figma library **« swab — Design System »** (<https://www.figma.com/design/igjlLhfd6bGqfStMkfBqZB>): 5 variable collections / 66 variables (24 primitives + 16 semantic tokens × Sombre/Clair + espacement + rayons, all scoped, aliased, with `var(--swab-…)` code syntax) and the 6 charte text styles (Newsreader + Hanken Grotesk).
+- **Gotcha (Figma Starter plan):** 1 mode per collection → light theme lives in a twin collection `Couleurs · Clair` (merge into modes after a Pro upgrade); 6 MCP tool calls per month → foundations pages + components (Bouton, Chip, Avatar) remain to build, resume protocol in `docs/design/README.md`.
+- New `agents/design-specialist.md` (area:design) rendered into Copilot + Claude Code copies via `scripts/render-agents.mjs`; owns `docs/design/**` and the Figma library.
+- Known drift recorded: `apps/mobile/src/theme.ts` still uses the pre-charte gold palette — needs an `area:mobile` alignment issue (charte wins).
+
 ## 2026-07-06 — Repo-wide ESLint (flat config): `lint` is now a real gate
 
 - Root `eslint.config.mjs`: typescript-eslint `recommendedTypeChecked` (type-aware via `projectService`, off each package's own tsconfig) + `eslint-config-prettier` last (Prettier stays the formatter). Bug-catching extras: `eqeqeq`, `no-console` (G3: pino only), `switch-exhaustiveness-check`. Test files relax `require-await`, `no-require-imports` (jest fresh-module pattern) and the `no-unsafe-*` family (jest mocks are any-typed).

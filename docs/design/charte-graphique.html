@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>swab — Charte graphique &amp; identité visuelle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,300;0,400;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#16120D; --surface:#201A14; --surface2:#2B231B;
+  --text:#F0E8DC; --dim:#A99B88; --faint:#6F6456;
+  --line:rgba(240,232,220,.11);
+  --accent:#AAC0A2; --accent-text:#16120D; --accent-soft:rgba(170,192,162,.40);
+  --l-bg:#F1EBE2; --l-surface:#FFFFFF; --l-surface2:#F7F1E8;
+  --l-text:#2B2418; --l-dim:#7C7060; --l-faint:#B0A492;
+  --l-line:rgba(43,36,24,.12); --l-accent:#5C7A54;
+  --etabli:#8FB59A; --apprivoiser:#D8B27A; --sommeil:#8AA0BE; --pause:#ACA0C0; --tendu:#C8917E;
+  --fd:'Newsreader', Georgia, serif;
+  --fb:'Hanken Grotesk', system-ui, sans-serif;
+  --fe:'Spectral', Georgia, serif;
+  --maxw:980px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *,*::before,*::after{animation:none!important;transition:none!important}}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+::selection{background:var(--accent-soft);color:var(--text)}
+
+/* ——— structure ——— */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+section.chap{padding:88px 0 72px;border-top:1px solid var(--line)}
+.eyebrow{font-family:var(--fb);font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+h2{font-family:var(--fd);font-weight:400;font-size:clamp(28px,4.2vw,38px);letter-spacing:-.01em;line-height:1.18;margin-bottom:14px}
+h3{font-family:var(--fd);font-weight:500;font-size:21px;letter-spacing:-.005em;margin:44px 0 10px}
+p.lead{font-size:17px;color:var(--dim);max-width:62ch;margin-bottom:8px}
+p{max-width:68ch}
+p+p{margin-top:10px}
+.note{font-size:13px;color:var(--faint);max-width:62ch;margin-top:12px}
+.muted{color:var(--dim)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:22px}
+.tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;letter-spacing:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:left;padding:0 14px 10px 0;border-bottom:1px solid var(--line)}
+td{padding:11px 14px 11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+
+/* ——— couverture ——— */
+header.cover{min-height:100svh;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.rings{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.rings svg{width:min(120vh,900px);height:min(120vh,900px);opacity:.9}
+.ring{fill:none;stroke:var(--line);stroke-width:1.2}
+.ring.on{stroke:var(--accent);stroke-width:1.6;opacity:.55}
+.cover-inner{position:relative;text-align:center;padding:40px 24px}
+.wordmark{font-family:var(--fd);font-weight:500;font-size:clamp(64px,12vw,118px);letter-spacing:-.025em;line-height:1}
+.arabic{font-size:clamp(20px,3vw,30px);color:var(--accent);margin-top:10px;font-family:var(--fd)}
+.tagline{font-size:14px;letter-spacing:.02em;color:var(--dim);margin-top:14px}
+.doc-title{margin-top:56px;font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+.doc-meta{font-size:12.5px;color:var(--faint);margin-top:8px}
+.dotline{display:flex;gap:14px;justify-content:center;margin-top:34px}
+.dot{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--faint)}
+.dot.f{background:var(--accent);border-color:var(--accent)}
+
+/* ——— sommaire ——— */
+.toc{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;counter-reset:toc;max-width:760px}
+@media(max-width:640px){.toc{grid-template-columns:1fr}}
+.toc a{display:flex;align-items:baseline;gap:14px;padding:13px 4px;border-bottom:1px solid var(--line);color:var(--text);font-size:15px;transition:color .15s}
+.toc a:hover{color:var(--accent)}
+.toc a::before{counter-increment:toc;content:counter(toc,decimal-leading-zero);font-family:var(--fd);font-size:14px;color:var(--faint)}
+.toc a span{margin-left:auto;font-size:12px;color:var(--faint)}
+
+/* ——— logo ——— */
+.logo-stage{display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--line);border-radius:13px;min-height:220px;position:relative;overflow:hidden}
+.logo-stage.light{background:var(--l-bg);color:var(--l-text)}
+.logo-stage .wm{font-family:var(--fd);font-weight:500;font-size:56px;letter-spacing:-.025em;line-height:1}
+.logo-stage .ar{font-family:var(--fd);font-size:17px;margin-top:6px;color:var(--accent)}
+.logo-stage.light .ar{color:var(--l-accent)}
+.clearzone{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.clearzone .box{border:1px dashed var(--accent-soft);padding:34px 46px;text-align:center}
+.dontgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:640px){.dontgrid{grid-template-columns:1fr 1fr}}
+.dont{background:var(--surface);border:1px solid var(--line);border-radius:11px;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;padding:16px}
+.dont .x{position:absolute;top:10px;right:12px;color:var(--tendu);font-size:15px;font-weight:700}
+.dont .cap{font-size:11.5px;color:var(--faint);text-align:center}
+.dont .wm{font-family:var(--fd);font-size:26px;font-weight:500;letter-spacing:-.02em}
+
+/* ——— couleurs ——— */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.sw{border-radius:11px;overflow:hidden;border:1px solid var(--line)}
+.sw .chip{height:84px}
+.sw .info{background:var(--surface);padding:10px 12px}
+.sw .nm{font-size:13px;font-weight:600}
+.sw .hx{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--dim);margin-top:2px}
+.sw .role{font-size:11px;color:var(--faint);margin-top:4px;line-height:1.4}
+.propbar{display:flex;height:52px;border-radius:9px;overflow:hidden;border:1px solid var(--line);margin-top:16px}
+.propbar div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.05em}
+
+/* ——— typo ——— */
+.typespec{display:flex;flex-direction:column;gap:0}
+.trow{display:grid;grid-template-columns:150px 1fr;gap:22px;align-items:baseline;padding:18px 0;border-bottom:1px solid var(--line)}
+.trow:last-child{border-bottom:none}
+.trow .meta{font-size:11.5px;color:var(--faint);line-height:1.7}
+.trow .meta b{color:var(--dim);font-weight:600;display:block;font-size:12px}
+@media(max-width:640px){.trow{grid-template-columns:1fr;gap:6px}}
+.spec-d1{font-family:var(--fd);font-weight:500;font-size:44px;letter-spacing:-.025em;line-height:1.05}
+.spec-d2{font-family:var(--fd);font-weight:400;font-size:29px;letter-spacing:-.01em;line-height:1.28}
+.spec-d3{font-family:var(--fd);font-weight:500;font-size:21px;letter-spacing:-.005em;line-height:1.3}
+.spec-b1{font-size:15.5px;line-height:1.55}
+.spec-b2{font-size:13.5px;line-height:1.55;color:var(--dim)}
+.spec-lb{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+.glyphs{font-size:26px;line-height:1.5;letter-spacing:.01em;color:var(--dim);word-break:break-all}
+
+/* ——— composants ——— */
+.uirow{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{font-family:var(--fb);font-size:14px;font-weight:600;border:none;border-radius:11px;padding:12px 22px;cursor:pointer}
+.btn.pri{background:var(--accent);color:var(--accent-text)}
+.btn.sec{background:transparent;color:var(--text);border:1.5px solid var(--line)}
+.btn.ghost{background:transparent;color:var(--dim);border:none;padding:12px 10px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;border-radius:999px;padding:7px 14px;border:1.5px solid var(--line);color:var(--dim)}
+.chip.on{border-color:var(--accent);color:var(--text);background:var(--surface2)}
+.chip .pt{width:8px;height:8px;border-radius:50%}
+.avatar{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:18px;background:var(--surface2);border:1.5px solid var(--line)}
+.avatar.e{background:var(--etabli);color:#1b1b1b;border-color:var(--etabli)}
+.radii{display:flex;gap:14px;flex-wrap:wrap}
+.rd{width:96px;height:72px;background:var(--surface2);border:1px solid var(--line);display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;color:var(--faint)}
+
+/* ——— voix ——— */
+.voice{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.voice{grid-template-columns:1fr}}
+.voice .card{padding:18px 20px}
+.voice .yes{border-left:3px solid var(--etabli)}
+.voice .no{border-left:3px solid var(--tendu)}
+.voice .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.voice .yes .lbl{color:var(--etabli)}
+.voice .no .lbl{color:var(--tendu)}
+.voice q{font-family:var(--fe);font-style:italic;font-size:16px;quotes:"« " " »"}
+
+footer{border-top:1px solid var(--line);padding:44px 0 64px;color:var(--faint);font-size:12.5px}
+
+@media print{
+  body{background:#fff;color:#2B2418}
+  :root{--bg:#fff;--surface:#F7F1E8;--surface2:#F1EBE2;--text:#2B2418;--dim:#7C7060;--faint:#B0A492;--line:rgba(43,36,24,.15);--accent:#5C7A54;--accent-text:#fff}
+  header.cover{min-height:auto;padding:80px 0}
+  section.chap{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ COUVERTURE ═══════════ -->
+<header class="cover">
+  <div class="rings" aria-hidden="true">
+    <svg viewBox="0 0 600 600">
+      <circle class="ring" cx="300" cy="300" r="260"/>
+      <circle class="ring" cx="300" cy="300" r="204"/>
+      <circle class="ring on" cx="300" cy="300" r="156"/>
+      <circle class="ring" cx="300" cy="300" r="110"/>
+      <circle class="ring" cx="300" cy="300" r="68"/>
+    </svg>
+  </div>
+  <div class="cover-inner">
+    <div class="wordmark">swab</div>
+    <div class="arabic" lang="ar">صواب</div>
+    <div class="tagline">jouer franc jeu</div>
+    <div class="dotline" aria-hidden="true">
+      <span class="dot f"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+    <div class="doc-title">Charte graphique &amp; identité visuelle</div>
+    <div class="doc-meta">Version 1.0 — Juillet 2026 · Document de référence interne &amp; prestataires</div>
+  </div>
+</header>
+
+<!-- ═══════════ SOMMAIRE ═══════════ -->
+<section class="chap" id="sommaire">
+  <div class="wrap">
+    <div class="eyebrow">Sommaire</div>
+    <nav class="toc">
+      <a href="#marque">La marque <span>fondations</span></a>
+      <a href="#logo">Logotype <span>construction &amp; usages</span></a>
+      <a href="#couleurs">Couleurs <span>palettes &amp; accessibilité</span></a>
+      <a href="#typo">Typographie <span>familles &amp; échelle</span></a>
+      <a href="#motif">Motif signature <span>cercles d'intimité</span></a>
+      <a href="#composants">Composants UI <span>formes &amp; états</span></a>
+      <a href="#voix">Ton de voix <span>écriture</span></a>
+      <a href="#regles">Règles d'or <span>récapitulatif</span></a>
+    </nav>
+  </div>
+</section>
+
+<!-- ═══════════ 01 · LA MARQUE ═══════════ -->
+<section class="chap" id="marque">
+  <div class="wrap">
+    <div class="eyebrow">01 · Fondations</div>
+    <h2>La marque</h2>
+    <p class="lead">swab est une application qui aide à entretenir ses relations : dire à qui on tient, exprimer une envie de se voir, et laisser le lien se faire quand l'envie est réciproque.</p>
+
+    <h3>Le nom</h3>
+    <p><strong>swab</strong> est la translittération de <span lang="ar">صواب</span> (<em>ṣawāb</em>), qui signifie en arabe <em>ce qui est juste, correct</em>. Le nom porte la promesse de la marque : des relations sans faux-semblants, où chacun joue franc jeu. Le mot arabe accompagne systématiquement le wordmark dans les contextes de présentation (couverture, écran d'accueil, communication) — il est l'origine du nom, pas un ornement.</p>
+    <p>La signature <strong>« jouer franc jeu »</strong> est la traduction fonctionnelle de la promesse. Elle s'écrit toujours en minuscules, sans point final.</p>
+
+    <h3>Personnalité</h3>
+    <div class="grid3" style="margin-top:16px">
+      <div class="card">
+        <div class="tag">Chaleureuse</div>
+        <p style="font-size:14px" class="muted">Des tons de terre, de lin et de sauge — la matière d'un intérieur habité, pas d'une interface froide. swab parle de personnes, jamais de « réseau ».</p>
+      </div>
+      <div class="card">
+        <div class="tag">Franche</div>
+        <p style="font-size:14px" class="muted">Une écriture directe, au tutoiement, sans détour ni euphémisme produit. On dit « envie de se voir », pas « demande de connexion ».</p>
+      </div>
+      <div class="card">
+        <div class="tag">Posée</div>
+        <p style="font-size:14px" class="muted">Pas de rouge d'urgence, pas de compteurs, pas de gamification. Les états d'une relation se disent en couleurs douces, jamais en alertes.</p>
+      </div>
+    </div>
+
+    <h3>Principes de conception</h3>
+    <table>
+      <tr><td style="width:220px"><strong>L'intime au centre</strong></td><td class="muted">La géométrie de swab est concentrique : plus une chose est proche du centre, plus elle compte. Ce principe gouverne le motif signature, la carte des relations et la hiérarchie visuelle.</td></tr>
+      <tr><td><strong>Le calme comme parti pris</strong></td><td class="muted">Une seule couleur d'accent, des contrastes maîtrisés, des animations discrètes (300–400 ms, courbes douces). Toute tension visuelle doit être justifiée par le contenu.</td></tr>
+      <tr><td><strong>Deux mondes, une matière</strong></td><td class="muted">Le mode sombre est l'expression première de la marque ; le mode clair en est la déclinaison exacte, jamais une simple inversion. Les deux partagent le même vert sauge décliné.</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════ 02 · LOGOTYPE ═══════════ -->
+<section class="chap" id="logo">
+  <div class="wrap">
+    <div class="eyebrow">02 · Logotype</div>
+    <h2>Un wordmark, pas un symbole</h2>
+    <p class="lead">L'identité repose sur le mot lui-même, composé en Newsreader Medium. Sa simplicité est volontaire : le motif des cercles joue le rôle graphique que jouerait ailleurs un pictogramme.</p>
+
+    <h3>Construction</h3>
+    <div class="grid2" style="margin-top:14px">
+      <div class="logo-stage">
+        <div style="text-align:center">
+          <div class="wm">swab</div>
+          <div class="ar" lang="ar">صواب</div>
+        </div>
+      </div>
+      <div class="logo-stage light">
+        <div style="text-align:center">
+          <div class="wm">swab</div>
+          <div class="ar" lang="ar">صواب</div>
+        </div>
+      </div>
+    </div>
+    <table style="margin-top:22px">
+      <tr><th>Élément</th><th>Spécification</th></tr>
+      <tr><td>Graisse &amp; casse</td><td>Newsreader Medium (500), tout en minuscules, jamais de capitale initiale — y compris en début de phrase.</td></tr>
+      <tr><td>Interlettrage</td><td>−2,5 % (letter-spacing : −0.025em), identique à toutes les tailles.</td></tr>
+      <tr><td>Version bilingue</td><td><span lang="ar">صواب</span> centré sous le wordmark, corps ≈ 30 % du wordmark, en couleur d'accent.</td></tr>
+      <tr><td>Zone de protection</td><td>Espace libre minimal égal à la hauteur du « s » sur les quatre côtés.</td></tr>
+      <tr><td>Taille minimale</td><td>24 px de haut à l'écran · 8 mm en impression. En dessous, utiliser le wordmark seul, sans la ligne arabe.</td></tr>
+    </table>
+
+    <h3>À ne pas faire</h3>
+    <div class="dontgrid" style="margin-top:14px">
+      <div class="dont"><span class="x" aria-hidden="true">✕</span><span class="wm" style="font-family:var(--fb);font-weight:700">swab</span><span class="cap">Changer la typographie</span></div>
+      <div class="dont"><span class="x" aria-hidden="true">✕</span><span class="wm">Swab</span><span class="cap">Ajouter une capitale</span></div>
+      <div class="dont"><span class="x" aria-hidden="true">✕</span><span class="wm" style="color:var(--tendu)">swab</span><span class="cap">Colorer le wordmark hors palette texte</span></div>
+      <div class="dont"><span class="x" aria-hidden="true">✕</span><span class="wm" style="letter-spacing:.2em">swab</span><span class="cap">Modifier l'interlettrage</span></div>
+      <div class="dont"><span class="x" aria-hidden="true">✕</span><span class="wm" style="transform:skewX(-12deg)">swab</span><span class="cap">Déformer, incliner, étirer</span></div>
+      <div class="dont"><span class="x" aria-hidden="true">✕</span><span class="wm" style="text-shadow:0 3px 8px rgba(0,0,0,.8)">swab</span><span class="cap">Ajouter ombres ou effets</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 03 · COULEURS ═══════════ -->
+<section class="chap" id="couleurs">
+  <div class="wrap">
+    <div class="eyebrow">03 · Couleurs</div>
+    <h2>Terre, lin &amp; sauge</h2>
+    <p class="lead">La palette fonctionne en trois couches : une gamme fonctionnelle sombre (expression première), sa jumelle claire, et une gamme sémantique réservée aux états des relations.</p>
+
+    <h3>Mode sombre — gamme principale</h3>
+    <div class="swatches" style="margin-top:14px">
+      <div class="sw"><div class="chip" style="background:#16120D"></div><div class="info"><div class="nm">Encre</div><div class="hx">#16120D</div><div class="role">Fond général (bg)</div></div></div>
+      <div class="sw"><div class="chip" style="background:#201A14"></div><div class="info"><div class="nm">Bois sombre</div><div class="hx">#201A14</div><div class="role">Surfaces, cartes</div></div></div>
+      <div class="sw"><div class="chip" style="background:#2B231B"></div><div class="info"><div class="nm">Bois</div><div class="hx">#2B231B</div><div class="role">Surfaces élevées, états actifs</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F0E8DC"></div><div class="info"><div class="nm">Lin</div><div class="hx">#F0E8DC</div><div class="role">Texte principal</div></div></div>
+      <div class="sw"><div class="chip" style="background:#A99B88"></div><div class="info"><div class="nm">Sable</div><div class="hx">#A99B88</div><div class="role">Texte secondaire (dim)</div></div></div>
+      <div class="sw"><div class="chip" style="background:#6F6456"></div><div class="info"><div class="nm">Terre</div><div class="hx">#6F6456</div><div class="role">Texte tertiaire (faint)</div></div></div>
+      <div class="sw"><div class="chip" style="background:#AAC0A2"></div><div class="info"><div class="nm">Sauge</div><div class="hx">#AAC0A2</div><div class="role">Accent — actions, sélection</div></div></div>
+      <div class="sw"><div class="chip" style="background:rgba(240,232,220,.12);border-bottom:1px solid var(--line)"></div><div class="info"><div class="nm">Filet</div><div class="hx">lin · 12 %</div><div class="role">Bordures, séparateurs</div></div></div>
+    </div>
+
+    <h3>Mode clair — gamme jumelle</h3>
+    <div class="swatches" style="margin-top:14px">
+      <div class="sw"><div class="chip" style="background:#F1EBE2"></div><div class="info"><div class="nm">Lin clair</div><div class="hx">#F1EBE2</div><div class="role">Fond général</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="info"><div class="nm">Blanc</div><div class="hx">#FFFFFF</div><div class="role">Surfaces, cartes</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F7F1E8"></div><div class="info"><div class="nm">Crème</div><div class="hx">#F7F1E8</div><div class="role">Surfaces élevées</div></div></div>
+      <div class="sw"><div class="chip" style="background:#2B2418"></div><div class="info"><div class="nm">Brou</div><div class="hx">#2B2418</div><div class="role">Texte principal</div></div></div>
+      <div class="sw"><div class="chip" style="background:#7C7060"></div><div class="info"><div class="nm">Taupe</div><div class="hx">#7C7060</div><div class="role">Texte secondaire</div></div></div>
+      <div class="sw"><div class="chip" style="background:#B0A492"></div><div class="info"><div class="nm">Grège</div><div class="hx">#B0A492</div><div class="role">Texte tertiaire</div></div></div>
+      <div class="sw"><div class="chip" style="background:#5C7A54"></div><div class="info"><div class="nm">Sauge profonde</div><div class="hx">#5C7A54</div><div class="role">Accent — actions, sélection</div></div></div>
+    </div>
+    <p class="note">Règle : la sauge change de valeur entre les modes (#AAC0A2 sombre → #5C7A54 clair) pour rester lisible ; c'est la même teinte, jamais deux verts différents. Le texte posé sur un aplat d'accent est toujours Encre (sombre) ou Blanc (clair).</p>
+
+    <h3>Gamme sémantique — états de la relation</h3>
+    <p class="muted" style="margin-bottom:14px">Cinq couleurs réservées exclusivement à l'état d'une relation. Elles ne servent jamais de décoration, de fond de section ni de couleur d'action. Le texte posé sur ces aplats est toujours sombre (#1B1B1B).</p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#8FB59A"></div><div class="info"><div class="nm">Établi</div><div class="hx">#8FB59A</div><div class="role">Relation stable, régulière</div></div></div>
+      <div class="sw"><div class="chip" style="background:#D8B27A"></div><div class="info"><div class="nm">À apprivoiser</div><div class="hx">#D8B27A</div><div class="role">Lien naissant, à construire</div></div></div>
+      <div class="sw"><div class="chip" style="background:#8AA0BE"></div><div class="info"><div class="nm">En sommeil</div><div class="hx">#8AA0BE</div><div class="role">Lien distendu, sans rupture</div></div></div>
+      <div class="sw"><div class="chip" style="background:#ACA0C0"></div><div class="info"><div class="nm">En pause</div><div class="hx">#ACA0C0</div><div class="role">Mise à distance choisie</div></div></div>
+      <div class="sw"><div class="chip" style="background:#C8917E"></div><div class="info"><div class="nm">Tendu</div><div class="hx">#C8917E</div><div class="role">Friction, à clarifier</div></div></div>
+    </div>
+
+    <h3>Proportions d'usage</h3>
+    <div class="propbar">
+      <div style="flex:62;background:#16120D;color:#6F6456">Encre 62 %</div>
+      <div style="flex:22;background:#201A14;color:#6F6456">Surfaces 22 %</div>
+      <div style="flex:9;background:#F0E8DC;color:#16120D">Lin 9 %</div>
+      <div style="flex:5;background:#AAC0A2;color:#16120D">Sauge 5 %</div>
+      <div style="flex:2;background:#C8917E;color:#1b1b1b">2 %</div>
+    </div>
+    <p class="note">L'accent sauge reste rare : c'est sa rareté qui guide l'œil vers l'action. Les couleurs sémantiques n'apparaissent qu'au contact des relations qu'elles décrivent.</p>
+
+    <h3>Accessibilité — contrastes mesurés (WCAG 2.1)</h3>
+    <table style="margin-top:8px">
+      <tr><th>Paire</th><th>Ratio</th><th>Verdict</th></tr>
+      <tr><td>Lin #F0E8DC sur Encre #16120D</td><td class="mono">15,3 : 1</td><td class="muted">AAA — texte courant</td></tr>
+      <tr><td>Sable #A99B88 sur Encre</td><td class="mono">6,9 : 1</td><td class="muted">AA+ — texte secondaire</td></tr>
+      <tr><td>Sauge #AAC0A2 sur Encre</td><td class="mono">9,6 : 1</td><td class="muted">AAA — accent &amp; texte</td></tr>
+      <tr><td>Encre sur aplat Sauge</td><td class="mono">9,6 : 1</td><td class="muted">AAA — boutons pleins</td></tr>
+      <tr><td>Brou #2B2418 sur Lin clair #F1EBE2</td><td class="mono">12,9 : 1</td><td class="muted">AAA — texte courant</td></tr>
+      <tr><td>Taupe #7C7060 sur Lin clair</td><td class="mono">4,1 : 1</td><td class="muted">AA — corps ≥ 14 px uniquement</td></tr>
+      <tr><td>Blanc sur Sauge profonde #5C7A54</td><td class="mono">4,8 : 1</td><td class="muted">AA — boutons pleins, mode clair</td></tr>
+    </table>
+    <p class="note">La Terre #6F6456 et la Grège #B0A492 sont sous le seuil AA : réservées aux mentions non essentielles (métadonnées, placeholders), jamais à une information nécessaire à l'action.</p>
+  </div>
+</section>
+
+<!-- ═══════════ 04 · TYPOGRAPHIE ═══════════ -->
+<section class="chap" id="typo">
+  <div class="wrap">
+    <div class="eyebrow">04 · Typographie</div>
+    <h2>Une voix qui raconte, une voix qui guide</h2>
+    <p class="lead">Deux familles seulement. Newsreader, une serif éditoriale, porte tout ce qui relève de l'humain : titres, prénoms, initiales. Hanken Grotesk, une grotesque humaniste, porte tout ce qui relève de l'interface : corps de texte, libellés, boutons.</p>
+
+    <div class="grid2" style="margin-top:20px">
+      <div class="card">
+        <div class="tag">Display · l'humain</div>
+        <div style="font-family:var(--fd);font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1.1">Newsreader</div>
+        <div class="glyphs" style="font-family:var(--fd);margin-top:12px">Aa Bb Cc Gg Qq &amp; ? — 0123456789</div>
+        <p class="note">Graisses : 300 · 400 · 500. Italique autorisée pour les citations. Toujours en interlettrage négatif (−1 % à −2,5 %) au-delà de 24 px.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Texte &amp; UI · l'interface</div>
+        <div style="font-family:var(--fb);font-size:34px;font-weight:600;letter-spacing:-.01em;line-height:1.1">Hanken Grotesk</div>
+        <div class="glyphs" style="font-family:var(--fb);margin-top:12px">Aa Bb Cc Gg Qq &amp; ? — 0123456789</div>
+        <p class="note">Graisses : 400 · 500 · 600 · 700. Les libellés en capitales prennent un interlettrage positif (+8 % à +16 %).</p>
+      </div>
+    </div>
+    <p class="note">Substitutions système : Georgia pour Newsreader, la pile system-ui pour Hanken Grotesk. Variante éditoriale : Spectral peut remplacer Newsreader dans les supports longs (blog, presse) — jamais dans le produit.</p>
+
+    <h3>Échelle typographique</h3>
+    <div class="typespec card" style="padding:8px 22px;margin-top:14px">
+      <div class="trow">
+        <div class="meta"><b>Display 1</b>Newsreader 500<br>44–60 px · −2,5 % · 1.05</div>
+        <div class="spec-d1">Voilà, c'est posé.</div>
+      </div>
+      <div class="trow">
+        <div class="meta"><b>Display 2</b>Newsreader 400<br>27–30 px · −1 % · 1.25</div>
+        <div class="spec-d2">Qui compte pour toi&nbsp;?</div>
+      </div>
+      <div class="trow">
+        <div class="meta"><b>Titre 3</b>Newsreader 500<br>19–24 px · −0,5 % · 1.3</div>
+        <div class="spec-d3">Carte des relations</div>
+      </div>
+      <div class="trow">
+        <div class="meta"><b>Corps</b>Hanken Grotesk 400<br>14,5–15,5 px · 1.55</div>
+        <div class="spec-b1">Ajoute les personnes que tu pourrais avoir envie de voir. Tu en ajouteras d'autres plus tard.</div>
+      </div>
+      <div class="trow">
+        <div class="meta"><b>Secondaire</b>Hanken Grotesk 400<br>12,5–13,5 px · 1.55 · Sable</div>
+        <div class="spec-b2">Ton envie reste invisible tant qu'elle n'est pas réciproque.</div>
+      </div>
+      <div class="trow">
+        <div class="meta"><b>Libellé</b>Hanken Grotesk 600<br>11–12 px · +9 % · capitales</div>
+        <div class="spec-lb">Cercle d'intimité</div>
+      </div>
+    </div>
+
+    <h3>Règles d'écriture typographique</h3>
+    <table>
+      <tr><td style="width:220px"><strong>La serif nomme les gens</strong></td><td class="muted">Prénoms, initiales dans les avatars et titres de fiches se composent en Newsreader. Une personne n'est jamais nommée dans la police d'interface au niveau titre.</td></tr>
+      <tr><td><strong>Jamais plus de deux familles</strong></td><td class="muted">Aucune troisième police, y compris pour les campagnes. La variation vient des graisses et des corps, pas des familles.</td></tr>
+      <tr><td><strong>Ponctuation française</strong></td><td class="muted">Espaces insécables avant ? ! : ; et guillemets « à chevrons ». L'esperluette est autorisée dans les libellés courts.</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════ 05 · MOTIF SIGNATURE ═══════════ -->
+<section class="chap" id="motif">
+  <div class="wrap">
+    <div class="eyebrow">05 · Motif signature</div>
+    <h2>Les cercles d'intimité</h2>
+    <p class="lead">Cinq cercles concentriques, du plus intime au plus lointain. C'est à la fois un composant fonctionnel (la carte des relations), le symbole de la marque et sa réserve graphique pour tous les supports.</p>
+
+    <div class="grid2" style="margin-top:20px;align-items:center">
+      <div class="logo-stage" style="min-height:340px">
+        <svg viewBox="0 0 320 320" width="300" height="300" role="img" aria-label="Motif des cinq cercles d'intimité">
+          <circle cx="160" cy="160" r="138" fill="none" stroke="rgba(240,232,220,.11)" stroke-width="1.5"/>
+          <circle cx="160" cy="160" r="110" fill="none" stroke="rgba(240,232,220,.11)" stroke-width="1.5"/>
+          <circle cx="160" cy="160" r="83"  fill="none" stroke="rgba(240,232,220,.11)" stroke-width="1.5"/>
+          <circle cx="160" cy="160" r="58"  fill="none" stroke="#AAC0A2" stroke-width="2"/>
+          <circle cx="160" cy="160" r="36"  fill="none" stroke="rgba(240,232,220,.11)" stroke-width="1.5"/>
+          <circle cx="197" cy="115" r="16" fill="#8FB59A"/>
+          <text x="197" y="121" text-anchor="middle" font-family="Newsreader, Georgia, serif" font-size="15" fill="#1b1b1b">L</text>
+          <text x="160" y="165" text-anchor="middle" font-family="Newsreader, Georgia, serif" font-size="16" fill="#F0E8DC">toi</text>
+        </svg>
+      </div>
+      <div>
+        <table>
+          <tr><th>Anneau</th><th>Signification</th></tr>
+          <tr><td style="width:140px"><strong>intime</strong></td><td class="muted">Le premier cercle — rayon le plus court.</td></tr>
+          <tr><td><strong>proche</strong></td><td class="muted">Les personnes du quotidien affectif.</td></tr>
+          <tr><td><strong>ami</strong></td><td class="muted">Le cercle amical stable.</td></tr>
+          <tr><td><strong>lien faible</strong></td><td class="muted">Les liens précieux mais épisodiques.</td></tr>
+          <tr><td><strong>connaissance</strong></td><td class="muted">La périphérie, sans jugement de valeur.</td></tr>
+        </table>
+        <p class="note">Proportions de référence (rayons) : 34 · 55 · 78 · 102 · 130 — un pas croissant qui donne plus d'espace aux cercles extérieurs, plus peuplés.</p>
+      </div>
+    </div>
+
+    <h3>Grammaire du motif</h3>
+    <table>
+      <tr><td style="width:220px"><strong>Trait, jamais aplat</strong></td><td class="muted">Les cercles sont toujours dessinés au filet (1,2–2 px). Seuls les avatars — les personnes — sont pleins.</td></tr>
+      <tr><td><strong>Un seul anneau actif</strong></td><td class="muted">Au plus un cercle en couleur d'accent à la fois : celui qui est sélectionné ou signifiant. Les autres restent au filet neutre.</td></tr>
+      <tr><td><strong>Recadrable, pas déformable</strong></td><td class="muted">En couverture, en en-tête ou en motif de fond, les cercles peuvent déborder du cadre (crop) mais restent parfaitement circulaires. Aucune ellipse.</td></tr>
+      <tr><td><strong>Les points sont des personnes</strong></td><td class="muted">Un disque plein sur un anneau représente toujours quelqu'un. Ne pas utiliser de disques pleins comme simple décoration.</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════ 06 · COMPOSANTS ═══════════ -->
+<section class="chap" id="composants">
+  <div class="wrap">
+    <div class="eyebrow">06 · Composants UI</div>
+    <h2>Formes &amp; états</h2>
+    <p class="lead">Un vocabulaire de formes court et strict : trois rayons, une bordure fine, des transitions douces. La rondeur complète est réservée à ce qui touche aux personnes et aux choix.</p>
+
+    <h3>Rayons de courbure</h3>
+    <div class="radii" style="margin-top:14px">
+      <div class="rd" style="border-radius:9px">9 px · contrôles</div>
+      <div class="rd" style="border-radius:11px">11 px · boutons, listes</div>
+      <div class="rd" style="border-radius:13px">13 px · cartes, modales</div>
+      <div class="rd" style="border-radius:999px">pilule · chips</div>
+      <div class="rd" style="border-radius:50%;width:72px">cercle</div>
+    </div>
+    <p class="note">Le cercle parfait est réservé aux avatars, aux points-personnes et aux anneaux d'intimité. La pilule aux étiquettes de choix (rôles, états, filtres).</p>
+
+    <h3>Boutons</h3>
+    <div class="uirow" style="margin-top:12px">
+      <button class="btn pri" type="button">Envoyer l'envie</button>
+      <button class="btn sec" type="button">Plus tard</button>
+      <button class="btn ghost" type="button">Passer</button>
+    </div>
+    <p class="note">Un seul bouton plein (accent) par écran. Le secondaire est au filet, le tertiaire nu. Les verbes d'action sont explicites : « Envoyer l'envie », jamais « Valider » ni « OK ».</p>
+
+    <h3>Chips d'état &amp; avatars</h3>
+    <div class="uirow" style="margin-top:12px">
+      <span class="avatar">L</span>
+      <span class="avatar e">N</span>
+      <span class="chip on"><span class="pt" style="background:#8FB59A"></span>établi</span>
+      <span class="chip"><span class="pt" style="background:#D8B27A"></span>à apprivoiser</span>
+      <span class="chip"><span class="pt" style="background:#8AA0BE"></span>en sommeil</span>
+      <span class="chip">collègue</span>
+      <span class="chip">promo</span>
+    </div>
+    <p class="note">L'avatar porte l'initiale en Newsreader. Quand un état est défini, l'avatar prend la couleur sémantique en fond, texte sombre #1B1B1B. La sélection d'une chip se marque par la bordure accent + surface élevée, jamais par un aplat d'accent.</p>
+
+    <h3>Mouvement</h3>
+    <table>
+      <tr><th>Usage</th><th>Spécification</th></tr>
+      <tr><td style="width:220px">Entrée d'écran</td><td class="mono">400 ms · ease · fondu + translation légère</td></tr>
+      <tr><td>Déplacement d'un point-personne</td><td class="mono">400 ms · cubic-bezier(.2, .8, .2, 1)</td></tr>
+      <tr><td>États (survol, sélection)</td><td class="mono">180–300 ms · ease</td></tr>
+      <tr><td>Interdits</td><td class="muted">Rebonds, secousses, confettis, badges animés. Respecter <span class="mono">prefers-reduced-motion</span>.</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════ 07 · TON DE VOIX ═══════════ -->
+<section class="chap" id="voix">
+  <div class="wrap">
+    <div class="eyebrow">07 · Ton de voix</div>
+    <h2>Franc, chaleureux, sans pression</h2>
+    <p class="lead">swab tutoie, parle un français naturel et nomme les choses par leur nom. L'application ne culpabilise jamais, ne presse jamais, ne compte pas les points.</p>
+
+    <div class="voice" style="margin-top:20px">
+      <div class="card yes"><div class="lbl">On écrit</div><q>Qui compte pour toi ?</q><p class="note">Direct, humain, une vraie question.</p></div>
+      <div class="card no"><div class="lbl">On n'écrit pas</div><q>Sélectionnez vos contacts prioritaires</q><p class="note">Vouvoiement administratif, jargon de gestion.</p></div>
+      <div class="card yes"><div class="lbl">On écrit</div><q>Ton envie reste invisible tant qu'elle n'est pas réciproque.</q><p class="note">On explique la mécanique, on rassure par le fait.</p></div>
+      <div class="card no"><div class="lbl">On n'écrit pas</div><q>Boostez vos connexions dès maintenant !</q><p class="note">Urgence artificielle, vocabulaire de croissance.</p></div>
+      <div class="card yes"><div class="lbl">On écrit</div><q>Voilà, c'est posé.</q><p class="note">Sobre, apaisant, conclusif.</p></div>
+      <div class="card no"><div class="lbl">On n'écrit pas</div><q>Félicitations ! Vous avez débloqué…</q><p class="note">Pas de gamification, pas de récompenses.</p></div>
+    </div>
+
+    <h3>Lexique de la marque</h3>
+    <table>
+      <tr><th>On dit</th><th>On ne dit pas</th></tr>
+      <tr><td>une envie (de se voir)</td><td class="muted">une demande, une invitation, un like</td></tr>
+      <tr><td>un match — quand l'envie est réciproque</td><td class="muted">une connexion, un contact validé</td></tr>
+      <tr><td>cercle d'intimité · intime, proche, ami, lien faible, connaissance</td><td class="muted">niveau, rang, score de proximité</td></tr>
+      <tr><td>l'état de la relation · établi, à apprivoiser, en sommeil, en pause, tendu</td><td class="muted">statut, santé de la relation</td></tr>
+      <tr><td>les rôles · famille, partenaire, collègue, promo, communauté, voisin</td><td class="muted">tags, catégories, labels</td></tr>
+    </table>
+    <p class="note">Les libellés d'états et de cercles s'écrivent toujours en minuscules, comme le wordmark : la marque ne hausse jamais le ton.</p>
+  </div>
+</section>
+
+<!-- ═══════════ 08 · RÈGLES D'OR ═══════════ -->
+<section class="chap" id="regles">
+  <div class="wrap">
+    <div class="eyebrow">08 · Récapitulatif</div>
+    <h2>Les dix règles d'or</h2>
+    <div class="grid2" style="margin-top:18px">
+      <div class="card"><div class="tag">1</div><p style="font-size:14.5px">Le wordmark est toujours en Newsreader Medium, minuscules, interlettrage −2,5 %.</p></div>
+      <div class="card"><div class="tag">2</div><p style="font-size:14.5px">Une seule couleur d'accent par mode : Sauge #AAC0A2 (sombre) / #5C7A54 (clair).</p></div>
+      <div class="card"><div class="tag">3</div><p style="font-size:14.5px">Les cinq couleurs sémantiques décrivent des relations — jamais de la décoration.</p></div>
+      <div class="card"><div class="tag">4</div><p style="font-size:14.5px">Deux familles typographiques, pas une de plus : Newsreader pour l'humain, Hanken Grotesk pour l'interface.</p></div>
+      <div class="card"><div class="tag">5</div><p style="font-size:14.5px">Les cercles sont au filet ; seules les personnes sont pleines.</p></div>
+      <div class="card"><div class="tag">6</div><p style="font-size:14.5px">Un seul bouton plein par écran, un seul anneau accentué à la fois.</p></div>
+      <div class="card"><div class="tag">7</div><p style="font-size:14.5px">Rayons : 9, 11, 13 px, pilule ou cercle. Rien d'autre.</p></div>
+      <div class="card"><div class="tag">8</div><p style="font-size:14.5px">Contraste AA minimum pour toute information utile ; AAA visé pour le texte courant.</p></div>
+      <div class="card"><div class="tag">9</div><p style="font-size:14.5px">Le ton tutoie, nomme franchement, et ne met jamais la pression.</p></div>
+      <div class="card"><div class="tag">10</div><p style="font-size:14.5px">Aucune urgence visuelle : pas de rouge vif, pas de compteur, pas de badge animé.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:baseline">
+    <div><span style="font-family:var(--fd);font-size:19px;color:var(--text)">swab</span> <span lang="ar" style="color:var(--accent)">صواب</span> — jouer franc jeu</div>
+    <div>Charte graphique v1.0 · Juillet 2026 · Établie à partir des maquettes produit (onboarding, carte des relations, fiche contact, flux envie &amp; match, sous-groupes, paramètres)</div>
+  </div>
+</footer>
+
+</body>
+</html>
