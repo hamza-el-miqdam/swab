@@ -10,6 +10,7 @@
 - Ratified `.specify/memory/constitution.md` v1.0.0 by mirroring — not duplicating — the existing `agents/_global-directives.md` (G1–G5). Governance section states explicitly: if the two ever diverge, `agents/_global-directives.md` wins; amendments happen there first, then this constitution is re-synced via `/speckit-constitution`.
 - Requires `uv` (Astral) locally — installed via `brew install uv`. Not yet wired into CI.
 - **Gotcha:** `RATIFICATION_DATE` in the constitution is a `TODO` — the original adoption date of `agents/_global-directives.md` isn't recorded in repo history. Fill in if it's ever recovered.
+- `CLAUDE.md` gained a "Spec-driven development (spec-kit)" section documenting the `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` flow and the constitution's mirror-not-replace relationship to `agents/_global-directives.md`. Existing `docs/specs/FS-*.md` specs are not being migrated into spec-kit's format — spec-kit is for new feature scaffolding going forward.
 - Follow-up: this is the foundation for the intended blueprint → spec → code workflow (design system blueprints feeding `/speckit-specify`); no blueprint tooling exists yet.
 
 ## 2026-07-06 — Repo-wide ESLint (flat config): `lint` is now a real gate
