@@ -4,6 +4,14 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-09 — GitHub spec-kit adopted for spec-driven development
+
+- Installed [github/spec-kit](https://github.com/github/spec-kit) via `uvx --from git+https://github.com/github/spec-kit.git specify init --here --integration claude`. New tooling: `.specify/` (templates, scripts, workflow config) and `.claude/skills/speckit-*` (8 slash-command skills: constitution, specify, plan, tasks, implement, clarify, analyze, checklist).
+- Ratified `.specify/memory/constitution.md` v1.0.0 by mirroring — not duplicating — the existing `agents/_global-directives.md` (G1–G5). Governance section states explicitly: if the two ever diverge, `agents/_global-directives.md` wins; amendments happen there first, then this constitution is re-synced via `/speckit-constitution`.
+- Requires `uv` (Astral) locally — installed via `brew install uv`. Not yet wired into CI.
+- **Gotcha:** `RATIFICATION_DATE` in the constitution is a `TODO` — the original adoption date of `agents/_global-directives.md` isn't recorded in repo history. Fill in if it's ever recovered.
+- Follow-up: this is the foundation for the intended blueprint → spec → code workflow (design system blueprints feeding `/speckit-specify`); no blueprint tooling exists yet.
+
 ## 2026-07-06 — Repo-wide ESLint (flat config): `lint` is now a real gate
 
 - Root `eslint.config.mjs`: typescript-eslint `recommendedTypeChecked` (type-aware via `projectService`, off each package's own tsconfig) + `eslint-config-prettier` last (Prettier stays the formatter). Bug-catching extras: `eqeqeq`, `no-console` (G3: pino only), `switch-exhaustiveness-check`. Test files relax `require-await`, `no-require-imports` (jest fresh-module pattern) and the `no-unsafe-*` family (jest mocks are any-typed).
