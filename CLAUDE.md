@@ -14,7 +14,7 @@ App that connects people with friends: you express an "envie" to a scope; it's r
 - Process (issue protocol, build order, privacy audit): `docs/agent-playbook.md`
 - Product laws + glossary (French UI copy is normative): `docs/product-overview.md`
 - Data model rationale: `swab-domain-spec.md` · Architecture: `aidd-multi-agent-blueprint.md`
-- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: mobile, web, backend, data, devops). Never edit rendered files by hand.
+- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: mobile, web, backend, data, devops, design). Never edit rendered files by hand.
 
 ## Spec-driven development (spec-kit)
 

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWAB — Application, prototype consolidé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --nuit:#0F1426; --encre:#171E38; --voile:#202949; --voile-2:#28325A;
+  --hair:rgba(237,235,226,.12); --hair-fort:rgba(237,235,226,.22);
+  --ivoire:#EDEBE2; --brume:#9AA1C2; --ombre:#6A7194;
+  --etoile:#E4BE6A; --etoile-encre:#1C1505;
+  --sauge:#6FBFA3; --ciel:#84A9E6; --corail:#D98A73;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--nuit);color:var(--ivoire);font-family:'Inter',sans-serif;font-size:15px;line-height:1.6;
+  background-image:radial-gradient(circle at 15% 8%, rgba(228,190,106,.05), transparent 40%)}
+h1,h2,h3,.wordmark,.ptitle,.donehead b{font-family:'Space Grotesk',sans-serif;font-weight:500;line-height:1.25}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+
+header.site{padding:36px 0 24px;border-bottom:1px solid var(--hair)}
+.head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.wordmark{font-size:26px;letter-spacing:.22em}
+.wordmark small{display:block;letter-spacing:.04em;font-size:12px;color:var(--brume);margin-top:4px;font-family:'Inter',sans-serif;font-weight:400}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--etoile);margin-bottom:8px}
+
+main{padding:44px 0 70px}
+.layout{display:grid;grid-template-columns:440px 1fr;gap:44px;align-items:start}
+@media(max-width:880px){.layout{grid-template-columns:1fr}}
+
+/* ---- Gabarit iPhone 17 : 402 x 874 pt (@3x), safe areas 62 / 34, Dynamic Island ---- */
+.devcol{position:sticky;top:16px}
+@media(max-width:880px){.devcol{position:static}}
+.devwrap{width:418px;margin:0 auto;transform-origin:top center}
+.device{width:418px;height:890px;background:#05070F;border:1px solid var(--hair-fort);border-radius:64px;padding:7px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.screenv{width:402px;height:874px;background:var(--encre);border-radius:57px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:124px;height:35px;background:#05070F;border-radius:20px;z-index:6}
+.statusbar{height:62px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 34px 10px;font-size:14px;font-weight:600;color:var(--ivoire)}
+.statusbar .sbicons{display:flex;gap:6px;align-items:center}
+.statusbar .sbicons svg{width:17px;height:12px;fill:var(--ivoire)}
+.topbar{height:44px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--hair)}
+.content{flex:1;overflow-y:auto;padding:14px 20px 20px;scrollbar-width:none}
+.content::-webkit-scrollbar{display:none}
+.homebar{height:34px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:9px}
+.homebar .hb{width:140px;height:5px;border-radius:3px;background:rgba(237,235,226,.3)}
+.backbtn{background:none;border:none;color:var(--brume);font-size:15px;cursor:pointer;font-family:'Inter',sans-serif;padding:4px 8px 4px 0;display:flex;align-items:center;gap:4px}
+.backbtn:hover{color:var(--ivoire)}
+.tbtitle{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ombre)}
+
+.scr{display:none;animation:fade .28s ease}
+.scr.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.ptitle{font-size:20px;margin:2px 0 0}
+.psub{font-size:13.5px;color:var(--brume);margin:3px 0 12px}
+.chip{display:inline-block;font-size:11px;letter-spacing:.06em;padding:3px 10px;border-radius:999px;background:rgba(228,190,106,.14);color:var(--etoile)}
+.chip.gris{background:rgba(154,161,194,.14);color:var(--brume)}
+.flab{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ombre);margin:15px 0 2px}
+.note{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--brume);line-height:1.5;margin:12px 0 0}
+.note svg{width:14px;height:14px;stroke:var(--ombre);flex-shrink:0;margin-top:2px;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+.btn{display:block;width:100%;padding:14px;border-radius:12px;border:none;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;margin-top:14px;transition:transform .1s}
+.btn:active{transform:scale(.985)}
+.btn-primary{background:var(--etoile);color:var(--etoile-encre)}
+.btn-ghost{background:transparent;color:var(--ivoire);border:1px solid var(--hair-fort)}
+.textbtn{background:none;border:none;color:var(--ombre);font-size:11.5px;cursor:pointer;font-family:'Inter',sans-serif;display:block;margin:12px auto 0;text-decoration:underline;text-underline-offset:3px}
+.hint{font-size:11.5px;color:var(--etoile);min-height:16px;margin-top:6px;text-align:center;visibility:hidden}
+.hint.show{visibility:visible}
+
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
+.tag{padding:8px 14px;border-radius:999px;border:1px solid var(--hair-fort);background:var(--voile);font-size:13px;color:var(--ivoire);cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .15s}
+.tag.sel{border-color:var(--etoile);color:var(--etoile)}
+.lvls,.seg{display:flex;gap:6px;margin:8px 0 2px}
+.lvl,.segb{flex:1;padding:10px 2px;text-align:center;font-size:12.5px;border:1px solid var(--hair-fort);border-radius:8px;background:var(--voile);color:var(--brume);cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .15s}
+.lvl.sel,.segb.sel{border-color:var(--etoile);color:var(--etoile)}
+.segb.retrait.sel{border-color:var(--corail);color:var(--corail)}
+
+.person{display:flex;align-items:center;gap:12px;margin:12px 0 6px}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--voile-2);color:var(--ivoire);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;flex-shrink:0}
+.person b{display:block;font-size:15px;font-weight:600}
+.person span{font-size:12px;color:var(--brume)}
+
+.tilegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 2px}
+.tile{display:flex;flex-direction:column;gap:7px;padding:15px 14px;border:1px solid var(--hair-fort);border-radius:14px;background:var(--voile);color:var(--ivoire);cursor:pointer;font-size:13.5px;text-align:left;font-family:'Inter',sans-serif;transition:border-color .15s}
+.tile:hover{border-color:var(--etoile)}
+.tile svg{width:18px;height:18px;stroke:var(--etoile);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+.rowlist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.rowi{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--voile);cursor:pointer;transition:border-color .15s}
+.rowi:hover{border-color:var(--hair-fort)}
+.rowi .n{flex:1;font-size:14px}
+.rowi .n small{display:block;font-size:11px;color:var(--ombre)}
+.rowi .c{font-size:11.5px;color:var(--ombre)}
+.rowi svg{width:16px;height:16px;stroke:var(--brume);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.rowi.sel{border-color:var(--etoile)}
+.recap{border-top:1px solid var(--hair);margin-top:14px;padding-top:12px;font-size:12.5px;color:var(--ombre)}
+.recap.on{color:var(--ivoire)}
+
+.journal{margin-top:6px}
+.jitem{display:flex;gap:12px;position:relative;padding-bottom:16px}
+.jitem::before{content:"";position:absolute;left:4px;top:13px;bottom:0;width:1px;background:var(--hair-fort)}
+.jitem:last-child::before{display:none}
+.jitem .pt{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ombre);background:var(--encre);flex-shrink:0;margin-top:4px}
+.jitem.hi .pt{background:var(--sauge);border-color:var(--sauge)}
+.jitem .tl{font-size:12.5px;color:var(--brume)}
+.jitem .tl small{display:block;font-size:11px;color:var(--ombre)}
+
+.donehead{text-align:center;padding:14px 0 4px}
+.donehead .ring{width:54px;height:54px;border-radius:50%;border:1.5px solid var(--sauge);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.donehead .ring svg{width:24px;height:24px;stroke:var(--sauge);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.donehead b{font-size:16px}
+.donehead p{font-size:12.5px;color:var(--brume);margin-top:4px}
+
+.paycard{background:var(--voile);border:1px solid var(--hair);border-radius:12px;padding:13px;margin:12px 0 0}
+.paycard .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;gap:12px}
+.paycard .row.total{border-top:1px solid var(--hair);margin-top:8px;padding-top:10px;font-weight:600;font-size:14px}
+.paycard .muted{color:var(--brume)}
+
+.budget-row{display:flex;align-items:center;gap:12px;margin:12px 0 2px}
+.budget-row label{font-size:13px;color:var(--brume)}
+.budget-row output{font-size:15px;font-weight:600;min-width:44px;text-align:right}
+input[type=range]{flex:1;accent-color:var(--etoile);height:4px}
+.plafond{font-size:11.5px;color:var(--ombre);margin-bottom:10px}
+.dnote{font-size:12px;color:var(--sauge);margin-top:10px;min-height:16px;text-align:center}
+
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 2px}
+.switchrow span{font-size:13px}
+.switchrow small{display:block;font-size:11px;color:var(--ombre)}
+.sw{position:relative;width:38px;height:21px;flex-shrink:0}
+.sw input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0;z-index:2}
+.sw .tr{position:absolute;inset:0;background:var(--voile-2);border-radius:999px;transition:background .2s}
+.sw .th{position:absolute;top:2.5px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--brume);transition:transform .2s,background .2s}
+.sw input:checked ~ .tr{background:rgba(228,190,106,.3)}
+.sw input:checked ~ .th{transform:translateX(16px);background:var(--etoile)}
+
+.feed{margin-top:14px}
+.fitem{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--voile);cursor:pointer;margin-bottom:8px;transition:border-color .15s}
+.fitem:hover{border-color:var(--hair-fort)}
+.fitem .dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.fitem .t{font-size:12.5px;line-height:1.4}
+.fitem .t small{display:block;font-size:11px;color:var(--ombre)}
+
+.plan{background:var(--encre);border:1px solid var(--hair);border-radius:16px;padding:22px 24px}
+.plan h2{font-size:18px;margin-bottom:4px}
+.plan>p{font-size:13px;color:var(--brume);margin-bottom:14px}
+.plan h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--etoile);margin:16px 0 8px;font-weight:500}
+.plan .lnk{display:block;width:100%;text-align:left;background:none;border:none;border-left:2px solid transparent;color:var(--brume);font-size:13px;padding:5px 10px;cursor:pointer;font-family:'Inter',sans-serif;transition:color .15s,border-color .15s}
+.plan .lnk:hover{color:var(--ivoire)}
+.plan .lnk.cur{color:var(--etoile);border-left-color:var(--etoile)}
+.plan .axes{border-top:1px solid var(--hair);margin-top:18px;padding-top:14px;font-size:12px;color:var(--brume);line-height:1.7}
+.plan .axes b{color:var(--ivoire);font-weight:500}
+
+footer.site{border-top:1px solid var(--hair);padding:24px 0 44px;font-size:12px;color:var(--ombre)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap head-row">
+    <div class="wordmark">SWAB
+      <small>Application — prototype consolidé · gabarit iPhone 17 : 402 × 874 pt (@3x) · retour sur chaque écran</small>
+    </div>
+    <svg width="150" height="54" viewBox="0 0 150 54" fill="none" aria-hidden="true">
+      <path d="M8 40 L40 14 L74 30 L108 10 L140 26" stroke="rgba(237,235,226,.25)" stroke-width="1"/>
+      <circle cx="8" cy="40" r="2.5" fill="#E4BE6A"/><circle cx="40" cy="14" r="2" fill="#EDEBE2"/>
+      <circle cx="74" cy="30" r="2.5" fill="#E4BE6A"/><circle cx="108" cy="10" r="2" fill="#EDEBE2"/>
+      <circle cx="140" cy="26" r="2.5" fill="#E4BE6A"/>
+    </svg>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="layout">
+
+<div class="devcol">
+<div class="devwrap" id="devwrap">
+<div class="device">
+<div class="screenv">
+  <div class="island" aria-hidden="true"></div>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="sbicons">
+      <svg viewBox="0 0 17 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>
+      <svg viewBox="0 0 22 12"><rect x="0" y="0" width="19" height="12" rx="3.5" fill="none" stroke="#EDEBE2" stroke-width="1" opacity=".5"/><rect x="2" y="2" width="12" height="8" rx="2"/><rect x="20" y="3.5" width="2" height="5" rx="1" opacity=".5"/></svg>
+    </span>
+  </div>
+  <div class="topbar">
+    <button class="backbtn" id="backbtn" onclick="back()">&#8249; Retour</button>
+    <span class="tbtitle" id="tbtitle"></span>
+  </div>
+  <div class="content" id="content">
+
+  <div class="scr on" id="ob-1" data-title="Bienvenue">
+    <div style="text-align:center;padding:18px 0 6px">
+      <div style="font-family:'Space Grotesk';font-size:30px;letter-spacing:.24em">SWAB</div>
+      <p style="font-size:12.5px;color:var(--brume);margin-top:6px">ندير صواب — on joue franc.<br>Le lien n'apparaît que s'il est réciproque.</p>
+    </div>
+    <div class="paycard">
+      <div class="row"><span class="muted">Votre cohorte</span><span>Résidence Les Acacias</span></div>
+      <div class="row"><span class="muted">Entrée synchronisée</span><span>12 juillet</span></div>
+      <div class="row"><span class="muted">Membres attendus</span><span>68</span></div>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Tout le monde entre en même temps : personne n'attend seul, la densité existe dès le premier jour.</p>
+    <button class="btn btn-primary" onclick="show('ob-2')">Rejoindre ma communauté</button>
+  </div>
+
+  <div class="scr" id="ob-2" data-title="Onboarding · clés">
+    <p class="ptitle">Vos clés naissent ici</p>
+    <p class="psub">Générées sur cet appareil, inscrites au journal de transparence. Personne — pas même SWAB — ne peut se faire passer pour vous.</p>
+    <div class="paycard">
+      <div class="row"><span class="muted">Paire de clés</span><span style="color:var(--sauge)">générée localement</span></div>
+      <div class="row"><span class="muted">Journal de transparence</span><span style="color:var(--sauge)">inscrite &#10003;</span></div>
+      <div class="row"><span class="muted">Copie serveur</span><span>aucune</span></div>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>La clé privée ne quitte jamais l'appareil. Le journal, public et vérifiable, empêche toute substitution de clé.</p>
+    <button class="btn btn-primary" onclick="show('ob-3')">Continuer</button>
+  </div>
+
+  <div class="scr" id="ob-3" data-title="Onboarding · contacts">
+    <p class="ptitle">Vos contacts, chez vous</p>
+    <p class="psub">L'import reste sur l'appareil. Rien n'est envoyé, comparé ni haché côté serveur.</p>
+    <div class="paycard">
+      <div class="row"><span class="muted">Contacts détectés</span><span>34</span></div>
+      <div class="row"><span class="muted">Dans votre cohorte</span><span>19</span></div>
+      <div class="row"><span class="muted">Transmis au serveur</span><span style="color:var(--sauge)">0</span></div>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><path d="M4 4l16 16"/></svg>La classification qui suit est votre regard sur vos relations. Il ne sera jamais montré à personne.</p>
+    <button class="btn btn-primary" onclick="show('ob-4')">Calibrer mes contacts</button>
+  </div>
+
+  <div class="scr" id="ob-4" data-title="Onboarding · calibration">
+    <p class="ptitle">Calibration <span style="font-size:12px;color:var(--ombre);font-family:'Inter'" id="cal-count">1 / 19</span></p>
+    <div class="person">
+      <div class="avatar" id="cal-av">Y</div>
+      <div><b id="cal-name">Yasmine B.</b><span>de votre cohorte</span></div>
+    </div>
+    <span class="flab">Rôles — cumulables</span>
+    <div class="tags" id="cal-roles">
+      <button class="tag" onclick="toggSel(this)">Famille</button>
+      <button class="tag" onclick="toggSel(this)">Partenaire</button>
+      <button class="tag" onclick="toggSel(this)">Collègue</button>
+      <button class="tag sel" onclick="toggSel(this)">Promo</button>
+      <button class="tag" onclick="toggSel(this)">Communauté</button>
+      <button class="tag" onclick="toggSel(this)">Voisin·e</button>
+    </div>
+    <span class="flab">Intimité</span>
+    <div class="lvls" id="cal-lvls">
+      <button class="lvl" onclick="selOne(this)">Noyau</button>
+      <button class="lvl sel" onclick="selOne(this)">Proches</button>
+      <button class="lvl" onclick="selOne(this)">Amis</button>
+      <button class="lvl" onclick="selOne(this)">Élargi</button>
+    </div>
+    <span class="flab">Présence</span>
+    <div class="seg" id="cal-pres">
+      <button class="segb sel" onclick="selOne(this)">En lien</button>
+      <button class="segb" onclick="selOne(this)">En pause</button>
+      <button class="segb retrait" onclick="selOne(this)">En retrait</button>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><path d="M4 4l16 16"/></svg>La présence filtre, elle ne crée jamais. « En retrait » : ce contact ne recevra plus rien de vous — verrou absolu.</p>
+    <button class="btn btn-primary" onclick="nextContact()">Contact suivant</button>
+    <button class="textbtn" onclick="show('ob-5')">Terminer la calibration</button>
+  </div>
+
+  <div class="scr" id="ob-5" data-title="Onboarding · terminé">
+    <div class="donehead">
+      <div class="ring"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
+      <b>Votre carte est prête</b>
+      <p>19 contacts calibrés, tout est resté sur cet appareil.<br>Le lien n'apparaîtra que si l'autre vous a classé aussi.</p>
+    </div>
+    <svg width="100%" viewBox="0 0 300 130" fill="none" aria-hidden="true" style="margin:8px 0 2px">
+      <path d="M30 100 L90 40 L150 78 L210 30 L270 66" stroke="rgba(237,235,226,.22)" stroke-width="1"/>
+      <circle cx="30" cy="100" r="4" fill="#E4BE6A"/><circle cx="90" cy="40" r="3" fill="#EDEBE2"/>
+      <circle cx="150" cy="78" r="4" fill="#6FBFA3"/><circle cx="210" cy="30" r="3" fill="#EDEBE2"/>
+      <circle cx="270" cy="66" r="4" fill="#E4BE6A"/>
+    </svg>
+    <button class="btn btn-primary" onclick="show('home')">Entrer dans SWAB</button>
+  </div>
+
+  <div class="scr" id="home" data-title="Carte des relations">
+    <p class="ptitle">Votre constellation</p>
+    <p class="psub">Seuls les liens réciproques brillent. Tout est calculé ici.</p>
+    <svg width="100%" viewBox="0 0 320 210" fill="none" style="display:block">
+      <circle cx="160" cy="105" r="38" stroke="rgba(237,235,226,.14)" stroke-dasharray="3 4"/>
+      <circle cx="160" cy="105" r="68" stroke="rgba(237,235,226,.11)" stroke-dasharray="3 4"/>
+      <circle cx="160" cy="105" r="97" stroke="rgba(237,235,226,.08)" stroke-dasharray="3 4"/>
+      <line x1="160" y1="105" x2="196" y2="82" stroke="#6FBFA3" stroke-width="1"/>
+      <line x1="160" y1="105" x2="120" y2="140" stroke="#6FBFA3" stroke-width="1"/>
+      <circle cx="160" cy="105" r="6" fill="#EDEBE2"/>
+      <g style="cursor:pointer" onclick="show('fiche')">
+        <circle cx="196" cy="82" r="7" fill="#E4BE6A"/>
+        <text x="196" y="66" text-anchor="middle" font-size="10.5" fill="#9AA1C2" font-family="Inter">Yasmine</text>
+      </g>
+      <circle cx="120" cy="140" r="6" fill="#E4BE6A" style="cursor:pointer" onclick="show('fiche')"/>
+      <circle cx="130" cy="70" r="5" fill="#9AA1C2"/>
+      <circle cx="222" cy="132" r="5" fill="#9AA1C2"/>
+      <circle cx="86" cy="98" r="5" fill="#9AA1C2"/>
+      <circle cx="238" cy="60" r="4" fill="#6A7194"/>
+      <circle cx="66" cy="160" r="4" fill="#6A7194"/>
+      <circle cx="252" cy="170" r="4" fill="#4A5170"/>
+    </svg>
+    <p style="font-size:10.8px;color:var(--ombre);text-align:center;margin:2px 0 0">
+      <span style="color:var(--etoile)">&#9679;</span> réciproque&nbsp;&nbsp;
+      <span style="color:var(--brume)">&#9679;</span> en attente&nbsp;&nbsp;
+      <span style="color:var(--ombre)">&#9679;</span> en pause&nbsp;&nbsp;
+      <span style="color:var(--sauge)">&#9472;</span> lien révélé
+    </p>
+    <div class="tilegrid">
+      <button class="tile" onclick="show('envie-1')"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvelle envie</button>
+      <button class="tile" onclick="show('groupes')"><svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 20c0-3 2.3-5 5-5M21 20c0-3-2.3-5-5-5"/></svg>Sous-groupes</button>
+      <button class="tile" onclick="show('evenements')"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 3v5M16 3v5M4 11h16"/></svg>Événements</button>
+      <button class="tile" onclick="show('params')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>Paramètres</button>
+    </div>
+    <span class="flab">Ce qui bouge</span>
+    <div class="feed">
+      <div class="fitem" onclick="show('match')"><span class="dot" style="background:var(--sauge)"></span><span class="t">Coïncidence révélée avec Yasmine — un café<small>il y a 20 min</small></span></div>
+      <div class="fitem" onclick="show('evt-b')"><span class="dot" style="background:var(--etoile)"></span><span class="t">Anniversaire de Yasmine — jeudi<small>cercle promo</small></span></div>
+    </div>
+  </div>
+
+  <div class="scr" id="fiche" data-title="Fiche contact">
+    <div class="person" style="margin-top:0">
+      <div class="avatar">Y</div>
+      <div><b>Yasmine B.</b><span>lien réciproque depuis le 14 juillet</span></div>
+    </div>
+    <span class="flab">Rôles</span>
+    <div class="tags">
+      <button class="tag sel" onclick="toggSel(this)">Promo</button>
+      <button class="tag sel" onclick="toggSel(this)">Communauté</button>
+      <button class="tag" onclick="toggSel(this)">Voisin·e</button>
+    </div>
+    <span class="flab">Intimité</span>
+    <div class="lvls">
+      <button class="lvl" onclick="selOne(this)">Noyau</button>
+      <button class="lvl sel" onclick="selOne(this)">Proches</button>
+      <button class="lvl" onclick="selOne(this)">Amis</button>
+      <button class="lvl" onclick="selOne(this)">Élargi</button>
+    </div>
+    <span class="flab">Présence</span>
+    <div class="seg">
+      <button class="segb sel" onclick="selOne(this);presNote('lien')">En lien</button>
+      <button class="segb" onclick="selOne(this);presNote('pause')">En pause</button>
+      <button class="segb retrait" onclick="selOne(this);presNote('retrait')">En retrait</button>
+    </div>
+    <p class="dnote" id="pres-note" style="color:var(--brume)"></p>
+    <span class="flab">Journal du lien</span>
+    <div class="journal">
+      <div class="jitem hi"><span class="pt"></span><span class="tl">Réciprocité révélée<small>14 juillet</small></span></div>
+      <div class="jitem"><span class="pt"></span><span class="tl">Intimité : amie &#8594; proche<small>13 juillet</small></span></div>
+      <div class="jitem"><span class="pt"></span><span class="tl">Ajoutée à votre carte<small>12 juillet</small></span></div>
+    </div>
+    <button class="btn btn-primary" onclick="show('envie-1')">Déclarer une envie avec Yasmine</button>
+    <p class="note"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><path d="M4 4l16 16"/></svg>Elle ne voit jamais votre classement — ni les rôles, ni l'intimité, ni la présence.</p>
+  </div>
+
+  <div class="scr" id="groupes" data-title="Sous-groupes">
+    <p class="ptitle">Vos constellations</p>
+    <p class="psub">Détectées sur l'appareil par analyse formelle de concepts (rôle × intimité). La présence n'entre pas dans le treillis.</p>
+    <div class="rowlist">
+      <div class="rowi" onclick="show('groupe-det')"><span class="n">Mes amis-voisins<small>voisin·e &#8743; intimité &#8805; amis</small></span><span class="c">6</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      <div class="rowi"><span class="n">Ma famille proche<small>famille &#8743; intimité &#8805; proches</small></span><span class="c">5</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      <div class="rowi"><span class="n">Ma communauté<small>communauté</small></span><span class="c">14</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      <div class="rowi"><span class="n">Mes collègues<small>collègue</small></span><span class="c">9</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      <div class="rowi"><span class="n">Mes collègues devenus amis<small>collègue &#8743; intimité &#8805; amis</small></span><span class="c">3</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Ces groupes n'existent que chez vous. Ils ne sont jamais transmis ni synchronisés.</p>
+  </div>
+
+  <div class="scr" id="groupe-det" data-title="Sous-groupe">
+    <p class="ptitle">Mes amis-voisins</p>
+    <p class="psub">6 contacts · voisin·e &#8743; intimité &#8805; amis · en lien uniquement</p>
+    <div class="tags">
+      <span class="tag" style="cursor:default">Yasmine</span><span class="tag" style="cursor:default">Karim</span><span class="tag" style="cursor:default">Nora</span><span class="tag" style="cursor:default">Sami</span><span class="tag" style="cursor:default">Lina</span><span class="tag" style="cursor:default">Adil</span>
+    </div>
+    <button class="btn btn-primary" onclick="show('envie-1')">Déclarer une envie vers ce groupe</button>
+    <p class="note"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><path d="M4 4l16 16"/></svg>Le groupe est une portée d'émission, pas un salon : ses membres ne savent pas qu'il existe.</p>
+  </div>
+
+  <div class="scr" id="envie-1" data-title="Envie · émission">
+    <p class="ptitle">Déclarer une envie</p>
+    <p class="psub">Scellée et silencieuse. Elle n'existera pour l'autre que si l'envie est réciproque.</p>
+    <span class="flab">Quoi</span>
+    <div class="tags" id="env-quoi">
+      <button class="tag sel" onclick="selOne(this)">Café</button>
+      <button class="tag" onclick="selOne(this)">Apéro</button>
+      <button class="tag" onclick="selOne(this)">Dîner</button>
+      <button class="tag" onclick="selOne(this)">Balade</button>
+    </div>
+    <span class="flab">Portée</span>
+    <div class="tags" id="env-portee">
+      <button class="tag sel" onclick="selOne(this)">Mes amis-voisins</button>
+      <button class="tag" onclick="selOne(this)">Ma famille proche</button>
+      <button class="tag" onclick="selOne(this)">Ma communauté</button>
+    </div>
+    <span class="flab">Quand vous voir ?</span>
+    <div class="tags" id="env-quand">
+      <button class="tag sel" onclick="selOne(this)">Ce soir, 19h</button>
+      <button class="tag" onclick="selOne(this)">Demain, apéro</button>
+      <button class="tag" onclick="selOne(this)">Ce week-end</button>
+    </div>
+    <span class="flab">Où vous retrouver ?</span>
+    <div class="tags" id="env-ou">
+      <button class="tag sel" onclick="selOne(this)">À décider ensemble</button>
+      <button class="tag" onclick="selOne(this)">Le café d'en bas</button>
+      <button class="tag" onclick="selOne(this)">Le Select</button>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Les contacts en pause ou en retrait ne sont pas adressés. Personne ne saura que vous avez émis — sauf coïncidence.</p>
+    <button class="btn btn-primary" onclick="show('envie-2')">Sceller et envoyer</button>
+  </div>
+
+  <div class="scr" id="envie-2" data-title="Envie · scellée">
+    <div class="donehead">
+      <div class="ring"><svg viewBox="0 0 24 24"><path d="M20 12.5A8.5 8.5 0 1 1 11.5 4 6.6 6.6 0 0 0 20 12.5z"/></svg></div>
+      <b>Envie scellée</b>
+      <p>Café · ce soir 19h · mes amis-voisins.<br>Elle expire dans 48&nbsp;heures.</p>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><path d="M4 4l16 16"/></svg>Si personne ne coïncide, il ne restera aucune trace — ni chez eux, ni sur le serveur, ni de refus nulle part.</p>
+    <button class="btn btn-ghost" onclick="show('home')">Retour à la carte</button>
+  </div>
+
+  <div class="scr" id="match" data-title="Coïncidence">
+    <div id="match-a">
+      <div class="donehead">
+        <div class="ring"><svg viewBox="0 0 24 24"><path d="M8 12l3 3 5-6"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <b>Coïncidence révélée</b>
+        <p>Yasmine aussi avait envie d'un café.<br>Vos deux envies se sont reconnues — rien d'autre n'a été comparé.</p>
+      </div>
+      <span class="flab">Quand</span>
+      <div class="tags"><button class="tag sel" onclick="selOne(this)">Ce soir, 19h</button><button class="tag" onclick="selOne(this)">Ce soir, 20h30</button><button class="tag" onclick="selOne(this)">Demain, apéro</button></div>
+      <span class="flab">Où</span>
+      <div class="tags"><button class="tag sel" onclick="selOne(this)">Le café d'en bas</button><button class="tag" onclick="selOne(this)">Le Select</button></div>
+      <button class="btn btn-primary" onclick="proposeMeet()">Proposer</button>
+      <p class="note"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><path d="M4 4l16 16"/></svg>Seule la coïncidence révèle. Une envie sans écho reste invisible — le refus n'existe pas dans SWAB.</p>
+    </div>
+    <div id="match-b" style="display:none">
+      <div class="donehead">
+        <div class="ring"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-7-10a7 7 0 0 1 14 0c0 5.4-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg></div>
+        <b>Rendez-vous proposé</b>
+        <p>Ce soir 19h · Le café d'en bas.<br>Yasmine confirme de son côté — puis vos écrans s'éteignent.</p>
+      </div>
+      <p class="note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>SWAB s'arrête à la porte du café : pas de chat infini, pas de statut « vu ». La rencontre se passe dehors.</p>
+      <button class="btn btn-ghost" onclick="show('home')">Retour à la carte</button>
+    </div>
+  </div>
+
+  <div class="scr" id="evenements" data-title="Événements">
+    <p class="ptitle">Événements</p>
+    <p class="psub">Déclarer les vôtres, répondre à ceux de vos cercles.</p>
+    <div class="rowlist">
+      <div class="rowi" onclick="show('evt-decl')"><span class="n">Déclarer un événement<small>anniversaire, mariage, naissance, deuil</small></span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      <div class="rowi" onclick="show('evt-b')"><span class="n">Anniversaire de Yasmine<small>jeudi 9 juillet · cercle promo</small></span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+      <div class="rowi" onclick="show('evt-recu')"><span class="n">Un de vos contacts a pensé à vous<small>une attention arrive — confirmer un créneau</small></span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    </div>
+  </div>
+
+  <div class="scr" id="evt-decl" data-title="Événement · déclarer">
+    <p class="ptitle">Déclarer un événement</p>
+    <p class="psub">Le type pilote le ton et les actions proposées.</p>
+    <span class="flab">Type</span>
+    <div class="tags" id="evd-type">
+      <button class="tag sel" onclick="selOne(this)">Anniversaire</button>
+      <button class="tag" onclick="selOne(this)">Mariage</button>
+      <button class="tag" onclick="selOne(this)">Naissance</button>
+      <button class="tag" onclick="selOne(this)">Décès d'un proche</button>
+    </div>
+    <span class="flab">Portée</span>
+    <div class="tags">
+      <button class="tag sel" onclick="toggSel(this)">Famille</button>
+      <button class="tag sel" onclick="toggSel(this)">Promo</button>
+      <button class="tag" onclick="toggSel(this)">Communauté</button>
+    </div>
+    <div class="switchrow">
+      <span>Autoriser les livraisons<small>adresse scellée pour le prestataire, purgée après</small></span>
+      <label class="sw"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><path d="M4 4l16 16"/></svg>Vous ne saurez pas qui a vu, ni qui a passé. Un blob chiffré par contact, TTL 30 jours.</p>
+    <button class="btn btn-primary" onclick="show('evt-pub')">Publier l'événement</button>
+  </div>
+
+  <div class="scr" id="evt-pub" data-title="Événement · diffusé">
+    <div class="donehead">
+      <div class="ring"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
+      <b>Événement diffusé</b>
+      <p>15 blobs chiffrés, à forme constante — le serveur n'apprend rien.</p>
+    </div>
+    <button class="btn btn-ghost" onclick="show('home')">Retour à la carte</button>
+  </div>
+
+  <div class="scr" id="evt-b" data-title="Événement · répondre">
+    <span class="chip">Anniversaire</span>
+    <div class="person">
+      <div class="avatar">Y</div>
+      <div><b>Yasmine fête ses 30 ans</b><span>jeudi 9 juillet · cercle promo</span></div>
+    </div>
+    <div class="tilegrid">
+      <button class="tile" id="evb-msg" onclick="evbChoose('msg')"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Envoyer un message</button>
+      <button class="tile" id="evb-gift" onclick="evbChoose('gift')"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M7.5 8a2.5 2.5 0 1 1 4.5-1.5V8M16.5 8A2.5 2.5 0 1 0 12 6.5V8"/></svg>Offrir un cadeau</button>
+    </div>
+    <p class="hint" id="evb-hint">Choisissez une action pour continuer</p>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Son adresse ne vous est jamais montrée. Une notification vous sera envoyée quand Yasmine recevra votre cadeau.</p>
+    <button class="btn btn-primary" onclick="evbNext()">Suivant</button>
+    <button class="btn btn-ghost" onclick="evbDismiss()">Ne rien faire</button>
+    <p class="dnote" id="evb-note" style="color:var(--brume)"></p>
+  </div>
+
+  <div class="scr" id="evt-msgB" data-title="Événement · message">
+    <div class="person" style="margin-top:0">
+      <div class="avatar">Y</div>
+      <div><b>Votre message pour Yasmine</b><span>remis par le canal chiffré existant</span></div>
+    </div>
+    <textarea placeholder="Joyeux anniversaire Yasmine !" style="width:100%;min-height:100px;background:var(--voile);border:1px solid var(--hair-fort);border-radius:10px;color:var(--ivoire);font-family:'Inter',sans-serif;font-size:13.5px;padding:12px;resize:vertical"></textarea>
+    <button class="btn btn-primary" onclick="this.textContent='Message envoyé'">Envoyer le message</button>
+  </div>
+
+  <div class="scr" id="evt-budget" data-title="Événement · budget">
+    <div class="person" style="margin-top:0">
+      <div class="avatar">Y</div>
+      <div><b>Offrir un cadeau</b><span>pour l'anniversaire de Yasmine</span></div>
+    </div>
+    <div class="budget-row">
+      <label for="evrng">Budget</label>
+      <input type="range" id="evrng" min="10" max="80" step="5" value="40" oninput="evBudget(this.value)">
+      <output id="evbud">40&nbsp;€</output>
+    </div>
+    <p class="plafond">Plafond strict — rien ne vous sera proposé au-delà.</p>
+    <div class="rowlist" id="evprops">
+      <div class="rowi" data-price="15" onclick="evPick(this,'Livre — sélection du libraire',15)"><span class="n">Livre — sélection du libraire</span><span class="c">15&nbsp;€</span></div>
+      <div class="rowi" data-price="18" onclick="evPick(this,'Chocolats artisanaux',18)"><span class="n">Chocolats artisanaux</span><span class="c">18&nbsp;€</span></div>
+      <div class="rowi" data-price="25" onclick="evPick(this,'Fleurs de saison',25)"><span class="n">Fleurs de saison</span><span class="c">25&nbsp;€</span></div>
+      <div class="rowi" data-price="45" onclick="evPick(this,'Coffret gourmand',45)"><span class="n">Coffret gourmand</span><span class="c">45&nbsp;€</span></div>
+      <div class="rowi" data-price="55" onclick="evPick(this,'Bouquet du fleuriste',55)"><span class="n">Bouquet du fleuriste</span><span class="c">55&nbsp;€</span></div>
+    </div>
+    <p class="recap" id="evrecap">Aucune sélection</p>
+    <button class="btn btn-primary" onclick="evToPay()">Suivant</button>
+  </div>
+
+  <div class="scr" id="evt-pay" data-title="Événement · paiement">
+    <p class="ptitle">Paiement</p>
+    <p class="psub">Première et seule donnée qui quitte l'appareil.</p>
+    <div class="paycard">
+      <div class="row"><span id="evp-name">—</span><span id="evp-price">—</span></div>
+      <div class="row"><span class="muted">Livraison via prestataire</span><span class="muted">incluse</span></div>
+      <div class="row total"><span>Total</span><span id="evp-total">—</span></div>
+    </div>
+    <div class="paycard"><div class="row"><span class="muted">Carte</span><span>&#8226;&#8226;&#8226;&#8226; 4421</span></div></div>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Le prestataire reçoit l'adresse scellée par Yasmine, la purge après livraison. Vous ne la verrez jamais.</p>
+    <button class="btn btn-primary" id="evp-btn" onclick="show('evt-done')">Payer</button>
+  </div>
+
+  <div class="scr" id="evt-done" data-title="Événement · confirmé">
+    <div class="donehead">
+      <div class="ring"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
+      <b>Commande transmise</b>
+      <p id="evd-sub">—</p>
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Une notification vous sera envoyée quand Yasmine recevra votre cadeau. Aucune relance d'ici là.</p>
+    <button class="btn btn-ghost" onclick="show('evt-msgB')">Ajouter un message pour Yasmine</button>
+    <button class="btn btn-ghost" onclick="show('home')">Retour à la carte</button>
+    <button class="textbtn" onclick="document.getElementById('evd-cancel').textContent='Commande annulée — remboursement intégral. Le prestataire libère le créneau, sans autre détail.'">Annuler la commande (avant préparation)</button>
+    <p class="dnote" id="evd-cancel"></p>
+  </div>
+
+  <div class="scr" id="evt-recu" data-title="Attention reçue">
+    <span class="chip">Anniversaire</span>
+    <div class="donehead">
+      <div class="ring"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M7.5 8a2.5 2.5 0 1 1 4.5-1.5V8M16.5 8A2.5 2.5 0 1 0 12 6.5V8"/></svg></div>
+      <b>Un de vos contacts a pensé à vous</b>
+      <p>Une livraison est prévue <strong style="color:var(--ivoire)">jeudi 9 juillet, 18h–20h</strong>.<br>Serez-vous disponible&nbsp;?</p>
+    </div>
+    <button class="btn btn-primary" id="recu-btn" onclick="this.textContent='Présence confirmée';document.getElementById('recu-note').textContent='Créneau confirmé auprès du prestataire.'">Je serai présente</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('recu-note').textContent='Créneaux alternatifs transmis au prestataire — l\u2019expéditeur n\u2019en saura rien.'">Proposer un autre créneau</button>
+    <p class="dnote" id="recu-note"></p>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>L'expéditeur ne vous est révélé que s'il a signé la carte jointe. Ni qui, ni combien de contacts ont été notifiés.</p>
+  </div>
+
+  <div class="scr" id="params" data-title="Paramètres">
+    <p class="ptitle">Paramètres</p>
+    <p class="psub">Les anciens « paramètres modaux » vivent désormais dans la présence.</p>
+    <span class="flab">Présence par défaut des nouveaux contacts</span>
+    <div class="seg">
+      <button class="segb sel" onclick="selOne(this)">En lien</button>
+      <button class="segb" onclick="selOne(this)">En pause</button>
+      <button class="segb retrait" onclick="selOne(this)">En retrait</button>
+    </div>
+    <div class="paycard">
+      <div class="row"><span class="muted" style="font-size:12px">En retrait = verrou absolu : jamais adressé, même si vous forcez. SWAB vous protège du geste.</span></div>
+      <div class="row"><span class="muted" style="font-size:12px">En pause = exclu par défaut, réintégrable d'un tap à l'émission.</span></div>
+    </div>
+    <span class="flab">Notifications d'événements</span>
+    <div class="switchrow"><span>Anniversaires</span><label class="sw"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
+    <div class="switchrow"><span>Mariages &amp; naissances</span><label class="sw"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
+    <div class="switchrow"><span>Deuils<small>toujours en registre sobre</small></span><label class="sw"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
+    <span class="flab">Livraison de cadeaux</span>
+    <div class="switchrow"><span>Autoriser les livraisons<small>adresse scellée pour le prestataire uniquement</small></span><label class="sw"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
+    <span class="flab">Vos données</span>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="document.getElementById('prm-note').textContent='Export chiffré préparé sur l\u2019appareil (portabilité RGPD).'">Exporter mes données</button>
+    <button class="textbtn" style="color:var(--corail)" onclick="document.getElementById('prm-note').textContent='Dissolution symétrique : vos arêtes s\u2019effacent des deux côtés, tombstone inscrite au journal de transparence.'">Quitter SWAB — dissoudre mes liens et tout effacer</button>
+    <p class="dnote" id="prm-note" style="color:var(--brume)"></p>
+  </div>
+
+  </div>
+  <div class="homebar"><span class="hb" aria-hidden="true"></span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="plan">
+  <h2>Plan de l'application</h2>
+  <p>Cliquez pour sauter à un écran — le bouton « Retour » du téléphone remonte toujours à l'écran précédent réellement visité.</p>
+  <h3>1 · Entrée en cohorte</h3>
+  <button class="lnk" data-s="ob-1" onclick="show('ob-1')">Bienvenue — cohorte synchronisée</button>
+  <button class="lnk" data-s="ob-2" onclick="show('ob-2')">Clés &amp; journal de transparence</button>
+  <button class="lnk" data-s="ob-3" onclick="show('ob-3')">Import local des contacts</button>
+  <button class="lnk" data-s="ob-4" onclick="show('ob-4')">Calibration — rôle · intimité · présence</button>
+  <button class="lnk" data-s="ob-5" onclick="show('ob-5')">Fin d'onboarding</button>
+  <h3>2 · Vie de la carte</h3>
+  <button class="lnk" data-s="home" onclick="show('home')">Carte des relations (accueil)</button>
+  <button class="lnk" data-s="fiche" onclick="show('fiche')">Fiche contact — Yasmine</button>
+  <button class="lnk" data-s="groupes" onclick="show('groupes')">Sous-groupes (FCA)</button>
+  <button class="lnk" data-s="groupe-det" onclick="show('groupe-det')">Détail — Mes amis-voisins</button>
+  <h3>3 · Envie &amp; coïncidence</h3>
+  <button class="lnk" data-s="envie-1" onclick="show('envie-1')">Émission — quoi · portée · quand · où</button>
+  <button class="lnk" data-s="envie-2" onclick="show('envie-2')">Envie scellée</button>
+  <button class="lnk" data-s="match" onclick="show('match')">Coïncidence — proposer la rencontre</button>
+  <h3>4 · Événements</h3>
+  <button class="lnk" data-s="evenements" onclick="show('evenements')">Hub événements</button>
+  <button class="lnk" data-s="evt-decl" onclick="show('evt-decl')">Déclarer (côté A)</button>
+  <button class="lnk" data-s="evt-b" onclick="show('evt-b')">Répondre — message · cadeau · rien (côté B)</button>
+  <button class="lnk" data-s="evt-budget" onclick="show('evt-budget')">Budget &amp; propositions</button>
+  <button class="lnk" data-s="evt-pay" onclick="show('evt-pay')">Paiement</button>
+  <button class="lnk" data-s="evt-done" onclick="show('evt-done')">Confirmation &amp; annulation</button>
+  <button class="lnk" data-s="evt-recu" onclick="show('evt-recu')">« Un de vos contacts a pensé à vous » (côté A)</button>
+  <h3>5 · Réglages &amp; sortie</h3>
+  <button class="lnk" data-s="params" onclick="show('params')">Paramètres — présence, verrous, offboarding</button>
+  <div class="axes">
+    <b>Modèle relationnel (v. actuelle)</b><br>
+    Rôle — facettes cumulatives · Intimité — 4 niveaux ordinaux · Présence — en lien / en pause / en retrait (filtre pur, absorbe les anciens « paramètres modaux ») · un seul acte intentionnel : l'envie.
+  </div>
+</div>
+
+</div>
+</main>
+
+<footer class="site">
+  <div class="wrap">SWAB · application consolidée — Zone 1 (présentation) · données fictives · le refus est structurellement inobservable, l'inaction aussi</div>
+</footer>
+
+<script>
+var hist=['ob-1'];
+function render(){
+  var id=hist[hist.length-1];
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on')});
+  var el=document.getElementById(id);
+  el.classList.add('on');
+  document.getElementById('tbtitle').textContent=el.dataset.title||'';
+  document.getElementById('backbtn').style.visibility=hist.length>1?'visible':'hidden';
+  document.querySelectorAll('.plan .lnk').forEach(function(l){l.classList.toggle('cur',l.dataset.s===id)});
+  document.getElementById('content').scrollTop=0;
+}
+function fitPhone(){
+  var col=document.querySelector('.devcol');
+  var sc=Math.min(1,(window.innerHeight-48)/898,(col.clientWidth||418)/418);
+  var d=document.getElementById('devwrap');
+  d.style.transform='scale('+sc+')';
+  d.style.height=(898*sc)+'px';
+}
+window.addEventListener('resize',fitPhone);
+function show(id){
+  if(hist[hist.length-1]===id)return;
+  hist.push(id);render();
+}
+function back(){
+  if(hist.length>1){hist.pop();render()}
+}
+function selOne(el){
+  Array.prototype.forEach.call(el.parentNode.children,function(c){c.classList.remove('sel')});
+  el.classList.add('sel');
+}
+function toggSel(el){el.classList.toggle('sel')}
+
+var calNames=[['Yasmine B.','Y'],['Karim E.','K'],['Nora T.','N'],['Sami R.','S']];
+var calIdx=0;
+function nextContact(){
+  calIdx=(calIdx+1)%calNames.length;
+  document.getElementById('cal-name').textContent=calNames[calIdx][0];
+  document.getElementById('cal-av').textContent=calNames[calIdx][1];
+  document.getElementById('cal-count').textContent=(calIdx+1)+' / 19';
+  document.querySelectorAll('#cal-roles .tag').forEach(function(t){t.classList.remove('sel')});
+}
+function presNote(m){
+  var t={lien:'En lien — adressable normalement.',
+         pause:'En pause — exclue par défaut de vos envies, réintégrable d\u2019un tap à l\u2019émission.',
+         retrait:'En retrait — verrou absolu : elle ne recevra plus rien de vous, même si vous forcez.'};
+  document.getElementById('pres-note').textContent=t[m];
+}
+function proposeMeet(){
+  document.getElementById('match-a').style.display='none';
+  document.getElementById('match-b').style.display='block';
+}
+
+var evbAction=null, evChosen=null;
+function evbChoose(a){
+  evbAction=a;
+  document.getElementById('evb-msg').style.borderColor=(a==='msg')?'var(--etoile)':'var(--hair-fort)';
+  document.getElementById('evb-gift').style.borderColor=(a==='gift')?'var(--etoile)':'var(--hair-fort)';
+  document.getElementById('evb-hint').classList.remove('show');
+}
+function evbNext(){
+  if(!evbAction){document.getElementById('evb-hint').classList.add('show');return}
+  show(evbAction==='msg'?'evt-msgB':'evt-budget');
+}
+function evbDismiss(){
+  document.getElementById('evb-note').textContent='Événement retiré de votre fil. Yasmine n\u2019en saura rien — aucun accusé de lecture.';
+}
+function evBudget(v){
+  document.getElementById('evbud').innerHTML=Math.round(v)+'&nbsp;€';
+  document.querySelectorAll('#evprops .rowi').forEach(function(p){
+    var ok=(+p.dataset.price)<=(+v);
+    p.style.display=ok?'flex':'none';
+    if(!ok&&p.classList.contains('sel')){p.classList.remove('sel');evClear()}
+  });
+}
+function evClear(){
+  evChosen=null;
+  var r=document.getElementById('evrecap');
+  r.textContent='Aucune sélection';r.classList.remove('on');
+}
+function evPick(el,name,price){
+  document.querySelectorAll('#evprops .rowi').forEach(function(p){p.classList.remove('sel')});
+  el.classList.add('sel');evChosen={name:name,price:price};
+  var r=document.getElementById('evrecap');
+  r.textContent=name+' · '+price+' €';r.classList.add('on');
+}
+function evToPay(){
+  if(!evChosen){document.getElementById('evrecap').textContent='Choisissez une proposition pour continuer';return}
+  document.getElementById('evp-name').textContent=evChosen.name;
+  document.getElementById('evp-price').textContent=evChosen.price+' €';
+  document.getElementById('evp-total').textContent=evChosen.price+' €';
+  document.getElementById('evp-btn').textContent='Payer '+evChosen.price+' €';
+  document.getElementById('evd-sub').textContent=evChosen.name+' · '+evChosen.price+' € — livraison selon les disponibilités de Yasmine.';
+  show('evt-pay');
+}
+evBudget(40);
+render();
+fitPhone();
+</script>
+</body>
+</html>

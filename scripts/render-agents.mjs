@@ -59,6 +59,15 @@ const AGENTS = [
       "Data & Schema Steward for Swab (area:db) — the ONLY agent allowed to edit packages/db/prisma/schema.prisma. Use for schema changes, migrations, seed data, and Prisma client packaging. MUST be used for any change under packages/db.",
   },
   {
+    name: "design-specialist",
+    source: "agents/design-specialist.md",
+    area: "design",
+    applyTo: "blueprints/**,docs/design/**",
+    title: "Design & Blueprint Specialist (area:design)",
+    description:
+      "Design & Blueprint Specialist for Swab (area:design). Use for blueprints (HTML prototypes), the Penpot design system and prototype (via the Penpot MCP), the graphic charter « Nuit », design tokens, and design notes feeding /speckit-specify. MUST be used for changes touching blueprints/ or docs/design/.",
+  },
+  {
     name: "devops-specialist",
     source: "agents/devops-infrastructure-specialist.md",
     area: "devops",

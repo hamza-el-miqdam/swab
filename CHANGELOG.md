@@ -4,6 +4,13 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-09 — New agent: Design & Blueprint Specialist (area:design)
+
+- Added `agents/design-specialist.md` — sixth specialist, owner of the front of the blueprint → spec → code pipeline: HTML blueprints (`blueprints/`), the Penpot design system/prototype (via the Penpot MCP plugin), and the graphic charter « Nuit » (palette, typography, Button/Tag components, iPhone 17 template — values documented as normative in the agent file).
+- Registered in `scripts/render-agents.mjs`; renders to `.github/instructions/design.instructions.md` and `.claude/agents/design-specialist.md`. Scope: `blueprints/**`, `docs/design/**`, Penpot; proposes (never edits) design tokens for `packages/ui`.
+- Includes field-tested Penpot MCP gotchas from the 2026-07-09 prototype build (writes target the browser-active page; async layout sizing; white default fills; hex-only fill colors; spurious `:error` responses — verify before retrying).
+- **Gotcha:** new Claude Code subagents are only picked up after a session restart.
+
 ## 2026-07-09 — GitHub spec-kit adopted for spec-driven development
 
 - Installed [github/spec-kit](https://github.com/github/spec-kit) via `uvx --from git+https://github.com/github/spec-kit.git specify init --here --integration claude`. New tooling: `.specify/` (templates, scripts, workflow config) and `.claude/skills/speckit-*` (8 slash-command skills: constitution, specify, plan, tasks, implement, clarify, analyze, checklist).
