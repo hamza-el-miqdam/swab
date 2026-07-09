@@ -4,6 +4,13 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-09 — First spec-kit pipeline test: specs/001-envie-match
+
+- Ran `/speckit-specify` against the already-approved `docs/specs/FS-05-envie-match.md` as a pipeline test: does converting a mature FS-* spec into spec-kit's format lose precision? Result: `specs/001-envie-match/spec.md`, all requirement-quality checklist items pass, all 16 ENV-* requirement IDs traced through as FR-001…FR-016.
+- FS-05 remains the authoritative source (stated explicitly in the new spec's header); this is a mirror for `/speckit-plan` and `/speckit-tasks` to consume, not a replacement. No other FS-* specs migrated yet — this was a one-feature trial.
+- **Gotcha:** spec-kit's "technology-agnostic success criteria" guideline doesn't fully fit privacy/concurrency correctness properties (e.g. "non-match unobservable via API response") — documented as a deliberate, noted exception in the checklist rather than a failure.
+- Next: `/speckit-plan` → `/speckit-tasks` on this same feature to judge whether the full pipeline is worth adopting repo-wide before migrating the remaining 6 specs.
+
 ## 2026-07-09 — New agent: Design & Blueprint Specialist (area:design)
 
 - Added `agents/design-specialist.md` — sixth specialist, owner of the front of the blueprint → spec → code pipeline: HTML blueprints (`blueprints/`), the Penpot design system/prototype (via the Penpot MCP plugin), and the graphic charter « Nuit » (palette, typography, Button/Tag components, iPhone 17 template — values documented as normative in the agent file).
