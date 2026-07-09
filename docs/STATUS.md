@@ -4,7 +4,14 @@
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 
-_Last updated: 2026-07-06_
+_Last updated: 2026-07-09_
+
+> **Native migration in progress:** mobile is moving from Expo/React Native (`apps/mobile`) to
+> native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose). `apps/mobile` is the
+> **frozen reference implementation** (critical fixes only) until each module reaches native
+> parity. Knowledge transfer: `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`.
+> Module statuses below describe the RN reference; native parity will be tracked per platform as
+> the migration lands (first target: FS-07 + FS-01).
 
 ## Modules (functional specs)
 
@@ -24,13 +31,13 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 
 | Item | Status | Notes |
 |---|---|---|
-| Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/mobile`, `apps/api`, `packages/db`. `apps/web`, `packages/ui`, `packages/api-client`, `tools/orchestrator` not created yet. |
+| Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/mobile` (frozen RN reference), `apps/api`, `packages/db`. `apps/ios`, `apps/android` (native migration Phase 2), `apps/web`, `packages/ui`, `packages/api-client`, `tools/orchestrator` not created yet. |
 | Database schema v0.1 | 🟢 | `users`, `vaults`, `envies` + seed. Privacy invariant holds: no classification columns. |
 | Local dev stack | 🟢 | `docker compose up --build` → Postgres :5432, API :3001, Adminer :8080. |
 | Mobile dev clients | 🟢 | iOS + Android via `expo run:*` (native crypto → Expo Go unsupported). Android SDK/emulator setup scripted in `scripts/`. |
 | CI | 🟡 | `ci.yml` skeleton exists. Missing: scope guard, privacy-audit job, coverage enforcement, OpenAPI diff gate. |
 | Lint (repo-wide ESLint) | 🟢 | Flat config: root `eslint.config.mjs` (type-aware typescript-eslint) + Expo preset in `apps/mobile`. All packages run `eslint .` — the mobile `exit 0` stub is gone. |
-| Agents (AIDD) | 🟢 | Single source of truth in `agents/`; `node scripts/render-agents.mjs` generates the Copilot (`.github/`) and Claude Code (`.claude/agents/`) copies (`--check` for CI). Seventh specialist added: Notion Liaison (area:notion-liaison). |
+| Agents (AIDD) | 🟢 | Single source of truth in `agents/`; `node scripts/render-agents.mjs` generates the Copilot (`.github/`) and Claude Code (`.claude/agents/`) copies (`--check` for CI). 2026-07-09: mobile-specialist (Expo RN) decommissioned; replaced by ios-specialist (area:ios) + android-specialist (area:android), knowledge inherited via `docs/migration/rn-native-handoff.md`. |
 | Spec ↔ Notion sync (French mirror) | 🟢 | All 7 `docs/specs/FS-*.md` mirrored, translated to French, under Notion page "Swab — Spécifications (FS-*)" for the non-dev co-founder to read/comment/edit. `docs/specs/.notion-sync.json` tracks per-spec snapshots; re-diffed on every invocation of the notion-liaison-specialist agent. Code stays canonical; conflicts are flagged, never auto-resolved. |
 | SMS provider (OTP) | ⚪ | Dev mode returns the code in the response; provider selection is an open question. |
 | Privacy audit (playbook §6) | ⚪ | Must run before any external tester and after every schema/API change. |
@@ -39,7 +46,9 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 
 Every change lands with an entry in its area changelog (rule G4.7 in `agents/_global-directives.md`):
 
-- [apps/mobile/CHANGELOG.md](../apps/mobile/CHANGELOG.md) — `area:mobile`
+- `apps/ios/CHANGELOG.md` — `area:ios` (created with the Phase 2 scaffold)
+- `apps/android/CHANGELOG.md` — `area:android` (created with the Phase 2 scaffold)
+- [apps/mobile/CHANGELOG.md](../apps/mobile/CHANGELOG.md) — frozen RN reference (critical fixes only)
 - [apps/api/CHANGELOG.md](../apps/api/CHANGELOG.md) — `area:backend`
 - [packages/db/CHANGELOG.md](../packages/db/CHANGELOG.md) — `area:db`
 - [CHANGELOG.md](../CHANGELOG.md) (repo root) — `area:devops`, docs, agents, tooling, cross-cutting

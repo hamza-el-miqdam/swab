@@ -1,4 +1,10 @@
-# Changelog — apps/mobile (area:mobile)
+# Changelog — apps/mobile (frozen RN reference implementation)
+
+> ⚠️ **FROZEN (2026-07-09):** this Expo/React Native app is being replaced by native `apps/ios`
+> and `apps/android`. It stays buildable as the reference implementation until native parity —
+> **critical fixes only**, no new features. Its knowledge was transferred to
+> `docs/migration/rn-native-handoff.md` (+ `docs/migration/vault-test-vectors.json`) when the
+> mobile-specialist agent was decommissioned. See the root `CHANGELOG.md` 2026-07-09 entry.
 
 > Newest first. One entry per merged change (or per working-tree milestone before the repo had this file).
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.

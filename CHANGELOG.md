@@ -4,6 +4,16 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-09 — Native migration Phase 1: iOS + Android specialists replace the Mobile (Expo RN) specialist
+
+- **Decision:** Swab's mobile client moves from cross-platform Expo/React Native to fully native `apps/ios` (Swift/SwiftUI, MVVM) and `apps/android` (Kotlin/Jetpack Compose, MVVM). `apps/mobile` stays in the repo as the **frozen reference implementation** (read-only except critical fixes) until each module reaches native parity; it will be removed in a later PR. First migration target: FS-07 Identity & Vault + FS-01 Onboarding.
+- **Knowledge inheritance before decommission:** the Mobile Engineering Specialist's complete context — feature inventory, binary contracts (AES-256-GCM vault wire format `base64(IV‖TAG‖CT)`, phone-hash `sha256("SALT:E164")`, API shapes, sync semantics), business rules, product ethos, known divergences, and RN-only gotchas — is captured in `docs/migration/rn-native-handoff.md`. Both new agent files import it as binding.
+- New `docs/migration/vault-test-vectors.json` — crypto vectors generated from the RN reference implementation (node:crypto, API-identical to react-native-quick-crypto). Both native crypto cores must reproduce every vector exactly before building on top; this file is the objective "knowledge transfer verified" gate.
+- Added `agents/ios-specialist.md` (area:ios, scope `apps/ios/**`) and `agents/android-specialist.md` (area:android, scope `apps/android/**`); registered in `scripts/render-agents.mjs` → `.github/instructions/{ios,android}.instructions.md` + `.claude/agents/{ios,android}-specialist.md`.
+- Decommissioned the Mobile Engineering Specialist: removed from the `AGENTS` registry, deleted `agents/mobile-specialist.md` and its rendered copies (`.claude/agents/mobile-specialist.md`, `.github/instructions/mobile.instructions.md` — the render script never cleans up orphans, so this is manual by design).
+- Docs updated to stay truthful: `agents/_global-directives.md` project description + G5 changelog locations, `CLAUDE.md`, `docs/STATUS.md`, `apps/mobile/CHANGELOG.md` freeze banner. `.specify/memory/constitution.md` still mirrors the pre-migration directives — **follow-up: re-run `/speckit-constitution` to resync** (global directives win on conflict, per governance).
+- **Gotchas:** new Claude Code subagents are only picked up after a session restart. `apps/ios`/`apps/android` and their changelogs do not exist yet — they land with the Phase 2 scaffold PR, deliberately kept out of the turbo/pnpm pipeline (CI wiring is an `area:sre` follow-up).
+
 ## 2026-07-09 — New agent: Spec ↔ Notion Liaison Specialist (area:notion-liaison) + French spec mirror
 
 - Added `agents/notion-liaison-specialist.md` — seventh specialist, the only bridge between `docs/specs/FS-*.md` (English, code-canonical) and a French mirror in Notion for the non-dev co-founder to read, comment on, and edit directly. Registered in `scripts/render-agents.mjs`; renders to `.github/instructions/notion-liaison.instructions.md` and `.claude/agents/notion-liaison-specialist.md`.

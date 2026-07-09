@@ -23,13 +23,22 @@ const BANNER = "<!-- RENDERED by scripts/render-agents.mjs from /agents — edit
 
 const AGENTS = [
   {
-    name: "mobile-specialist",
-    source: "agents/mobile-specialist.md",
-    area: "mobile",
-    applyTo: "apps/mobile/**",
-    title: "Mobile Engineering Specialist (area:mobile)",
+    name: "ios-specialist",
+    source: "agents/ios-specialist.md",
+    area: "ios",
+    applyTo: "apps/ios/**",
+    title: "iOS Native Specialist (area:ios)",
     description:
-      "Mobile Engineering Specialist for Swab (area:mobile). Use for any work in apps/mobile — Expo/React Native screens, the on-device encrypted vault, FCA subgroups, offline-first features, and their tests. MUST be used for changes touching apps/mobile.",
+      "iOS Native Specialist for Swab (area:ios). Use for any work in apps/ios — Swift/SwiftUI (MVVM) screens, the on-device encrypted vault (CryptoKit + Keychain), offline-first features, and their tests. Inherits the RN app's knowledge via docs/migration/rn-native-handoff.md. MUST be used for changes touching apps/ios.",
+  },
+  {
+    name: "android-specialist",
+    source: "agents/android-specialist.md",
+    area: "android",
+    applyTo: "apps/android/**",
+    title: "Android Native Specialist (area:android)",
+    description:
+      "Android Native Specialist for Swab (area:android). Use for any work in apps/android — Kotlin/Jetpack Compose (MVVM) screens, the on-device encrypted vault (Keystore + javax.crypto), offline-first features, and their tests. Inherits the RN app's knowledge via docs/migration/rn-native-handoff.md. MUST be used for changes touching apps/android.",
   },
   {
     name: "backend-specialist",
