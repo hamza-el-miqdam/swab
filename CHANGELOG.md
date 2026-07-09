@@ -4,6 +4,37 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-09 — New agent: Spec ↔ Notion Liaison Specialist (area:notion-liaison) + French spec mirror
+
+- Added `agents/notion-liaison-specialist.md` — seventh specialist, the only bridge between `docs/specs/FS-*.md` (English, code-canonical) and a French mirror in Notion for the non-dev co-founder to read, comment on, and edit directly. Registered in `scripts/render-agents.mjs`; renders to `.github/instructions/notion-liaison.instructions.md` and `.claude/agents/notion-liaison-specialist.md`.
+- Created the Notion structure: parent page "Swab — Spécifications (FS-*)" with one French subpage per FS-01…07, each carrying a "source canonique" note pointing back to its code file. Requirement IDs (ONB-01, MAP-03, …) preserved verbatim as translation anchors.
+- New `docs/specs/.notion-sync.json` — sync-state file the agent owns. Stores full content snapshots (English + French, not hashes) per spec so the agent can diff by direct comparison. **Mandatory behavior:** every invocation re-fetches the live Notion page and comments before doing anything else — never assumes the last-synced snapshot is still current.
+- **Design decision:** the co-founder can freely edit French text or comment (not comment-only) — free edit was chosen over the safer comment-only default. To offset that risk: code remains canonical (per CLAUDE.md), and if both the code and the Notion page changed since the last sync, the agent stops and reports the conflict instead of picking a side (G4 ambiguity rule extended to two-way doc sync).
+- **Gotcha:** the Notion workspace connected this session is Hamza's own account — pages were created privately; sharing the parent page with the actual co-founder is a manual step (Notion's own share UI), not something the agent does autonomously.
+
+## 2026-07-09 — First spec-kit pipeline test: specs/001-envie-match
+
+- Ran `/speckit-specify` against the already-approved `docs/specs/FS-05-envie-match.md` as a pipeline test: does converting a mature FS-* spec into spec-kit's format lose precision? Result: `specs/001-envie-match/spec.md`, all requirement-quality checklist items pass, all 16 ENV-* requirement IDs traced through as FR-001…FR-016.
+- FS-05 remains the authoritative source (stated explicitly in the new spec's header); this is a mirror for `/speckit-plan` and `/speckit-tasks` to consume, not a replacement. No other FS-* specs migrated yet — this was a one-feature trial.
+- **Gotcha:** spec-kit's "technology-agnostic success criteria" guideline doesn't fully fit privacy/concurrency correctness properties (e.g. "non-match unobservable via API response") — documented as a deliberate, noted exception in the checklist rather than a failure.
+- Next: `/speckit-plan` → `/speckit-tasks` on this same feature to judge whether the full pipeline is worth adopting repo-wide before migrating the remaining 6 specs.
+
+## 2026-07-09 — New agent: Design & Blueprint Specialist (area:design)
+
+- Added `agents/design-specialist.md` — sixth specialist, owner of the front of the blueprint → spec → code pipeline: HTML blueprints (`blueprints/`), the Penpot design system/prototype (via the Penpot MCP plugin), and the graphic charter « Nuit » (palette, typography, Button/Tag components, iPhone 17 template — values documented as normative in the agent file).
+- Registered in `scripts/render-agents.mjs`; renders to `.github/instructions/design.instructions.md` and `.claude/agents/design-specialist.md`. Scope: `blueprints/**`, `docs/design/**`, Penpot; proposes (never edits) design tokens for `packages/ui`.
+- Includes field-tested Penpot MCP gotchas from the 2026-07-09 prototype build (writes target the browser-active page; async layout sizing; white default fills; hex-only fill colors; spurious `:error` responses — verify before retrying).
+- **Gotcha:** new Claude Code subagents are only picked up after a session restart.
+
+## 2026-07-09 — GitHub spec-kit adopted for spec-driven development
+
+- Installed [github/spec-kit](https://github.com/github/spec-kit) via `uvx --from git+https://github.com/github/spec-kit.git specify init --here --integration claude`. New tooling: `.specify/` (templates, scripts, workflow config) and `.claude/skills/speckit-*` (8 slash-command skills: constitution, specify, plan, tasks, implement, clarify, analyze, checklist).
+- Ratified `.specify/memory/constitution.md` v1.0.0 by mirroring — not duplicating — the existing `agents/_global-directives.md` (G1–G5). Governance section states explicitly: if the two ever diverge, `agents/_global-directives.md` wins; amendments happen there first, then this constitution is re-synced via `/speckit-constitution`.
+- Requires `uv` (Astral) locally — installed via `brew install uv`. Not yet wired into CI.
+- **Gotcha:** `RATIFICATION_DATE` in the constitution is a `TODO` — the original adoption date of `agents/_global-directives.md` isn't recorded in repo history. Fill in if it's ever recovered.
+- `CLAUDE.md` gained a "Spec-driven development (spec-kit)" section documenting the `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` flow and the constitution's mirror-not-replace relationship to `agents/_global-directives.md`. Existing `docs/specs/FS-*.md` specs are not being migrated into spec-kit's format — spec-kit is for new feature scaffolding going forward.
+- Follow-up: this is the foundation for the intended blueprint → spec → code workflow (design system blueprints feeding `/speckit-specify`); no blueprint tooling exists yet.
+
 ## 2026-07-06 — Repo-wide ESLint (flat config): `lint` is now a real gate
 
 - Root `eslint.config.mjs`: typescript-eslint `recommendedTypeChecked` (type-aware via `projectService`, off each package's own tsconfig) + `eslint-config-prettier` last (Prettier stays the formatter). Bug-catching extras: `eqeqeq`, `no-console` (G3: pino only), `switch-exhaustiveness-check`. Test files relax `require-await`, `no-require-imports` (jest fresh-module pattern) and the `no-unsafe-*` family (jest mocks are any-typed).

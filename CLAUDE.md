@@ -14,7 +14,14 @@ App that connects people with friends: you express an "envie" to a scope; it's r
 - Process (issue protocol, build order, privacy audit): `docs/agent-playbook.md`
 - Product laws + glossary (French UI copy is normative): `docs/product-overview.md`
 - Data model rationale: `swab-domain-spec.md` · Architecture: `aidd-multi-agent-blueprint.md`
-- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: mobile, web, backend, data, devops). Never edit rendered files by hand.
+- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: mobile, web, backend, data, devops, design). Never edit rendered files by hand.
+
+## Spec-driven development (spec-kit)
+
+Swab uses [github/spec-kit](https://github.com/github/spec-kit) to turn specs into implementation plans and tasks. Workflow: `docs/specs/FS-*.md` (source requirements) → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`. Optional gates: `/speckit-clarify` (before planning, de-risk ambiguity), `/speckit-analyze` (after tasks, before implement, cross-artifact consistency), `/speckit-checklist` (after plan, requirements quality).
+
+- `.specify/memory/constitution.md` is spec-kit's planning-time gate — it mirrors `agents/_global-directives.md`, it does not replace it. **On any conflict, `agents/_global-directives.md` wins.** Amend the global directives first, then re-run `/speckit-constitution` to resync.
+- Existing `docs/specs/FS-*.md` files remain the canonical specs for already-scoped work; spec-kit's `/speckit-specify` is for scaffolding new feature specs going forward, not a mandatory migration of old ones.
 
 ## Commands
 

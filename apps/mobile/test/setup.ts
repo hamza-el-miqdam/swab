@@ -7,7 +7,11 @@
  * jest.mock calls are hoisted above imports, and babel-plugin-jest-hoist
  * only allows out-of-scope variables with that prefix.
  */
+import { setUpTests } from 'react-native-reanimated';
+
 import { createHash as mockCreateHash, randomUUID as mockRandomUUID } from 'node:crypto';
+
+setUpTests(); // reanimated jest matchers (toHaveAnimatedStyle) + timer glue
 
 interface Stores {
   kv: Map<string, string>;
