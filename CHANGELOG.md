@@ -4,6 +4,14 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-09 — New agent: Spec ↔ Notion Liaison Specialist (area:notion-liaison) + French spec mirror
+
+- Added `agents/notion-liaison-specialist.md` — seventh specialist, the only bridge between `docs/specs/FS-*.md` (English, code-canonical) and a French mirror in Notion for the non-dev co-founder to read, comment on, and edit directly. Registered in `scripts/render-agents.mjs`; renders to `.github/instructions/notion-liaison.instructions.md` and `.claude/agents/notion-liaison-specialist.md`.
+- Created the Notion structure: parent page "Swab — Spécifications (FS-*)" with one French subpage per FS-01…07, each carrying a "source canonique" note pointing back to its code file. Requirement IDs (ONB-01, MAP-03, …) preserved verbatim as translation anchors.
+- New `docs/specs/.notion-sync.json` — sync-state file the agent owns. Stores full content snapshots (English + French, not hashes) per spec so the agent can diff by direct comparison. **Mandatory behavior:** every invocation re-fetches the live Notion page and comments before doing anything else — never assumes the last-synced snapshot is still current.
+- **Design decision:** the co-founder can freely edit French text or comment (not comment-only) — free edit was chosen over the safer comment-only default. To offset that risk: code remains canonical (per CLAUDE.md), and if both the code and the Notion page changed since the last sync, the agent stops and reports the conflict instead of picking a side (G4 ambiguity rule extended to two-way doc sync).
+- **Gotcha:** the Notion workspace connected this session is Hamza's own account — pages were created privately; sharing the parent page with the actual co-founder is a manual step (Notion's own share UI), not something the agent does autonomously.
+
 ## 2026-07-09 — First spec-kit pipeline test: specs/001-envie-match
 
 - Ran `/speckit-specify` against the already-approved `docs/specs/FS-05-envie-match.md` as a pipeline test: does converting a mature FS-* spec into spec-kit's format lose precision? Result: `specs/001-envie-match/spec.md`, all requirement-quality checklist items pass, all 16 ENV-* requirement IDs traced through as FR-001…FR-016.
