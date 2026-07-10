@@ -43,29 +43,41 @@ only holder of classification data; sync sees ciphertext only).
 
 Requirement coverage: IDT-01/06 (client side: hash-before-send), VLT-01/02/04 (client), ONB-01..09.
 
-Status as of 2026-07-10 (iOS: `apps/ios/CHANGELOG.md`, 55/55 tests, 91.9% coverage on `SwabCore`;
-Android: `apps/android/CHANGELOG.md`, 47/47 tests, 98.1% domain coverage). ✅ = verified by an
-automated test on this host. 🟡 = implemented, compiles against real platform APIs, but
-unverified on-device (no simulator boot / no emulator available in this environment).
+Status as of 2026-07-10 (iOS: `apps/ios/CHANGELOG.md`, 55/55 tests, 91.9% coverage on `SwabCore`,
+plus a hand-authored `SwabApp.xcodeproj` app shell; Android: `apps/android/CHANGELOG.md`, 47/47
+tests, 98.1% domain coverage). ✅ = verified by an automated test or an actual run on real
+Simulator/emulator hardware on this host. 🟡 = implemented, compiles against real platform APIs,
+but not yet exercised end-to-end.
+
+Both apps were built, installed, and launched for real: iOS on the "iPhone 17" Simulator
+(`xcodebuild` → `xcrun simctl install/launch`), Android on a `Pixel_6_Pro` emulator (`gradlew
+assembleDebug` → `adb install` → `adb shell am start`). Both rendered the Welcome screen with the
+exact French copy, no crash in `simctl launch` / logcat, and navigated correctly to the next
+screen (iOS: resumed onto Phone from persisted state, confirming ONB-08 for real; Android: tapped
+through to Phone, confirming Compose navigation). Neither run went further than the Phone screen —
+completing OTP verification and creating a vault key requires a live `apps/api` instance, which
+was not started for this pass, so the Keystore/DataStore/Keychain-on-launch paths are exercised by
+unit tests (iOS: yes, directly, via `KeychainSecureStoreTests` running against the real Keychain
+from the CLI test process; Android: only through `InMemory*` fakes) rather than by the live app.
 
 | Criterion | iOS | Android |
 |---|---|---|
 | Crypto vectors (`vault-test-vectors.json`) reproduced exactly | ✅ | ✅ |
 | Phone-hash vectors reproduced exactly | ✅ | ✅ |
-| Vault encrypted at rest; key in OS keystore; fresh-copy accessors (VLT-01) | ✅ (Keychain exercised directly by unsigned CLI test process) | 🟡 (fresh-copy accessors ✅; `AndroidKeystoreVaultKeyStore` unverified on-device) |
+| Vault encrypted at rest; key in OS keystore; fresh-copy accessors (VLT-01) | ✅ (Keychain exercised directly by unsigned CLI test process) | 🟡 (fresh-copy accessors ✅ by test; `AndroidKeystoreVaultKeyStore` compiles against real Keystore APIs but key creation not yet triggered on-device — needs a live API to complete OTP) |
 | Sync: push, 409 → re-pull + retry once (VLT-02) | ✅ | ✅ |
 | API client sends only `phoneHash`/`code`/`displayName`/`{blob,version}` (ONB-05, asserted via test) | ✅ | ✅ |
-| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | 🟡 (logic + copy ✅; SwiftUI screens have no view-level tests) | 🟡 (logic + copy ✅; Compose screens unverified on-device) |
-| Resume-at-step after process kill (ONB-08); step stays `phone` until OTP verified | ✅ | ✅ |
+| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | ✅ Welcome+Phone confirmed running on Simulator (screenshot-verified); otp/contacts/calibrate/done not walked live (no local API running) | ✅ Welcome+Phone confirmed running on emulator (screenshot-verified); otp/contacts/calibrate/done not walked live |
+| Resume-at-step after process kill (ONB-08); step stays `phone` until OTP verified | ✅ (unit tests; also incidentally confirmed live — a stale app container resumed straight to Phone on relaunch) | ✅ (unit tests only) |
 | Contacts denied → manual entry, identical capabilities (ONB-03) | 🟡 (manual path ✅; real `CNContactStore` import deferred, fake stands in) | 🟡 (manual path ✅; real `ContentResolver` import deferred, stub) |
 | État/ressenti layer optional + collapsed (ONB-06); no gamification (ONB-09, asserted via copy test) | ✅ | ✅ |
-| Airplane-mode: calibration persists locally, syncs later, only `POST /vault` carries derived data | ✅ | ✅ (unit-level; no manual on-device airplane-mode run) |
+| Airplane-mode: calibration persists locally, syncs later, only `POST /vault` carries derived data | ✅ (unit-level) | ✅ (unit-level) |
 
-**Remaining before Wave 1 is fully 🟢 on both platforms:** an `.xcodeproj`/`@main` app shell for
-iOS (no `xcodegen` — unjustified new dep, per G4) and on-device/emulator verification for both
-platforms (Keystore, DataStore, Compose screens, SwiftUI screens) — this dev machine has the
-Android SDK but no running emulator, and no iOS simulator was booted for this pass. Real
-contacts-import (Contacts framework / `ContentResolver`) is stubbed on both platforms; the
-manual-entry path already satisfies ONB-03's denial-parity acceptance criterion. FS-02's real
-radial `Canvas`/`MapGeometry` module (Wave 2) is out of scope — both platforms use a minimal
+**Remaining before Wave 1 is fully 🟢 on both platforms:** a full live walkthrough (welcome →
+phone → OTP → contacts → calibrate → done) against a running `apps/api` instance
+(`docker compose up --build`), which would exercise Android's real Keystore/DataStore adapters and
+both platforms' vault-key creation on real hardware for the first time. Real contacts-import
+(Contacts framework / `ContentResolver`) is stubbed on both platforms; the manual-entry path
+already satisfies ONB-03's denial-parity acceptance criterion. FS-02's real radial
+`Canvas`/`MapGeometry` module (Wave 2) is out of scope — both platforms use a minimal
 list/ring-button calibration interaction for now, matching the RN reference's own stated v0.

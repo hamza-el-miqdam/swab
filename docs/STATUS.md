@@ -13,7 +13,9 @@ _Last updated: 2026-07-10_
 > Module statuses below describe the RN reference. **Wave 1 native parity (FS-07 client scope +
 > FS-01) landed 2026-07-10**: `apps/ios` (55/55 tests, 91.9% coverage) and `apps/android` (47/47
 > tests, 98.1% domain coverage) both reproduce the crypto/phone-hash vectors exactly and
-> implement vault/sync/API-client/onboarding logic. Full per-criterion status (including what's
+> implement vault/sync/API-client/onboarding logic. Both apps were built and run for real — iOS
+> on the "iPhone 17" Simulator, Android on a `Pixel_6_Pro` emulator — rendering the Welcome/Phone
+> screens with the correct French copy and no crashes. Full per-criterion status (including what's
 > still 🟡 pending on-device verification) is tracked in `docs/migration/rn-audit-map.md`'s Wave 1
 > checklist, not duplicated here.
 
