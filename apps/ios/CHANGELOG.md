@@ -1,5 +1,73 @@
 # apps/ios — Changelog
 
+## 2026-07-10 — [MAP-01..09] Wave 2: FS-02 Relationship Map, natively
+
+**What:** 1:1 port of the RN reference (`apps/mobile/src/map/*`, `app/(main)/carte.tsx`,
+`app/(main)/_layout.tsx`, `src/ui/nav-bar.tsx`) into `apps/ios`, plus the 3-tab nav shell
+(MAP-02) wired in after onboarding's `.complete` step.
+
+`SwabCore/Carte/` (pure, no SwiftUI import — unit-testable, no UI dependency):
+
+- `MapGeometry.swift` — `mapSize = 320`, `rings = [1,2,3,4]`, `ringRadius(ring) = (mapSize/2) * (ring/4.6) + 24`, `positionOn(ring:index:)` using the golden angle `2.399963` rad/index, `clamp`, `panBound(scale:)`, `nodeSize(ring:)`. Byte-for-byte port of `apps/mobile/src/map/geometry.ts`'s formulas — verified against the same math computed independently in Python (see `MapGeometryTests`), not derived circularly from the Swift code itself.
+- `EtatColors.swift` — état → hex color (`disponible` #8FB59A, `occupé` #C8917E, `ailleurs` #8AA0BE), unset/unrecognized → neutral `CarteTheme.surface`/`line`. Divergence flag carried forward verbatim from `apps/mobile/src/map/etatColors.ts`'s comment: the blueprint's 5-état taxonomy is mapped onto the SHIPPED 3-état vocabulary — not silently expanded.
+- `CarteLabels.swift` — `ringLabel` dict, `contactLabel` (« Léa — Très proche » format, MAP-08), `initials` (up to 2, uppercased, ASCII/Unicode whitespace-aware).
+- `CarteTheme.swift` — the 8 theme hex colors from `apps/mobile/src/theme.ts`, kept as plain strings (not `Color`) so `SwabCore` stays free of any UI-framework import; `SwabUI/Carte/ColorHex.swift` does the `Color(hex:)` conversion at the view layer.
+
+`SwabUI/Carte/` (SwiftUI, MVVM):
+
+- `CarteViewModel.swift` — `@Observable`, holds `contacts`/`listMode`/`legendOpen`/`selected`, `refresh()` reads the vault only. Deliberately imports nothing beyond `Observation`/`SwabCore` — no networking symbol appears in this file (MAP-05), asserted structurally by `CarteOfflineInvariantTests` (reads the file's own source text off disk via `#filePath` and fails if `URLSession`/`ApiClient`/`HTTPTransport`/`VaultSync` ever appears).
+- `RadialMapView.swift` — ring circles + 4 hairline spokes (0/45/90/135°) + « moi » center pill, one `ContactNodeView` per placed contact, pinch (`MagnificationGesture`, 1x–3x) + pan (`DragGesture`) combined via `.simultaneously`, both bounded through `MapGeometry.clamp`/`panBound`. `ContactNodeView` tracks `hasAppeared` per instance: first mount sets its position directly (no travel), a later `.onChange(of:)` on the computed point wraps the update in `withAnimation(.easeInOut(duration: 0.35))` — the SwiftUI equivalent of the RN reference's `mounted` ref pattern (MAP-04: re-tag → animated move, no teleport).
+- `PeekSheetView.swift` — native `.sheet(isPresented:)` (not `.sheet(item:)`, to sidestep a `VaultContact: Identifiable` retroactive-conformance question across module boundaries) showing Intimité/État/Rôles rows; « Ouvrir la fiche » rendered visibly `.disabled(true)` — the FS-03 seam, same as the RN reference.
+- `RingListView.swift` — `List`/`Section` grouped by ring (MAP-08), unplaced contacts get a trailing unheaded section, every row's `accessibilityLabel` is `CarteLabels.contactLabel`.
+- `CarteView.swift` — composes the above: list/map mode toggle, calm empty state (MAP-06, `carte.empty`), unplaced-contacts tray (nothing hidden, MAP-09), état legend toggle. Refreshes on `.task` (first appear) and on `scenePhase` transitioning to `.active` (foreground) so an FS-03 re-tag is picked up on return without a relaunch.
+- `MainTabsView.swift` — exactly 3 tabs (Carte/Envie/Sous-groupes) via `TabView`/`.tabItem { Text(...) }` — labels only, no badge/counter modifier exists anywhere in this file, so none can appear (MAP-02, MAP-09/ethos law 5). `EnvieView`/`SousGroupesView` are calm placeholder screens (FS-05/FS-04 seams).
+
+`App/SwabApp.swift` — the `.complete` case of `RootView`'s switch now renders `MainTabsView(vault: vault)` instead of the old static "done" placeholder text. Everything else in the app shell (Keychain-backed `SecureStore`, file-backed `KeyValueStore`, real `ApiClient`) is unchanged — a 6-line diff.
+
+**Why:** Wave 2 of the RN → native migration (`docs/migration/rn-audit-map.md`) — the carte is the app's home screen and the first screen a user with a calibrated vault actually lands on.
+
+**Test results:** `cd apps/ios && xcrun swift test` — **77/77 tests pass, 0 failures** (55 from Wave 1 + 22 new: `MapGeometryTests` (9), `EtatColorsTests` (6), `CarteLabelsTests` (5), `CarteOfflineInvariantTests` (2)). Coverage on `SwabCore` (`swift test --enable-code-coverage` + `llvm-cov report`): **92.73% line coverage** overall; the three new Carte modules (`MapGeometry.swift`, `EtatColors.swift`, `CarteLabels.swift`) are each at **100%** line coverage. `SwabUI`'s new Carte views/view model are not separately coverage-measured (same pattern as Wave 1's onboarding views — no ViewInspector-style tooling in this package) but `CarteViewModel`'s only non-trivial logic (`refresh`/`select`/`unplaced`/`placed`) is thin enough that the MAP-05 structural test plus the visual Simulator verification below stand in for it.
+
+**MAP-01..09 status:**
+
+| Requirement | Status | Notes |
+|---|---|---|
+| MAP-01 (radial layout, moi centered, ring from vault) | ✅ | `MapGeometryTests`; visually confirmed on Simulator (screenshot below) |
+| MAP-02 (exactly 3 nav items, no badges) | ✅ | `MainTabsView` — no badge/counter API call exists in the file, by construction |
+| MAP-03 (état/ring visual encoding) | ✅ | `EtatColorsTests`, `MapGeometryTests.test_MAP03_nodeSizeStepsDownPerRing` |
+| MAP-04 (tap → peek sheet, animated re-tag, disabled fiche seam) | 🟡 | Peek sheet + disabled button implemented and code-reviewed against the RN reference; the animated-vs-snap mount behavior is implemented (`ContactNodeView`'s `hasAppeared` tracking) but **not** covered by an automated UI test — SwiftUI position-animation assertions need a UI test target this package doesn't have (same gap as Wave 1's onboarding views) |
+| MAP-05 (offline-first, no network) | ✅ | `CarteOfflineInvariantTests` — structural source scan of `CarteViewModel.swift` |
+| MAP-06 (calm empty state) | ✅ | `carte.empty` copy (already ported in Wave 1's `Fr.swift`), rendered when `contacts.isEmpty` |
+| MAP-07 (≤150 contacts, 60fps pan/zoom, no jank) | 🟡 | Geometry math verified exactly (`MapGeometryTests`); 60fps-under-load was **not** profiled with Instruments in this pass (no realistic 150-contact fixture walked live) — SwiftUI `Button`-per-node may need to move to `Canvas` if profiling later shows jank, per the ios-specialist rule; not attempted here |
+| MAP-08 (screen-reader list fallback) | ✅ | `RingListView` + `CarteLabelsTests`; every row carries `accessibilityLabel` via the same `contactLabel` helper the map uses |
+| MAP-09 (no counters/search/sorting) | ✅ | Existing generic `CopyEthosTests` cover every `Fr.swift` key including the carte.*/nav.* strings added in Wave 1; no search/sort UI exists in any new file |
+
+**Simulator verification (honest account):** `xcodebuild -project SwabApp.xcodeproj -scheme SwabApp -destination 'platform=iOS Simulator,name=iPhone 17' -configuration Debug CODE_SIGNING_ALLOWED=NO build` → **BUILD SUCCEEDED**, confirming the new Carte sources compile as part of the real app target (not just the SPM test target). Installed + launched fresh (`xcrun simctl install/launch`) — reproduced the same "cold start shows Welcome, no crash" result as Wave 1's app-shell entry.
+
+To actually see the Carte UI render (reaching it live requires OTP against a running `docker compose` API, unavailable in this sandbox — same limitation `rn-audit-map.md` already documents for iOS), the app's entry point was **temporarily** swapped for a throwaway view that seeds an in-memory vault with 2 placed contacts (ring 1 « disponible », ring 3 « occupé ») + 1 unplaced contact and jumps straight to `MainTabsView`, then reverted immediately after screenshotting (`git diff apps/ios/App/SwabApp.swift` shows only the intended 6-line `.complete` wiring — the temporary view never landed). The screenshot confirmed, pixel-measured against the known scale factor: ring circles + spokes render at the exact `MapGeometry` radii (the "Sam" node measured at ~128pt from center, matching `ringRadius(3) = 128.35` to within rounding), état colors render correctly (green for disponible, terracotta for occupé), the unplaced tray shows "Unplaced Person" as a chip, the légende toggle and list-mode switch are present, and the 3-tab nav bar reads exactly "Carte / Envie / Sous-groupes" with no badges. Tapping a node to open the peek sheet was **not** exercised live — this sandbox has no assistive-access permission for scripted Simulator taps (`osascript`/System Events return `-1719`, the same blocker Wave 1 hit), so `PeekSheetView`'s presentation is verified by code review + the disabled-button assertion pattern only, not an on-device tap.
+
+**Gotchas discovered:**
+
+11. **A doc comment that names the exact symbols a structural "no networking import" test scans for will itself trip that test.** `CarteViewModel.swift`'s first draft explained the MAP-05 invariant by literally writing `URLSession`/`ApiClient` in a comment — `CarteOfflineInvariantTests` (which scans the raw source text, not compiled symbols) failed on its own doc comment. Fixed by rephrasing the comment to describe the invariant without naming the banned tokens. Worth remembering for any future structural/tripwire test: it can't distinguish code from prose.
+12. **`xcrun simctl` commands need `dangerouslyDisableSandbox` in this environment**, or they hang indefinitely (a `simctl list devices` call sat for 2+ minutes with zero output before being killed) — a bare sandboxed `Bash` call to `simctl` appears to stall on some IPC/XPC call to `CoreSimulatorService` that needs broader process permissions. Once re-run with the sandbox disabled, the same commands returned in under a second. Not previously documented in the Wave 1 entry (that pass apparently avoided hitting it, or ran outside this particular sandboxing config).
+13. **`.sheet(item:)` would need `VaultContact: Identifiable`, which — declared in `SwabUI` over a `SwabCore` type conforming to a stdlib protocol — is a retroactive conformance requiring `@retroactive` under Swift 6 conventions; `Package.swift` still pins `swift-tools-version: 5.10`, where that attribute's availability was unverified without risking a build break.** Sidestepped entirely by using `.sheet(isPresented:)` with a computed `Binding` instead — no retroactive conformance needed, same UX.
+14. **SwiftUI's `.onChange(of:)` needs `Equatable` on the watched value** — `MapGeometry.Point` was declared `Equatable` from the start for exactly this reason (`ContactNodeView` watches `MapGeometry.positionOn(ring:index:)`'s result to decide whether to snap or animate).
+
+**Deferred (honestly, not silently):**
+
+- **MAP-07's 60fps-under-150-contacts claim is unverified by profiling.** The geometry math is exact and the node rendering is plain SwiftUI `Button`s in a `ZStack`/`ForEach`, not `Canvas` — the ios-specialist rules call out `Canvas`/Core Animation as the fallback if `Instruments` profiling shows jank at scale. No 150-contact fixture was built or profiled in this pass; if a future pass finds jank, the fix is swapping `RadialMapView`'s node rendering to a single `Canvas`, not touching `MapGeometry` (already pure/fast).
+- **Clustering past ~150 contacts (OQ-MAP-1)** — explicitly out of scope per the spec's own open question; not attempted.
+- **No UI/interaction tests** (tap-to-open-sheet, pinch/pan gesture behavior, animate-vs-snap timing) — same gap as Wave 1's onboarding views; this package has no UI test target. All carte logic that *can* be unit-tested without SwiftUI (`MapGeometry`, `EtatColors`, `CarteLabels`, the MAP-05 offline invariant) is tested; the SwiftUI glue is verified by code review + one live Simulator screenshot only.
+- **FS-03 "grow-from-node" transition** — `PeekSheetView`'s « Ouvrir la fiche » stays a visibly disabled seam, per the task's explicit instruction not to build ahead of FS-03.
+
+**apps/ios structure (additions only):**
+```
+apps/ios/
+  Sources/SwabCore/Carte/{MapGeometry,EtatColors,CarteLabels,CarteTheme}.swift
+  Sources/SwabUI/Carte/{ColorHex,CarteViewModel,RadialMapView,PeekSheetView,RingListView,CarteView,MainTabsView}.swift
+  Tests/SwabCoreTests/{MapGeometryTests,EtatColorsTests,CarteLabelsTests,CarteOfflineInvariantTests}.swift
+```
+
 ## 2026-07-10 — [ONB-01..09] App shell: hand-authored .xcodeproj, @main entry point, first Simulator boot
 
 **What:** Added the previously-deferred app shell so `apps/ios` is installable and runnable on the iOS Simulator, without introducing any new tooling or third-party dependency.

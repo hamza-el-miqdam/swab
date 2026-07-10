@@ -125,13 +125,7 @@ struct RootView: View {
                 step = .complete
             }
         case .complete:
-            VStack(spacing: 16) {
-                Text(Fr.t(.brandName))
-                    .font(.headline)
-                Text(Fr.t(.doneCta))
-                    .font(.body)
-            }
-            .padding()
+            MainTabsView(vault: vault)
         }
     }
 }
