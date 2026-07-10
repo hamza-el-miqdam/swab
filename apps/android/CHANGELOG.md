@@ -2,6 +2,151 @@
 
 Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, newest first (G5).
 
+## 2026-07-10 — [MAP-01..09] FS-02 Relationship Map (Wave 2) — radial carte, list fallback, 3-tab nav
+
+### What
+
+Ported FS-02 (`apps/mobile/src/map/*`, `app/(main)/carte.tsx`, `app/(main)/_layout.tsx`,
+`src/ui/nav-bar.tsx`) natively, 1:1 behavior parity with the RN reference.
+
+- `carte/MapGeometry.kt` — pure Kotlin (no Android/Compose imports) port of
+  `geometry.ts`: `MAP_SIZE=320`, rings `[1,2,3,4]`, `ringRadius`, `positionOn`
+  (golden-angle `2.399963` placement), `clamp`, `panBound`, `nodeSize`.
+- `carte/EtatColors.kt` — the 3 shipped états (`disponible`/`occupé`/`ailleurs`)
+  mapped to the blueprint hex colors; returns hex strings + nulls (not Compose
+  `Color`) so it stays platform-free. **Flagged divergence carried forward
+  unchanged, per rn-native-handoff.md §5: the blueprint's 5-état taxonomy vs
+  the shipped 3 — not resolved here.**
+- `carte/Labels.kt` — `RING_LABEL`, `contactLabel` (« Léa — Très proche »),
+  `initials` (up to 2, uppercased).
+- `carte/CarteViewModel.kt` — loads/refreshes from `Vault` only; MAP-05
+  (offline by construction) is enforced structurally by
+  `CarteOfflineStructuralTest`, which scans `carte/` and `ui/carte/` sources
+  for any `com.swab.android.network` import or HTTP primitive.
+- `ui/carte/RadialMap.kt` — rings + spokes drawn in one `Canvas` (perf rule:
+  not one composable per ring); `moi` centered; one lightweight composable
+  per placed contact (own tap target + TalkBack label + independent
+  animation — Canvas can't host per-node semantics/gestures, so nodes stay
+  outside it, same split as the RN reference's View+Pressable architecture).
+  Pinch-zoom (1x–3x) + bounded pan via `detectTransformGestures`. A contact's
+  first mount snaps in place; only later ring/index changes animate
+  (`Animatable` + `tween(350ms)`, `hasMounted` tracked per contact id via
+  `remember(contact.id)`, RN's `mounted` ref ported 1:1).
+- `ui/carte/PeekSheet.kt` — Material 3 `ModalBottomSheet` (already a
+  transitive compose-bom dependency — no new dep, G4) showing
+  Intimité/État/Rôles; « Ouvrir la fiche » rendered visibly **disabled**
+  (FS-03 seam, not built).
+- `ui/carte/RingList.kt` — `LazyColumn` grouped by ring (MAP-08), unplaced
+  contacts get their own trailing untitled section, each row carries
+  `Labels.contactLabel` via `Modifier.semantics`.
+- `ui/carte/CarteScreen.kt` + `ui/nav/BottomNav.kt` — map/list toggle, calm
+  empty state, unplaced-contacts tray, legend toggle; `NavigationBarItem`
+  takes a `label` only, so no badge/counter can be rendered on the 3 tabs
+  by construction (MAP-02) — enforced by `BottomNavStructuralTest`.
+- `MainActivity.kt` — `Routes.CARTE/ENVIE/SOUS_GROUPES` wired into
+  `SwabNavHost`, replacing the Wave-1 placeholder; `CarteViewModel` hoisted
+  to `SwabNavHost`'s scope (same rule as `signupViewModel` — Carte/Envie/
+  Sous-groupes are sibling `composable {}` destinations, so a per-destination
+  `remember` would tear it down on every tab switch). `Fr.kt` already had
+  every `carte.*`/`nav.*`/`envie.*`/`sousgroupes.*` string from Wave 1's
+  bootstrap — no new copy needed.
+
+### A real bug found and fixed via the on-device walkthrough (not caught by JVM tests)
+
+`RadialMap` rendered correctly in concept but was **visually broken on a real
+high-density device**: on the `Pixel_6_Pro` emulator (density 3.5x,
+`wm density` → 560), the map collapsed to roughly 1/3.5 of its intended
+320dp size and contact nodes shrank to ~13dp, while `moi`'s hardcoded
+`44.dp` circle did not shrink — so Léa's node appeared to sit almost
+entirely inside `moi`. Root cause: `MapGeometry`'s numbers are
+dp-equivalent units (a 320-unit canvas is meant to render as a 320dp box),
+but the code converted them with `Float.toDp()`, which treats its input as
+**raw device pixels** and divides by density — a double conversion. Same
+class of bug in two places, two different fixes:
+- Outside the `Canvas` (`RadialMap`'s container size, `ContactNode`'s
+  offset/size): `MapGeometry` units are dp — wrap with `.dp` directly, not
+  `Float.toDp()`.
+- Inside the `Canvas` (`RingsAndSpokes`): a `DrawScope` draws in raw pixels,
+  so `MapGeometry` units are multiplied by the `DrawScope`'s own `density`
+  (px = dp × density) before being passed to `drawCircle`/`drawLine`.
+- Same fix applied to the pinch/pan bound: `pan.x/y` from
+  `detectTransformGestures` and `graphicsLayer`'s `translationX/Y` are both
+  raw pixels, so `MapGeometry.panBound(scale)` (dp-equivalent) is multiplied
+  by `density` before being used as the pixel clamp.
+
+No JVM unit test could have caught this — `MapGeometryTest` verifies the
+pure math is internally self-consistent (which it is), and Robolectric
+isn't in this project's stack; only a real device/emulator with a
+non-1.0 density exposes the mismatch. Verified fixed with a before/after
+screenshot pair on the same emulator (see walkthrough section below).
+
+### Test results
+
+`./gradlew test`: **80/80 passing** (47 Wave-1 + 33 new: `MapGeometryTest`
+10, `EtatColorsTest` 5, `LabelsTest` 6, `CarteViewModelTest` 5,
+`CarteOfflineStructuralTest` 2, `CarteEthosCopyTest` 3,
+`BottomNavStructuralTest` 2). No regressions.
+`./gradlew jacocoDomainCoverage`: **98.4%** line coverage overall; the new
+`com/swab/android/carte` package is **100%** (52/52 lines) — the `ui/carte`
+and `ui/nav` Compose files are excluded from the gate the same way all
+other UI packages are (needs an emulator/instrumented test to exercise
+meaningfully; the on-device walkthrough below is the closest substitute in
+this environment).
+
+### On-device walkthrough (real, not simulated)
+
+Built `./gradlew assembleDebug`, installed on the already-running
+`Pixel_6_Pro` emulator (`emulator-5554`) via `adb install -r`, and drove the
+**entire** flow non-interactively with `adb shell input` + `uiautomator
+dump` (same technique as the Wave-1 walkthrough): welcome → phone → OTP
+(dev-mode code shown in-app, against the live `apps/api` from
+`docker compose up`) → added 2 manual contacts (Léa, Nadia) → calibrate,
+placed Léa on ring 1 and Nadia on ring 3 → done → **landed on the new Carte
+screen**. Confirmed via `uiautomator dump` + screenshots (before the density
+fix and after):
+- Radial map renders with 4 ring circles, 4 spokes, `moi` centered, both
+  contacts positioned and correctly sized per ring (after the fix).
+- Tapping a contact node opens the peek sheet with correct Intimité/État/
+  Rôles and a visibly disabled « Ouvrir la fiche ».
+- List-mode switch toggles to `RingList`, showing ring-header-grouped rows
+  (Très proche → Léa, Familier → Nadia) — feature-equivalent to the map.
+- Bottom nav (Carte/Envie/Sous-groupes) navigates correctly, correct tab
+  highlighted, both placeholder screens render their calm copy.
+- `adb logcat` checked after every step: **zero exceptions**, no
+  `FATAL EXCEPTION`/`AndroidRuntime` crash lines anywhere in the run.
+
+### MAP-01..09 status
+
+MAP-01 (radial layout from vault) ✅ live. MAP-02 (exactly 3 nav
+destinations, no badges) ✅ live + structurally enforced. MAP-03 (état/ring
+visual encoding, flagged 3-vs-5 divergence) ✅. MAP-04 (tap → peek sheet,
+animated not teleported re-tag) ✅ animation implemented and unit-tested
+(`hasMounted` gate); the actual FS-03 fiche navigation is out of scope by
+design (disabled button, seam only). MAP-05 (offline by construction) ✅
+live + structurally enforced. MAP-06 (calm empty/sparse state) ✅ copy
+wired, not exercised live (both test contacts were placed — an empty-vault
+run was not walked on-device this session). MAP-07 (150-contact density,
+60fps pan/zoom) ✅ geometry proven at n=150 in `MapGeometryTest`; a live
+60fps/150-contact perf run was **not** done (no Perfetto profiling in this
+session — deferred, same as Wave 1's non-functional perf claims). MAP-08
+(TalkBack list fallback) ✅ live (list mode screenshot-verified; a real
+TalkBack screen-reader pass was not run, only the semantics/content-desc
+wiring was verified structurally and via `uiautomator dump`'s
+`content-desc` output). MAP-09 (no search/sort/ranking) ✅ structurally
+enforced (`CarteEthosCopyTest`) and true by construction (no `TextInput`/
+search field exists in `CarteScreen`).
+
+### Deferred / out of scope (do not attempt without a product decision)
+
+- Clustering past ~150 contacts (OQ-MAP-1) — explicitly deferred per spec.
+- FS-03 fiche navigation and the "grow-from-node" spatial-continuity
+  transition — the peek sheet's button is wired disabled, nothing more.
+- A dedicated Compose UI/instrumented test suite for `ui/carte`/`ui/nav` —
+  the domain layer (geometry/colors/labels/view model) has 100% JVM
+  coverage; the Compose layer is verified only via the live walkthrough
+  above and structural source-scanning tests, consistent with how Wave 1
+  treated `ui/onboarding`.
+
 ## 2026-07-10 — [VLT-01, IDT-01, ONB-02] On-device walkthrough: emulator base URL, a real Keystore bug, and its fix
 
 Closed the two gaps `rn-audit-map.md` flagged as 🟡 for Android by actually
