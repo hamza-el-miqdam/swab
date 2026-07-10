@@ -1,5 +1,47 @@
 # apps/ios — Changelog
 
+## 2026-07-10 — [ONB-01..09] App shell: hand-authored .xcodeproj, @main entry point, first Simulator boot
+
+**What:** Added the previously-deferred app shell so `apps/ios` is installable and runnable on the iOS Simulator, without introducing any new tooling or third-party dependency.
+
+- `apps/ios/App/SwabApp.swift` — the composition root. `@main struct SwabApp: App` → `RootView`, a `NavigationStack` that switches over `OnboardingStep` (`welcome → phone → contacts → calibrate → done → complete`) and instantiates each `SwabUI` view + its `SwabCore`-backed view model. Wired with real production types, not stubs: `KeychainSecureStore`, `FileKeyValueStore` (JSON at `Application Support/swab-store.v1.json`), `Session`, `VaultKeyStore`, `Vault`, `URLSessionHTTPTransport` + `ApiClient` pointed at `http://127.0.0.1:3001` (the local `docker compose` API — unreachable from a bare Simulator boot, so phone/otp screens exercise their existing `showError` path until the API is actually running; this is expected, not a bug). Contacts import uses `FakeContactsImporter(granted: false)` since the real `CNContactStore` importer is still deferred (unchanged from the Wave 1 entry).
+- `apps/ios/SwabApp.xcodeproj/project.pbxproj` — hand-authored, plain-text pbxproj (`objectVersion = 56`, Xcode 26-compatible). One native target (`SwabApp`, `com.apple.product-type.application`) consuming the existing `Package.swift` as an `XCLocalSwiftPackageReference`, depending on the `SwabCore` and `SwabUI` library products via `XCSwiftPackageProductDependency`. This is genuinely Apple-native tooling (no `xcodegen`/CocoaPods) — the task's own framing confirms hand-authoring a `.xcodeproj` doesn't require G4 justification, same logic as any other in-tree config file.
+- `apps/ios/SwabApp.xcodeproj/xcshareddata/xcschemes/SwabApp.xcscheme` — a shared scheme (checked in, not user-local) so `xcodebuild -scheme SwabApp` works non-interactively without ever having opened the project in the Xcode GUI first.
+- Bundle ID `com.swab.ios`, deployment target iOS 17.0 (matches `Package.swift`'s `.iOS(.v17)`), `CODE_SIGNING_ALLOWED = NO` / `CODE_SIGNING_REQUIRED = NO` baked into every build configuration — no signing identity needed for Simulator builds. `Info.plist` is fully generated (`GENERATE_INFOPLIST_FILE = YES` + `INFOPLIST_KEY_*` build settings) rather than hand-written, including `INFOPLIST_KEY_NSContactsUsageDescription` ready for when the real `CNContactStore` importer lands.
+
+**Why:** the user explicitly asked to see the app running on a Simulator — Wave 1 deliberately stopped short of this (see the entry below) to avoid `xcodegen` as an unjustified new dependency; a hand-authored `.xcodeproj` avoids that tradeoff entirely.
+
+**Verified, honestly:**
+
+- `xcodebuild -project SwabApp.xcodeproj -scheme SwabApp -destination 'platform=iOS Simulator,name=iPhone 17' -configuration Debug CODE_SIGNING_ALLOWED=NO build` → **BUILD SUCCEEDED** (after fixing one build error, see gotcha #8 below).
+- `xcrun simctl boot 69A3D47E-99C3-45B7-8D84-4858EC4E709C` ("iPhone 17") + `open -a Simulator`, then `xcrun simctl install booted <DerivedData>/.../SwabApp.app` + `xcrun simctl launch booted com.swab.ios` → launched with a real PID, no crash reported by `simctl launch`.
+- `xcrun simctl io booted screenshot` taken twice: once immediately after install (showed the **Phone** step, `Ton numéro` / "Il est haché sur ton téléphone avant tout envoi") because the Simulator's on-disk app container from an earlier attempt earlier the same day had already persisted `onboarding.step.v1 = phone` — this is `OnboardingStateStore`'s ONB-08 resume-at-step working correctly, not a bug. To get an unambiguous first-run screenshot, ran `xcrun simctl uninstall booted com.swab.ios` then reinstalled fresh: second screenshot shows the **Welcome** screen exactly as specified (ONB-01) — `swab · صواب`, "Dis ce dont tu as envie. À qui tu veux.", "Tout reste chiffré sur ton téléphone.", "Commencer" CTA. Both screenshots were >100KB (not a black/system-error frame).
+- `xcrun swift test` re-run after the app shell existed: **55/55 tests pass, 0 failures** — the `App/` target is additive; it does not touch `SwabCore`/`SwabUI` sources.
+
+**Gotchas discovered:**
+
+7. **`XCLocalSwiftPackageReference.relativePath` is relative to the directory *containing* the `.xcodeproj` bundle, not to the bundle itself.** With `SwabApp.xcodeproj` living at `apps/ios/SwabApp.xcodeproj` (i.e. inside `apps/ios`, next to `Package.swift`), the correct `relativePath` to reference that same directory is `""` (empty string) — `".."` resolves one level too far up (to `apps/`, which has no `Package.swift`, and fails package resolution with a "manifest cannot be accessed" error naming the *wrong* parent directory). Cost one failed `xcodebuild -list` before pattern-matching the error text back to the pbxproj.
+8. **`OnboardingStep` has no `.otp` case** — the persisted step intentionally stays `.phone` throughout the OTP exchange (see the Wave 1 entry's file header comment on `OnboardingState.swift`: "the step stays `.phone` until OTP verification succeeds"). The app shell's `RootView` therefore cannot switch on `step == .otp`; phone→otp sub-navigation is local `@State private var showingOtp: Bool` layered on top of the `.phone` case, not a persisted onboarding step. Caught immediately by the Swift compiler (`type 'OnboardingStep' has no member 'otp'`) on the first build attempt — no runtime debugging needed.
+9. **A shared `.xcscheme` must be checked in for non-interactive `xcodebuild -scheme` to work.** Xcode auto-generates a user-local scheme the first time a project is opened in the GUI, but a project that has never been opened in Xcode (this one, built purely from the CLI) has no scheme at all unless one is committed under `xcshareddata/xcschemes/`. Wrote it by hand alongside the pbxproj; `BlueprintIdentifier` values must match the target's object ID exactly (`1A0000000000000000000002`) or `xcodebuild -list` silently omits the scheme.
+10. **`GENERATE_INFOPLIST_FILE = YES` + `INFOPLIST_KEY_*` build settings fully replace a hand-written `Info.plist`** on modern Xcode (verified: no `Info.plist` file reference anywhere in the pbxproj, yet the built `.app/Info.plist` exists and is well-formed) — one fewer file to hand-author correctly.
+
+**Still rough / not attempted here:**
+
+- The API-dependent screens (phone OTP request, vault sync in `DoneViewModel.finish()`) were not exercised end-to-end against a running `docker compose up` API in this pass — only that they fail gracefully (`showError`) when the API is unreachable, which is the offline-first contract working as designed, not a gap. Exercising the full happy path against a live API is a follow-up manual check, not a blocker for "does it run."
+- Real `CNContactStore` import, account deletion, multi-device, and contact-link invites remain deferred exactly as documented in the Wave 1 entry below — nothing in this pass changed that scope.
+- No UI/snapshot tests were added for `App/SwabApp.swift` itself (it has no unit-testable logic of its own — it is pure wiring); `SwabUI` view/snapshot test coverage remains a deferral from Wave 1.
+
+**apps/ios structure (additions only — see Wave 1 entry below for the rest):**
+```
+apps/ios/
+  App/SwabApp.swift
+  SwabApp.xcodeproj/
+    project.pbxproj
+    xcshareddata/xcschemes/SwabApp.xcscheme
+```
+
+Build/run from the CLI: `xcodebuild -project apps/ios/SwabApp.xcodeproj -scheme SwabApp -destination 'platform=iOS Simulator,name=iPhone 17' build`, then `xcrun simctl install booted <built .app>` + `xcrun simctl launch booted com.swab.ios`. Unit tests are unaffected: still `cd apps/ios && xcrun swift test`.
+
 ## 2026-07-10 — [VLT-01, VLT-02, VLT-04, IDT-01, IDT-02, IDT-06, ONB-01..09] Bootstrap apps/ios: Wave 1 (FS-07 client scope + FS-01 Onboarding)
 
 **What:** Created `apps/ios` from scratch as a Swift Package (`SwabCore` + `SwabUI` + `SwabCoreTests`) — zero third-party dependencies, CryptoKit/Foundation/Security/SwiftUI/Observation only. TDD throughout: vault-test-vectors.json tests were written and run red before `VaultCrypto` existed.
