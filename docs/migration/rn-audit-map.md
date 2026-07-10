@@ -43,15 +43,29 @@ only holder of classification data; sync sees ciphertext only).
 
 Requirement coverage: IDT-01/06 (client side: hash-before-send), VLT-01/02/04 (client), ONB-01..09.
 
+Status as of 2026-07-10 (iOS: `apps/ios/CHANGELOG.md`, 55/55 tests, 91.9% coverage on `SwabCore`;
+Android: `apps/android/CHANGELOG.md`, 47/47 tests, 98.1% domain coverage). ✅ = verified by an
+automated test on this host. 🟡 = implemented, compiles against real platform APIs, but
+unverified on-device (no simulator boot / no emulator available in this environment).
+
 | Criterion | iOS | Android |
 |---|---|---|
-| Crypto vectors (`vault-test-vectors.json`) reproduced exactly | ☐ | ☐ |
-| Phone-hash vectors reproduced exactly | ☐ | ☐ |
-| Vault encrypted at rest; key in OS keystore; fresh-copy accessors (VLT-01) | ☐ | ☐ |
-| Sync: push, 409 → re-pull + retry once (VLT-02) | ☐ | ☐ |
-| API client sends only `phoneHash`/`code`/`displayName`/`{blob,version}` (ONB-05, asserted via test) | ☐ | ☐ |
-| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | ☐ | ☐ |
-| Resume-at-step after process kill (ONB-08); step stays `phone` until OTP verified | ☐ | ☐ |
-| Contacts denied → manual entry, identical capabilities (ONB-03) | ☐ | ☐ |
-| État/ressenti layer optional + collapsed (ONB-06); no gamification (ONB-09, asserted via copy test) | ☐ | ☐ |
-| Airplane-mode: calibration persists locally, syncs later, only `POST /vault` carries derived data | ☐ | ☐ |
+| Crypto vectors (`vault-test-vectors.json`) reproduced exactly | ✅ | ✅ |
+| Phone-hash vectors reproduced exactly | ✅ | ✅ |
+| Vault encrypted at rest; key in OS keystore; fresh-copy accessors (VLT-01) | ✅ (Keychain exercised directly by unsigned CLI test process) | 🟡 (fresh-copy accessors ✅; `AndroidKeystoreVaultKeyStore` unverified on-device) |
+| Sync: push, 409 → re-pull + retry once (VLT-02) | ✅ | ✅ |
+| API client sends only `phoneHash`/`code`/`displayName`/`{blob,version}` (ONB-05, asserted via test) | ✅ | ✅ |
+| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | 🟡 (logic + copy ✅; SwiftUI screens have no view-level tests) | 🟡 (logic + copy ✅; Compose screens unverified on-device) |
+| Resume-at-step after process kill (ONB-08); step stays `phone` until OTP verified | ✅ | ✅ |
+| Contacts denied → manual entry, identical capabilities (ONB-03) | 🟡 (manual path ✅; real `CNContactStore` import deferred, fake stands in) | 🟡 (manual path ✅; real `ContentResolver` import deferred, stub) |
+| État/ressenti layer optional + collapsed (ONB-06); no gamification (ONB-09, asserted via copy test) | ✅ | ✅ |
+| Airplane-mode: calibration persists locally, syncs later, only `POST /vault` carries derived data | ✅ | ✅ (unit-level; no manual on-device airplane-mode run) |
+
+**Remaining before Wave 1 is fully 🟢 on both platforms:** an `.xcodeproj`/`@main` app shell for
+iOS (no `xcodegen` — unjustified new dep, per G4) and on-device/emulator verification for both
+platforms (Keystore, DataStore, Compose screens, SwiftUI screens) — this dev machine has the
+Android SDK but no running emulator, and no iOS simulator was booted for this pass. Real
+contacts-import (Contacts framework / `ContentResolver`) is stubbed on both platforms; the
+manual-entry path already satisfies ONB-03's denial-parity acceptance criterion. FS-02's real
+radial `Canvas`/`MapGeometry` module (Wave 2) is out of scope — both platforms use a minimal
+list/ring-button calibration interaction for now, matching the RN reference's own stated v0.

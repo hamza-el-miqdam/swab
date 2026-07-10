@@ -4,14 +4,18 @@
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 
-_Last updated: 2026-07-09_
+_Last updated: 2026-07-10_
 
 > **Native migration in progress:** mobile is moving from Expo/React Native (`apps/mobile`) to
 > native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose). `apps/mobile` is the
 > **frozen reference implementation** (critical fixes only) until each module reaches native
 > parity. Knowledge transfer: `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`.
-> Module statuses below describe the RN reference; native parity will be tracked per platform as
-> the migration lands (first target: FS-07 + FS-01).
+> Module statuses below describe the RN reference. **Wave 1 native parity (FS-07 client scope +
+> FS-01) landed 2026-07-10**: `apps/ios` (55/55 tests, 91.9% coverage) and `apps/android` (47/47
+> tests, 98.1% domain coverage) both reproduce the crypto/phone-hash vectors exactly and
+> implement vault/sync/API-client/onboarding logic. Full per-criterion status (including what's
+> still 🟡 pending on-device verification) is tracked in `docs/migration/rn-audit-map.md`'s Wave 1
+> checklist, not duplicated here.
 
 ## Modules (functional specs)
 
@@ -31,7 +35,7 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 
 | Item | Status | Notes |
 |---|---|---|
-| Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/mobile` (frozen RN reference), `apps/api`, `packages/db`. `apps/ios`, `apps/android` (native migration Phase 2), `apps/web`, `packages/ui`, `packages/api-client`, `tools/orchestrator` not created yet. |
+| Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/mobile` (frozen RN reference), `apps/api`, `packages/db`. `apps/ios` (Swift Package, not yet an Xcode app) and `apps/android` (Gradle/Compose) exist with Wave 1 built but are deliberately outside the turbo/pnpm pipeline — run `xcrun swift test` / `./gradlew test` directly. `apps/web`, `packages/ui`, `packages/api-client`, `tools/orchestrator` not created yet. |
 | Database schema v0.1 | 🟢 | `users`, `vaults`, `envies` + seed. Privacy invariant holds: no classification columns. |
 | Local dev stack | 🟢 | `docker compose up --build` → Postgres :5432, API :3001, Adminer :8080. |
 | Mobile dev clients | 🟢 | iOS + Android via `expo run:*` (native crypto → Expo Go unsupported). Android SDK/emulator setup scripted in `scripts/`. |
@@ -46,8 +50,8 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 
 Every change lands with an entry in its area changelog (rule G4.7 in `agents/_global-directives.md`):
 
-- `apps/ios/CHANGELOG.md` — `area:ios` (created with the Phase 2 scaffold)
-- `apps/android/CHANGELOG.md` — `area:android` (created with the Phase 2 scaffold)
+- `apps/ios/CHANGELOG.md` — `area:ios`
+- `apps/android/CHANGELOG.md` — `area:android`
 - [apps/mobile/CHANGELOG.md](../apps/mobile/CHANGELOG.md) — frozen RN reference (critical fixes only)
 - [apps/api/CHANGELOG.md](../apps/api/CHANGELOG.md) — `area:backend`
 - [packages/db/CHANGELOG.md](../packages/db/CHANGELOG.md) — `area:db`
