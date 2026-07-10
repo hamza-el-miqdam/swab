@@ -9,6 +9,12 @@ import SwiftUI
 public struct CarteView: View {
     @State private var viewModel: CarteViewModel
     @Environment(\.scenePhase) private var scenePhase
+    /// FS-03 seam: pushed via `.navigationDestination(item:)` below, not a
+    /// `.sheet` — `CarteView` stays mounted (and `RadialMapView`'s
+    /// pan/zoom `@State` survives) while the fiche is on top, so returning
+    /// preserves the map's prior scroll/pan position (FCH-07, MAP-04
+    /// reverse transition).
+    @State private var ficheContact: VaultContact?
 
     public init(viewModel: CarteViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -60,8 +66,14 @@ public struct CarteView: View {
             }
         )) {
             if let selected = viewModel.selected {
-                PeekSheetView(contact: selected)
+                PeekSheetView(contact: selected, onOpenFiche: { contact in
+                    viewModel.closeSheet()
+                    ficheContact = contact
+                })
             }
+        }
+        .navigationDestination(item: $ficheContact) { contact in
+            FicheView(viewModel: viewModel.makeFicheViewModel(for: contact))
         }
     }
 

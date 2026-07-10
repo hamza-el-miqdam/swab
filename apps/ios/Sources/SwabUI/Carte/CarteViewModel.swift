@@ -48,4 +48,11 @@ public final class CarteViewModel {
     public func toggleLegend() {
         legendOpen.toggle()
     }
+
+    /// FS-03 seam: constructs the fiche's view model without exposing this
+    /// view model's private `vault` reference — `CarteView` calls this when
+    /// « Ouvrir la fiche » is tapped instead of holding its own `Vault`.
+    public func makeFicheViewModel(for contact: VaultContact) -> FicheViewModel {
+        FicheViewModel(vault: vault, contact: contact)
+    }
 }

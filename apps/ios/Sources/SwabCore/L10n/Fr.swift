@@ -84,6 +84,27 @@ public enum I18nKey: String, CaseIterable, Sendable {
     case enviePlaceholder = "envie.placeholder"
     case sousgroupesTitle = "sousgroupes.title"
     case sousgroupesPlaceholder = "sousgroupes.placeholder"
+
+    // FS-03 — fiche contact. Copy below is original (not blueprint-quoted,
+    // same status as `carte.empty`) except where the spec gives literal
+    // French wording (ficheStaleConfirm/ficheStaleLater/ficheEtatPausedConsequence/
+    // ficheNoMetrics — quoted verbatim from FS-03's requirement rows).
+    case ficheSubtitle = "fiche.subtitle"
+    case ficheAxisIntimite = "fiche.axis.intimite"
+    case ficheAxisRoles = "fiche.axis.roles"
+    case ficheAxisEtat = "fiche.axis.etat"
+    case ficheAxisRessenti = "fiche.axis.ressenti"
+    case ficheHistoryTitle = "fiche.history.title"
+    case ficheHistoryEmpty = "fiche.history.empty"
+    case ficheHistoryReconfirmed = "fiche.history.reconfirmed"
+    case ficheNoMetrics = "fiche.noMetrics"
+    case ficheAsymmetryHint = "fiche.asymmetryHint"
+    case ficheStaleTitle = "fiche.stale.title"
+    case ficheStaleConfirm = "fiche.stale.confirm"
+    case ficheStaleLater = "fiche.stale.later"
+    case ficheEtatPausedConsequence = "fiche.etat.pausedConsequence"
+    case fichePendingHint = "fiche.pending.hint"
+    case ficheEnvieInactive = "fiche.envie.inactive"
 }
 
 public enum Fr {
@@ -165,6 +186,23 @@ public enum Fr {
         .enviePlaceholder: "Les envies arrivent bientôt.",
         .sousgroupesTitle: "Sous-groupes",
         .sousgroupesPlaceholder: "Les sous-groupes arrivent bientôt.",
+
+        .ficheSubtitle: "Tu déclares, swab ne devine pas.",
+        .ficheAxisIntimite: "Intimité",
+        .ficheAxisRoles: "Rôles · contexte",
+        .ficheAxisEtat: "État",
+        .ficheAxisRessenti: "Ressenti",
+        .ficheHistoryTitle: "Ce qui a bougé",
+        .ficheHistoryEmpty: "Rien à montrer pour l’instant.",
+        .ficheHistoryReconfirmed: "Confirmé à nouveau",
+        .ficheNoMetrics: "Aucun compteur, aucune métrique.",
+        .ficheAsymmetryHint: "Ce classement est privé et à sens unique : rien ici ne montre comment cette personne te classe.",
+        .ficheStaleTitle: "Est-ce que ça a bougé ?",
+        .ficheStaleConfirm: "C’est toujours ça",
+        .ficheStaleLater: "À revoir plus tard",
+        .ficheEtatPausedConsequence: "en pause → exclu par défaut à l’envoi",
+        .fichePendingHint: "Cette personne n’a pas encore rejoint swab.",
+        .ficheEnvieInactive: "Envie indisponible tant qu’elle n’a pas rejoint swab.",
     ]
 
     public static func t(_ key: I18nKey) -> String {

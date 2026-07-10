@@ -2,9 +2,9 @@
 /// a glance. Native `.sheet` presentation (SwiftUI's own slide-up, no
 /// custom gesture code needed here — that budget went to `RadialMapView`).
 ///
-/// « Ouvrir la fiche » is the FS-03 seam: rendered visibly DISABLED on
-/// purpose (honest, nothing hidden). FS-03 flips it to a real navigation
-/// action and adds the grow-from-node transition.
+/// « Ouvrir la fiche » is the FS-03 seam: was rendered visibly DISABLED
+/// until FS-03; now wired to `onOpenFiche`, which `CarteView` uses to
+/// close this sheet and push the real fiche screen.
 import SwabCore
 import SwiftUI
 
@@ -12,6 +12,7 @@ private let unset = "—" // quiet dash, not copy: an axis simply not filled in 
 
 struct PeekSheetView: View {
     let contact: VaultContact
+    let onOpenFiche: (VaultContact) -> Void
 
     var body: some View {
         let palette = EtatColors.color(for: contact.etat)
@@ -35,14 +36,13 @@ struct PeekSheetView: View {
             )
 
             Button {
-                // FS-03 seam: intentionally disabled — see file header.
+                onOpenFiche(contact)
             } label: {
                 Text(Fr.t(.carteOpenFiche))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
             }
             .buttonStyle(.bordered)
-            .disabled(true)
             .accessibilityLabel(Fr.t(.carteOpenFiche))
 
             Spacer(minLength: 0)

@@ -1,5 +1,75 @@
 # apps/ios — Changelog
 
+## 2026-07-10 — [FCH-01..08] Wave 3: FS-03 Contact Card (Fiche contact), natively (greenfield)
+
+**What:** FS-03 was never built in the RN reference (`apps/mobile`) — no port, built from `docs/specs/FS-03-contact-card.md` alone, wired into the existing FS-02 seam (`PeekSheetView`'s « Ouvrir la fiche »).
+
+`SwabCore/Fiche/` (pure, no SwiftUI import — unit-testable):
+
+- `FicheHistoryEvent.swift` — `Codable`/`Hashable` local-only history entry: `.axisChanged(axis:value:)`, `.reconfirmed`, `.relationshipEvent(String)` (the last case exists for a future FS-05 match event to populate; nothing writes it yet).
+- `FicheAxis.swift` — the four axis identifiers (`intimite`/`roles`/`etat`/`ressenti`), shared between history events and UI copy lookups.
+- `FicheVocabulary.swift` — OQ-FCH-1 placeholder taxonomy. Rôles·contexte (Famille/Amitié/Travail/Voisinage/Autre) is an ⚠️ ASSUMPTION invented for this walking skeleton, not blueprint-sourced. État/Ressenti deliberately reuse the exact 3-value sets already shipped in Wave 1 (`CalibrateView`'s `etats`/`ressentis`, `EtatColors.byLabel`) rather than inventing a new list, per the task brief.
+- `FicheStaleness.swift` — `shouldShowNudge(lastAxisChangeAt:snoozedUntil:now:stalenessInterval:)`, pure/testable. Default staleness interval is six months (⚠️ ASSUMPTION, spec flags this explicitly as unresolved); snooze window is 30 days (spec's own acceptance criterion).
+- `FicheFilterConsequence.swift` — FCH-06 informational-only text. **Divergence flag** (documented, same pattern as `EtatColors.swift`'s own flag): the spec calls `en pause` an ÉTAT value, but the vocabulary actually shipped in Wave 1 put "en pause" under RESSENTI (`Fr.ressentiPaused`) — `EtatColors`/`CalibrateView`'s état set has no pause value. Per the brief's instruction to reuse the existing 3-value état set rather than invent a new one, this checks BOTH `etat` and `ressenti` for "en pause" so the consequence text stays legible regardless of which axis holds it; a product decision should resolve which axis it belongs to, not this code.
+- `FicheEligibility.swift` — FCH-08: `isEnvieActive(targetId:)` — pending contacts (`targetId == nil`) get inactive envie eligibility, nothing else.
+
+`SwabCore/Vault/Vault.swift` (extended, not replaced):
+
+- `VaultContact` gains `targetId: String?` (FCH-08 — mirrors FS-07's `ContactLink.targetId`; no separate `ContactLink` type exists in this client yet), `history: [FicheHistoryEvent]` (FCH-04), `lastAxisChangeAt`/`stalenessSnoozedUntil: Date?` (FCH-05). Now conforms to `Hashable` (needed for SwiftUI's `.navigationDestination(item:)`, see gotcha below) with a **custom** `Codable` (`init(from:)`/`encode(to:)`, not synthesized) so a Wave 1/2 blob that predates `history` (a non-optional array — synthesized decoding would throw on a missing key) decodes to `[]` instead of failing.
+- New `Vault` actor methods: `getContact(id:)` (fresh-copy single-contact fetch), `setFicheRing/Etat/Ressenti/Roles(id:...)` — distinct from the existing `setRing`/`setEtat`/`setRessenti` (still used unchanged by Wave 1's `CalibrateView`) because every fiche edit ALSO appends a history event and resets the FCH-05 staleness timer, `reconfirmFicheStaleness(id:)` (« C'est toujours ça »: resets timer, logs a quiet `.reconfirmed` entry, doesn't touch axis values), `snoozeFicheStaleness(id:)` (« À revoir plus tard »: 30-day window, deliberately does NOT append a history event — nothing to log, matching the spec's "nothing is logged server-side" acceptance criterion literally even though this is local-only either way).
+
+`SwabUI/Fiche/` (SwiftUI, MVVM, mirrors `CarteViewModel`'s shape):
+
+- `FicheViewModel.swift` — `@Observable`, wraps one `VaultContact` + the owning `Vault`; every setter is optimistic (mutate vault, then `refresh()` from the fresh copy — no pending/queued state needed since the vault itself is already the local source of truth and `VaultSync` reconciles separately). Exposes `recentHistory` (12-month filter + newest-first sort), `shouldShowStalenessNudge`, `filterConsequenceText`, `isEnvieActive`.
+- `FicheView.swift` — four tap-editable axis sections (ring chips, a `FlowRolesView` multi-select grid for rôles, état/ressenti chips), the FCH-05 staleness banner (never a modal — a plain inline `VStack`, exactly two actions), FCH-06 filter-consequence text, FCH-08 pending notice, an explicit FCH-02 asymmetry hint, an FCH-03 "Aucun compteur, aucune métrique" footer (no numeric reciprocity signal is shown at all — the safest reading of "if shown" was not to show one), and the FCH-04 history feed.
+
+Wiring into FS-02:
+
+- `PeekSheetView.swift` — « Ouvrir la fiche » is no longer `.disabled(true)`; it now takes an `onOpenFiche: (VaultContact) -> Void` closure. Per the task's explicit instruction, nothing else in this file's existing peek-sheet content was touched.
+- `CarteViewModel.swift` — added `makeFicheViewModel(for:)` so `CarteView` can construct a `FicheViewModel` without `CarteView` holding its own `Vault` reference (keeps `Vault` a private implementation detail of `CarteViewModel`, and doesn't add a networking-adjacent symbol to the file `CarteOfflineInvariantTests` scans).
+- `CarteView.swift` — closes the peek sheet and pushes `FicheView` via `.navigationDestination(item:)` (not another `.sheet`) onto the same `NavigationStack` `RootView` already provides. This satisfies FCH-07 "by construction": `CarteView` stays mounted underneath the pushed fiche (a `.sheet` dismiss doesn't destroy the presenting view; neither does a stack push), so `RadialMapView`'s pinch/pan `@State` survives a round trip to the fiche and back — no bespoke position-save/restore code was needed.
+
+**Why:** Wave 3 of the RN → native migration — FS-03 is the first FS in this migration with no RN reference to port from (`apps/mobile` never built it), so this is genuinely new native design work, built directly from `docs/specs/FS-03-contact-card.md`.
+
+**Test results:** `cd apps/ios && xcrun swift test` — **110/110 tests pass, 0 failures** (77 from Waves 1–2 + 33 new: `FicheStalenessTests` (9), `FicheVaultTests` (13), `FicheFilterConsequenceTests` (4), `FicheEligibilityTests` (2), `FicheVocabularyTests` (3), `FichePrivacyInvariantTests` (2)). Coverage (`swift test --enable-code-coverage` + `llvm-cov report` over `Sources/SwabCore/**`): **93.94% line coverage overall** (up from 92.73%); every new `Fiche/` module is at **100%** line coverage; `Vault.swift` (now carrying the FS-03 fiche methods alongside the original ones) is at **97.91%**. `xcodebuild -project SwabApp.xcodeproj -scheme SwabApp -destination 'platform=iOS Simulator,name=iPhone 17' -configuration Debug CODE_SIGNING_ALLOWED=NO build` → **BUILD SUCCEEDED**, confirming the app target (not just the SPM test target) picks up the `PeekSheetView` signature change and the new `Fiche` sources cleanly.
+
+**FCH-01..08 status:**
+
+| Requirement | Status | Notes |
+|---|---|---|
+| FCH-01 (four tap-editable axes, immediate vault write + local history) | ✅ | `FicheVaultTests` (`setFicheRing/Etat/Ressenti/Roles`); `FicheView`'s axis chips call these directly, no debounce/queue |
+| FCH-02 (asymmetric/private, no symmetry implied) | ✅ | Nothing on the fiche reads or displays any "how they classified you" data — no such data exists anywhere in this client's vault shape, so there's nothing to accidentally surface; explicit `fiche.asymmetryHint` copy states this outright |
+| FCH-03 (reciprocity signal qualitative only, no counters/metrics) | ✅ | No numeric reciprocity signal is rendered at all (chose not to show one over risking a numeric-feeling qualitative one); `fiche.noMetrics` = "Aucun compteur, aucune métrique." renders unconditionally; `CopyEthosTests` (existing, generic over all `Fr.swift` keys) covers the new copy's no-digit/no-gamification-word constraints for free |
+| FCH-04 (history feed, 12mo, newest first, vault-only) | ✅ | `FicheVaultTests.test_FCH04_historyFeed_newestFirst`; `FicheViewModel.recentHistory`'s 12-month `Calendar` cutoff is not itself unit-tested in isolation (would need date-injectable `now`, which `recentHistory` doesn't take — see deferred) but the underlying `Vault` history ordering it relies on is |
+| FCH-05 (staleness nudge, default 6mo ⚠️ ASSUMPTION, exactly two actions, 30-day snooze) | ✅ | `FicheStalenessTests` (9 boundary/timing cases) + `FicheVaultTests` (reconfirm/snooze vault-level behavior); `FicheView.stalenessNudge` renders as a plain inline banner, never a `.sheet`/`.alert` |
+| FCH-06 (`en pause` état → filter consequence text) | 🟡 | Consequence text implemented and tested (`FicheFilterConsequenceTests`), but see the DIVERGENCE FLAG in `FicheFilterConsequence.swift`: the shipped vocabulary has "en pause" under ressenti, not état, so this checks both axes rather than cleanly satisfying the spec's literal "État values include `en pause`" — flagged, not silently resolved |
+| FCH-07 (back navigation preserves map position) | 🟡 | Achieved by construction (push, not sheet-replace, onto the existing `NavigationStack` — `CarteView`/`RadialMapView` never get torn down) and confirmed by code review + the `xcodebuild` app-target build succeeding with the real navigation wiring; **not** verified by an on-device tap-through (no UI test target, no scripted-Simulator-tap permission in this sandbox — same limitation Wave 2's MAP-04 entry already documents) |
+| FCH-08 (pending contact, `targetId == nil`, fully editable, inactive envie) | ✅ | `FicheVaultTests.test_FCH08_pendingContact_axesAreFullyEditable`, `FicheEligibilityTests`; `FicheView.pendingNotice` renders `fiche.pendingHint`/`fiche.envie.inactive` when `!isEnvieActive` |
+
+**Privacy invariant (G1, FS-03's own acceptance criterion):** `FichePrivacyInvariantTests.test_FCH01_axisEditsOverNetwork_onlyOpaqueBlobAndVersionEverSent` drives a *real* `ApiClient.pushVault` call (through `VaultSync.sync()`, the exact path production code takes) against a fake `HTTPTransport` that captures the literal `URLRequest.httpBody` bytes after every FCH-01 axis has been edited with distinctive plaintext strings (all étal/ressenti/rôles values + a distinctive display name) — asserts the captured JSON body's keys are exactly `{blob, version}` and that none of the plaintext classification strings appear anywhere in the serialized body. A second test (`test_FCH01_encryptedVaultBlob_neverContainsClassificationPlaintext`) restates the same invariant at the ciphertext-at-rest boundary. This is stronger than the existing `ApiClientPrivacyInvariantTests` (which only structurally checks the `Encodable` type's field list) because it exercises the actual serialized wire payload after real fiche writes.
+
+**Gotchas discovered:**
+
+15. **`VaultContact` needed `Hashable`, not just `Equatable`**, for SwiftUI's `.navigationDestination(item: Binding<D?>)` (`D: Hashable`). Declaring it in `SwabCore` (its home module) is a plain, non-retroactive conformance — no `@retroactive` question like Wave 2's `Identifiable` sheet-vs-navigationDestination tradeoff (see Wave 2 gotcha #13); this is why `.navigationDestination(item:)` was usable here where `.sheet(item:)` wasn't there.
+16. **Adding a non-optional stored property (`history: [FicheHistoryEvent]`) to an existing `Codable` struct silently breaks decoding of already-persisted data unless you write a custom `init(from:)`.** Swift's synthesized `Decodable` only auto-defaults *Optional*-typed properties to `nil` on a missing key (via an implicit `decodeIfPresent`); a non-optional `Array` property with no key present throws. Caught by writing `test_backwardCompat_legacyContactWithoutFicheFields_decodesWithDefaults` (feeds a hand-written legacy-shaped JSON string with no FS-03 keys at all) before touching the real `Vault` methods — this test would have failed loudly with the naive synthesized-`Codable` approach.
+17. **Providing a custom `init(from:)` disables synthesis of `encode(to:)` too** (Swift requires both-or-neither once you touch one) — had to write the `encode(to:)` mirror by hand alongside it.
+
+**Deferred (honestly, not silently):**
+
+- **FCH-07's on-device "return to map, position preserved" behavior is not exercised by an automated UI test.** Same category of gap as Wave 2's MAP-04 animated-move claim: SwiftUI navigation/position-state assertions need a UI test target this package doesn't have. Verified by code review (the mechanism — staying on the same `NavigationStack`, no view teardown — is structural, not incidental) and a successful real app-target build, not a live tap-through.
+- **No UI/interaction tests for `FicheView`/`FicheViewModel`** — consistent with every other `SwabUI` view in this codebase (Wave 1 onboarding, Wave 2 carte): all new logic that *can* be unit-tested without SwiftUI lives in `SwabCore` and is tested there (100% on every new `Fiche/` file); `FicheViewModel`'s own thin glue (`recentHistory`'s date-cutoff wiring, `refresh()`'s vault round-trip) is exercised only via code review + the successful app build.
+- **FCH-06's état/ressenti taxonomy divergence (`en pause`) is not resolved, only flagged** — a product decision is needed on which axis "en pause" actually belongs to; tracked alongside OQ-FCH-1 in `docs/specs/FS-03-contact-card.md`.
+- **OQ-FCH-1 remains genuinely open** — `FicheVocabulary.roles` is this task's own placeholder invention, not extracted from the blueprint with Hamza as the spec calls for.
+- **FCH-04's "relationship events (matches with this person)" case exists in the type (`FicheHistoryEvent.Kind.relationshipEvent`) but nothing populates it** — FS-05 (envie/match) isn't built yet; the shape is forward-compatible so a future match event can append without another vault-shape migration, exactly like `history`'s own backward-compat handling above.
+
+**apps/ios structure (additions only):**
+```
+apps/ios/
+  Sources/SwabCore/Fiche/{FicheHistoryEvent,FicheAxis,FicheVocabulary,FicheStaleness,FicheFilterConsequence,FicheEligibility}.swift
+  Sources/SwabUI/Fiche/{FicheViewModel,FicheView}.swift
+  Tests/SwabCoreTests/{FicheStalenessTests,FicheVaultTests,FicheFilterConsequenceTests,FicheEligibilityTests,FicheVocabularyTests,FichePrivacyInvariantTests}.swift
+```
+
 ## 2026-07-10 — [MAP-01..09] Wave 2: FS-02 Relationship Map, natively
 
 **What:** 1:1 port of the RN reference (`apps/mobile/src/map/*`, `app/(main)/carte.tsx`,
