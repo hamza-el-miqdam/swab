@@ -81,6 +81,14 @@ private fun SwabNavHost(container: AppContainer) {
     val step by onboardingViewModel.step.collectAsState()
     val scope = rememberCoroutineScope()
 
+    // Hoisted above NavHost (not remembered per-`composable {}`): the phone
+    // and OTP screens are separate NavBackStackEntry compositions, so a
+    // ViewModel `remember`ed inside either one is torn down and recreated
+    // fresh on navigation, dropping the memory-only PendingSignup phone hash
+    // between screens. One shared instance for the whole signup sub-flow
+    // fixes it (found via manual on-device signup walkthrough).
+    val signupViewModel = rememberSignupViewModel(container)
+
     // ONB-08 gate: wait for the persisted step to resolve, then start there.
     if (step == null) return
 
@@ -92,11 +100,9 @@ private fun SwabNavHost(container: AppContainer) {
             })
         }
         composable(Routes.PHONE) {
-            val signupViewModel = rememberSignupViewModel(container)
             PhoneScreen(signupViewModel, onOtpRequested = { navController.navigate(Routes.OTP) })
         }
         composable(Routes.OTP) {
-            val signupViewModel = rememberSignupViewModel(container)
             OtpScreen(
                 signupViewModel,
                 onBackToPhone = { navController.navigate(Routes.PHONE) },

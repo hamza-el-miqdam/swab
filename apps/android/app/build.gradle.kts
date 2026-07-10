@@ -25,8 +25,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 10.0.2.2 is the AVD's alias for the host machine's loopback —
+            // `localhost` from inside the emulator means the emulator itself.
+            // Points at the local `docker compose up` stack (apps/api).
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3001\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "API_BASE_URL", "\"https://api.swab.app\"")
         }
     }
 
@@ -42,6 +49,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // Wave-1 domain code lives in src/main/kotlin so it's compiled once and

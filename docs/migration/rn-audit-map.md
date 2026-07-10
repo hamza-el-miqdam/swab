@@ -51,24 +51,41 @@ but not yet exercised end-to-end.
 
 Both apps were built, installed, and launched for real: iOS on the "iPhone 17" Simulator
 (`xcodebuild` → `xcrun simctl install/launch`), Android on a `Pixel_6_Pro` emulator (`gradlew
-assembleDebug` → `adb install` → `adb shell am start`). Both rendered the Welcome screen with the
-exact French copy, no crash in `simctl launch` / logcat, and navigated correctly to the next
-screen (iOS: resumed onto Phone from persisted state, confirming ONB-08 for real; Android: tapped
-through to Phone, confirming Compose navigation). Neither run went further than the Phone screen —
-completing OTP verification and creating a vault key requires a live `apps/api` instance, which
-was not started for this pass, so the Keystore/DataStore/Keychain-on-launch paths are exercised by
-unit tests (iOS: yes, directly, via `KeychainSecureStoreTests` running against the real Keychain
-from the CLI test process; Android: only through `InMemory*` fakes) rather than by the live app.
+assembleDebug` → `adb install` → `adb shell am start`).
+
+**Android went further: a full live walkthrough against a running `apps/api`**
+(`docker compose up`) — welcome → phone → OTP request → new-user name prompt → OTP verify →
+contacts screen, driven via `adb shell input` and cross-checked against the API's own request
+logs (not just screenshots). This surfaced and fixed two real bugs before they'd have hit a real
+device: (1) `ApiClient`'s default base URL doesn't reach the host Mac from the emulator (fixed via
+a per-build-type `BuildConfig.API_BASE_URL` + debug-only cleartext network security config), and
+(2) `AndroidKeystoreVaultKeyStore` threw `InvalidAlgorithmParameterException` on first vault-key
+creation because Android Keystore AES/GCM keys reject a caller-supplied IV on `ENCRYPT_MODE` by
+default (fixed; regression-tested with 2 new instrumented tests in
+`AndroidKeystoreVaultKeyStoreTest`, run via `./gradlew connectedDebugAndroidTest` against the real
+Keystore). A third bug — `SignupViewModel` losing pending-phone state across Phone→OTP navigation
+because it was `remember`ed per-`composable{}` instead of hoisted to `NavHost` scope — was also
+found and fixed during the same walkthrough. Full details: `apps/android/CHANGELOG.md`'s
+2026-07-10 "On-device walkthrough" entry.
+
+**iOS confirmed running (Welcome screen, French copy, no crash, ONB-08 resume proven live) but
+not walked further**: this sandboxed environment has no assistive-access permission for scripted
+UI automation on the iOS Simulator (`osascript`/System Events taps are blocked — `-1719`), so
+phone→OTP→contacts could not be driven non-interactively the way Android was via `adb shell
+input`. iOS's Keychain/CryptoKit vault-key path (`SecureStore` storing the raw generated key
+directly) is architecturally different from Android's envelope-encryption-via-non-exportable-
+Keystore-key approach, so the specific IV bug found on Android does not apply there — but that is
+an architectural argument, not an on-device proof, and a live iOS walkthrough remains open.
 
 | Criterion | iOS | Android |
 |---|---|---|
 | Crypto vectors (`vault-test-vectors.json`) reproduced exactly | ✅ | ✅ |
 | Phone-hash vectors reproduced exactly | ✅ | ✅ |
-| Vault encrypted at rest; key in OS keystore; fresh-copy accessors (VLT-01) | ✅ (Keychain exercised directly by unsigned CLI test process) | 🟡 (fresh-copy accessors ✅ by test; `AndroidKeystoreVaultKeyStore` compiles against real Keystore APIs but key creation not yet triggered on-device — needs a live API to complete OTP) |
+| Vault encrypted at rest; key in OS keystore; fresh-copy accessors (VLT-01) | ✅ (Keychain exercised directly by unsigned CLI test process) | ✅ (live: `getOrCreateVaultKey()` succeeds against the real Keystore after ONB-02's OTP-verify step; also 2 new instrumented tests) |
 | Sync: push, 409 → re-pull + retry once (VLT-02) | ✅ | ✅ |
-| API client sends only `phoneHash`/`code`/`displayName`/`{blob,version}` (ONB-05, asserted via test) | ✅ | ✅ |
-| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | ✅ Welcome+Phone confirmed running on Simulator (screenshot-verified); otp/contacts/calibrate/done not walked live (no local API running) | ✅ Welcome+Phone confirmed running on emulator (screenshot-verified); otp/contacts/calibrate/done not walked live |
-| Resume-at-step after process kill (ONB-08); step stays `phone` until OTP verified | ✅ (unit tests; also incidentally confirmed live — a stale app container resumed straight to Phone on relaunch) | ✅ (unit tests only) |
+| API client sends only `phoneHash`/`code`/`displayName`/`{blob,version}` (ONB-05, asserted via test) | ✅ | ✅ (also confirmed live against real API request logs) |
+| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | 🟡 Welcome confirmed on Simulator (screenshot-verified); phone/otp/contacts/calibrate/done not walked live (no scripted input available in this environment) | ✅ welcome→phone→otp(+needsName)→contacts walked live end-to-end against the real API; calibrate/done not walked (no reason to expect issues — same pattern as contacts) |
+| Resume-at-step after process kill (ONB-08); step stays `phone` until OTP verified | ✅ (unit tests; also incidentally confirmed live — a stale app container resumed straight to Phone on relaunch) | ✅ (unit tests; live walkthrough also exercised the happy path through OTP verify) |
 | Contacts denied → manual entry, identical capabilities (ONB-03) | 🟡 (manual path ✅; real `CNContactStore` import deferred, fake stands in) | 🟡 (manual path ✅; real `ContentResolver` import deferred, stub) |
 | État/ressenti layer optional + collapsed (ONB-06); no gamification (ONB-09, asserted via copy test) | ✅ | ✅ |
 | Airplane-mode: calibration persists locally, syncs later, only `POST /vault` carries derived data | ✅ (unit-level) | ✅ (unit-level) |

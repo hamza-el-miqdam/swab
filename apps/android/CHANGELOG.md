@@ -2,6 +2,64 @@
 
 Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, newest first (G5).
 
+## 2026-07-10 — [VLT-01, IDT-01, ONB-02] On-device walkthrough: emulator base URL, a real Keystore bug, and its fix
+
+Closed the two gaps `rn-audit-map.md` flagged as 🟡 for Android by actually
+running the app against a live `apps/api` (`docker compose up`) on a
+`Pixel_6_Pro` emulator and walking welcome → phone → OTP → new-user name →
+contacts end to end.
+
+**Emulator can't reach `localhost` on the host — needed `10.0.2.2`:**
+- `ApiClient.DEFAULT_BASE_URL` (`http://localhost:3001`) resolves to the
+  emulator's own loopback, not the Mac running Docker. Added a
+  `BuildConfig.API_BASE_URL` field per build type (`debug` →
+  `http://10.0.2.2:3001`, the AVD's host-loopback alias; `release` → a
+  placeholder `https://api.swab.app` for later) and wired it through
+  `AppContainer`.
+- Cleartext HTTP is blocked by default on API 28+. Added a **debug-only**
+  network security config (`src/debug/res/xml/network_security_config.xml`
+  + `src/debug/AndroidManifest.xml`) permitting cleartext to `10.0.2.2` and
+  `localhost` only — the release manifest is untouched, so this never
+  weakens a real build (G1 least-privilege).
+
+**Real bug found and fixed — `AndroidKeystoreVaultKeyStore` threw on first
+vault-key creation:** `java.security.InvalidAlgorithmParameterException:
+Caller-provided IV not permitted` at the `Cipher.init(ENCRYPT_MODE, ...)`
+call wrapping the vault key. Android Keystore AES/GCM keys are generated
+with randomized encryption **required** by default — the provider refuses a
+caller-supplied `GCMParameterSpec(iv)` on `ENCRYPT_MODE` and throws instead
+of just ignoring it. Fix: `cipher.init(Cipher.ENCRYPT_MODE, wrapKey.key)`
+with no spec, then read the Keystore-chosen IV back via `cipher.iv`
+afterwards. `DECRYPT_MODE` has no such restriction and was already correct.
+This only reproduces against the real Keystore provider — added
+`app/src/androidTest/kotlin/.../AndroidKeystoreVaultKeyStoreTest.kt` (2
+tests: key generation doesn't throw, key is stable across calls) as a
+regression guard, run via `./gradlew connectedDebugAndroidTest`.
+
+**A second, unrelated bug surfaced during the same walkthrough and was
+fixed:** `MainActivity`'s `SwabNavHost` called `rememberSignupViewModel`
+separately inside the `PHONE` and `OTP` `composable { }` blocks. Compose
+scopes `remember` to the individual `NavBackStackEntry`, so navigating
+Phone → OTP created a **second, fresh** `SignupViewModel` with empty
+`PendingSignup` state, discarding the phone hash just set on the Phone
+screen — the OTP screen then showed `otp.missingPhone` ("Reprenons depuis
+ton numéro.") on every normal run, not just on a genuine process restart as
+intended (ONB-08's actual contract). Fixed by hoisting one shared
+`signupViewModel` instance to `SwabNavHost`'s own scope, above `NavHost`,
+so it survives navigation between the two screens.
+
+**Verified end to end against the live API:** `POST /auth/otp/request` →
+`200`; `/auth/otp/verify` first attempt correctly returns `422`/`needsName`
+for a new user; second attempt with a display name returns `200`,
+`isNewUser: true`; app navigates to the Contacts screen
+(`Qui compte pour toi ?`). `AndroidKeystoreVaultKeyStore.getOrCreateVaultKey()`
+(called right after verify per ONB-02) no longer throws. No exceptions in
+logcat across the full run.
+
+**Test results after these fixes:** `./gradlew test` still 47/47;
+`./gradlew connectedDebugAndroidTest` 2/2 new instrumented tests pass on
+the `Pixel_6_Pro` emulator.
+
 ## 2026-07-10 — [VLT-01, VLT-02, VLT-04, IDT-01, IDT-02, IDT-06, ONB-01..09] Bootstrap apps/android, Wave 1 (FS-07 client scope + FS-01 Onboarding)
 
 ### What

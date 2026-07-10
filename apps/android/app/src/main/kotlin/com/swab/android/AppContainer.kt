@@ -1,6 +1,7 @@
 package com.swab.android
 
 import android.content.Context
+import com.swab.android.BuildConfig
 import com.swab.android.identity.KeystoreTokenStore
 import com.swab.android.identity.SecureTokenStore
 import com.swab.android.network.ApiClient
@@ -27,6 +28,7 @@ class AppContainer(context: Context) {
     val vault = Vault(keyValueStore, vaultKeyStore)
     val apiClient = ApiClient(
         transport = HttpUrlConnectionTransport(),
+        baseUrl = BuildConfig.API_BASE_URL,
         accessTokenProvider = { tokenStore.getAccessToken() },
     )
     val vaultSync = VaultSync(vault, apiClient)

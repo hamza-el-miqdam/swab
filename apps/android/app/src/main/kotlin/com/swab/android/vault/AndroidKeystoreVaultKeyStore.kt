@@ -79,10 +79,15 @@ class AndroidKeystoreVaultKeyStore(private val kv: KeyValueStore) : VaultKeyStor
         val vaultKey = ByteArray(VaultKeyStore.KEY_LENGTH_BYTES)
         SecureRandom().nextBytes(vaultKey)
 
-        val iv = ByteArray(IV_LENGTH)
-        SecureRandom().nextBytes(iv)
+        // Android Keystore AES/GCM keys are generated with randomized
+        // encryption required (the default) — the provider refuses a
+        // caller-supplied IV on ENCRYPT_MODE and throws
+        // InvalidAlgorithmParameterException("Caller-provided IV not
+        // permitted"). Init with no spec and read the Keystore-chosen IV
+        // back afterwards; DECRYPT_MODE has no such restriction (above).
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, wrapKey.key, GCMParameterSpec(TAG_LENGTH_BITS, iv))
+        cipher.init(Cipher.ENCRYPT_MODE, wrapKey.key)
+        val iv = cipher.iv
         val ciphertextAndTag = cipher.doFinal(vaultKey)
 
         val out = ByteArray(iv.size + ciphertextAndTag.size)
