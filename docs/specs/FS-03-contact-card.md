@@ -1,6 +1,6 @@
 # FS-03 — Contact Card (Fiche contact)
 
-**Status:** Approved · **Agents:** Mobile (sole) · **Depends on:** FS-02, FS-07 · **Blueprint:** `swab - Fiche contact (standalone) (1)`
+**Status:** Implemented (iOS native, 2026-07-10 — see `apps/ios/CHANGELOG.md`; Android parity pending) · **Agents:** Mobile (sole) · **Depends on:** FS-02, FS-07 · **Blueprint:** `swab - Fiche contact (standalone) (1)`
 
 ## Purpose
 

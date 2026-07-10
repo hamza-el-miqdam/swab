@@ -143,3 +143,61 @@ blocker as Wave 1.
 sheet tap, pinch/pan) once a scripted-input path exists; 60fps/jank profiling under a realistic
 ~150-contact load on both platforms (OQ-MAP-1 clustering itself stays explicitly out of scope per
 the spec); the pre-existing `CalibrateScreen` ring-picker layout bug noted above.
+
+## Wave 3 parity checklist (FS-03 Contact Card)
+
+Requirement coverage: FCH-01..08. **Greenfield** — FS-03 was never built in the RN reference
+(`apps/mobile`), so there was no port to verify against; both platforms built directly from
+`docs/specs/FS-03-contact-card.md`, delegated to `ios-specialist`/`android-specialist` in
+parallel (disjoint file scopes) and independently re-verified by the lead (full clean test runs,
+app-target builds, and a manual read of the privacy-invariant tests and vault backward-compat
+handling — not just trusting the agents' self-reports).
+
+Status as of 2026-07-10. iOS: `apps/ios/CHANGELOG.md`, 110/110 tests (33 new), 93.94% `SwabCore`
+coverage, 100% on every new `Fiche/` module. Android: `apps/android/CHANGELOG.md`, 108/108 tests
+(28 new, confirmed via a clean `./gradlew clean test` run), 98.32% domain coverage, 100% on the
+new `fiche` package.
+
+Both platforms independently arrived at the same pragmatic call on two spec ambiguities:
+
+- **FCH-03 (reciprocity signal, "if shown")**: neither platform shows one at all — only the
+  qualitative "Aucun compteur, aucune métrique" footer. Any numeric-adjacent signal risked reading
+  as quantitative or implying the other person's classification, which FCH-02 forbids outright.
+- **FCH-06 (`en pause` axis)**: the spec calls it an ÉTAT value; the vocabulary actually shipped in
+  Wave 1 (`CalibrateScreen`/`EtatColors`) put it under RESSENTI instead. Both platforms check
+  *both* axes for "en pause" rather than silently picking one interpretation — documented as a
+  divergence in each changelog, not resolved by this code. A product decision should settle which
+  axis "en pause" belongs to (folds into OQ-FCH-1).
+
+**Privacy invariant (G1) verified at the wire level, not just by type shape**, on both platforms:
+`FichePrivacyInvariantTests` (iOS) / `FichePrivacyLeakTest` (Android) drive real axis edits through
+the actual `VaultSync`/`ApiClient` production path with a recording fake transport, then assert
+none of the plaintext classification strings (role names, état, ressenti, axis labels) appear in
+the literal request body — only `{blob, version}` ever leaves the device. Independently re-read by
+the lead, not just taken on the agents' word.
+
+**Backward compatibility with pre-FS-03 vault blobs** (Wave 1/2 vaults gain new fields: `targetId`,
+`history`, `lastAxisChangeAt`, `stalenessSnoozedUntil`/`staleSnoozedUntil`) was verified by reading
+the actual decode paths: iOS uses a custom `Codable.init(from:)` with `decodeIfPresent` + defaults
+(a synthesized decoder would throw on the non-optional `history` array missing from an old blob);
+Android's `@Serializable` fields default to `null`/`emptyList()` automatically on a missing key, no
+custom deserializer needed. Both confirmed correct by inspection, not just by the agents' claims.
+
+| Criterion | iOS | Android |
+|---|---|---|
+| FCH-01 (four tap-editable axes, immediate vault write + local history) | ✅ unit-tested (`FicheVaultTests`) | ✅ unit-tested (`VaultTest` additions) |
+| FCH-02 (asymmetric/private, no symmetry implication) | ✅ (no other-party data surfaced anywhere in `FicheView`) | ✅ (same, `FicheScreen`) |
+| FCH-03 (reciprocity signal, qualitative only) | ✅ (no numeric signal shown at all — safest reading of "if shown") | ✅ (same) |
+| FCH-04 (12-month history feed, newest first) | 🟡 axis-change events only — relationship/match events deferred, no FS-04/05 data source exists yet | 🟡 same — `VaultHistoryEvent.axis = null` reserved for future relationship events |
+| FCH-05 (staleness nudge, 6mo default/30d snooze, non-blocking) | ✅ unit-tested (`FicheStalenessTests`) | ✅ unit-tested (`FicheStalenessTest`) |
+| FCH-06 (état → filter-consequence text, incl. `en pause`) | 🟡 implemented; documented `en pause` axis divergence (checks both axes) | 🟡 same divergence, same resolution |
+| FCH-07 (back nav preserves map position) | ✅ by construction — `.navigationDestination(item:)` push, `RadialMapView`'s pan/zoom state never torn down; not interaction-tested live (same assistive-access blocker as Waves 1–2) | 🟡 nav route wired; not interaction-tested live (no scripted-input path in this environment either) |
+| FCH-08 (pending contact, `targetId == nil`, inactive envie eligibility) | ✅ unit-tested (`FicheEligibilityTests`) | ✅ unit-tested (part of `FicheViewModelTest`) |
+
+**Remaining before Wave 3 is fully 🟢 on both platforms:** a live on-device walkthrough tapping
+through peek sheet → fiche → axis edit → back-to-map on both platforms (neither got one this wave —
+unlike Wave 2's Android pass, this wave's verification stopped at test suite + independent build,
+consistent with the assistive-access limitation blocking iOS and simply not yet attempted on
+Android); FCH-04's relationship/match event population, blocked on FS-04/FS-05 existing; OQ-FCH-1's
+real Rôles·contexte taxonomy (current lists are an explicit placeholder ASSUMPTION on both
+platforms); resolving the `en pause` état-vs-ressenti divergence at the product level.

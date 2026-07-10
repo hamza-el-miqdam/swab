@@ -10,21 +10,24 @@ _Last updated: 2026-07-10_
 > native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose). `apps/mobile` is the
 > **frozen reference implementation** (critical fixes only) until each module reaches native
 > parity. Knowledge transfer: `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`.
-> Module statuses below describe the RN reference. **Wave 1 (FS-07 client scope + FS-01) and
-> Wave 2 (FS-02 Relationship Map) native parity both landed 2026-07-10**: `apps/ios` (77/77 tests,
-> 92.7% `SwabCore` coverage) and `apps/android` (80/80 tests, 98.4% domain coverage). Both apps
-> were built and run for real on Simulator/emulator; Android additionally got a full live
-> walkthrough against `docker compose up`'s API for both waves (welcome → phone → OTP → contacts →
-> calibrate → done → Carte, including tapping a contact node to open the peek sheet and toggling
-> list mode), which found and fixed four real bugs along the way — emulator-to-host networking, an
-> Android Keystore IV restriction, a Compose navigation state-loss bug, and a density-scaling bug
-> in the radial map's `Canvas` rendering — see `apps/android/CHANGELOG.md`'s two 2026-07-10
-> entries. iOS is confirmed running on the "iPhone 17" Simulator (Welcome screen live, Carte screen
-> screenshot-verified via a temporary seeded view) but not interactively walked — this environment
-> has no assistive-access permission for scripted Simulator input. A pre-existing bug was also
-> found in the RN-ported `CalibrateScreen`'s ring-picker (unrelated to Wave 2, not yet fixed) — see
-> `docs/migration/rn-audit-map.md`. Full per-criterion status is tracked in that file's Wave 1 and
-> Wave 2 checklists, not duplicated here.
+> Module statuses below describe the RN reference. **Wave 1 (FS-07 client scope + FS-01),
+> Wave 2 (FS-02 Relationship Map), and Wave 3 (FS-03 Contact Card, greenfield — no RN
+> equivalent to port) all landed 2026-07-10**: `apps/ios` (110/110 tests, 93.9% `SwabCore`
+> coverage) and `apps/android` (108/108 tests, 98.32% domain coverage). Waves 1–2 were built and
+> run for real on Simulator/emulator; Android additionally got a full live walkthrough against
+> `docker compose up`'s API (welcome → phone → OTP → contacts → calibrate → done → Carte,
+> including tapping a contact node to open the peek sheet and toggling list mode), which found
+> and fixed four real bugs along the way — emulator-to-host networking, an Android Keystore IV
+> restriction, a Compose navigation state-loss bug, and a density-scaling bug in the radial map's
+> `Canvas` rendering — see `apps/android/CHANGELOG.md`'s two 2026-07-10 entries. iOS is confirmed
+> running on the "iPhone 17" Simulator (Welcome screen live, Carte screen screenshot-verified via
+> a temporary seeded view) but not interactively walked — this environment has no assistive-access
+> permission for scripted Simulator input. Wave 3 (FS-03) landed test-suite-verified plus an
+> independent build check on both platforms, but has **not** had a live on-device walkthrough yet
+> on either platform — flagged as a follow-up. A pre-existing bug was also found in the RN-ported
+> `CalibrateScreen`'s ring-picker (unrelated to Wave 2, not yet fixed) — see
+> `docs/migration/rn-audit-map.md`. Full per-criterion status is tracked in that file's Wave 1,
+> Wave 2, and Wave 3 checklists, not duplicated here.
 
 ## Modules (functional specs)
 
@@ -32,8 +35,8 @@ _Last updated: 2026-07-10_
 |---|---|---|---|---|
 | FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth (`/auth/otp`), JWT sessions, opaque vault store (`/vault`, versioned), `/health` + `/ready`. Mobile vault client done (AES-256-GCM on-device, SecureStore key). **Missing:** contact discovery endpoint, web invite landing. |
 | FS-01 | Onboarding | 🟢 Implemented | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Test names carry ONB-02/03/04/07/08. Dev-mode OTP returned in API response (no SMS provider yet). |
-| FS-02 | Relationship Map | 🟢 Implemented | Mobile | Radial map + list fallback from the vault, nav Carte/Envie/Sous-groupes, peek sheet, pan/zoom. MAP-01..09 tests green. Fiche transition pending FS-03; clustering deferred (OQ-MAP-1). |
-| FS-03 | Contact Card | ⚪ Not started | Mobile | Depends on FS-02 ✅. « Ouvrir la fiche » seam is wired (disabled) in the peek sheet. |
+| FS-02 | Relationship Map | 🟢 Implemented | Mobile | Radial map + list fallback from the vault, nav Carte/Envie/Sous-groupes, peek sheet, pan/zoom. MAP-01..09 tests green. Fiche transition now wired to FS-03 in both apps; clustering deferred (OQ-MAP-1). |
+| FS-03 | Contact Card | 🟢 Implemented (iOS + Android native) | Mobile | Greenfield — never built in the RN reference. Four tap-editable axes, 12-month history feed, FCH-05 staleness nudge, FCH-06 filter-consequence text (with a documented `en pause` taxonomy divergence), FCH-08 pending-contact support. FCH-01..08 tests green in both `apps/ios` and `apps/android`; no reciprocity signal shown (FCH-03 deviation, see `apps/android/CHANGELOG.md`), FCH-04 relationship/match events deferred pending FS-04/05. |
 | FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | Pure on-device domain module. |
 | FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | The only two-agent spec; OpenAPI seam not yet drafted. |
 | FS-06 | Filtering rules | ⚪ Not started | Mobile | Rules live in the vault. |
