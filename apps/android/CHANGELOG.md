@@ -2,6 +2,106 @@
 
 Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, newest first (G5).
 
+## 2026-07-10 — [FCH-01..08] FS-03 Contact Card (Wave 3) — greenfield fiche screen, vault history + staleness
+
+### What
+
+FS-03 has no RN reference (never built in `apps/mobile`) — built natively from
+`docs/specs/FS-03-contact-card.md` alone. Wires the FS-02 seam: `PeekSheet`'s
+« Ouvrir la fiche » button (previously rendered visibly disabled) now
+navigates to `fiche/{contactId}`.
+
+- `vault/Vault.kt` — extended the FS-07 model to carry what FS-03 needs, all
+  still inside the one encrypted `VaultData` blob:
+  - `VaultContact.targetId: String?` (mirrors FS-07's `ContactLink.targetId`,
+    IDT-07). ⚠️ ASSUMPTION: defaults to `null` for every contact, because
+    contact discovery (IDT-06) has no Android client yet — every contact is
+    honestly "pending" today, not a placeholder guess, so FCH-08's envie
+    ineligibility indicator is correct out of the box.
+  - `VaultContact.lastAxisChangeAt` / `staleSnoozedUntil` (epoch millis) —
+    drive FCH-05.
+  - `VaultData.history: List<VaultHistoryEvent>` + `Vault.recordAxisEdit`,
+    `getHistory`, `confirmStillAccurate`, `snoozeStaleness`, `setRoles`
+    (roles had no setter before FS-03). `recordAxisEdit` stamps
+    `lastAxisChangeAt` and appends a history event atomically (one lock
+    acquisition — can't reuse the existing private `mutateContact`, which
+    takes its own non-reentrant lock).
+- `fiche/FicheStaleness.kt` — pure (no Android imports, same rule as
+  `carte/MapGeometry.kt`) FCH-05 timing: due for a nudge only if an axis was
+  ever edited, that edit is ≥6 months old (⚠️ ASSUMPTION, flagged by the spec
+  itself), and no active 30-day « À revoir plus tard » snooze covers now.
+- `fiche/FicheFilterConsequence.kt` — FCH-06 informational-only "état → FS-06
+  consequence" text (FS-06 itself isn't built; nothing here filters real
+  recipients). ⚠️ KNOWN DIVERGENCE, documented in the file: this task's brief
+  says reuse the shipped 3-value ÉTAT set (disponible/occupé/ailleurs) as-is,
+  but FCH-06 requires the blueprint's `en pause` specifically — which today
+  ships under RESSENTI, not ÉTAT (EtatColors.kt's already-flagged 3-vs-5-état
+  divergence, rn-native-handoff.md §5, not resolved by this task). Resolved
+  by checking both axes' current values for `en pause` rather than inventing
+  a new état option nobody asked for here.
+- `fiche/FicheViewModel.kt` — loads one contact + its 12-month history window
+  from the vault only (never network — enforced structurally by
+  `FicheOfflineStructuralTest`, mirroring `CarteOfflineStructuralTest`
+  MAP-05). Every axis setter (`setIntimite/setRoles/setEtat/setRessenti`)
+  writes to the vault immediately and appends a history event in the same
+  call (FCH-01, optimistic + offline-capable by construction — there's no
+  network call to be offline *from*).
+- `ui/fiche/FicheScreen.kt` — the four tap-editable axes (`FilterChip` per
+  option), the FCH-04 history feed (newest first), and the FCH-05 nudge as an
+  inline `Card` at the foot of the screen — never an `AlertDialog`, matching
+  « jamais bloquant ». FCH-08: pending contacts (`targetId == null`) get the
+  identical fully-editable fiche, plus two extra lines noting they haven't
+  joined and envie is inactive. Rôles·contexte options (Famille / Amitié /
+  Travail / Voisinage / Autre) are OQ-FCH-1's placeholder taxonomy, flagged
+  ⚠️ ASSUMPTION in both `Fr.kt` and the screen file.
+- `MainActivity.kt` — new `fiche/{contactId}` route, a leaf destination (not
+  hoisted to `SwabNavHost` scope like `carteViewModel`, since it isn't shared
+  between sibling tabs). FCH-07 (back preserves map position) falls out of
+  existing `Navigation-Compose` behavior for free: pushing `fiche` on top of
+  `carte` never disposes `carte`'s composition, so `RadialMap`'s remembered
+  pan/zoom state is still there on `popBackStack()` — no extra plumbing
+  needed, confirmed by reading how `RadialMap.kt` remembers `scale`/`offsetX`/
+  `offsetY`.
+- `ui/carte/PeekSheet.kt` — per the brief, ONLY the button's `onClick` and
+  disabled state changed (added an `onOpenFiche` parameter); the rest of the
+  peek sheet is untouched.
+- `l10n/Fr.kt` — new `FICHE_*` constants, added to `ALL_STRINGS`
+  (`NoGamificationCopyTest` covers them automatically).
+
+### Deviations from the brief (with reasoning)
+
+- **No reciprocity signal is rendered at all (FCH-03).** The spec makes one
+  optional ("if shown"). FCH-02 requires nothing on the fiche ever imply the
+  other person's classification is visible — any soft qualitative copy here
+  risks being misread as "they feel this way too." Omitting it is the only
+  reading with zero leak risk; there was nothing safe to show.
+- **FCH-04 relationship events (matches, coarse-grain) are deferred.** FS-04/
+  05 (envie/match flow) don't exist yet, so there is no local data source for
+  them. The vault schema is ready (`VaultHistoryEvent.axis = null` reserved
+  for this), only axis-change events are wired today.
+- **FCH-06's état/en pause conflict** — see `FicheFilterConsequence.kt` above;
+  resolved by checking both axes rather than picking one brief instruction
+  over the other outright.
+
+### Tests
+
+108 JVM unit tests total (`./gradlew test`), all green. Jacoco domain-layer
+coverage (same `jacocoDomainCoverage` task as Wave 1/2, UI/platform-glue
+excluded per that task's existing exclusion list): 98.32% lines overall,
+100% for the new `fiche` package. New coverage: `VaultTest` (setRoles,
+recordAxisEdit, getHistory, confirmStillAccurate, snoozeStaleness, FCH-08
+default-pending contact), `FicheStalenessTest`, `FicheFilterConsequenceTest`,
+`FicheViewModelTest` (all four axis writes, history ordering + 12-month
+window, staleness nudge appear/reset/snooze/re-eligibility, FCH-08 pending
+contact stays fully editable), `FicheOfflineStructuralTest` (network-import
+scan, mirrors MAP-05's `CarteOfflineStructuralTest`), and
+`FichePrivacyLeakTest` — drives all four axis edits through the real
+`FicheViewModel` → `Vault` → `VaultSync` → `ApiClient` path with a recording
+`HttpTransport` and asserts the literal request body contains none of the
+plaintext values, axis labels, or field names used (the FS-03 acceptance
+criterion, stronger than `VaultTest`'s existing generic "no plaintext"
+check).
+
 ## 2026-07-10 — [MAP-01..09] FS-02 Relationship Map (Wave 2) — radial carte, list fallback, 3-tab nav
 
 ### What

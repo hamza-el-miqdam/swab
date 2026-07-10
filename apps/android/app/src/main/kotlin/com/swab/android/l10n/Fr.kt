@@ -84,6 +84,29 @@ object Fr {
     const val CARTE_SHEET_ETAT: String = "État"
     const val CARTE_SHEET_ROLES: String = "Rôles"
 
+    const val FICHE_BACK: String = "Retour"
+    const val FICHE_AXIS_INTIMITE: String = "Intimité"
+    const val FICHE_AXIS_ROLES: String = "Rôles·contexte"
+    const val FICHE_AXIS_ETAT: String = "État"
+    const val FICHE_AXIS_RESSENTI: String = "Ressenti"
+    // OQ-FCH-1: placeholder Rôles·contexte taxonomy — product hasn't fixed
+    // the vocabulary yet, per the spec's own open question.
+    const val FICHE_ROLE_FAMILLE: String = "Famille"
+    const val FICHE_ROLE_AMITIE: String = "Amitié"
+    const val FICHE_ROLE_TRAVAIL: String = "Travail"
+    const val FICHE_ROLE_VOISINAGE: String = "Voisinage"
+    const val FICHE_ROLE_AUTRE: String = "Autre"
+    const val FICHE_HISTORY_TITLE: String = "Le fil de ce qui a bougé"
+    const val FICHE_HISTORY_EMPTY: String = "Rien n’a encore bougé."
+    // ⚠️ ASSUMPTION: exact nudge copy isn't in the spec (only the two button
+    // labels are quoted verbatim below) — this title is a neutral placeholder.
+    const val FICHE_STALE_TITLE: String = "Ça n’a pas changé depuis un moment."
+    const val FICHE_STALE_CONFIRM: String = "C’est toujours ça"
+    const val FICHE_STALE_DISMISS: String = "À revoir plus tard"
+    const val FICHE_ETAT_PAUSED_CONSEQUENCE: String = "en pause → exclu par défaut à l’envoi"
+    const val FICHE_PENDING_LABEL: String = "N’a pas encore rejoint swab"
+    const val FICHE_ENVIE_INACTIVE: String = "Envie indisponible tant que cette personne n’a pas rejoint swab."
+
     const val NAV_CARTE: String = "Carte"
     const val NAV_ENVIE: String = "Envie"
     const val NAV_SOUS_GROUPES: String = "Sous-groupes"
@@ -109,6 +132,10 @@ object Fr {
             DONE_TITLE, DONE_SUBTITLE, DONE_PROMISE, DONE_CTA,
             CARTE_TITLE, CARTE_SUBTITLE, CARTE_EMPTY, CARTE_ME, CARTE_LIST_MODE, CARTE_LEGEND,
             CARTE_OPEN_FICHE, CARTE_SHEET_INTIMITE, CARTE_SHEET_ETAT, CARTE_SHEET_ROLES,
+            FICHE_BACK, FICHE_AXIS_INTIMITE, FICHE_AXIS_ROLES, FICHE_AXIS_ETAT, FICHE_AXIS_RESSENTI,
+            FICHE_ROLE_FAMILLE, FICHE_ROLE_AMITIE, FICHE_ROLE_TRAVAIL, FICHE_ROLE_VOISINAGE, FICHE_ROLE_AUTRE,
+            FICHE_HISTORY_TITLE, FICHE_HISTORY_EMPTY, FICHE_STALE_TITLE, FICHE_STALE_CONFIRM, FICHE_STALE_DISMISS,
+            FICHE_ETAT_PAUSED_CONSEQUENCE, FICHE_PENDING_LABEL, FICHE_ENVIE_INACTIVE,
             NAV_CARTE, NAV_ENVIE, NAV_SOUS_GROUPES,
             ENVIE_TITLE, ENVIE_PLACEHOLDER, SOUSGROUPES_TITLE, SOUSGROUPES_PLACEHOLDER,
         )

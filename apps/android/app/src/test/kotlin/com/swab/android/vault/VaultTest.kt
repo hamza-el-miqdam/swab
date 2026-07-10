@@ -103,4 +103,80 @@ class VaultTest {
         val encrypted = vault.getEncryptedVault()
         assertTrue(!encrypted.blob.contains("Secret Name"))
     }
+
+    @Test
+    fun `FCH-01 setRoles persists the chosen roles`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Sami")
+        vault.setRoles(contact.id, listOf("Famille", "Travail"))
+        assertEquals(listOf("Famille", "Travail"), vault.getContacts().first().roles)
+    }
+
+    @Test
+    fun `FCH-01 recordAxisEdit stamps lastAxisChangeAt and appends a history event, clearing any snooze`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Sami")
+        vault.snoozeStaleness(contact.id, at = 500L)
+        assertEquals(500L + Vault.SNOOZE_MILLIS, vault.getContacts().first().staleSnoozedUntil)
+
+        vault.recordAxisEdit(contact.id, axis = "etat", summary = "État → disponible", at = 1_000L)
+
+        val updated = vault.getContacts().first()
+        assertEquals(1_000L, updated.lastAxisChangeAt)
+        assertNull("a fresh edit clears any active snooze", updated.staleSnoozedUntil)
+
+        val history = vault.getHistory(contact.id)
+        assertEquals(1, history.size)
+        assertEquals("etat", history.first().axis)
+        assertEquals("État → disponible", history.first().summary)
+        assertEquals(1_000L, history.first().at)
+    }
+
+    @Test
+    fun `FCH-04 getHistory returns newest first and only for the requested contact`() = runTest {
+        // Real (non-fixed) id generator: newVault()'s fixed "fixed-id" would
+        // collide both contacts onto the same id, which is exactly what this
+        // test needs to distinguish.
+        val vault = Vault(InMemoryKeyValueStore(), InMemoryVaultKeyStore())
+        val a = vault.addContact("A")
+        val b = vault.addContact("B")
+        vault.recordAxisEdit(a.id, axis = "etat", summary = "first", at = 1L)
+        vault.recordAxisEdit(a.id, axis = "ressenti", summary = "second", at = 2L)
+        vault.recordAxisEdit(b.id, axis = "etat", summary = "other contact", at = 3L)
+
+        val history = vault.getHistory(a.id)
+        assertEquals(2, history.size)
+        assertEquals("second", history.first().summary)
+        assertEquals("first", history[1].summary)
+    }
+
+    @Test
+    fun `FCH-05 confirmStillAccurate resets the timer and clears the snooze`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Sami")
+        vault.recordAxisEdit(contact.id, axis = "etat", summary = "x", at = 1L)
+        vault.snoozeStaleness(contact.id, at = 2L)
+
+        vault.confirmStillAccurate(contact.id, at = 3L)
+
+        val updated = vault.getContacts().first()
+        assertEquals(3L, updated.lastAxisChangeAt)
+        assertNull(updated.staleSnoozedUntil)
+    }
+
+    @Test
+    fun `FCH-05 snoozeStaleness pushes staleSnoozedUntil 30 days out from the given instant`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Sami")
+        vault.snoozeStaleness(contact.id, at = 10_000L)
+        assertEquals(10_000L + Vault.SNOOZE_MILLIS, vault.getContacts().first().staleSnoozedUntil)
+    }
+
+    @Test
+    fun `FCH-08 a newly added contact has no targetId - hasn't joined swab yet`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Pending Person")
+        assertNull(vault.getContacts().first().targetId)
+        assertEquals(contact.id, vault.getContacts().first().id) // sanity
+    }
 }

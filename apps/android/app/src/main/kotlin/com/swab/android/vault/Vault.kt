@@ -29,10 +29,43 @@ data class VaultContact(
     val roles: List<String> = emptyList(),
     val etat: String? = null,
     val ressenti: String? = null,
+    /**
+     * Mirrors FS-07's `ContactLink.targetId` (IDT-07): null while this person
+     * hasn't joined swab yet. ASSUMPTION: defaults to null for every contact
+     * because contact discovery (IDT-06) has no Android client yet — until
+     * that lands, the fiche's envie-eligibility indicator (FCH-08) is
+     * legitimately "inactive" for everyone, which is the honest state today,
+     * not a placeholder guess.
+     */
+    val targetId: String? = null,
+    /** FCH-05 — epoch millis of the most recent axis edit; null = never edited. */
+    val lastAxisChangeAt: Long? = null,
+    /** FCH-05 — epoch millis until which the staleness nudge stays suppressed after « À revoir plus tard ». */
+    val staleSnoozedUntil: Long? = null,
+)
+
+/**
+ * FS-03 FCH-04 — one entry in a contact's local history feed (axis edits;
+ * relation events like matches are a reserved future case via [axis] = null,
+ * once FS-04/05 exist to source them). Lives inside the same encrypted
+ * [VaultData] blob as everything else — never sent to the network except as
+ * opaque ciphertext (FCH acceptance criterion / G1).
+ */
+@Serializable
+data class VaultHistoryEvent(
+    val id: String,
+    val contactId: String,
+    /** "intimite" | "roles" | "etat" | "ressenti" | null (reserved for future relation events). */
+    val axis: String? = null,
+    val summary: String,
+    val at: Long,
 )
 
 @Serializable
-data class VaultData(val contacts: List<VaultContact> = emptyList())
+data class VaultData(
+    val contacts: List<VaultContact> = emptyList(),
+    val history: List<VaultHistoryEvent> = emptyList(),
+)
 
 data class EncryptedVaultBlob(val blob: String, val version: Int)
 
@@ -44,6 +77,9 @@ class Vault(
     companion object {
         private const val BLOB_KEY = "vault.blob.v1"
         private const val VERSION_KEY = "vault.version.v1"
+
+        /** FCH-05 « À revoir plus tard » re-eligibility window — 30 days, per spec. */
+        const val SNOOZE_MILLIS: Long = 30L * 24 * 60 * 60 * 1000
     }
 
     private val json = Json { ignoreUnknownKeys = true } // shape grows with FS-03/04/06
@@ -115,6 +151,42 @@ class Vault(
 
     suspend fun setRessenti(id: String, ressenti: String?) =
         mutateContact(id) { it.copy(ressenti = ressenti) }
+
+    suspend fun setRoles(id: String, roles: List<String>) = mutateContact(id) { it.copy(roles = roles) }
+
+    /**
+     * FCH-01 — records one axis edit as a local history event and stamps
+     * [VaultContact.lastAxisChangeAt], resetting any active staleness snooze
+     * (a fresh edit is itself a re-confirmation). Atomic with the history
+     * append: both mutate the same [VaultData] under one lock acquisition, so
+     * [mutateContact] (which takes its own lock) can't be reused here.
+     */
+    suspend fun recordAxisEdit(contactId: String, axis: String, summary: String, at: Long) {
+        mutex.withLock {
+            val data = hydrate()
+            val index = data.contacts.indexOfFirst { it.id == contactId }
+            if (index < 0) return@withLock
+            val updatedContacts = data.contacts.toMutableList()
+            updatedContacts[index] = updatedContacts[index].copy(lastAxisChangeAt = at, staleSnoozedUntil = null)
+            val event = VaultHistoryEvent(id = idGenerator(), contactId = contactId, axis = axis, summary = summary, at = at)
+            val next = data.copy(contacts = updatedContacts, history = data.history + event)
+            cache = next
+            persist(next)
+        }
+    }
+
+    /** FCH-04 — newest first; callers apply the 12-month window. */
+    suspend fun getHistory(contactId: String): List<VaultHistoryEvent> = mutex.withLock {
+        hydrate().history.filter { it.contactId == contactId }.sortedByDescending { it.at }.map { it.copy() }
+    }
+
+    /** FCH-05 « C'est toujours ça » — resets the staleness timer, clears any snooze. */
+    suspend fun confirmStillAccurate(contactId: String, at: Long) =
+        mutateContact(contactId) { it.copy(lastAxisChangeAt = at, staleSnoozedUntil = null) }
+
+    /** FCH-05 « À revoir plus tard » — quietly suppresses the nudge for [SNOOZE_MILLIS]; nothing logged server-side. */
+    suspend fun snoozeStaleness(contactId: String, at: Long) =
+        mutateContact(contactId) { it.copy(staleSnoozedUntil = at + SNOOZE_MILLIS) }
 
     /** Ciphertext + version for VaultSync — the only exit door. */
     suspend fun getEncryptedVault(): EncryptedVaultBlob = mutex.withLock {

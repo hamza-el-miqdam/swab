@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.swab.android.carte.EtatColors
@@ -35,12 +34,13 @@ private const val UNSET = "—" // quiet dash, not copy: an axis simply not fill
 /**
  * MAP-04 — tap a contact, read Intimité / État / Rôles. Uses Material 3's
  * [ModalBottomSheet] (already in build.gradle.kts via the compose-bom — no
- * new dependency, G4). « Ouvrir la fiche » is the FS-03 seam: rendered
- * visibly DISABLED on purpose — nothing hidden — same as the RN reference.
+ * new dependency, G4). « Ouvrir la fiche » now navigates to the FS-03 fiche
+ * screen via [onOpenFiche] — the button was rendered visibly disabled while
+ * that screen didn't exist yet (Wave 2); it's wired live as of FS-03.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PeekSheet(contact: VaultContact?, onDismiss: () -> Unit) {
+fun PeekSheet(contact: VaultContact?, onDismiss: () -> Unit, onOpenFiche: (VaultContact) -> Unit) {
     if (contact == null) return
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
@@ -62,15 +62,13 @@ fun PeekSheet(contact: VaultContact?, onDismiss: () -> Unit) {
             PeekRow(Fr.CARTE_SHEET_ETAT, contact.etat ?: UNSET)
             PeekRow(Fr.CARTE_SHEET_ROLES, contact.roles.takeIf { it.isNotEmpty() }?.joinToString(" · ") ?: UNSET)
             OutlinedButton(
-                onClick = {}, // FS-03 seam: navigate to /fiche/{id} once it exists
-                enabled = false,
+                onClick = { onOpenFiche(contact) },
                 shape = RoundedCornerShape(999.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp, bottom = 24.dp)
                     .semantics {
                         contentDescription = Fr.CARTE_OPEN_FICHE
-                        disabled()
                     },
             ) {
                 Text(Fr.CARTE_OPEN_FICHE)

@@ -39,7 +39,7 @@ import com.swab.android.l10n.Fr
  * unplaced contacts stay visible in a tray — nothing hidden (MAP-06/09).
  */
 @Composable
-fun CarteScreen(viewModel: CarteViewModel) {
+fun CarteScreen(viewModel: CarteViewModel, onOpenFiche: (String) -> Unit) {
     val contacts by viewModel.contacts.collectAsState()
     val listMode by viewModel.listMode.collectAsState()
     val legendOpen by viewModel.legendOpen.collectAsState()
@@ -118,7 +118,14 @@ fun CarteScreen(viewModel: CarteViewModel) {
         }
     }
 
-    PeekSheet(contact = selected, onDismiss = viewModel::clearSelection)
+    PeekSheet(
+        contact = selected,
+        onDismiss = viewModel::clearSelection,
+        onOpenFiche = { contact ->
+            viewModel.clearSelection()
+            onOpenFiche(contact.id)
+        },
+    )
 }
 
 /** MAP-03 legend: explains the état colors — toggled, never shown unasked. */
