@@ -10,18 +10,21 @@ _Last updated: 2026-07-10_
 > native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose). `apps/mobile` is the
 > **frozen reference implementation** (critical fixes only) until each module reaches native
 > parity. Knowledge transfer: `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`.
-> Module statuses below describe the RN reference. **Wave 1 native parity (FS-07 client scope +
-> FS-01) landed 2026-07-10**: `apps/ios` (55/55 tests, 91.9% coverage) and `apps/android` (47/47
-> tests, 98.1% domain coverage) both reproduce the crypto/phone-hash vectors exactly and
-> implement vault/sync/API-client/onboarding logic. Both apps were built and run for real — iOS on
-> the "iPhone 17" Simulator (Welcome screen only, screenshot-verified), Android on a `Pixel_6_Pro`
-> emulator with a **full live walkthrough** against `docker compose up`'s API (welcome → phone →
-> OTP → new-user name → contacts) that found and fixed two real bugs (emulator-to-host networking,
-> and an Android Keystore IV restriction on vault-key creation) plus a Compose navigation
-> state-loss bug — see `apps/android/CHANGELOG.md`'s 2026-07-10 walkthrough entry. Full
-> per-criterion status (including what's still 🟡 pending on-device verification) is tracked in
-> `docs/migration/rn-audit-map.md`'s Wave 1
-> checklist, not duplicated here.
+> Module statuses below describe the RN reference. **Wave 1 (FS-07 client scope + FS-01) and
+> Wave 2 (FS-02 Relationship Map) native parity both landed 2026-07-10**: `apps/ios` (77/77 tests,
+> 92.7% `SwabCore` coverage) and `apps/android` (80/80 tests, 98.4% domain coverage). Both apps
+> were built and run for real on Simulator/emulator; Android additionally got a full live
+> walkthrough against `docker compose up`'s API for both waves (welcome → phone → OTP → contacts →
+> calibrate → done → Carte, including tapping a contact node to open the peek sheet and toggling
+> list mode), which found and fixed four real bugs along the way — emulator-to-host networking, an
+> Android Keystore IV restriction, a Compose navigation state-loss bug, and a density-scaling bug
+> in the radial map's `Canvas` rendering — see `apps/android/CHANGELOG.md`'s two 2026-07-10
+> entries. iOS is confirmed running on the "iPhone 17" Simulator (Welcome screen live, Carte screen
+> screenshot-verified via a temporary seeded view) but not interactively walked — this environment
+> has no assistive-access permission for scripted Simulator input. A pre-existing bug was also
+> found in the RN-ported `CalibrateScreen`'s ring-picker (unrelated to Wave 2, not yet fixed) — see
+> `docs/migration/rn-audit-map.md`. Full per-criterion status is tracked in that file's Wave 1 and
+> Wave 2 checklists, not duplicated here.
 
 ## Modules (functional specs)
 

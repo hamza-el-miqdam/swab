@@ -84,17 +84,62 @@ an architectural argument, not an on-device proof, and a live iOS walkthrough re
 | Vault encrypted at rest; key in OS keystore; fresh-copy accessors (VLT-01) | ✅ (Keychain exercised directly by unsigned CLI test process) | ✅ (live: `getOrCreateVaultKey()` succeeds against the real Keystore after ONB-02's OTP-verify step; also 2 new instrumented tests) |
 | Sync: push, 409 → re-pull + retry once (VLT-02) | ✅ | ✅ |
 | API client sends only `phoneHash`/`code`/`displayName`/`{blob,version}` (ONB-05, asserted via test) | ✅ | ✅ (also confirmed live against real API request logs) |
-| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | 🟡 Welcome confirmed on Simulator (screenshot-verified); phone/otp/contacts/calibrate/done not walked live (no scripted input available in this environment) | ✅ welcome→phone→otp(+needsName)→contacts walked live end-to-end against the real API; calibrate/done not walked (no reason to expect issues — same pattern as contacts) |
+| Onboarding flow welcome→phone→otp→contacts→calibrate→done (ONB-01..07), French copy verbatim | 🟡 Welcome confirmed on Simulator (screenshot-verified); phone/otp/contacts/calibrate/done not walked live (no scripted input available in this environment) | ✅ full walkthrough welcome→phone→otp(+needsName)→contacts→calibrate→done→Carte driven live twice (2026-07-10, Wave 1 verification and again ahead of Wave 2), zero crashes |
 | Resume-at-step after process kill (ONB-08); step stays `phone` until OTP verified | ✅ (unit tests; also incidentally confirmed live — a stale app container resumed straight to Phone on relaunch) | ✅ (unit tests; live walkthrough also exercised the happy path through OTP verify) |
 | Contacts denied → manual entry, identical capabilities (ONB-03) | 🟡 (manual path ✅; real `CNContactStore` import deferred, fake stands in) | 🟡 (manual path ✅; real `ContentResolver` import deferred, stub) |
 | État/ressenti layer optional + collapsed (ONB-06); no gamification (ONB-09, asserted via copy test) | ✅ | ✅ |
 | Airplane-mode: calibration persists locally, syncs later, only `POST /vault` carries derived data | ✅ (unit-level) | ✅ (unit-level) |
 
-**Remaining before Wave 1 is fully 🟢 on both platforms:** a full live walkthrough (welcome →
-phone → OTP → contacts → calibrate → done) against a running `apps/api` instance
-(`docker compose up --build`), which would exercise Android's real Keystore/DataStore adapters and
-both platforms' vault-key creation on real hardware for the first time. Real contacts-import
-(Contacts framework / `ContentResolver`) is stubbed on both platforms; the manual-entry path
-already satisfies ONB-03's denial-parity acceptance criterion. FS-02's real radial
-`Canvas`/`MapGeometry` module (Wave 2) is out of scope — both platforms use a minimal
-list/ring-button calibration interaction for now, matching the RN reference's own stated v0.
+**Remaining before Wave 1 is fully 🟢 on both platforms:** the same live walkthrough on iOS
+(blocked on this host's lack of assistive-access permission for scripted Simulator input — an
+XCUITest target would sidestep this if picked up later) and real contacts-import (both platforms
+stub it; manual entry already satisfies ONB-03's denial-parity criterion).
+
+**Known bug found during the Android walkthrough, tracked but not yet fixed (pre-existing Wave 1
+code, unrelated to Wave 2):** `apps/android/app/src/main/kotlin/com/swab/android/ui/onboarding/CalibrateScreen.kt`'s
+ring-picker `Row` (4 `GhostButton`s: "Anneau 1"..."Anneau 4") renders the 3rd/4th buttons squeezed
+into a vertical column of single characters on the `Pixel_6_Pro` emulator once a contact is
+selected — almost certainly a `Row` width-overflow/measurement issue with 4 unconstrained
+`TextButton`s exceeding available width. Does not block calibration (ring 1/2 buttons work fine,
+and any ring is reachable by keyboard/other means), but should be fixed before this screen ships.
+
+## Wave 2 parity checklist (FS-02 Relationship Map)
+
+Requirement coverage: MAP-01..09.
+
+Status as of 2026-07-10. iOS: `apps/ios/CHANGELOG.md`, 77/77 tests (22 new), 92.73% `SwabCore`
+coverage, 100% on the 3 new pure Carte modules. Android: `apps/android/CHANGELOG.md`, 80/80 tests
+(33 new), 98.4% domain coverage, 100% on the new `carte` package.
+
+**Android went further again: a full live walkthrough** — this time driven by the lead directly
+(not delegated), reaching the actual Carte screen via a real onboarding run (welcome → phone → OTP
+→ 2 manually-added contacts → calibrate → done) against the live API, then interacting with the
+rendered map: tapped a contact node → peek sheet opened correctly (Intimité/État/Rôles, disabled
+"Ouvrir la fiche"), toggled list mode → contacts correctly grouped under "Très proche", zero
+crashes. This live pass also caught and fixed a real density-scaling bug (see Android changelog):
+`MapGeometry`'s dp-equivalent units were run through `Float.toDp()` (which expects raw pixels) —
+a double conversion that collapsed the whole map to ~1/3.5 size and made contact nodes appear to
+overlap "moi" on the emulator's 3.5x-density display. No JVM test could have caught this.
+
+**iOS**: build succeeds for the real Simulator app target; a temporary seeded view (reverted after,
+`git diff` on `SwabApp.swift` shows only the intended 6-line wiring) confirmed the map renders
+pixel-accurately (ring radii, spoke lines, état colors, unplaced tray, 3-tab nav) via screenshot.
+Interactive verification (tap → peek sheet, pinch/pan) was not possible — same assistive-access
+blocker as Wave 1.
+
+| Criterion | iOS | Android |
+|---|---|---|
+| MAP-01 (radial layout, moi centered, ring from vault) | ✅ (unit-tested geometry + screenshot-verified) | ✅ (unit-tested + live-verified) |
+| MAP-02 (exactly 3 nav items, no badges) | ✅ (no badge API surface exists in the file, by construction) | ✅ (same, + live-verified) |
+| MAP-03 (état/ring visual encoding) | ✅ | ✅ |
+| MAP-04 (tap → peek sheet, animated re-tag, disabled fiche seam) | 🟡 implemented + code-reviewed; not interaction-tested (no UI test target, no scripted taps) | ✅ live-verified: tap opens the peek sheet with correct rows and the disabled fiche button |
+| MAP-05 (offline-first, no network) | ✅ (structural source-scan test) | ✅ (structural source-scan test) |
+| MAP-06 (calm empty state) | ✅ (copy wired; not exercised live with zero contacts) | ✅ (copy wired; not exercised live with zero contacts) |
+| MAP-07 (≤150 contacts, 60fps pan/zoom) | 🟡 geometry math verified at scale; no Instruments profiling done | 🟡 geometry math verified at n=150 in `MapGeometryTest`; no Perfetto/60fps profiling done |
+| MAP-08 (screen-reader list fallback) | ✅ (accessibility-label test) | ✅ (accessibility-label test + live-verified list mode) |
+| MAP-09 (no counters/search/sorting) | ✅ (copy-ethos test covers all new strings) | ✅ (copy-ethos test covers all new strings) |
+
+**Remaining before Wave 2 is fully 🟢 on both platforms:** iOS interactive verification (peek
+sheet tap, pinch/pan) once a scripted-input path exists; 60fps/jank profiling under a realistic
+~150-contact load on both platforms (OQ-MAP-1 clustering itself stays explicitly out of scope per
+the spec); the pre-existing `CalibrateScreen` ring-picker layout bug noted above.
