@@ -18,6 +18,7 @@ Swab (صواب) — an app to express desires ("envies") to scopes of friends, r
 - Minimum 80% line coverage on changed packages, enforced in CI (`vitest --coverage` / `jest --coverage`; threshold configured in each package, not globally fudged).
 - Test the contract, not the implementation: table-driven tests for pure logic, integration tests against a real Postgres (Neon CI branch), no mocking of Prisma in integration tests.
 - Every bug fix starts with a regression test that reproduces it.
+- **E2E gate (mobile — part of Definition of Done):** every functional requirement of an implemented spec has a scenario in `docs/qa/e2e-scenarios.md` and an entry in `docs/qa/e2e-coverage.json` (verification class: `automated` / `unit-covered` / `api-integration` / `manual` / `not-e2e-verifiable` — honest classification, never silently dropped). Before any `area:ios`/`area:android` task is Done, the platform's full on-device E2E suite runs via `scripts/e2e-ios.sh` / `scripts/e2e-android.sh` (booted Simulator/emulator + live local API): the generated `test-results/e2e/e2e-report.md` must be **PASS with zero drift-guard failures**, and its summary is pasted into the PR. E2E test names carry their requirement IDs (`test_ONB05_...`) — the report generator joins results to requirements through the manifest. New or changed user-facing requirements update scenarios + manifest in the same PR.
 
 ## G3 — Observability
 
