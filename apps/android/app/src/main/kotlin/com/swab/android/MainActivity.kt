@@ -83,6 +83,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // E2E-only seed hook (legacy-vault backward-compat test). Which class
+        // this resolves to is decided at COMPILE time by build variant: the
+        // real implementation exists only in src/debug/kotlin; release builds
+        // compile the src/release/kotlin no-op instead, so this line is inert
+        // in production — see E2ESeedHooks' header for the full argument.
+        // Must run before AppContainer so the seeded blob is on disk before
+        // anything hydrates the vault.
+        E2ESeedHooks.apply(intent, applicationContext)
+
         val container = AppContainer(applicationContext)
 
         setContent {

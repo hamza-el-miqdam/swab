@@ -22,6 +22,19 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // E2E test isolation (apps/android/CHANGELOG.md, e2e suite entry):
+        // Android Test Orchestrator restarts the app process AND clears its
+        // package data (DataStore prefs — onboarding step, vault, session
+        // tokens) before every single @Test, not just once per
+        // connectedAndroidTest invocation. A same-process file-deletion
+        // approach was tried first and rejected: Jetpack DataStore's
+        // `preferencesDataStore` delegate is a process-wide singleton keyed
+        // by file path, so deleting that file out from under an
+        // already-initialized DataStore instance from a PREVIOUS test in the
+        // same instrumentation process corrupts reads for every test after
+        // the first one in the run — this was caught live (7/8 E2E tests
+        // hung at the very first screen) before landing.
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
     buildTypes {
@@ -62,6 +75,15 @@ android {
         getByName("test") {
             kotlin.srcDirs("src/test/kotlin")
         }
+        // Variant-selected E2E seed hook (Wave 4): the real implementation is
+        // compiled ONLY into debug builds; release gets a no-op twin, so the
+        // hook is physically absent from release APKs (see E2ESeedHooks.kt).
+        getByName("debug") {
+            kotlin.srcDirs("src/debug/kotlin")
+        }
+        getByName("release") {
+            kotlin.srcDirs("src/release/kotlin")
+        }
     }
 
     packaging {
@@ -75,6 +97,10 @@ android {
             isIncludeAndroidResources = false
             isReturnDefaultValues = true
         }
+        // Pairs with clearPackageData above — each instrumented @Test gets
+        // its own process instead of sharing one across the whole
+        // connectedAndroidTest invocation.
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 }
 
@@ -116,6 +142,11 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation(composeBom)
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    // Test-only, not shipped in the app: gives each instrumented @Test its
+    // own process + clean package data (see testOptions.execution /
+    // clearPackageData above) — required for the new e2e/ suite's
+    // isolation, see apps/android/CHANGELOG.md.
+    androidTestUtil("androidx.test:orchestrator:1.5.1")
 }
 
 // Coverage on the domain layer (crypto/identity/vault/network/onboarding-state/

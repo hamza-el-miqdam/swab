@@ -2,6 +2,200 @@
 
 Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, newest first (G5).
 
+## 2026-07-11 — [ONB-01..09, MAP-01/02/04/06/08/09, FCH-01..08, VLT-01] Wave 4 — Compose UI E2E test suite + legacy-vault seed hook, driven end-to-end on a real emulator
+
+### What
+
+Added `app/src/androidTest/kotlin/com/swab/android/e2e/` — 14 instrumented Compose UI
+tests across 5 classes (plus 1 shared driver file, `E2EFlows.kt`) that drive the real
+app through Espresso/`compose-ui-test`, tapping and typing against the real Compose
+tree (no ViewModel mocking), against the real local API stack (`docker compose up`,
+`10.0.2.2:3001`):
+
+- `OnboardingE2ETest` — ONB-01..08 happy path (Welcome → phone → OTP →
+  display-name retry → manual contact add → calibrate rings 1/2 → Done → Carte);
+  ONB-09 no-gamification: at every onboarding screen landing, scans the ENTIRE
+  rendered semantics tree for percent signs and `X/Y` counter shapes
+  (complements the JVM `NoGamificationCopyTest`, which only checks the static
+  `Fr` table — this catches runtime-composed copy); plus a dedicated
+  regression test for the Wave-1 `SignupViewModel` per-`composable{}`
+  `remember` state-loss bug (asserts the real OTP screen renders instead of
+  the `OTP_MISSING_PHONE` fallback).
+- `RelationshipMapE2ETest` — MAP-01/04/08/09 (map rendering, peek sheet
+  content + fiche-open enablement, list-mode grouping); MAP-02 (bottom nav
+  exposes EXACTLY three Tab-role destinations — Carte/Envie/Sous-groupes,
+  each genuinely navigable — and no digits-only "badge-shaped" text node
+  exists on any of the three surfaces); MAP-06 (skip-contacts onboarding via
+  « Passer » → empty Calibrate shows the calm `CALIBRATE_EMPTY` copy → Carte
+  shows `CARTE_EMPTY` + centered « moi », with the same no-progress-framing
+  scan as ONB-09); plus a dedicated regression test for the Wave-2
+  `Float.toDp()` double-conversion density bug (measures a placed node's
+  actual rendered pixel width against `MapGeometry.nodeSize(ring) * density`
+  with tolerance, so a re-collapse reads as a hard failure instead of a
+  visual-only regression nobody notices).
+- `FicheE2ETest` — FCH-01..08 (open fiche from the map peek sheet, edit the
+  Intimité axis, back out, re-open, edit persisted); FCH-04 (history starts
+  empty after calibration — calibration writes rings without `recordAxisEdit`
+  — then each fiche axis edit appends a visible event, and ordering is
+  asserted newest-first by comparing the events' rendered y-positions);
+  FCH-08 (a manually-added contact — `targetId = null`, i.e. every contact
+  today since discovery has no Android client yet — shows
+  `FICHE_PENDING_LABEL` + `FICHE_ENVIE_INACTIVE` while its axes stay
+  genuinely editable: a real état edit selects, persists, and feeds history).
+- `LegacyVaultCompatE2ETest` — VLT-01 backward compat, the Android twin of
+  iOS's `--uitesting-seed-legacy-vault` XCUITest: seeds a PRE-FS-03-shaped
+  vault blob (no `history` array, no `targetId`/`lastAxisChangeAt`/
+  `staleSnoozedUntil` fields — the on-disk shape before commit 162b0c8)
+  through the REAL crypto path, then launches the app and asserts it reaches
+  Carte without crashing, the legacy contact renders on its ring, and its
+  fiche opens with the empty history feed + pending state instead of a
+  decode throw.
+- `ActivityRecreationSmokeTest` — full Activity destroy/recreate (device
+  rotation) after onboarding, asserting no crash and vault-backed contacts
+  survive — same class of "state scoped to the wrong lifetime" bug as the
+  Wave-1 nav fix, exercised one level up (Activity/process instead of
+  NavBackStackEntry).
+
+### Legacy-vault seed hook (`E2ESeedHooks`) — design + release safety
+
+`LegacyVaultCompatE2ETest` needs "old bytes already on disk" before the app
+first hydrates the vault. That is done by a debug-only seed hook, selected at
+COMPILE time by build variant:
+
+- `app/src/debug/kotlin/com/swab/android/E2ESeedHooks.kt` — the real
+  implementation. On an opt-in Intent extra
+  (`com.swab.android.e2e.SEED_LEGACY_VAULT`), it writes a hand-written
+  pre-FS-03 JSON contact list through the REAL production crypto path — the
+  actual `AndroidKeystoreVaultKeyStore.getOrCreateVaultKey()`
+  (hardware-backed Keystore wrap key, `javax.crypto`) and the actual
+  `VaultCrypto.encrypt` wire format (IV ‖ TAG ‖ CIPHERTEXT, base64) — into
+  DataStore under the stable keys `vault.blob.v1` / `vault.version.v1`, plus
+  `onboarding.step.v1 = complete` so launch lands on Carte. Nothing bypasses
+  the encryption; only the JSON *shape* is deliberately old.
+- `app/src/release/kotlin/com/swab/android/E2ESeedHooks.kt` — a no-op twin
+  with an empty body.
+
+Release-safety argument: this is NOT a runtime `if (BuildConfig.DEBUG)` gate —
+the seeding code is **physically absent from release APKs** because the release
+variant compiles the no-op source file instead (verified by disassembling the
+compiled release class: zero references to vault/DataStore/crypto symbols).
+Same exclusion class as iOS's `#if DEBUG`. Belt-and-braces, even a debug build
+behaves identically to before unless the launching Intent carries the test-only
+extra, which only `LegacyVaultCompatE2ETest` sets (via
+`createEmptyComposeRule` + manual `ActivityScenario.launch(intent)` —
+`createAndroidComposeRule` launches with a default Intent too early to attach
+it). An Intent extra was chosen over an instrumentation-runner argument
+because reading runner args from `src/main` would drag test infra into
+production code; the extra keeps `src/main`'s only touchpoint a single call
+into the variant-selected object at the top of `MainActivity.onCreate`
+(before `AppContainer`, so the blob is on disk before anything hydrates).
+
+`build.gradle.kts`: wired Android Test Orchestrator
+(`testInstrumentationRunnerArguments["clearPackageData"] = "true"`,
+`testOptions.execution = "ANDROIDX_TEST_ORCHESTRATOR"`,
+`androidTestUtil("androidx.test:orchestrator:1.5.1")`) so every `@Test` gets
+its own process and clean `DataStore`/vault state instead of sharing one
+process across the whole `connectedAndroidTest` invocation.
+
+### Real, verified run
+
+Final run (2026-07-11): `./gradlew :app:clean :app:connectedDebugAndroidTest`
+from clean, against a booted `Pixel_6_Pro` (API 34) AVD emulator and the live
+`docker compose up` API stack (`curl http://localhost:3001/health` → 200).
+**Final result: 16/16 instrumented tests passed, 0 failures, 0 errors,
+0 skipped** (`BUILD SUCCESSFUL in 1m 55s`) — the 14 e2e tests above plus the
+2 pre-existing `AndroidKeystoreVaultKeyStoreTest` cases (the Wave-1 Keystore
+caller-supplied-IV-on-`ENCRYPT_MODE` regression guard, already instrumented
+before this wave, unaffected by this change). JUnit XML under
+`app/build/outputs/androidTest-results/connected/debug/`. Release compile
+(`:app:compileReleaseKotlin`) also verified green with the no-op hook variant.
+(An earlier 2026-07-10 run of the then-8-test suite was 10/10 green on the
+same device.)
+
+The first clean attempt (2026-07-10) surfaced two real problems that a
+"should pass" report would have missed:
+
+1. Two overlapping `connectedAndroidTest` invocations against the same
+   device (one background, one foreground, launched a beat apart) corrupted
+   each other's instrumentation session — read as `Process crashed` /
+   `0 tests`. Not a product or test bug; resolved by never running more than
+   one instrumentation session against a device at a time.
+2. A genuine, reproducible `FicheE2ETest` failure on a real single-run
+   attempt: `Failed to inject touch input... could not find any node that
+   satisfies ContentDescription = 'Sam — Très proche'`. Root cause: the
+   test's own comment claimed `CarteViewModel`'s contact list stays stale on
+   return from Fiche (documented as an "intentional Wave-3 scope boundary"
+   at authoring time) — false. `ui/carte/CarteScreen.kt`'s
+   `LaunchedEffect(Unit) { viewModel.refresh() }` re-fires every time the
+   Carte `composable {}` re-enters composition, including navigating back
+   from Fiche, so the map's node label already shows the post-edit ring by
+   the time the test re-selects it. Fixed the test to assert against the
+   correct (refreshed) label instead of the stale one it originally assumed
+   — see the updated comment in `FicheE2ETest.kt`. This was a stale test
+   assumption, not an app bug; no `main`-app code changed for this fix.
+
+### Regression coverage vs. the known Wave 1-2 bugs — what's covered and what isn't
+
+- Emulator-to-host networking (`10.0.2.2`, not `localhost`): covered
+  implicitly by every test in the suite — `BuildConfig.API_BASE_URL` is
+  wired to `10.0.2.2:3001` (`app/build.gradle.kts`) and every onboarding
+  flow round-trips through the real API.
+- Compose `remember`-per-`composable{}` state loss (Wave 1, `SignupViewModel`
+  hoisting fix): directly regression-tested,
+  `OnboardingE2ETest.test_navigationStateLoss_phoneHashSurvivesPhoneToOtpTransition`.
+- Android Keystore rejecting caller-supplied IV on `ENCRYPT_MODE`: already
+  had a dedicated instrumented regression test,
+  `AndroidKeystoreVaultKeyStoreTest` (pre-existing, not part of this wave's
+  new files, but runs in the same `connectedAndroidTest` invocation and is
+  included in the 16/16 count above).
+- `Float.toDp()` double-conversion density bug (Wave 2, `MapGeometry`):
+  directly regression-tested,
+  `RelationshipMapE2ETest.test_densityRegression_placedNodeSizeIsNotCollapsed`.
+- `CalibrateScreen.kt` ring-picker text-wrap bug (Wave 1, still open,
+  `docs/migration/rn-audit-map.md`): **not** regression-tested — still open,
+  out of scope for this wave. `OnboardingE2ETest`'s shared
+  `completeOnboarding()` helper (`E2EFlows.kt`) deliberately only drives
+  rings 1/2 during calibration and asserts (`require`) if a test tries rings
+  3/4, so the suite doesn't silently pass by avoiding the buggy UI region —
+  any future attempt to exercise rings 3/4 headlessly fails loudly with a
+  pointer back to this note instead of hanging or mis-asserting.
+
+### Deliberately NOT automated (and why) — honest gaps, not stubs
+
+- MAP-05 (< 500ms first paint) and MAP-07 (60fps pan/zoom, ~150 contacts):
+  performance numbers measured inside `compose-ui-test` on an emulator are
+  noise, not evidence — needs a Macrobenchmark on real hardware.
+- MAP-03 visual grammar and MAP-04's "grows from its map position" spatial
+  continuity: purely visual/animated qualities with no semantics-tree
+  signature; the navigation seam itself IS covered (peek sheet → fiche).
+- FCH-05 staleness nudge (6-month threshold, 30-day snooze): needs time
+  travel; `FicheViewModel.nowProvider` is only injectable in JVM unit tests
+  (covered there), and faking the device clock under Orchestrator isn't
+  reliable. Not driven E2E.
+- FCH-04 "relationship events (matches)": no FS-04/05 data source exists yet
+  (`VaultHistoryEvent.axis = null` reserved) — only axis-edit events are
+  assertable today, and are.
+- ONB-03 device-contact import: `onImportContacts` is deliberately unwired in
+  this build (permission-gated picker lands later); only the manual-add path
+  is exercisable headlessly.
+- ONB-09's "no confetti/celebration": the E2E scan covers rendered TEXT
+  (percent/counter shapes); a celebratory *animation* would not be caught —
+  no such component exists in the codebase to assert against.
+
+### Gotchas for future changes to this suite
+
+- Each `@Test` needs a fresh phone number (`uniquePhoneNumber()` in
+  `E2EFlows.kt`) — the API throttles OTP requests per phone hash (max 3 per
+  5-minute window) and a reused number also skips the `needsName` branch the
+  onboarding flow exercises.
+- Never launch two `connectedAndroidTest` (or `connectedAndroidTest` +
+  Android Studio's own instrumented run) invocations against the same
+  device concurrently — see problem 1 above.
+- `waitUntilSelected` (`E2EFlows.kt`) intentionally reads the **merged**
+  semantics tree (unlike the other `waitUntil*` helpers, which use
+  unmerged) — `Selected` lives on `FilterChip`'s merged parent node, not the
+  raw child `Text` node.
+
 ## 2026-07-10 — [FCH-01..08] FS-03 Contact Card (Wave 3) — greenfield fiche screen, vault history + staleness
 
 ### What
