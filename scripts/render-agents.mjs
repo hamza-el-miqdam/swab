@@ -71,10 +71,10 @@ const AGENTS = [
     name: "design-specialist",
     source: "agents/design-specialist.md",
     area: "design",
-    applyTo: "blueprints/**,docs/design/**",
-    title: "Design & Blueprint Specialist (area:design)",
+    applyTo: "blueprints/**,docs/design/**,docs/design-system.md,packages/ui/**",
+    title: "Design & Design-System Specialist (area:design)",
     description:
-      "Design & Blueprint Specialist for Swab (area:design). Use for blueprints (HTML prototypes), the Penpot design system and prototype (via the Penpot MCP), the graphic charter « Nuit », design tokens, and design notes feeding /speckit-specify. MUST be used for changes touching blueprints/ or docs/design/.",
+      "Design & Design-System Specialist for Swab (area:design). Use for blueprints (HTML prototypes), the design token contract (docs/design-system.md, packages/ui foundations), the Penpot design system and prototype (via the Penpot MCP), the graphic charter « Nuit », and design notes feeding /speckit-specify. MUST be used for changes touching blueprints/, docs/design/, docs/design-system.md, or design tokens in packages/ui.",
   },
   {
     name: "notion-liaison-specialist",

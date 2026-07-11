@@ -41,6 +41,12 @@
 - Entry gate `app/index.tsx`: onboarding-complete now redirects to `/carte` (was an inline placeholder).
 - i18n: `carte.title` is now « Ma carte » (blueprint verbatim), `carte.placeholder` removed; added `carte.subtitle/empty/me/listMode/legend/openFiche/sheet.*`, `nav.*`, `envie.*`, `sousgroupes.*`.
 
+## 2026-07-07 — Adopt Nuit design tokens in `src/theme.ts`
+
+- Retargeted `colors` from the earlier earthy `#16120D` blueprint to the **Nuit** palette (source of truth: `docs/design-system.md`): `bg #0F1426`, `surface #171E38`, plus raised surfaces (`surfaceRaised`, `surfaceHigh`), rgba hairlines (`line`, `lineStrong`), the ivoire/brume/ombre text ramp, `accent #E4BE6A` (+ `accentInk`, `accentTint`, `accentTrack`), and semantic status hues `sauge`/`ciel`/`corail`.
+- Added `typography` (Space Grotesk display + Inter body, with the prototype type scale) and `radii` tokens; extended `spacing` with `sm: 12`. Kept the `text`/`textDim`/`accent`/`accentInk`/`bg`/`surface`/`line` keys `src/ui.tsx` already consumes, plus a `ringLine` back-compat alias — no call-site changes needed.
+- **Gotcha:** token names are the French Nuit names by role (`accent` = étoile, `corail` = *en retrait*, never "error red"). Add new values to the prototype + `docs/design-system.md` first (area:design), then reflect here — don't invent colours in app code.
+
 ## 2026-07-06 — Real ESLint (Expo preset + repo base) replaces the `exit 0` stub
 
 - `eslint.config.mjs` composes `eslint-config-expo/flat` with the root config; `lint` script now runs `eslint .`. New devDeps: `eslint@^9` (required — see root changelog gotcha), `eslint-config-expo@^57`.

@@ -88,6 +88,14 @@
 - `CLAUDE.md` gained a "Spec-driven development (spec-kit)" section documenting the `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` flow and the constitution's mirror-not-replace relationship to `agents/_global-directives.md`. Existing `docs/specs/FS-*.md` specs are not being migrated into spec-kit's format — spec-kit is for new feature scaffolding going forward.
 - Follow-up: this is the foundation for the intended blueprint → spec → code workflow (design system blueprints feeding `/speckit-specify`); no blueprint tooling exists yet.
 
+## 2026-07-07 — Nuit design system: consolidated prototype, token contract, design agent merged into the design specialist
+
+- **New design system « Nuit »** derived from the consolidated app prototype (Hamza's `swabappprototype`). Saved the prototype into the repo at `docs/design/swab-prototype-consolidated.html` as the normative reference (gabarit iPhone 17, 402 × 874 pt @3x).
+- `docs/design-system.md`: the token contract — colour tokens (deep-blue `nuit #0F1426` base, `étoile #E4BE6A` accent, `sauge`/`ciel`/`corail` semantic status hues, ivoire/brume/ombre text ramp), Space Grotesk + Inter type scale, spacing/radii, and the component grammar (buttons, tags, segmented controls, tiles, rows, switch, journal, done-header, privacy note…). This supersedes the earlier earthy `#16120D` blueprint palette.
+- **Merged into the existing `area:design` agent** (`agents/design-specialist.md`, previously "Design & Blueprint Specialist") rather than adding a second design agent: scope widened to `docs/design-system.md` and `packages/ui/**` foundations alongside `blueprints/**`/`docs/design/**`; registry `applyTo` in `scripts/render-agents.mjs` updated to match; rendered Copilot (`.github/instructions/design.instructions.md`) and Claude Code (`.claude/agents/design-specialist.md`) copies regenerated.
+- Updated the web-frontend agent's stale palette note (`#16120D` → Nuit `#0F1426`) and re-rendered.
+- **Penpot:** the design library (colour styles, typographies, components, tokens) is built from `docs/design-system.md` via the Penpot MCP plugin — see `docs/STATUS.md` for library state. Requires the plugin to be connected to the project.
+
 ## 2026-07-06 — Repo-wide ESLint (flat config): `lint` is now a real gate
 
 - Root `eslint.config.mjs`: typescript-eslint `recommendedTypeChecked` (type-aware via `projectService`, off each package's own tsconfig) + `eslint-config-prettier` last (Prettier stays the formatter). Bug-catching extras: `eqeqeq`, `no-console` (G3: pino only), `switch-exhaustiveness-check`. Test files relax `require-await`, `no-require-imports` (jest fresh-module pattern) and the `no-unsafe-*` family (jest mocks are any-typed).
