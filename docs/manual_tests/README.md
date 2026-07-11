@@ -1,5 +1,12 @@
 # Swab Functional Testing
 
+> **Superseded as the Definition-of-Done gate (Wave 4).** The binding E2E gate is now the
+> automated on-device suites run via `scripts/e2e-ios.sh` / `scripts/e2e-android.sh`, with
+> per-requirement scenarios in [`../qa/e2e-scenarios.md`](../qa/e2e-scenarios.md), the coverage
+> manifest in [`../qa/e2e-coverage.json`](../qa/e2e-coverage.json), and a generated report under
+> `test-results/e2e/`. This directory remains useful as a **manual smoke-test walkthrough**
+> (exploratory testing, human verification of visual/perf requirements classed `manual`).
+
 > **Wave 1 + Wave 2 Functional Test Suite**
 > 
 > Verify Onboarding (FS-01), Identity & Vault (FS-07), and Relationship Map (FS-02) end-to-end on both iOS and Android platforms.

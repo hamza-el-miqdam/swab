@@ -30,6 +30,10 @@ web-build/
 .env.*
 !.env.example
 
+# --- Test artifacts (generated per-run by scripts/e2e-*.sh — never committed) ---
+test-results/
+*.xcresult
+
 # --- Logs & debug ---
 *.log
 npm-debug.log*
