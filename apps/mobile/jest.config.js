@@ -6,6 +6,8 @@
  */
 module.exports = {
   preset: 'jest-expo',
+  // gesture-handler + reanimated need their jest shims before anything renders
+  setupFiles: ['react-native-gesture-handler/jestSetup'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   moduleNameMapper: {
     '^react-native-quick-crypto$': '<rootDir>/test/quick-crypto-node.js',

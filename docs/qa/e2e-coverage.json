@@ -1,0 +1,278 @@
+{
+  "$comment": "FS requirement → E2E verification manifest. Joined against on-device test results by scripts/e2e-report.mjs. Statuses: automated (named tests must run — drift guard), unit-covered, api-integration, manual, not-e2e-verifiable. Scenarios: docs/qa/e2e-scenarios.md. Update in the same PR as any user-facing requirement change (G2 E2E gate).",
+  "requirements": {
+    "ONB-01": {
+      "fs": "FS-01",
+      "title": "Welcome screen, privacy promise, single CTA « Commencer »",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte"] }
+    },
+    "ONB-02": {
+      "fs": "FS-01",
+      "title": "Phone-OTP signup; vault key before any classification input",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte", "OnboardingE2ETest.test_navigationStateLoss_phoneHashSurvivesPhoneToOtpTransition"] },
+      "notes": "Android also guards the Wave-1 phone→OTP state-loss regression."
+    },
+    "ONB-03": {
+      "fs": "FS-01",
+      "title": "Add contacts: import / manual / « Passer » without penalty",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts", "OnboardingE2ETests.test_ONB03_skippingContacts_stillReachesCarte"] },
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte", "RelationshipMapE2ETest.test_MAP06_skipContactsOnboarding_emptyMapIsCalm"] },
+      "notes": "Manual entry + skip paths automated. OS contact-import permission path is deliberately unwired in test envs (no seeded device contacts) — manual check when touched."
+    },
+    "ONB-04": {
+      "fs": "FS-01",
+      "title": "Radial calibration around « moi » prefiguring the map",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte"] },
+      "notes": "Rings 1/2 only — E2EFlows/OnboardingFlow hard-fail on rings 3/4 (open CalibrateScreen text-wrap bug, tracked since Wave 2)."
+    },
+    "ONB-05": {
+      "fs": "FS-01",
+      "title": "Classification data never leaves the device during onboarding",
+      "ios": { "status": "unit-covered" },
+      "android": { "status": "unit-covered" },
+      "notes": "Wire-level assertion via network mocks in platform unit suites + playbook §6 privacy audit (wire audit). Not driveable from the UI layer."
+    },
+    "ONB-06": {
+      "fs": "FS-01",
+      "title": "État/Ressenti layer optional, collapsed by default",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB03_skippingContacts_stillReachesCarte"] },
+      "android": { "status": "automated", "tests": ["RelationshipMapE2ETest.test_MAP06_skipContactsOnboarding_emptyMapIsCalm"] },
+      "notes": "Automated tests prove completion without ever expanding the layer; collapsed-by-default visual state is part of the manual smoke walkthrough."
+    },
+    "ONB-07": {
+      "fs": "FS-01",
+      "title": "Completion screen privacy confirmation → « Voir ma carte » → FS-02",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte"] }
+    },
+    "ONB-08": {
+      "fs": "FS-01",
+      "title": "Onboarding resumable mid-flow from local state",
+      "ios": { "status": "automated", "tests": ["RegressionAndResilienceE2ETests.test_backgroundForeground_midOnboarding_doesNotCrash", "RegressionAndResilienceE2ETests.test_backgroundForeground_onCarte_doesNotCrash"] },
+      "android": { "status": "automated", "tests": ["ActivityRecreationSmokeTest.test_recreateAtCarte_noCrash_contactsSurvive"] },
+      "notes": "Android covers full activity destroy/recreate; iOS covers background/foreground (XCUITest cannot SIGKILL-and-relaunch preserving state) — cold-kill resume on iOS stays a manual smoke check."
+    },
+    "ONB-09": {
+      "fs": "FS-01",
+      "title": "No gamification: no %, confetti, or counters; positional steps only",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB09_noGamification_onAnyOnboardingScreen"] },
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB09_noGamificationCopyOnAnyOnboardingScreen"] },
+      "notes": "Text/semantics-tree scans; celebration *animations* have no semantics signature — none exist to assert against (manual eye kept in walkthrough)."
+    },
+    "MAP-01": {
+      "fs": "FS-02",
+      "title": "Radial layout from the vault, no server call to render",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
+      "android": { "status": "automated", "tests": ["RelationshipMapE2ETest.test_MAP01_09_mapRendersMoiAndPlacedContactNodes", "RelationshipMapE2ETest.test_densityRegression_placedNodeSizeIsNotCollapsed"] },
+      "notes": "Android also guards the Wave-2 Float.toDp() density-collapse regression."
+    },
+    "MAP-02": {
+      "fs": "FS-02",
+      "title": "Exactly three nav destinations (Carte, Envie, Sous-groupes), no badges",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_MAP02_tabBar_exactlyThreeDestinations_noBadges"] },
+      "android": { "status": "automated", "tests": ["RelationshipMapE2ETest.test_MAP02_bottomNavExactlyThreeDestinations_noBadges"] }
+    },
+    "MAP-03": {
+      "fs": "FS-02",
+      "title": "Non-textual axis encoding (ring = intimité; état A·chaud / B·froid)",
+      "ios": { "status": "manual" },
+      "android": { "status": "manual" },
+      "notes": "Visual grammar against the blueprint — human judgment; no semantics signature to assert."
+    },
+    "MAP-04": {
+      "fs": "FS-02",
+      "title": "Tap contact → peek sheet → « Ouvrir la fiche » → FS-03 with spatial continuity",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_MAP04_peekSheet_showsCorrectRowsAndEnabledOpenFiche"] },
+      "android": { "status": "automated", "tests": ["RelationshipMapE2ETest.test_MAP04_peekSheetShowsCorrectRowsAndOpenFicheIsEnabled"] },
+      "notes": "Guards the Wave-2→3 disabled-« Ouvrir la fiche » regression. The grow-from-position animation itself is a manual/visual check."
+    },
+    "MAP-05": {
+      "fs": "FS-02",
+      "title": "Fully offline render from vault; first paint < 500 ms",
+      "ios": { "status": "manual" },
+      "android": { "status": "manual" },
+      "notes": "Offline functionality is implicitly exercised (suites render map from local state); the 500 ms budget needs Instruments/Macrobenchmark — emulator timings are noise."
+    },
+    "MAP-06": {
+      "fs": "FS-02",
+      "title": "Calm empty/sparse states, no progress framing",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_MAP06_emptyMap_isCalm_noProgressFramingOrPressureCopy"] },
+      "android": { "status": "automated", "tests": ["RelationshipMapE2ETest.test_MAP06_skipContactsOnboarding_emptyMapIsCalm"] }
+    },
+    "MAP-07": {
+      "fs": "FS-02",
+      "title": "~150 contacts at 60 fps; graceful ring clustering beyond",
+      "ios": { "status": "manual" },
+      "android": { "status": "manual" },
+      "notes": "Perf profiling (Instruments / Macrobenchmark on hardware); clustering design still open (OQ-MAP-1)."
+    },
+    "MAP-08": {
+      "fs": "FS-02",
+      "title": "Screen-reader list fallback grouped by ring, feature-equivalent",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_MAP08_listMode_groupsContactsByIntimacyLevel"] },
+      "android": { "status": "automated", "tests": ["RelationshipMapE2ETest.test_MAP08_listModeGroupsContactsByIntimacyLevel"] },
+      "notes": "Grouping + fiche parity automated; the VoiceOver/TalkBack experience itself is a manual accessibility pass."
+    },
+    "MAP-09": {
+      "fs": "FS-02",
+      "title": "No search, no sorting metrics, no top-friends — spatial discovery only",
+      "ios": { "status": "manual" },
+      "android": { "status": "automated", "tests": ["RelationshipMapE2ETest.test_MAP01_09_mapRendersMoiAndPlacedContactNodes"] },
+      "notes": "iOS has no dedicated absence assertion yet — candidate for the next iOS E2E increment."
+    },
+    "FCH-01": {
+      "fs": "FS-03",
+      "title": "Four axes tap-editable; immediate vault write + history event",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_FCH01_and_FCH07_editPersists_andMapSurvivesRoundTrip"] },
+      "android": { "status": "automated", "tests": ["FicheE2ETest.test_FCH01_08_openEditBackReopen_editPersists"] }
+    },
+    "FCH-02": {
+      "fs": "FS-03",
+      "title": "Asymmetric, private classification; copy never implies symmetry",
+      "ios": { "status": "manual" },
+      "android": { "status": "manual" },
+      "notes": "Copy review — human judgment against spec French copy."
+    },
+    "FCH-03": {
+      "fs": "FS-03",
+      "title": "No counters or metrics on the fiche; reciprocity qualitative only",
+      "ios": { "status": "manual" },
+      "android": { "status": "manual" },
+      "notes": "Wave-3 converged interpretation: no reciprocity signal shown at all. Absence-of-metrics is checked in the manual walkthrough; a semantics-scan test is a candidate increment."
+    },
+    "FCH-04": {
+      "fs": "FS-03",
+      "title": "History feed: axis changes + coarse match events, 12 months, newest first",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_FCH04_axisEdit_appendsHistoryEvent_newestFirst"] },
+      "android": { "status": "automated", "tests": ["FicheE2ETest.test_FCH04_axisEditAppendsVisibleHistory_newestFirst"] },
+      "notes": "Match events not yet testable — FS-05 not implemented."
+    },
+    "FCH-05": {
+      "fs": "FS-03",
+      "title": "Staleness nudge: two actions, never modal, 30-day re-eligibility",
+      "ios": { "status": "unit-covered" },
+      "android": { "status": "unit-covered" },
+      "notes": "Needs time travel; nowProvider is injectable only in JVM/XCTest unit suites, where the logic is covered."
+    },
+    "FCH-06": {
+      "fs": "FS-03",
+      "title": "« en pause » état + FS-06 filter consequence shown",
+      "ios": { "status": "unit-covered" },
+      "android": { "status": "unit-covered" },
+      "notes": "Vocabulary + consequence rendering covered in view-model unit tests. The état-vs-ressenti axis ambiguity for « en pause » remains flagged (Wave 3) — E2E once FS-06 lands and resolves it."
+    },
+    "FCH-07": {
+      "fs": "FS-03",
+      "title": "Back to map preserving position (MAP-04 reverse transition)",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_FCH01_and_FCH07_editPersists_andMapSurvivesRoundTrip"] },
+      "android": { "status": "automated", "tests": ["FicheE2ETest.test_FCH01_08_openEditBackReopen_editPersists"] }
+    },
+    "FCH-08": {
+      "fs": "FS-03",
+      "title": "Fiche for non-member contacts; axes editable, envie inactive",
+      "ios": { "status": "automated", "tests": ["MapAndFicheE2ETests.test_FCH08_pendingContact_ficheEditable_envieShownInactive"] },
+      "android": { "status": "automated", "tests": ["FicheE2ETest.test_FCH08_pendingContact_ficheFullyEditable_envieInactive"] }
+    },
+    "IDT-01": {
+      "fs": "FS-07",
+      "title": "Phone-OTP identity; server stores phoneHash only",
+      "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte"] },
+      "notes": "Mobile OTP round-trip automated against the live dev API; the phoneHash-only storage guarantee is an apps/api integration + DB-audit assertion."
+    },
+    "IDT-02": {
+      "fs": "FS-07",
+      "title": "JWT access + rotating refresh; reuse detection revokes family",
+      "ios": { "status": "api-integration" },
+      "android": { "status": "api-integration" },
+      "notes": "Server-session behavior — apps/api integration suite; no mobile UI surface."
+    },
+    "IDT-03": {
+      "fs": "FS-07",
+      "title": "OTP throttling per phoneHash/IP; single-use, ≤5 min codes",
+      "ios": { "status": "api-integration" },
+      "android": { "status": "api-integration" },
+      "notes": "Rate-limit behavior — deliberately not driven from a device (abusive request volume)."
+    },
+    "IDT-04": {
+      "fs": "FS-07",
+      "title": "In-app account deletion → cascade erasure, 7-day grace",
+      "ios": { "status": "not-e2e-verifiable" },
+      "android": { "status": "not-e2e-verifiable" },
+      "notes": "No native deletion UI exists yet (outside Waves 1–3 scope); cascade erasure is an apps/api integration test. Reclass to automated when the UI lands."
+    },
+    "IDT-05": {
+      "fs": "FS-07",
+      "title": "Multi-device / vault-key transfer via recovery phrase",
+      "ios": { "status": "not-e2e-verifiable" },
+      "android": { "status": "not-e2e-verifiable" },
+      "notes": "Out of POC scope by spec (⚠️ ASSUMPTION); no surface exists."
+    },
+    "IDT-06": {
+      "fs": "FS-07",
+      "title": "Hashed contact discovery; boolean-only responses",
+      "ios": { "status": "unit-covered" },
+      "android": { "status": "unit-covered" },
+      "notes": "Hash-before-network is unit/wire covered; response-shape guarantees are apps/api tests. Import UI path exercised by onboarding E2E."
+    },
+    "IDT-07": {
+      "fs": "FS-07",
+      "title": "Non-member links + invite via web landing; pending links resolve on join",
+      "ios": { "status": "api-integration" },
+      "android": { "status": "api-integration" },
+      "notes": "Web/backend scope. The mobile-side half (non-member contact has an editable fiche) is FCH-08 (automated)."
+    },
+    "IDT-08": {
+      "fs": "FS-07",
+      "title": "Directional private links; no “X added you”, ever",
+      "ios": { "status": "api-integration" },
+      "android": { "status": "api-integration" },
+      "notes": "Asserted server-side: no such event/notification payload exists (playbook §6 non-observability audit)."
+    },
+    "IDT-09": {
+      "fs": "FS-07",
+      "title": "Opaque single-purpose invite tokens; landing reveals displayName only after validation",
+      "ios": { "status": "not-e2e-verifiable" },
+      "android": { "status": "not-e2e-verifiable" },
+      "notes": "Web scope (apps/web tests) — no mobile surface."
+    },
+    "VLT-01": {
+      "fs": "FS-07",
+      "title": "Vault encrypted on-device (AES-256-GCM, key in secure store)",
+      "ios": { "status": "automated", "tests": ["RegressionAndResilienceE2ETests.test_vaultBackwardCompat_legacyShapeDoesNotCrashOnLaunch"] },
+      "android": { "status": "automated", "tests": ["LegacyVaultCompatE2ETest.test_VLT01_FCH01_08_legacyPreFs03VaultBlob_loadsToCarte_contactsRenderAndFicheOpens", "AndroidKeystoreVaultKeyStoreTest.test_VLT01_getOrCreateVaultKey_generatesAndPersistsWithoutThrowing", "AndroidKeystoreVaultKeyStoreTest.test_VLT01_getOrCreateVaultKey_isStableAcrossCalls"] },
+      "notes": "E2E exercises the real encrypt/decrypt path via the legacy-blob seed hooks (also the pre-FS-03 backward-compat regression guard); full crypto properties live in the cross-platform vector unit tests (docs/migration/vault-test-vectors.json). Recovery-phrase backup is IDT-05/VLT-05 territory."
+    },
+    "VLT-02": {
+      "fs": "FS-07",
+      "title": "Dumb blob storage; version + 409 optimistic concurrency",
+      "ios": { "status": "api-integration" },
+      "android": { "status": "api-integration" },
+      "notes": "Blob/version semantics — apps/api integration + client-side unit tests of the sync engine."
+    },
+    "VLT-03": {
+      "fs": "FS-07",
+      "title": "Server never decodes/logs/indexes blob contents",
+      "ios": { "status": "api-integration" },
+      "android": { "status": "api-integration" },
+      "notes": "The wire-level privacy-invariant test in apps/api; re-verified on every schema change (playbook §6)."
+    },
+    "VLT-04": {
+      "fs": "FS-07",
+      "title": "Sync triggers (background, post-onboarding, debounced bursts); full offline between",
+      "ios": { "status": "unit-covered" },
+      "android": { "status": "unit-covered" },
+      "notes": "Trigger scheduling unit-covered; offline operation implicitly exercised by all map/fiche E2E flows running off local state."
+    },
+    "VLT-05": {
+      "fs": "FS-07",
+      "title": "Device-loss honesty: no recovery phrase → data loss, stated in-app",
+      "ios": { "status": "not-e2e-verifiable" },
+      "android": { "status": "not-e2e-verifiable" },
+      "notes": "Recovery-phrase UX unresolved (OQ-IDT-2); no such screen exists yet."
+    }
+  }
+}

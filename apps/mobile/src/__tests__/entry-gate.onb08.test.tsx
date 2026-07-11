@@ -1,7 +1,7 @@
 /**
  * ONB-08 — the entry gate resumes at the persisted step; once complete it
- * shows the carte placeholder. Plus: the welcome CTA actually starts the
- * flow (ONB-01), and the root layout renders.
+ * redirects home to the carte (FS-02). Plus: the welcome CTA actually
+ * starts the flow (ONB-01), and the root layout renders.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
@@ -32,11 +32,10 @@ describe('ONB-08 entry gate', () => {
     expect(await screen.findByText('redirect:/onboarding/calibrate')).toBeTruthy();
   });
 
-  it('shows the carte placeholder once onboarding is complete', async () => {
+  it('redirects home to the carte once onboarding is complete (MAP-01)', async () => {
     await setStep('complete');
     render(<Index />);
-    expect(await screen.findByText(fr['carte.title'])).toBeTruthy();
-    expect(screen.getByText(fr['carte.placeholder'])).toBeTruthy();
+    expect(await screen.findByText('redirect:/carte')).toBeTruthy();
   });
 });
 

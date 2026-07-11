@@ -1,8 +1,45 @@
-# Changelog — apps/mobile (area:mobile)
+# Changelog — apps/mobile (frozen RN reference implementation)
+
+> ⚠️ **FROZEN (2026-07-09):** this Expo/React Native app is being replaced by native `apps/ios`
+> and `apps/android`. It stays buildable as the reference implementation until native parity —
+> **critical fixes only**, no new features. Its knowledge was transferred to
+> `docs/migration/rn-native-handoff.md` (+ `docs/migration/vault-test-vectors.json`) when the
+> mobile-specialist agent was decommissioned. See the root `CHANGELOG.md` 2026-07-09 entry.
 
 > Newest first. One entry per merged change (or per working-tree milestone before the repo had this file).
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G4.7).
+
+## 2026-07-06 — [MAP-07] Carte pan/zoom + 150-contact density
+
+- Pinch (1×–3×) and pan on the radial canvas via `GestureDetector`: gestures write reanimated shared values in worklets — zero JS-thread work during interaction (mobile rules 3–4). `GestureHandlerRootView` now wraps the app in `app/_layout.tsx`.
+- Clamping is pure and unit-tested (`clamp`, `panBound` in `src/map/geometry.ts`): zoom bounded to 1×–3×, pan bounded to the scaled overflow so the map can never leave the viewport.
+- 150-contact render asserted in tests; the 60fps claim still needs the manual on-device check (both platforms) before release sign-off.
+- **Deferred:** clustering past ~150 contacts (OQ-MAP-1 — blueprint shows ≤ ~30, defer until real data).
+- Test infra gotcha: RNGH's `fireGestureHandler` treats the FIRST `ACTIVE` event as `onStart`; `onUpdate` only fires from the second `ACTIVE` on. Shared-value → style propagation needs fake timers + `advanceTimersByTime` (reanimated `setUpTests()` is called in `test/setup.ts`; `react-native-gesture-handler/jestSetup` added to jest `setupFiles`).
+
+## 2026-07-06 — [MAP-04] Peek sheet + légende des états
+
+- Tap any contact (node, list row, or tray chip) → `src/map/PeekSheet.tsx`: reanimated slide-up, scrim, handle, rows Intimité / État / Rôles (unset axes shown as a quiet « — »).
+- **FS-03 seam, flagged assumption:** « Ouvrir la fiche » is rendered DISABLED (`accessibilityState={{ disabled: true }}`) — visible and honest rather than hidden. FS-03 flips it to `router.push('/fiche/[id]')` and owns the grow-from-node transition (MAP-04 spatial continuity is NOT satisfied yet — deferred with the fiche itself).
+- « Légende des états » toggle on the carte explains the état swatches on demand (collapsed by default).
+- No bottom-sheet dependency added; scrim/sheet close is exercised via testID (a labelled close control awaits FS-03 copy).
+
+## 2026-07-06 — [MAP-01/03/05/06/08/09] Radial map from the vault
+
+- `app/(main)/carte.tsx` is the real home surface: loads `getContacts()` on focus (so an FS-03 re-tag animates on return), radial map default, list mode via Switch, calm empty state (approved copy), légende.
+- `src/map/geometry.ts`: ring math extracted VERBATIM from the ONB-04 calibration screen (which now imports it — one spatial truth, ONB suites untouched). 150-per-ring positions are finite, deterministic, on-ring (property-style test).
+- `src/map/ContactNode.tsx`: memoized initials node, size steps down per ring, ring changes animate with `withTiming` on the UI thread — first mount snaps (no travel), only changes move.
+- **Flagged assumption — état → color:** blueprint palette mapped onto the SHIPPED 3-état vocabulary (disponible `#8FB59A` · occupé `#C8917E` · ailleurs `#8AA0BE`, unset → neutral surface) in `src/map/etatColors.ts`. The blueprint's richer 5-ring/5-état taxonomy is a divergence to resolve in a follow-up `area:mobile` issue — do NOT remap silently.
+- **Flagged assumption — unplaced tray:** never-calibrated contacts stay visible in a chip tray under the map (nothing hidden silently); they also get a « — » section in list mode.
+- `src/map/RingList.tsx` (MAP-08): SectionList grouped by ring, rows announce « name — ring » (TalkBack acceptance), feature-equivalent press action.
+- MAP-05 is enforced structurally: a test scans `src/map/**` and `app/(main)/**` for API-client/fetch/WebSocket imports and fails on any hit. MAP-09: no TextInput exists on the carte (asserted).
+
+## 2026-07-06 — [MAP-02] Navigation shell: Carte / Envie / Sous-groupes
+
+- `app/(main)/_layout.tsx` (expo-router Tabs) with a custom bar `src/ui/nav-bar.tsx`: exactly three label-only tabs — badges/counters impossible by construction (product law 5). Envie & Sous-groupes are calm placeholders (approved copy) holding FS-05/FS-04 slots.
+- Entry gate `app/index.tsx`: onboarding-complete now redirects to `/carte` (was an inline placeholder).
+- i18n: `carte.title` is now « Ma carte » (blueprint verbatim), `carte.placeholder` removed; added `carte.subtitle/empty/me/listMode/legend/openFiche/sheet.*`, `nav.*`, `envie.*`, `sousgroupes.*`.
 
 ## 2026-07-07 — Adopt Nuit design tokens in `src/theme.ts`
 

@@ -16,6 +16,7 @@ import { t } from '../../src/i18n/fr';
 import { setStep } from '../../src/onboarding/state';
 import { colors, spacing } from '../../src/theme';
 import { Body, Brand, Button, Screen, Title } from '../../src/ui';
+import { MAP_SIZE, RINGS, positionOn, ringRadius } from '../../src/map/geometry';
 import {
   getContacts,
   setEtat,
@@ -25,7 +26,6 @@ import {
   type VaultContact,
 } from '../../src/vault/vault';
 
-const RINGS: readonly IntimacyRing[] = [1, 2, 3, 4];
 const RING_LABEL: Record<IntimacyRing, string> = {
   1: t('ring.1'),
   2: t('ring.2'),
@@ -34,22 +34,6 @@ const RING_LABEL: Record<IntimacyRing, string> = {
 };
 const ETATS = [t('etat.available'), t('etat.busy'), t('etat.away')] as const;
 const RESSENTIS = [t('ressenti.light'), t('ressenti.precious'), t('ressenti.paused')] as const;
-
-const MAP_SIZE = 320;
-
-function ringRadius(ring: IntimacyRing): number {
-  return (MAP_SIZE / 2) * (ring / 4.6) + 24;
-}
-
-/** Deterministic angular spread per ring — stable positions, no jumps. */
-function positionOn(ring: IntimacyRing, index: number): { top: number; left: number } {
-  const angle = index * 2.399963; // golden angle, avoids overlap clumping
-  const r = ringRadius(ring);
-  return {
-    left: MAP_SIZE / 2 + r * Math.cos(angle) - 28,
-    top: MAP_SIZE / 2 + r * Math.sin(angle) - 14,
-  };
-}
 
 export default function Calibrate(): React.JSX.Element {
   const router = useRouter();

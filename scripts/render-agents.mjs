@@ -23,13 +23,22 @@ const BANNER = "<!-- RENDERED by scripts/render-agents.mjs from /agents — edit
 
 const AGENTS = [
   {
-    name: "mobile-specialist",
-    source: "agents/mobile-specialist.md",
-    area: "mobile",
-    applyTo: "apps/mobile/**",
-    title: "Mobile Engineering Specialist (area:mobile)",
+    name: "ios-specialist",
+    source: "agents/ios-specialist.md",
+    area: "ios",
+    applyTo: "apps/ios/**",
+    title: "iOS Native Specialist (area:ios)",
     description:
-      "Mobile Engineering Specialist for Swab (area:mobile). Use for any work in apps/mobile — Expo/React Native screens, the on-device encrypted vault, FCA subgroups, offline-first features, and their tests. MUST be used for changes touching apps/mobile.",
+      "iOS Native Specialist for Swab (area:ios). Use for any work in apps/ios — Swift/SwiftUI (MVVM) screens, the on-device encrypted vault (CryptoKit + Keychain), offline-first features, and their tests. Inherits the RN app's knowledge via docs/migration/rn-native-handoff.md. MUST be used for changes touching apps/ios.",
+  },
+  {
+    name: "android-specialist",
+    source: "agents/android-specialist.md",
+    area: "android",
+    applyTo: "apps/android/**",
+    title: "Android Native Specialist (area:android)",
+    description:
+      "Android Native Specialist for Swab (area:android). Use for any work in apps/android — Kotlin/Jetpack Compose (MVVM) screens, the on-device encrypted vault (Keystore + javax.crypto), offline-first features, and their tests. Inherits the RN app's knowledge via docs/migration/rn-native-handoff.md. MUST be used for changes touching apps/android.",
   },
   {
     name: "backend-specialist",
@@ -59,6 +68,24 @@ const AGENTS = [
       "Data & Schema Steward for Swab (area:db) — the ONLY agent allowed to edit packages/db/prisma/schema.prisma. Use for schema changes, migrations, seed data, and Prisma client packaging. MUST be used for any change under packages/db.",
   },
   {
+    name: "design-specialist",
+    source: "agents/design-specialist.md",
+    area: "design",
+    applyTo: "blueprints/**,docs/design/**,docs/design-system.md,packages/ui/**",
+    title: "Design & Design-System Specialist (area:design)",
+    description:
+      "Design & Design-System Specialist for Swab (area:design). Use for blueprints (HTML prototypes), the design token contract (docs/design-system.md, packages/ui foundations), the Penpot design system and prototype (via the Penpot MCP), the graphic charter « Nuit », and design notes feeding /speckit-specify. MUST be used for changes touching blueprints/, docs/design/, docs/design-system.md, or design tokens in packages/ui.",
+  },
+  {
+    name: "notion-liaison-specialist",
+    source: "agents/notion-liaison-specialist.md",
+    area: "notion-liaison",
+    applyTo: "docs/specs/**",
+    title: "Spec ↔ Notion Liaison Specialist (area:notion-liaison)",
+    description:
+      "Spec ↔ Notion Liaison Specialist for Swab (area:notion-liaison). Use to sync docs/specs/FS-*.md with their French Notion mirror for the non-dev co-founder: checks the live Notion page and comments every invocation, translates changes in both directions, and flags conflicts instead of guessing. MUST be used for changes touching docs/specs/ that also need to reach Notion, or when asked to check/sync Notion.",
+  },
+  {
     name: "devops-specialist",
     source: "agents/devops-infrastructure-specialist.md",
     area: "devops",
@@ -66,15 +93,6 @@ const AGENTS = [
     title: "DevOps & Infrastructure Specialist (area:sre)",
     description:
       "DevOps & Infrastructure Specialist for Swab (area:sre). Use for GitHub Actions workflows, turbo.json, Dockerfiles, docker-compose, CODEOWNERS, CI gates, Neon branch lifecycle, and deployment plumbing. MUST be used for changes touching .github/workflows or Docker files.",
-  },
-  {
-    name: "design-specialist",
-    source: "agents/design-system-specialist.md",
-    area: "design",
-    applyTo: "docs/design-system.md,docs/design/**,packages/ui/**",
-    title: "Design System Steward (area:design)",
-    description:
-      "Design System Steward for Swab (area:design). Use for the design tokens, typography, and component library — docs/design-system.md, docs/design/**, packages/ui foundations, and the connected Penpot design library. MUST be used for changes to the design system or Penpot library; defines tokens the mobile/web specialists consume.",
   },
 ];
 

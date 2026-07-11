@@ -29,7 +29,7 @@ Rule: a spec's Depends-on list must be `Implemented` (or explicitly stubbed by a
 
 ## 3. Issue protocol (the orchestrator creates these; agents consume them)
 
-Every issue carries: title `[FS-05][ENV-09] Race-safe match creation`, labels `area:*` + `fs:*`, body sections **Requirement** (verbatim quote of the FR row), **Scope** (allowed paths — the scope guard enforces this), **Acceptance** (the Given/When/Then that must become tests), **Seam** (API contract touched, if any). An issue referencing no requirement ID is invalid — reject it and say why.
+Every issue carries: title `[FS-05][ENV-09] Race-safe match creation`, labels `area:*` + `fs:*`, body sections **Requirement** (verbatim quote of the FR row), **Scope** (allowed paths — the scope guard enforces this), **Acceptance** (the Given/When/Then that must become tests), **Seam** (API contract touched, if any). For `area:ios`/`area:android` issues touching user-facing behavior, Acceptance also names the requirement IDs whose E2E scenarios (`docs/qa/e2e-scenarios.md`) must be added or re-run. An issue referencing no requirement ID is invalid — reject it and say why.
 
 ## 4. Non-negotiable working rules (compressed from /agents — full text is your prompt)
 
@@ -43,7 +43,7 @@ Every issue carries: title `[FS-05][ENV-09] Race-safe match creation`, labels `a
 ## 5. Definition of Ready / Done (gate checklist)
 
 **Ready:** requirement ID exists in an Approved spec · dependencies Implemented or stubbed · seam contract agreed (if cross-agent) · acceptance criteria present.
-**Done:** acceptance tests green · coverage ≥80% changed · scope guard green · spec status updated if the module completed · required checks (per agent DoD) green · PR ≤400 lines · human review passed.
+**Done:** acceptance tests green · coverage ≥80% changed · scope guard green · **mobile E2E gate green (`scripts/e2e-ios.sh` / `scripts/e2e-android.sh` → `test-results/e2e/e2e-report.md` PASS, no drift; summary pasted in the PR — see G2)** · spec status updated if the module completed · required checks (per agent DoD) green · PR ≤400 lines · human review passed.
 
 ## 6. The privacy audit (recurring, blocking)
 

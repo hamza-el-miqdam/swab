@@ -65,8 +65,26 @@ export const fr = {
   'done.promise': 'Personne — ni eux, ni nous — ne voit comment tu l’as remplie.',
   'done.cta': 'Voir ma carte',
 
-  'carte.title': 'Ta carte',
-  'carte.placeholder': 'La carte des relations arrive avec FS-02. Tes placements sont déjà là, chiffrés sur ton téléphone.',
+  // FS-02 — carte (blueprint copy is normative; carte.empty approved addition)
+  'carte.title': 'Ma carte',
+  'carte.subtitle': 'ton cercle, à l’instant',
+  'carte.empty': 'Ta carte est calme. Ajoute qui compte pour toi, quand tu veux.',
+  'carte.me': 'moi',
+  'carte.listMode': 'Affichage en liste',
+  'carte.legend': 'Légende des états',
+  'carte.openFiche': 'Ouvrir la fiche',
+  'carte.sheet.intimite': 'Intimité',
+  'carte.sheet.etat': 'État',
+  'carte.sheet.roles': 'Rôles',
+
+  'nav.carte': 'Carte',
+  'nav.envie': 'Envie',
+  'nav.sousGroupes': 'Sous-groupes',
+
+  'envie.title': 'Envie',
+  'envie.placeholder': 'Les envies arrivent bientôt.',
+  'sousgroupes.title': 'Sous-groupes',
+  'sousgroupes.placeholder': 'Les sous-groupes arrivent bientôt.',
 } as const;
 
 export type I18nKey = keyof typeof fr;
