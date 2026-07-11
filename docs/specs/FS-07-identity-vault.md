@@ -1,6 +1,6 @@
 # FS-07 — Identity, Contacts & Vault Sync (foundation)
 
-**Status:** Approved · **Agents:** Backend (lead), Mobile (vault client), Data Steward (models), Web (invite landing) · **Depends on:** nothing — everything depends on it. · **Blueprint:** implied by Onboarding + the privacy promise.
+**Status:** Implemented (API + native vault clients, 2026-07-10 — Wave 1; multi-device/recovery-phrase items remain POC assumptions, see IDT-05/VLT-05) · **Agents:** Backend (lead), Mobile (vault client), Data Steward (models), Web (invite landing) · **Depends on:** nothing — everything depends on it. · **Blueprint:** implied by Onboarding + the privacy promise.
 
 ## Purpose
 

@@ -4,7 +4,7 @@
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 
-_Last updated: 2026-07-10_
+_Last updated: 2026-07-12_
 
 > **Native migration in progress:** mobile is moving from Expo/React Native (`apps/mobile`) to
 > native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose). `apps/mobile` is the
@@ -27,7 +27,30 @@ _Last updated: 2026-07-10_
 > on either platform — flagged as a follow-up. A pre-existing bug was also found in the RN-ported
 > `CalibrateScreen`'s ring-picker (unrelated to Wave 2, not yet fixed) — see
 > `docs/migration/rn-audit-map.md`. Full per-criterion status is tracked in that file's Wave 1,
-> Wave 2, and Wave 3 checklists, not duplicated here.
+> Wave 2, and Wave 3 checklists, not duplicated here. **Wave 4 (E2E/QA), Android side, landed
+> 2026-07-10:** a Compose UI instrumented test suite (`apps/android/app/src/androidTest/kotlin/com/swab/android/e2e/`,
+> 8 tests + regression coverage for the Wave 1 nav-state-loss bug and the Wave 2 density-scaling
+> bug) ran end-to-end via `./gradlew connectedAndroidTest` against a booted Pixel_6_Pro emulator
+> and the live `docker compose up` API — **10/10 instrumented tests passed, 0 failures** (includes
+> the pre-existing Keystore-IV regression test). One real test bug was found and fixed along the
+> way (a stale assumption about `CarteViewModel` not refreshing on return from Fiche — it does);
+> see `apps/android/CHANGELOG.md`'s 2026-07-10 Wave 4 entry. The `CalibrateScreen` ring-picker
+> text-wrap bug remains open and un-regression-tested (rings 3/4 are still out of scope for
+> automated calibration flows). **Wave 4 completed 2026-07-12 on both platforms:** Android's
+> suite grew to 16 tests (added a legacy-vault backward-compat test — compile-time-excluded
+> debug-only seed hook, `E2ESeedHooks`, plus ONB-09/MAP-02/MAP-06/FCH-04/FCH-08 gap coverage) —
+> **16/16 passed** on a clean `./gradlew :app:clean :app:connectedDebugAndroidTest`. iOS built a
+> from-scratch `SwabAppUITests` XCUITest target (13 tests: the original 8 plus the same five gap
+> requirements) — first full run found every onboarding-touching test failing with a Keychain
+> entitlement error (`errSecMissingEntitlement`, traced to `CODE_SIGNING_ALLOWED = NO` on all six
+> `project.pbxproj` build configs, a stale Wave-1 default that predates any app-process Keychain
+> use); switched to ad hoc signing (`CODE_SIGN_IDENTITY = "-"`, Simulator-only) and re-ran —
+> **13/13 passed**. Both platforms verified independently from clean by the lead, not just agent
+> self-report. E2E is now a hard Definition-of-Done gate (`agents/_global-directives.md` G2,
+> both specialists' DoD) enforced via `scripts/e2e-{ios,android}.sh` → `test-results/e2e/e2e-report.md`,
+> with a per-requirement scenario/coverage manifest in `docs/qa/` (see `docs/qa/e2e-scenarios.md`,
+> `docs/qa/e2e-coverage.json`) covering all 40 FS-01/02/03/07 requirement IDs. CI wiring
+> (macOS/emulator runners) is a filed follow-up, not yet built — see `docs/migration/rn-audit-map.md`.
 
 ## Modules (functional specs)
 
@@ -51,7 +74,8 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 | Database schema v0.1 | 🟢 | `users`, `vaults`, `envies` + seed. Privacy invariant holds: no classification columns. |
 | Local dev stack | 🟢 | `docker compose up --build` → Postgres :5432, API :3001, Adminer :8080. |
 | Mobile dev clients | 🟢 | iOS + Android via `expo run:*` (native crypto → Expo Go unsupported). Android SDK/emulator setup scripted in `scripts/`. |
-| CI | 🟡 | `ci.yml` skeleton exists. Missing: scope guard, privacy-audit job, coverage enforcement, OpenAPI diff gate. |
+| CI | 🟡 | `ci.yml` skeleton exists. Missing: scope guard, privacy-audit job, coverage enforcement, OpenAPI diff gate, native E2E workflow (macOS + emulator runners — filed follow-up). |
+| Mobile E2E gate (Wave 4) | 🟢 | Local, agent-enforced Definition-of-Done gate — `scripts/e2e-ios.sh` / `scripts/e2e-android.sh` → `test-results/e2e/e2e-report.md`, requirement coverage manifest in `docs/qa/`. Not yet wired into CI. |
 | Lint (repo-wide ESLint) | 🟢 | Flat config: root `eslint.config.mjs` (type-aware typescript-eslint) + Expo preset in `apps/mobile`. All packages run `eslint .` — the mobile `exit 0` stub is gone. |
 | Agents (AIDD) | 🟢 | Single source of truth in `agents/`; `node scripts/render-agents.mjs` generates the Copilot (`.github/`) and Claude Code (`.claude/agents/`) copies (`--check` for CI). 2026-07-09: mobile-specialist (Expo RN) decommissioned; replaced by ios-specialist (area:ios) + android-specialist (area:android), knowledge inherited via `docs/migration/rn-native-handoff.md`. |
 | Spec ↔ Notion sync (French mirror) | 🟢 | All 7 `docs/specs/FS-*.md` mirrored, translated to French, under Notion page "Swab — Spécifications (FS-*)" for the non-dev co-founder to read/comment/edit. `docs/specs/.notion-sync.json` tracks per-spec snapshots; re-diffed on every invocation of the notion-liaison-specialist agent. Code stays canonical; conflicts are flagged, never auto-resolved. |

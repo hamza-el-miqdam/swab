@@ -4,6 +4,49 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-12 — Wave 4: mobile E2E testing made a hard Definition-of-Done gate
+
+- **What:** every functional requirement of the implemented specs (FS-01/02/03/07, ~40 requirement
+  IDs) now has a scenario in new `docs/qa/e2e-scenarios.md` and a machine-readable verification-class
+  entry in new `docs/qa/e2e-coverage.json` (`automated` / `unit-covered` / `api-integration` /
+  `manual` / `not-e2e-verifiable` — honest classification, nothing silently dropped). New
+  `scripts/e2e-report.mjs` (zero new dependencies — regex JUnit-XML parsing + `xcrun xcresulttool`
+  shellout) joins on-device test results against that manifest and emits `test-results/e2e/e2e-report.{md,json}`,
+  with a **drift guard**: the run fails if any requirement marked `automated` has no matching
+  executed test, not just if a test fails. New wrapper entry points `scripts/e2e-android.sh` /
+  `scripts/e2e-ios.sh` are the one-command gate (preflight API health + device check → full suite →
+  report). `test-results/` and `*.xcresult` added to `.gitignore` — generated per run, never
+  committed.
+- **Why:** Waves 1–3 shipped strong unit coverage but the functional test doc (`docs/manual_tests/`)
+  was a wave behind and mapped only to feature level, not requirement IDs; there was no automated
+  on-device suite, no generated report, and nothing in the agents' Definition of Done required E2E
+  before calling a task done.
+- **Agent workflow guardrail:** `agents/_global-directives.md` (G2), `agents/ios-specialist.md`, and
+  `agents/android-specialist.md` now require the platform's full E2E suite green via the wrapper
+  scripts (report PASS, zero drift) before Done, with the report summary pasted into the PR; new/
+  changed user-facing requirements update the scenario doc + manifest in the same PR.
+  `docs/agent-playbook.md` §3/§5 updated to match. Rendered copies (`.github/`, `.claude/agents/`)
+  regenerated via `node scripts/render-agents.mjs` — `--check` passes.
+- **Platform suites landed and independently re-verified from clean by the lead** (not just agent
+  self-report): Android 16/16 (`./gradlew :app:clean :app:connectedDebugAndroidTest`), iOS 13/13
+  (`xcodebuild test`). Full detail in `apps/android/CHANGELOG.md` / `apps/ios/CHANGELOG.md` and
+  `docs/migration/rn-audit-map.md`'s new Wave 4 section. Notably, the iOS suite exposed a real bug —
+  `project.pbxproj` had code signing fully disabled since the Wave-1 app-shell scaffold (fine for
+  bare `xcrun swift test`, but an unsigned app process has no Keychain entitlements once actually
+  run via XCUITest); fixed with ad hoc signing (`CODE_SIGN_IDENTITY = "-"`, Simulator-only).
+- **Doc truth-up:** FS-01/02/07 `Status:` headers flipped `Approved` → `Implemented` (they'd landed
+  in Wave 1 but G5's header-flip step was missed at the time); FS-03's header corrected (said
+  "Android parity pending" — Android landed in Wave 3). `docs/manual_tests/README.md` now points at
+  the new suite as the binding gate, keeping itself as a manual/exploratory smoke-test doc.
+- **Deferred (follow-up, not built this wave):** wiring the E2E gate into GitHub Actions CI (needs a
+  macOS runner for XCUITest and a Linux/KVM emulator runner for `connectedAndroidTest` — cost/setup
+  tradeoff, scoped to `area:sre`/devops-specialist, `.github/workflows` only). The gate today is
+  local and agent-enforced, not yet machine-enforced on every PR.
+- **Gotchas:** the iOS/Android Simulator/emulator can silently shut down between sessions —
+  `xcrun simctl list devices booted` / `adb devices` should be checked before assuming either wrapper
+  script will find a target. Docker Desktop does not auto-start the daemon on `docker compose up` if
+  it isn't already running (`open -a Docker` first, then poll `docker info`).
+
 ## 2026-07-09 — Native migration Phase 1: iOS + Android specialists replace the Mobile (Expo RN) specialist
 
 - **Decision:** Swab's mobile client moves from cross-platform Expo/React Native to fully native `apps/ios` (Swift/SwiftUI, MVVM) and `apps/android` (Kotlin/Jetpack Compose, MVVM). `apps/mobile` stays in the repo as the **frozen reference implementation** (read-only except critical fixes) until each module reaches native parity; it will be removed in a later PR. First migration target: FS-07 Identity & Vault + FS-01 Onboarding.

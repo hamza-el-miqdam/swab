@@ -201,3 +201,54 @@ consistent with the assistive-access limitation blocking iOS and simply not yet 
 Android); FCH-04's relationship/match event population, blocked on FS-04/FS-05 existing; OQ-FCH-1's
 real Rôles·contexte taxonomy (current lists are an explicit placeholder ASSUMPTION on both
 platforms); resolving the `en pause` état-vs-ressenti divergence at the product level.
+
+**Wave 3's "not interaction-tested live" gaps for FCH-04/05/07/08 are now closed by Wave 4** (below)
+— both platforms drive the real peek-sheet → fiche → axis-edit → back-to-map flow through actual
+UI automation (XCUITest / Espresso), not just unit tests or a static build check. The iOS
+assistive-access blocker that stopped a scripted Simulator walkthrough in Waves 1–3 is specifically
+what Wave 4's XCUITest approach sidesteps — it drives the Simulator via Apple's `testmanagerd`
+(the same mechanism Xcode's own UI recorder uses), not host-level `osascript`/System Events
+scripting, so it was never subject to that sandbox limitation.
+
+## Wave 4 parity checklist (E2E/QA — on-device functional test suites)
+
+Not a spec migration wave (no new FS requirements) — this wave hardens verification of FS-01/02/03/07
+with real on-device UI-automation suites and a machine-generated, requirement-ID-keyed report, and
+makes the suite a hard gate in the agents' Definition of Done (`agents/_global-directives.md` G2).
+Full requirement-to-scenario-to-test mapping lives in `docs/qa/e2e-scenarios.md` +
+`docs/qa/e2e-coverage.json`, not duplicated here — this section is status only.
+
+Status as of 2026-07-12, independently re-verified by the lead (not just agent self-report) via a
+clean rebuild of both suites:
+
+- **Android** — `apps/android/app/src/androidTest/kotlin/com/swab/android/e2e/`, 16 instrumented
+  Compose UI tests across 5 classes (`OnboardingE2ETest`, `RelationshipMapE2ETest`, `FicheE2ETest`,
+  `ActivityRecreationSmokeTest`, `LegacyVaultCompatE2ETest`) + 2 pre-existing Keystore tests. Added
+  this wave: a debug-only legacy-vault seed hook (`E2ESeedHooks`, compile-time excluded from
+  release via separate `src/debug`/`src/release` source sets — verified empty in the release class
+  via `javap`) mirroring iOS's launch-argument hook, plus ONB-09/MAP-02/MAP-06/FCH-04/FCH-08 gap
+  coverage. **16/16 passed** on a clean `./gradlew :app:clean :app:connectedDebugAndroidTest`
+  against a booted Pixel_6_Pro (API 34) and the live local API — re-run independently by the lead
+  via `scripts/e2e-android.sh`, matching the agent's report.
+- **iOS** — `apps/ios/SwabAppUITests/`, 13 XCUITest methods across 3 classes (`OnboardingE2ETests`,
+  `MapAndFicheE2ETests`, `RegressionAndResilienceE2ETests`), a from-scratch UI-testing target
+  (hand-wired into the hand-authored `.xcodeproj` — no XcodeGen) plus `#if DEBUG` launch-argument
+  hooks (`--uitesting-reset`, `--uitesting-seed-legacy-vault`) in `SwabApp.swift`. First full run
+  found 11/13 failing with a Keychain entitlement error; root cause traced (by the agent, confirmed
+  by the lead) to `CODE_SIGNING_ALLOWED = NO` across all six `project.pbxproj` build configs — a
+  Wave-1 default that predates any code path exercising Keychain from a *running app process*
+  (unit tests via bare `xcrun swift test` don't need signing; XCUITest-driven app processes do).
+  Fixed by switching to ad hoc signing (`CODE_SIGN_IDENTITY = "-"`, Simulator-only, no team/account
+  needed) — confirmed via `git log` this wasn't an intentional CI/security boundary, just untested
+  until this wave's app-process-level suite existed. **13/13 passed** after the fix, re-run
+  independently by the lead via `scripts/e2e-ios.sh`.
+- **Combined report**: `test-results/e2e/e2e-report.md` — **PASS, 29/29 tests, 0 drift-guard
+  failures** (every requirement the manifest marks `automated` has a matching executed test on its
+  platform). All four implemented FS modules (FS-01/02/03/07) show as verified.
+
+**Remaining:** CI wiring (macOS runner for XCUITest, Linux/KVM emulator runner for
+`connectedAndroidTest`) is a filed follow-up — the gate is currently local/agent-enforced only, not
+machine-enforced on every PR. iOS has no dedicated MAP-09 (no-search/no-ranking) absence assertion
+yet (Android does) — candidate for the next increment. Visual-grammar (MAP-03), performance
+(MAP-05/07), and copy-symmetry (FCH-02) requirements remain manual-verification classes by design —
+see the coverage manifest for the full breakdown of what is/isn't E2E-automatable and why.
