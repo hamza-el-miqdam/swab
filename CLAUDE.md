@@ -1,6 +1,6 @@
 # Swab (صواب)
 
-App that connects people with friends: you express an "envie" to a scope; it's revealed only if mutual. Turborepo + pnpm monorepo, strict TypeScript: `apps/mobile` (Expo RN), `apps/web` (Next.js), `apps/api` (Fastify), `packages/db` (Prisma/Postgres), `tools/orchestrator`.
+App that connects people with friends: you express an "envie" to a scope; it's revealed only if mutual. Turborepo + pnpm monorepo, strict TypeScript on the JS side: `apps/ios` (Swift/SwiftUI, native — in migration) and `apps/android` (Kotlin/Compose, native — in migration) replace `apps/mobile` (Expo RN — **frozen reference implementation** until native parity; see `docs/migration/rn-native-handoff.md`), plus `apps/web` (Next.js), `apps/api` (Fastify), `packages/db` (Prisma/Postgres), `tools/orchestrator`.
 
 ## Binding rules (single source of truth — imported, do not duplicate)
 
@@ -9,12 +9,12 @@ App that connects people with friends: you express an "envie" to a scope; it's r
 ## Where things are
 
 - **What is done:** `docs/STATUS.md` — implementation status per module + infrastructure. Update it in the same PR when a module starts or completes.
-- **Change history (G5 — part of every Definition of Done):** every change appends an entry to its area changelog in the same commit/PR — `apps/mobile/CHANGELOG.md`, `apps/api/CHANGELOG.md`, `packages/db/CHANGELOG.md` (data-steward only), root `CHANGELOG.md` (devops/docs/agents/tooling). Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, newest first.
+- **Change history (G5 — part of every Definition of Done):** every change appends an entry to its area changelog in the same commit/PR — `apps/ios/CHANGELOG.md`, `apps/android/CHANGELOG.md`, `apps/mobile/CHANGELOG.md` (frozen RN — critical fixes only), `apps/api/CHANGELOG.md`, `packages/db/CHANGELOG.md` (data-steward only), root `CHANGELOG.md` (devops/docs/agents/tooling). Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, newest first.
 - Functional specs with stable requirement IDs: `docs/specs/FS-01..07-*.md` — read the relevant spec BEFORE implementing; quote requirement IDs (ONB-05, ENV-11…) in branch, PR title, and test names.
 - Process (issue protocol, build order, privacy audit): `docs/agent-playbook.md`
 - Product laws + glossary (French UI copy is normative): `docs/product-overview.md`
 - Data model rationale: `swab-domain-spec.md` · Architecture: `aidd-multi-agent-blueprint.md`
-- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: mobile, web, backend, data, devops, design). Never edit rendered files by hand.
+- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: ios, android, web, backend, data, devops, design). Never edit rendered files by hand. The mobile-specialist (Expo RN) was decommissioned 2026-07-09; its knowledge lives in `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`.
 
 ## Spec-driven development (spec-kit)
 
@@ -30,7 +30,8 @@ Swab uses [github/spec-kit](https://github.com/github/spec-kit) to turn specs in
 - `pnpm --filter @repo/api test` / `pnpm --filter @repo/mobile test` — per-package
 - `pnpm --filter @repo/db db:generate` — regenerate Prisma client (build/test depend on it)
 - `docker compose up --build` — local Postgres :5432 + API :3001 + Adminer :8080
-- Mobile: `cd apps/mobile && npx expo run:ios|android` (dev client required — native crypto module; Expo Go won't work)
+- RN reference app (frozen): `cd apps/mobile && npx expo run:ios|android` (dev client required — native crypto module; Expo Go won't work)
+- Native apps: `apps/ios` (`xcodebuild test`) / `apps/android` (`./gradlew test`) — scaffolds land in the migration Phase 2 PR
 
 ## Hard boundaries (will fail review/CI if crossed)
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only override: allows cleartext HTTP to the AVD's host-loopback alias
+  so the app can reach `docker compose up`'s apps/api on the developer's Mac
+  (see AppContainer's BuildConfig.API_BASE_URL). Lives under src/debug so the
+  release build type never inherits it — G1 least-privilege.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

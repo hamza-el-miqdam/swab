@@ -3,7 +3,7 @@
 
 ## Project
 
-Swab (صواب) — an app to express desires ("envies") to scopes of friends, revealed only on mutual match. Monorepo: Turborepo + pnpm, strict TypeScript end-to-end. `apps/mobile` (Expo/React Native), `apps/web` (Next.js), `apps/api` (standalone Node service, container-ready), `packages/db` (Prisma + Postgres/Neon), `packages/ui`, `packages/api-client`, `tools/orchestrator`. Read `/docs/specs/*.md` and `swab-domain-spec.md` before any task.
+Swab (صواب) — an app to express desires ("envies") to scopes of friends, revealed only on mutual match. Monorepo: Turborepo + pnpm, strict TypeScript on the JS/TS side. Mobile clients: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Jetpack Compose, native) are being built to replace `apps/mobile` (Expo/React Native), which is the **frozen reference implementation** — read-only except critical fixes — until native parity; its knowledge is captured in `docs/migration/rn-native-handoff.md`. Also: `apps/web` (Next.js), `apps/api` (standalone Node service, container-ready), `packages/db` (Prisma + Postgres/Neon), `packages/ui`, `packages/api-client`, `tools/orchestrator`. Read `/docs/specs/*.md` and `swab-domain-spec.md` before any task.
 
 ## G1 — Zero-Trust Security
 
@@ -18,6 +18,7 @@ Swab (صواب) — an app to express desires ("envies") to scopes of friends, r
 - Minimum 80% line coverage on changed packages, enforced in CI (`vitest --coverage` / `jest --coverage`; threshold configured in each package, not globally fudged).
 - Test the contract, not the implementation: table-driven tests for pure logic, integration tests against a real Postgres (Neon CI branch), no mocking of Prisma in integration tests.
 - Every bug fix starts with a regression test that reproduces it.
+- **E2E gate (mobile — part of Definition of Done):** every functional requirement of an implemented spec has a scenario in `docs/qa/e2e-scenarios.md` and an entry in `docs/qa/e2e-coverage.json` (verification class: `automated` / `unit-covered` / `api-integration` / `manual` / `not-e2e-verifiable` — honest classification, never silently dropped). Before any `area:ios`/`area:android` task is Done, the platform's full on-device E2E suite runs via `scripts/e2e-ios.sh` / `scripts/e2e-android.sh` (booted Simulator/emulator + live local API): the generated `test-results/e2e/e2e-report.md` must be **PASS with zero drift-guard failures**, and its summary is pasted into the PR. E2E test names carry their requirement IDs (`test_ONB05_...`) — the report generator joins results to requirements through the manifest. New or changed user-facing requirements update scenarios + manifest in the same PR.
 
 ## G3 — Observability
 
@@ -36,6 +37,6 @@ Swab (صواب) — an app to express desires ("envies") to scopes of friends, r
 
 ## G5 — Documentation & Changelogs (all agents — part of Definition of Done)
 
-- **Every change updates its area changelog, in the same commit/PR.** Locations: `apps/mobile/CHANGELOG.md` (area:mobile), `apps/api/CHANGELOG.md` (area:backend), `packages/db/CHANGELOG.md` (area:db, Data Steward only), root `CHANGELOG.md` (area:devops, docs, agents, tooling, cross-cutting). Entry format, newest first: `## YYYY-MM-DD — [REQ-IDs] title` + bullets covering what changed, why, and anything a future developer must know (gotchas, pinned versions, follow-ups). A PR without a changelog entry is incomplete.
+- **Every change updates its area changelog, in the same commit/PR.** Locations: `apps/ios/CHANGELOG.md` (area:ios), `apps/android/CHANGELOG.md` (area:android), `apps/mobile/CHANGELOG.md` (frozen RN reference — critical fixes only), `apps/api/CHANGELOG.md` (area:backend), `packages/db/CHANGELOG.md` (area:db, Data Steward only), root `CHANGELOG.md` (area:devops, docs, agents, tooling, cross-cutting). Entry format, newest first: `## YYYY-MM-DD — [REQ-IDs] title` + bullets covering what changed, why, and anything a future developer must know (gotchas, pinned versions, follow-ups). A PR without a changelog entry is incomplete.
 - **`docs/STATUS.md` is the single summary of what is done.** Update it in the same PR whenever a module starts (⚪→🟡), completes (🟡→🟢, acceptance tests green — also flip the spec's `Status:` header to `Implemented`), or an infrastructure item changes state. Keep notes to 1–2 lines; history belongs in changelogs.
 - Docs stay truthful: if your change makes README/DEVELOPMENT.md/spec text wrong (commands, ports, flows), fix that text in the same PR. Code and docs never disagree on `main`.

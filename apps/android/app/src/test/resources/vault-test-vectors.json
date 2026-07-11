@@ -1,0 +1,53 @@
+{
+  "$comment": "Generated from the RN reference implementation (apps/mobile/src/vault/crypto.ts + src/lib/phoneHash.ts) by a node:crypto script — see docs/migration/rn-native-handoff.md §7. Wire format: base64(IV(12) || TAG(16) || CIPHERTEXT), AES-256-GCM, no AAD. Phone hash: sha256(\"<salt>:<normalized>\") lowercase hex. Native iOS and Android crypto implementations MUST reproduce every vector exactly. Fixed IVs are for tests only; production uses fresh random IVs.",
+  "generatedFrom": "apps/mobile/src/vault/crypto.ts @ feat/agents-native-migration",
+  "aes256gcm": [
+    {
+      "name": "empty-vault",
+      "keyBase64": "AQgPFh0kKzI5QEdOVVxjanF4f4aNlJuiqbC3vsXM09o=",
+      "ivBase64": "ZGtyeYCHjpWco6qx",
+      "plaintextUtf8": "{\"contacts\":[]}",
+      "blobBase64": "ZGtyeYCHjpWco6qx33UaQiTkJxkIguKhXjMQU6WAxKApBfzLxY/CQ2UGgg=="
+    },
+    {
+      "name": "single-contact-all-axes",
+      "keyBase64": "KjE4P0ZNVFtiaXB3foWMk5qhqK+2vcTL0tng5+71/AM=",
+      "ivBase64": "yM/W3eTr8vkABw4V",
+      "plaintextUtf8": "{\"contacts\":[{\"id\":\"7d444840-9dc0-11d1-b245-5ffdce74fad2\",\"displayName\":\"Leïla\",\"phoneHash\":\"07aff4a580d883b2c3fa060b36605b01b8a4ef47dd9c472aa7053a3a90a47712\",\"ring\":1,\"roles\":[\"confidente\"],\"etat\":\"disponible\",\"ressenti\":\"douceur\"}]}",
+      "blobBase64": "yM/W3eTr8vkABw4VE1gTBy6RhYfRN9e6Hx1C5nZm1+YC2w7c2gwqZU+JDkYF009Yap+xX39G/dXIDt2mFcv1eCqYR3HCxB+LFr8a5jTtJHoXYhKSvKTPyI4uWpKzvgDPtGY2ZmGVDyVEca7ZCWyzuR1u+jRqnVdBpbofQf9i55qSb8ZXoESFd8S73E6Xi6js+ZEQOev8kb4eKmwve0cq4TczUnrP6betmzNSft5thiC0nv3ekiBXqpUo2p7YMCe/nOzEG9f4QoLYGIQZHoONx5PVVXQNDJPyisnmtrHKcIulxWvx/8t6Zfi9cuATNJMRMaM/Z1bj4/Y3qVonA+OMe/f2J1YcCNo="
+    },
+    {
+      "name": "utf8-multibyte",
+      "keyBase64": "+gEIDxYdJCsyOUBHTlVcY2pxeH+GjZSboqmwt77FzNM=",
+      "ivBase64": "AwoRGB8mLTQ7QklQ",
+      "plaintextUtf8": "{\"contacts\":[{\"id\":\"00000000-0000-4000-8000-000000000001\",\"displayName\":\"صواب — été 🌙\",\"roles\":[]}]}",
+      "blobBase64": "AwoRGB8mLTQ7QklQNUHHKY/UrRqdMvaFnstCRjSxulJW20LeRL/s8naQ83BUvbcdrad3haJgevQ6Rr/C+NlhCfzmu3MNG+2F51jiOb55BziBsQJJxSepNIilFP+Y5ECh+Yz5R8Itx4b3Bm7ahpZprn1TJ1IcoEIvKAnqswbUQU2a/Gj9nza8xcKDxw=="
+    }
+  ],
+  "phoneHash": [
+    {
+      "input": "+33 6 12 34 56 78",
+      "normalized": "+33612345678",
+      "salt": "swab-poc-phone-salt-v1",
+      "sha256Hex": "07aff4a580d883b2c3fa060b36605b01b8a4ef47dd9c472aa7053a3a90a47712"
+    },
+    {
+      "input": "06 12 34 56 78",
+      "normalized": "0612345678",
+      "salt": "swab-poc-phone-salt-v1",
+      "sha256Hex": "3e54fe03ff97ef7a4f42119fd74b6e9432a34f19edc968ec92cf0feba49b7335"
+    },
+    {
+      "input": "+1 (415) 555-0100",
+      "normalized": "+14155550100",
+      "salt": "swab-poc-phone-salt-v1",
+      "sha256Hex": "310351791eea575f051e89e48f78060b6cf96be10247896393d407385dcd3619"
+    },
+    {
+      "input": "  +212612345678  ",
+      "normalized": "+212612345678",
+      "salt": "swab-poc-phone-salt-v1",
+      "sha256Hex": "69b431ea021a697900b005443ddabe4d866c90e58d4a7cc7581ac654bd4425fd"
+    }
+  ]
+}
