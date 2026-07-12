@@ -4,6 +4,32 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-12 — [area:design] Split "Mariages & naissances" into two rows on the Paramètres screen
+
+- **What:** on the Settings screen (`22 · Paramètres`), the single "Mariages & naissances" event-
+  notification row is split into two independent rows — "Mariages" and "Naissances" — each with its
+  own toggle. Applied in three places kept in sync: the Penpot prototype ("Prototype — Parcours
+  consolidé" page, board `22 · Paramètres`), the consolidated prototype
+  (`docs/design/swab-prototype-consolidated.html`), and the blueprint
+  (`blueprints/swab-app-prototype.html`).
+- **Why:** weddings and births are distinct life events; users should be able to mute one without the
+  other. Requested product refinement.
+- **How (Penpot):** cloned the existing "Mariages & naissances" `switchrow` (its `lbl` + `sw` toggle
+  sub-boards) so the new "Naissances" row is byte-identical in style/toggle default (checked/on) — no
+  values reinvented. The section lives inside the `content` flex-column (rowGap 14), so insertion +
+  ordering (Anniversaires → Mariages → Naissances → Deuils) is layout-driven; no manual repositioning.
+  The frozen "Deuils" row (with its "toujours en registre sobre" sub-text) and everything below simply
+  reflow down 35px. `content` is a fixed-height (734) flex board but content only reaches y+634 of it,
+  so the extra row fits with slack — re-verified zero overflow (content bottom = safe-area bottom) and
+  `export_shape`-confirmed the four rows render correctly.
+- **Gotcha:** `shape.clone()` inserts the copy adjacent to the original at an unpredictable sibling
+  index, and the flex reflow is async — always re-read child order after cloning and fix ordering with
+  `setParentIndex`, then `await` ~300ms before reading positions or the container looks un-reflowed
+  (rows appear to overlap at the same y).
+- **Follow-up:** copy ("Mariages", "Naissances") is a prototype-level refinement; if a settings spec
+  freezes this list it must match. No token/component changes; no app code touched (hand-off to
+  `area:ios`/`area:android` when the native settings screen is built).
+
 ## 2026-07-12 — [area:design] Flow 0 follow-up: simplified Bienvenue, new optional "Vos coordonnées" screen
 
 - **What (Change 1 — simplify `1 · Bienvenue`):** removed the "paycard"-style cohort info block
