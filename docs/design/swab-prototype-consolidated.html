@@ -70,6 +70,21 @@ main{padding:44px 0 70px}
 .hint{font-size:11.5px;color:var(--etoile);min-height:16px;margin-top:6px;text-align:center;visibility:hidden}
 .hint.show{visibility:visible}
 
+/* ---- Auth: Text field / OTP code input (Flow 0 · Authentification) ---- */
+.field{margin:8px 0 2px}
+.field input{width:100%;background:var(--voile);border:1px solid var(--hair);border-radius:10px;color:var(--ivoire);font-family:'Inter',sans-serif;font-size:15px;padding:12px 14px;transition:border-color .15s}
+.field input::placeholder{color:var(--ombre)}
+.field input:focus{outline:none;border-color:var(--etoile)}
+.field.err input{border-color:var(--corail)}
+.telrow{display:flex;gap:8px}
+.telrow input.cc{width:64px;flex-shrink:0;text-align:center;padding:12px 6px}
+.errmsg{font-size:11.5px;color:var(--corail);margin-top:4px;display:none}
+.errmsg.show{display:block}
+.otprow{display:flex;gap:8px;margin:10px 0 2px}
+.otprow input{width:100%;aspect-ratio:1;text-align:center;background:var(--voile);border:1px solid var(--hair);border-radius:10px;color:var(--ivoire);font-family:'Inter',sans-serif;font-size:20px;font-weight:600;transition:border-color .15s}
+.otprow input:focus{outline:none;border-color:var(--etoile)}
+.otprow.err input{border-color:var(--corail)}
+
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
 .tag{padding:8px 14px;border-radius:999px;border:1px solid var(--hair-fort);background:var(--voile);font-size:13px;color:var(--ivoire);cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .15s}
 .tag.sel{border-color:var(--etoile);color:var(--etoile)}
@@ -194,18 +209,109 @@ footer.site{border-top:1px solid var(--hair);padding:24px 0 44px;font-size:12px;
   </div>
   <div class="content" id="content">
 
+  <!-- 2026-07-12 (design-specialist, follow-up pass): removed the "paycard" cohort-info block
+       (résidence name / synced-entry date / expected-member count) — the app has no such
+       address/cohort data about the user at this point in the flow (before phone auth even runs),
+       so showing it implied information that doesn't exist yet. Replaced with a plain welcome:
+       one tagline + one short reassurance line, consistent with product law 5 (calm by design —
+       nothing fabricated or implied that isn't true yet). CTA unchanged in destination
+       (-> auth-tel, "2 · Numéro de téléphone" — confirmed still correct). -->
   <div class="scr on" id="ob-1" data-title="Bienvenue">
     <div style="text-align:center;padding:18px 0 6px">
       <div style="font-family:'Space Grotesk';font-size:30px;letter-spacing:.24em">SWAB</div>
       <p style="font-size:12.5px;color:var(--brume);margin-top:6px">ندير صواب — on joue franc.<br>Le lien n'apparaît que s'il est réciproque.</p>
     </div>
-    <div class="paycard">
-      <div class="row"><span class="muted">Votre cohorte</span><span>Résidence Les Acacias</span></div>
-      <div class="row"><span class="muted">Entrée synchronisée</span><span>12 juillet</span></div>
-      <div class="row"><span class="muted">Membres attendus</span><span>68</span></div>
+    <div style="text-align:center;padding:22px 10px 4px">
+      <p class="ptitle">Bienvenue. Prenez votre temps.</p>
+      <p class="psub" style="margin-top:8px">Rien ne se passe tant que vous ne l'avez pas décidé — pas de compte à rattraper, pas d'attente, juste votre carte quand vous serez prêt·e.</p>
     </div>
-    <p class="note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Tout le monde entre en même temps : personne n'attend seul, la densité existe dès le premier jour.</p>
-    <button class="btn btn-primary" onclick="show('ob-2')">Rejoindre ma communauté</button>
+    <button class="btn btn-primary" onclick="show('auth-tel')">Commencer</button>
+  </div>
+
+  <!-- Flow 0 · Authentification — phone+OTP is identical for sign-up/sign-in (apps/api/src/routes/auth.ts
+       POST /auth/otp/verify branches only at the very end); these two screens are shared, then screen 3
+       diverges to "Votre nom" (new account) or "Bon retour" (existing account). Proposed copy (not sourced
+       from an existing spec) is used where FS-01/FS-07 don't already freeze wording; see design note. -->
+  <div class="scr" id="auth-tel" data-title="Numéro de téléphone">
+    <p class="ptitle">Votre numéro</p>
+    <p class="psub">Pour vous identifier et vous prévenir en cas de coïncidence.</p>
+    <span class="flab">Numéro de téléphone</span>
+    <div class="field telrow" id="tel-field">
+      <input type="text" class="cc" value="+33" maxlength="4" inputmode="tel" aria-label="Indicatif pays">
+      <input type="tel" id="tel-num" placeholder="6 12 34 56 78" inputmode="numeric" aria-label="Numéro national" oninput="clearTelErr()">
+    </div>
+    <p class="errmsg" id="tel-errmsg">Numéro invalide — vérifiez le format.</p>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Tout reste chiffré sur ton téléphone. Votre numéro sert uniquement à vous identifier — il n'est jamais montré à vos contacts.</p>
+    <button class="btn btn-primary" onclick="submitPhone()">Recevoir le code</button>
+  </div>
+
+  <div class="scr" id="auth-otp" data-title="Code de vérification">
+    <p class="ptitle">Code de vérification</p>
+    <p class="psub">Entrez le code à 6 chiffres envoyé par SMS au +33 6 12 34 56 78.</p>
+    <div class="otprow" id="otp-row">
+      <input id="otp-0" maxlength="1" inputmode="numeric" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)">
+      <input id="otp-1" maxlength="1" inputmode="numeric" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)">
+      <input id="otp-2" maxlength="1" inputmode="numeric" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)">
+      <input id="otp-3" maxlength="1" inputmode="numeric" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)">
+      <input id="otp-4" maxlength="1" inputmode="numeric" oninput="otpInput(this,4)" onkeydown="otpKey(event,4)">
+      <input id="otp-5" maxlength="1" inputmode="numeric" oninput="otpInput(this,5)" onkeydown="otpKey(event,5)">
+    </div>
+    <p class="errmsg" id="otp-errmsg">Code incorrect, réessayez.</p>
+    <button class="textbtn" onclick="resendOtp()">Renvoyer le code</button>
+    <p class="hint" id="otp-resent">Nouveau code envoyé.</p>
+    <!-- Conceptual branch on success: existing account -> "Bon retour" (auth-retour); new account -> "Votre nom"
+         (auth-nom). Only the new-account path is wired (here and in Penpot's single NavigateTo trigger) — a
+         click-through prototype/Penpot interaction can't express real branching on one trigger. -->
+    <button class="btn btn-primary" onclick="verifyOtp()">Vérifier</button>
+  </div>
+
+  <div class="scr" id="auth-nom" data-title="Votre nom">
+    <p class="ptitle">Comment vous appelle-t-on ?</p>
+    <p class="psub">Ce nom sera visible par vos contacts.</p>
+    <span class="flab">Nom affiché</span>
+    <div class="field" id="nom-field">
+      <input type="text" id="nom-input" placeholder="Prénom" oninput="clearNomErr()">
+    </div>
+    <p class="errmsg" id="nom-errmsg">Choisissez un nom pour continuer.</p>
+    <button class="btn btn-primary" onclick="submitNom()">Continuer</button>
+  </div>
+
+  <!-- 2026-07-12 (design-specialist, follow-up pass): NEW screen, "5 · Vos coordonnées" —
+       inserted between "4 · Votre nom" and "6 · Bon retour" (renumbered). Proposed copy, not
+       sourced from any spec — docs/specs/*.md, docs/product-overview.md and swab-domain-spec.md
+       have zero hits for "adresse"/"email"; see design note + CHANGELOG for the area:db flag this
+       introduces (two candidate User fields with no schema/vault placement decided). Both fields
+       reuse the Text field component (.field, built previous session for auth-tel/auth-nom) —
+       no new component. Optional, non-blocking per ONB-03/ONB-06 precedent (skippable contact
+       import / optional état-ressenti layer): a single always-enabled "Continuer" works whether
+       or not either field is filled, so there is no separate skip affordance needed — one CTA
+       keeps to the "one étoile primary action per screen" rule and the effect is identical to a
+       skip (fields never block progress; submitCoord() below never validates their contents). -->
+  <div class="scr" id="auth-coord" data-title="Vos coordonnées">
+    <p class="ptitle">Vos coordonnées</p>
+    <p class="psub">Facultatif. Vous pouvez continuer sans rien renseigner, et revenir dessus plus tard.</p>
+    <span class="flab">Adresse (facultatif)</span>
+    <div class="field" id="adr-field">
+      <input type="text" id="adr-input" placeholder="Adresse postale">
+    </div>
+    <span class="flab">Email (facultatif)</span>
+    <div class="field" id="email-field">
+      <input type="email" id="email-input" placeholder="adresse@email.com">
+    </div>
+    <p class="note"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Utile si un·e proche veut vous envoyer un cadeau ou un mot. Jamais montré à vos contacts, jamais requis pour utiliser SWAB.</p>
+    <button class="btn btn-primary" onclick="submitCoord()">Continuer</button>
+  </div>
+
+  <div class="scr" id="auth-retour" data-title="Bon retour">
+    <div class="donehead">
+      <div class="ring"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
+      <b>Bon retour</b>
+      <p>Votre carte vous attend, telle que vous l'avez laissée.</p>
+    </div>
+    <!-- POC scope gap: this screen only covers same-device sign-in (local vault key already present). A
+         new-device sign-in needs the not-yet-designed recovery-phrase flow — open question OQ-IDT-2, FS-07
+         VLT-05. Not designed here; flagged, not improvised. -->
+    <button class="btn btn-primary" onclick="show('home')">Continuer</button>
   </div>
 
   <div class="scr" id="ob-2" data-title="Onboarding · clés">
@@ -611,8 +717,14 @@ footer.site{border-top:1px solid var(--hair);padding:24px 0 44px;font-size:12px;
 <div class="plan">
   <h2>Plan de l'application</h2>
   <p>Cliquez pour sauter à un écran — le bouton « Retour » du téléphone remonte toujours à l'écran précédent réellement visité.</p>
+  <h3>0 · Authentification</h3>
+  <button class="lnk" data-s="ob-1" onclick="show('ob-1')">Bienvenue</button>
+  <button class="lnk" data-s="auth-tel" onclick="show('auth-tel')">Numéro de téléphone</button>
+  <button class="lnk" data-s="auth-otp" onclick="show('auth-otp')">Code de vérification</button>
+  <button class="lnk" data-s="auth-nom" onclick="show('auth-nom')">Votre nom (nouveau compte)</button>
+  <button class="lnk" data-s="auth-coord" onclick="show('auth-coord')">Vos coordonnées (facultatif)</button>
+  <button class="lnk" data-s="auth-retour" onclick="show('auth-retour')">Bon retour (compte existant)</button>
   <h3>1 · Entrée en cohorte</h3>
-  <button class="lnk" data-s="ob-1" onclick="show('ob-1')">Bienvenue — cohorte synchronisée</button>
   <button class="lnk" data-s="ob-2" onclick="show('ob-2')">Clés &amp; journal de transparence</button>
   <button class="lnk" data-s="ob-3" onclick="show('ob-3')">Import local des contacts</button>
   <button class="lnk" data-s="ob-4" onclick="show('ob-4')">Calibration — rôle · intimité · présence</button>
@@ -681,6 +793,64 @@ function selOne(el){
   el.classList.add('sel');
 }
 function toggSel(el){el.classList.toggle('sel')}
+
+function clearTelErr(){
+  document.getElementById('tel-field').classList.remove('err');
+  document.getElementById('tel-errmsg').classList.remove('show');
+}
+function submitPhone(){
+  var num=document.getElementById('tel-num');
+  if(num.value.replace(/\D/g,'').length<9){
+    document.getElementById('tel-field').classList.add('err');
+    document.getElementById('tel-errmsg').classList.add('show');
+    return;
+  }
+  clearTelErr();
+  show('auth-otp');
+}
+function otpInput(el,idx){
+  el.value=el.value.replace(/[^0-9]/g,'').slice(-1);
+  if(el.value&&idx<5){document.getElementById('otp-'+(idx+1)).focus()}
+  clearOtpErr();
+}
+function otpKey(e,idx){
+  if(e.key==='Backspace'&&!e.target.value&&idx>0){document.getElementById('otp-'+(idx-1)).focus()}
+}
+function clearOtpErr(){
+  document.getElementById('otp-row').classList.remove('err');
+  document.getElementById('otp-errmsg').classList.remove('show');
+}
+function verifyOtp(){
+  var vals='';
+  for(var i=0;i<6;i++){vals+=document.getElementById('otp-'+i).value}
+  if(vals.length<6){
+    document.getElementById('otp-row').classList.add('err');
+    document.getElementById('otp-errmsg').classList.add('show');
+    return;
+  }
+  clearOtpErr();
+  show('auth-nom');
+}
+function resendOtp(){
+  document.getElementById('otp-resent').classList.add('show');
+}
+function clearNomErr(){
+  document.getElementById('nom-field').classList.remove('err');
+  document.getElementById('nom-errmsg').classList.remove('show');
+}
+function submitNom(){
+  var input=document.getElementById('nom-input');
+  if(!input.value.trim()){
+    document.getElementById('nom-field').classList.add('err');
+    document.getElementById('nom-errmsg').classList.add('show');
+    return;
+  }
+  clearNomErr();
+  show('auth-coord');
+}
+function submitCoord(){
+  show('ob-2');
+}
 
 var calNames=[['Yasmine B.','Y'],['Karim E.','K'],['Nora T.','N'],['Sami R.','S']];
 var calIdx=0;

@@ -4,6 +4,186 @@
 > Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
 
+## 2026-07-12 — [area:design] Flow 0 follow-up: simplified Bienvenue, new optional "Vos coordonnées" screen
+
+- **What (Change 1 — simplify `1 · Bienvenue`):** removed the "paycard"-style cohort info block
+  (résidence name, synced-entry date, expected-member count) from the Bienvenue screen — the app
+  has no such address/cohort data about the user at this point in the flow (phone auth hasn't even
+  run yet), so displaying it implied information that isn't true. Replaced with a plain, calm
+  welcome: one tagline ("Bienvenue. Prenez votre temps.") + one short reassurance sentence ("Rien
+  ne se passe tant que vous ne l'avez pas décidé — pas de compte à rattraper, pas d'attente, juste
+  votre carte quand vous serez prêt·e."), per product law 5 (calm by design — nothing fabricated or
+  implied that isn't true yet). Single primary CTA kept, renamed "Commencer" (from "Rejoindre ma
+  communauté" — the old copy referenced the removed cohort framing); its destination was
+  re-verified unchanged: `-> 2 · Numéro de téléphone`.
+- **What (Change 2 — new screen `5 · Vos coordonnées`):** inserted between `4 · Votre nom` and the
+  existing `5 · Bon retour`, which is renumbered `6 · Bon retour` (same board, no other flow
+  touched — Flows 1–7's own numbering/IDs untouched). Two optional fields, **Adresse** (postal
+  address — "for receiving physical things from friends, gifts, event mail") and **Email** ("for
+  the case where someone doesn't want app-mediated delivery but still wants to be reachable"), both
+  reusing the existing Text field component built last session for `auth-tel`/`auth-nom` — no new
+  component added. Copy: title "Vos coordonnées", subtitle "Facultatif. Vous pouvez continuer sans
+  rien renseigner, et revenir dessus plus tard.", field placeholders "Adresse postale" /
+  "adresse@email.com" (kept short to fit the field's fixed width — the "why" lives in the note
+  below the fields instead, matching the `auth-tel` pattern of short placeholder + explanatory
+  note), note "Utile si un·e proche veut vous envoyer un cadeau ou un mot. Jamais montré à vos
+  contacts, jamais requis pour utiliser SWAB." Single CTA "Continuer", always enabled — works
+  identically whether either field is filled or empty, so there is no separate skip affordance:
+  this keeps to the "one étoile primary action per screen" rule while producing the exact same
+  non-blocking effect as the "Passer" precedent on ONB-03 (skippable contact import) / ONB-06
+  (optional état-ressenti layer) — optional layers never block completion. Rewired:
+  `4 · Votre nom -> 5 · Vos coordonnées -> 1 · Onboarding · clés` (the same target `4 · Votre nom`
+  used to navigate to directly); `6 · Bon retour`'s own routing (`-> 6 · Carte des relations`,
+  short-circuit for returning users fed from the OTP branch) is untouched.
+- **Unspec'd surface, flagged not frozen:** neither field exists in any of `docs/specs/FS-*.md`,
+  `docs/product-overview.md`, or `swab-domain-spec.md` (zero hits checked for "adresse"/"email" as
+  a contact-info concept before starting). All copy on both screens is proposed, not sourced — HTML
+  comments in both prototype sources mark it as such. **This introduces two candidate `User` fields
+  (postal address, email) with no schema/vault placement decided — needs an `area:db` proposal
+  before any backend/app work can support it; not proposed here, out of this agent's scope.**
+- **Privacy judgement call (flagged, not redesigned):** a postal address isn't classification data
+  (rôles/intimité/présence/état — the G1 privacy invariant's specific scope), so it doesn't
+  literally violate that invariant. It's still sensitive PII with no established
+  encryption/storage story in this app the way phone number and vault contents have — worth the
+  data-steward's explicit attention on where/how it's stored (`Vault` blob vs. a plain `User`
+  column) when the `area:db` proposal is opened. No defensive redesign attempted here — one-line
+  flag only, per this task's scope.
+- **Verification:** both prototype HTML sources (`docs/design/swab-prototype-consolidated.html`,
+  `blueprints/swab-app-prototype.html`) kept byte-identical after edits (`diff` clean). Penpot:
+  cloned `4 · Votre nom` as the structural base for the new screen (reuses the Text field
+  component's `field / nom` board verbatim, renamed `field / adresse` + a cloned `field / email`),
+  fixed a flex-reflow stall after board insertion (toggling `columnGap` forced Penpot to recompute
+  child x-positions — see gotcha below), fixed a text z-order/insert quirk on the Bienvenue tagline
+  (`content.insertChild(i, shape)` silently no-ops when the shape is already a child of that same
+  parent — use `shape.setParentIndex(i)` instead to reorder within an existing parent). Flow 0
+  re-checked for zero pairwise overlap and zero containment violations after the insert+renumber
+  (6/6 screens, `isContainedIn` against the flow board); re-checked page-wide for zero overlap
+  across all 8 flow boards (Flow 0 grew from 5 to 6 screens, width 3084px, still clear of Flow 1 by
+  ~258px). `export_shape`-verified `1 · Bienvenue` and `5 · Vos coordonnées` individually, plus the
+  full `Flow 0 · Authentification` board (all 6 screens at once, confirming numbering 1–6 in both
+  board names and their internal topbar-title text — these are two separate values in Penpot, easy
+  to update one and miss the other, which happened once mid-session and was caught by the full-board
+  export before finishing).
+- **Gotcha for next agent:** (1) `content.insertChild(index, shape)` where `shape` already belongs
+  to `content` does not reorder it — it silently fails (no error, no move). Use
+  `shape.setParentIndex(index)` for in-place reordering. (2) After inserting a new child into an
+  existing flex-row board (e.g. adding a 6th screen to a 5-screen "Écrans" row), sibling positions
+  do not always auto-reflow immediately even after an `await sleep`; nudging any flex property (e.g.
+  `columnGap += 1` then back) forces Penpot to recompute — found via stale/overlapping x-positions
+  on export. (3) Every screen has its `N · Titre` in *two* places — the board's `.name` and a
+  separate Text shape inside `topbar` with the same string as its `characters` — renumbering one
+  without the other is an easy miss, always re-export the full flow after a renumber to catch it.
+
+## 2026-07-12 — [area:design] Penpot prototype restructured into workflow-grouped flows with prototyping interactions
+
+- **What:** the connected Penpot file's "Prototype — Parcours consolidé" page went from 22 screen
+  boards scattered as flat siblings (same y, x decreasing ~460px each, no layout system) to 7 named
+  `Flow N · <Title>` parent boards, each with a column flex layout (title label + a row-flex "Écrans"
+  child holding the screens in numeric order): `Flow 1 · Onboarding` (1–5), `Flow 2 · Carte des
+  relations` (6–7), `Flow 3 · Sous-groupes` (8–9), `Flow 4 · Envie & Match` (10–12), `Flow 5 ·
+  Événements` (13–20), `Flow 6 · Notifications` (21), `Flow 7 · Paramètres` (22). The 7 flow boards
+  are stacked in a single column on the page with 1300px y-gaps (each flow board ≈1042px tall, so
+  ≈258px of clear breathing room between clusters) — no 7-group misfit found, all 22 screens mapped
+  cleanly. Flow boards use the `nuit` colour as background so each cluster reads as a distinct card;
+  titles use the library's `Title` typography (Space Grotesk 20/500) already used for screen titles.
+- **Interactions:** 32 `click` → `NavigateTo` interactions wired directly on the actual tappable
+  element (button, list row, tile, or feed item — not just "whole board"), reconstructed by reading
+  each screen's `content` tree for a matching label: in-flow sequences (e.g. Bienvenue → Onboarding
+  clés → … → terminé) plus cross-flow entry points found via real nav elements — Onboarding·terminé
+  → Carte des relations, Carte's 4 dashboard tiles → Envie/Sous-groupes/Événements/Paramètres, Carte's
+  2 feed items → Coïncidence/Événement·répondre, Sous-groupe·détail → Envie·émission, Fiche contact →
+  Envie·émission, Événements' 3 list rows → Déclarer/répondre/Attention reçue, and the "Retour à la
+  carte" buttons on 4 different event screens back to Carte des relations. Deliberately **not** wired
+  (logged, not guessed): "Contact suivant" (loops in place, not a screen change), "Proposer" on
+  Coïncidence (no dedicated outcome screen exists), "Ne rien faire" on Événement·répondre (calm-by-design
+  — refusal must stay invisible, wiring it would contradict product law 5), the two RSVP buttons on
+  Attention reçue and "Envoyer le message" on Événement·message (no dedicated confirmation screen
+  exists for either — ambiguous target), and Paramètres has no back-to-Carte affordance in the
+  prototype at all (flagged as a UX gap, not fabricated).
+- **Consistency fixes:** segmented-control cells (`segb`, used on Intimité/Présence/Paramètres
+  toggles, 17 instances across 3 screens) had a hardcoded `border-radius: 8`, which isn't in
+  `docs/design-system.md`'s radii scale (10/12/14/999/50%/57/64) — relinked to the `radius.input`
+  token (resolves to 10) via `shape.applyToken()`. The library's `Button`/`Tag` main components
+  already had fully correct values (radius 12/999, colour `#e4be6a`/`#202949` exactly matching
+  `etoile`/`voile`) but weren't linked to the token/colour assets by reference — attempted
+  `applyToken()` on the main-instance shapes but it did not persist across plugin calls (values are
+  already correct, so no visible defect; logging as an incomplete polish, not claiming it's done).
+- **Flagged, not fixed:** 39 recurring micro-spacing values (rowGap 1/6, columnGap 10, padding 13,
+  chip padding 10) inside `paycard`/`tile`/`tilerow`/`fitem`/`rowi`/`chip` — found identically across
+  every instance of these compound components on every sampled screen, which reads as intentional
+  sub-scale spacing already baked into shipped components rather than drift. Mechanically forcing
+  them onto `docs/design-system.md`'s coarser 4/8/12/14/16/20/24 scale would visibly change dozens of
+  already-shipped card/tile proportions — out of this task's "consistency enforcement, not creative
+  redesign" scope. Needs verification against the consolidated HTML prototype and either an extension
+  of the documented spacing scale or a deliberate normalization pass, tracked as a follow-up.
+- **Verification:** every flow board checked for zero pairwise overlap and zero containment
+  violations (`penpotUtils.isContainedIn` on every screen against its flow board); screen order
+  confirmed identical to source (22/22 accounted for, none dropped/duplicated); visually verified via
+  `export_shape` on Flow 1 (5 screens), Flow 5 (8 screens, widest), Flow 6 (1 screen), and the fixed
+  `segb` radius on Flow 1. `export_shape` hit transient 30s timeouts several times during the session
+  (plugin/render-queue load, not a disconnect — `execute_code` stayed responsive throughout); retries
+  succeeded every time.
+- **No blueprint changes:** screen content, copy, and flow order are unchanged — only the Penpot
+  canvas organization and prototyping interactions were touched, so `blueprints/**` and
+  `docs/design/swab-prototype-consolidated.html` stay in sync (no divergence to flag).
+- **Gotcha for next agent:** `board.addFlexLayout()` on a *new empty* board is safe to call directly
+  (only pre-existing children need `penpotUtils.addFlexLayout()` to preserve order); `applyToken()` on
+  a component's *main instance* (as opposed to a regular shape/instance copy) silently failed to
+  persist across `execute_code` calls in this session despite returning success both times — worth a
+  focused repro before relying on it for main-component token linking again.
+
+## 2026-07-12 — [ONB-01, ONB-02, IDT-01, IDT-02, IDT-03] New phone+OTP auth flow (sign-up/sign-in), design-only
+
+- **Why:** the connected Penpot prototype jumped straight from "Bienvenue" to local key generation —
+  no phone-number entry, no OTP verification, no "sign in" concept anywhere — even though phone+OTP
+  auth is fully built server-side (`apps/api/src/routes/auth.ts`). `POST /auth/otp/verify` treats
+  sign-up and sign-in identically (branches only at the very end, on whether `displayName` is
+  supplied), so the design mirrors that: one shared phone+OTP entry, diverging only after
+  verification. No "New here?/Returning?" choice screen — matches product law 5 (calm by design, no
+  upfront self-classification).
+- **What (design chain, in propagation order):** added the new screens' content to
+  `docs/design/swab-prototype-consolidated.html` and mirrored verbatim into
+  `blueprints/swab-app-prototype.html` (both stayed byte-identical, as before); added the **Text
+  field** and **OTP code input** components to `docs/design-system.md` §4's component grammar table;
+  built the Penpot side (new `Flow 0 · Authentification` board, before `Flow 1 · Onboarding`):
+  - `1 · Bienvenue` — reparented from Flow 1 (not recreated); its CTA interaction retargeted from the
+    old "Onboarding · clés" to the new phone screen.
+  - `2 · Numéro de téléphone` (new) — indicatif + national-number Text field pair, the existing
+    (screen-convention) privacy-note text style, CTA "Recevoir le code". Privacy copy sources FS-01's
+    literal quote "Tout reste chiffré sur ton téléphone" (ONB-02); the rest is proposed copy.
+  - `3 · Code de vérification` (new) — 6-box OTP input (auto-advance-styled), "Renvoyer le code" reusing
+    the existing text-button style (cloned from "Terminer la calibration", not a new component), error
+    state in `corail` ("Code incorrect, réessayez.").
+  - `4 · Votre nom` (new, new-account branch) — display-name Text field + "Continuer", wired
+    (`NavigateTo`) from screen 3 as the primary/novel path.
+  - `5 · Bon retour` (new, returning-account branch) — reuses the existing `donehead` (ring + title +
+    subtitle) pattern, not a new component.
+  - Wiring: `1→2→3→4→(Flow 1's now-renumbered first screen)`; `5→Flow 2 · Carte des relations`'s first
+    screen. Screen 3's conceptual branch to screen 5 (existing accounts) is **documented, not wired** —
+    both the HTML prototype and Penpot's `NavigateTo` can only express one destination per trigger, so
+    only the more novel new-account path is interactive; this mirrors the real branch point in
+    `apps/api/src/routes/auth.ts`.
+  - `Flow 1 · Onboarding` locally renumbered 1→4 (`Onboarding · clés/contacts/calibration/terminé`) now
+    that `Bienvenue` moved out — including the previously-out-of-sync topbar title text on each
+    renumbered screen (`characters` didn't auto-follow the board rename). Global leftover screen IDs on
+    Flows 2–7 (from the prior restructuring task) were **not** touched, as out of scope.
+  - Verified: zero pairwise overlap / zero containment violations on Flow 0 and the now-4-screen
+    Flow 1 (`penpotUtils.isContainedIn`); every new screen and both new components spot-checked with
+    `export_shape`.
+- **Incomplete, flagged honestly:** the two new components (Text field, OTP code input; empty/focus/
+  error states) are built and `export_shape`-verified as swatches inside the `Flow 0` board, and fully
+  documented in `docs/design-system.md`, but **not yet placed into the "Swab — Design System" page's
+  `§ Composants` section** — Penpot only allows writes to the page open in the connected browser tab,
+  which stayed on "Prototype — Parcours consolidé" for this entire session (`appendChild` on a
+  Design-System-page shape throws `Cannot modify a page that is not currently active`). Needs a
+  follow-up pass with that page active. New-device sign-in (lost local vault key) is explicitly **not**
+  designed — it needs the not-yet-designed recovery-phrase flow, open question OQ-IDT-2 in
+  `docs/specs/FS-07-identity-vault.md` (VLT-05) — flagged on the "Bon retour" screen, not improvised.
+- **Not touched (explicitly out of scope):** all app code (`apps/ios`, `apps/android`, `apps/api`,
+  `apps/mobile`) — the real apps already have working phone+OTP auth; wiring the design to app code is
+  a separate future `area:ios`/`area:android`/`area:web` task. `blueprints/swab - Onboarding
+  (standalone) (1).html` — unchanged, it only covers post-auth calibration steps.
+
 ## 2026-07-12 — Wave 4: mobile E2E testing made a hard Definition-of-Done gate
 
 - **What:** every functional requirement of the implemented specs (FS-01/02/03/07, ~40 requirement

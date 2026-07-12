@@ -10,7 +10,7 @@
 > Owner: Design System Steward (`agents/design-system-specialist.md`). Product law 5 (calm by design)
 > is binding: nothing here may introduce counters, celebration, or urgency affordances.
 
-_Last updated: 2026-07-07_
+_Last updated: 2026-07-12_
 
 ## 1. Colour tokens
 
@@ -97,6 +97,8 @@ exists) and, on mobile, a primitive in `apps/mobile/src/ui.tsx` (later `packages
 | **Button — primary** | default, active | `étoile` fill, `étoile-encre` text, radius 12, full-width. |
 | **Button — ghost** | default | transparent, `hair-fort` border, `ivoire` text. |
 | **Text button** | default | underlined, `ombre`, centred; low-emphasis exits. |
+| **Text field** | empty, focused, error | `voile` fill, radius 10 (input/row radius), `hair` border default → `étoile` border on focus → `corail` border + inline `errmsg` on error. Label uses `flab` (11px Inter, uppercase, `ombre`). Used for phone number, display name. |
+| **OTP code input** | empty, filled, focused, error | Six individual digit boxes, same fill/radius family as Text field (`voile`, radius 10); square proportions derived from the `tile`/`rowi` geometry rather than invented dimensions. Auto-advance on input; error state = `corail` border, calm inline copy (e.g. "Code incorrect, réessayez") — never "error red". |
 | **Tag / chip** | unselected, selected | pill; selected = `étoile` border + text. `chip` = filled accent tint; `chip.gris` = neutral tint. |
 | **Segmented control** | option, selected, **retrait**-selected | selected = `étoile`; the `retrait` option selects to `corail` (absolute lock). |
 | **Intimacy levels** | 4 ordinal cells | Noyau · Proches · Amis · Élargi; selected = `étoile`. |
