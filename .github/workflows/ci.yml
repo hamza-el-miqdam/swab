@@ -22,5 +22,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - name: Agent renders in sync (agents/ is the source of truth)
+        run: node scripts/render-agents.mjs --check
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint typecheck test build

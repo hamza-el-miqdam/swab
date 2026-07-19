@@ -11,6 +11,7 @@
 - Stale-reference cleanup after the `apps/mobile` removal: `CLAUDE.md` (project description, commands, changelog list), `agents/_global-directives.md`, backend-specialist scope (`apps/mobile` → `apps/ios`/`apps/android`), design-specialist DoD (`area:mobile` → `area:ios`/`area:android`), and "G4.7" citations corrected to G5 in the api/db/root changelog headers.
 - Compacted the bloated history files: `docs/STATUS.md` (99→~60 lines, migration banner summarized), root/ios/android changelogs rewritten as summaries (root also had a leftover merge-conflict marker and out-of-order entries — fixed). No facts dropped, only narration; deep detail remains in git history and `docs/migration/rn-audit-map.md`.
 - **Follow-up:** re-run `/speckit-constitution` to mirror the amended G5 into `.specify/memory/constitution.md`.
+- `ci.yml` now runs `node scripts/render-agents.mjs --check` — the `.github/` Copilot copies are deliberate generated duplication (Copilot can't follow imports, unlike the `.claude/agents/` `@`-import wrappers); the CI guard is what makes keeping them safe.
 
 ## 2026-07-19 — chore: remove frozen apps/mobile RN reference implementation
 
