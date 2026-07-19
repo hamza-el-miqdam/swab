@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-07-19 — [design-system] Wire real Nuit tokens into Theme.kt, retire placeholder
+
+- `Theme.kt`'s Wave-1 placeholder (`darkColorScheme`/`lightColorScheme` pair with invented `SwabLight` hex values) is replaced by a single `darkColorScheme` built from the now-generated `DesignTokens.kt`. `docs/design-system.md` §1 is explicit: Nuit is **one** dark theme, no light palette exists anywhere in the charter/Penpot/`tokens.json` — inventing one would violate the design agent's no-invented-values rule, so `isSystemInDarkTheme()` branching is removed; the app always renders Nuit regardless of OS setting. This is a behavior change, not just a color fill-in — flagging per instructions.
+- Role mapping follows `docs/design-system.md` §1 role descriptions, not Material3's default names: `background`=nuit, `surface`=encre, `surfaceVariant`=voile, `surfaceContainerHighest`=voile-2, `onBackground`/`onSurface`=ivoire, `onSurfaceVariant`=brume, `outline`=hair-fort (opacity-composited), `outlineVariant`=hair, `primary`=étoile, `onPrimary`=étoile-encre.
+- Deliberately left at Material3 defaults (no charter basis, not invented): `tertiary*`, `secondary*`, `inverse*`, `scrim`, `surfaceDim`/`surfaceBright`/other `surfaceContainer*` steps. `error*` roles also left default — `corail` is documented as "never an error red" (caution/en-retrait, not form-validation error), so mapping it to M3's `error` slot would misuse the token; no app code currently reads `isError`/`error*`, confirmed by grep.
+- Verified: `./gradlew test` 216/216 JVM tests green (debug+release), `./gradlew :app:compileDebugKotlin` clean. Grepped `apps/android` for other hardcoded hex duplicating `DesignTokens` — none found beyond the already-flagged `EtatColors.kt` 3-état divergence (untouched, out of scope).
+
 ## 2026-07-11 — [ONB-01..09, MAP-01/02/04/06/08/09, FCH-01..08, VLT-01] Wave 4 — Compose E2E suite (16/16) + legacy-vault seed hook
 
 - New `app/src/androidTest/.../e2e/`: 14 instrumented Compose UI tests (5 classes + shared `E2EFlows.kt`) driving the real app against the live `docker compose` API (`10.0.2.2:3001`) — onboarding happy path with runtime no-gamification semantics scans, map/peek-sheet/list-mode, fiche axis-edit persistence + newest-first history, legacy-vault backward compat, Activity-recreation smoke. Plus dedicated regression tests for the Wave-1 nav state-loss bug and the Wave-2 density bug (measures rendered node pixels vs `MapGeometry.nodeSize × density`).
