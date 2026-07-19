@@ -3,14 +3,13 @@
 > **Single source of truth for design tokens and component grammar.**
 > Extracted verbatim from the consolidated app prototype
 > ([`docs/design/swab-prototype-consolidated.html`](design/swab-prototype-consolidated.html)) — gabarit iPhone 17,
-> 402 × 874 pt (@3x). The Penpot design library, `apps/mobile/src/theme.ts`, and any future
-> `packages/ui` primitives all derive from this file. **Do not invent values** — if something is
+> 402 × 874 pt (@3x). The Penpot design library and `packages/ui` primitives derive from this file. **Do not invent values** — if something is
 > missing here, add it to the prototype first, then reflect it here (design agent, `area:design`).
 >
 > Owner: Design System Steward (`agents/design-system-specialist.md`). Product law 5 (calm by design)
 > is binding: nothing here may introduce counters, celebration, or urgency affordances.
 
-_Last updated: 2026-07-12_
+_Last updated: 2026-07-19_
 
 ## 1. Colour tokens
 

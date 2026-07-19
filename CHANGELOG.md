@@ -1,8 +1,18 @@
 # Changelog — repo root (area:devops · docs · agents · tooling · cross-cutting)
 
 > Newest first. Changes that don't belong to a single app/package: CI/CD, docker, docs, agent prompts, scripts, workspace config.
-> Per-area history: [apps/mobile](apps/mobile/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
+> Per-area history: [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets. Agents: updating the right changelog is part of your Definition of Done (G4.7).
+
+## 2026-07-19 — chore: remove frozen apps/mobile RN reference implementation
+
+- `apps/mobile` was the Expo/React Native reference during the native migration to `apps/ios` and `apps/android`. Native implementations (Waves 1–4) reached parity and are feature-complete; knowledge is preserved in `docs/migration/rn-native-handoff.md`, `docs/migration/vault-test-vectors.json`, and `docs/migration/rn-audit-map.md`.
+- Deleted `apps/mobile` folder entirely.
+- Updated `agents/_global-directives.md` to remove `apps/mobile` from the project description and from the G5 changelog locations.
+- Updated `agents/design-specialist.md` to remove `apps/mobile` from scope and update token-consumption guidance.
+- Updated `agents/ios-specialist.md` and `agents/android-specialist.md` to remove the frozen-reference scope restriction and update feature-parity references to point to specs + handoff docs.
+- Removed reference link in root `CHANGELOG.md` per-area history.
+- Updated `docs/STATUS.md` to remove `apps/mobile` from the modules table and the Changelogs section.
 
 ## 2026-07-12 — [area:design] Split "Mariages & naissances" into two rows on the Paramètres screen
 
@@ -29,6 +39,113 @@
 - **Follow-up:** copy ("Mariages", "Naissances") is a prototype-level refinement; if a settings spec
   freezes this list it must match. No token/component changes; no app code touched (hand-off to
   `area:ios`/`area:android` when the native settings screen is built).
+
+## 2026-07-17 — [area:design] Penpot native Flows wired — prototype is now Play/Present-able
+
+- **Context:** all click interactions on the "Prototype — Parcours consolidé" page were already
+  wired from prior sessions, but Penpot's Present/Play mode picks its start point from `page.flows`
+  (`Flow` objects with a named `startingBoard`), not from click wiring. Before this pass, all 5
+  existing `page.flows` entries pointed at the organizational `Flow N · <Title>` wrapper board (a
+  ~3600×1000pt row containing every screen in that section side-by-side) instead of an actual
+  418×890pt phone screen, and there was no Flow at all for the true app entry point
+  `1 · Bienvenue` — so Play mode had nothing usable to open on.
+- **Repointed the 5 pre-existing Flows** from wrapper boards to real screen boards (`startingBoard`
+  reassigned directly, flows not deleted/recreated): `Flow 2` → `6 · Carte des relations`,
+  `Flow 3` → `8 · Sous-groupes`, `Flow 4` → `10 · Envie · émission`, `Flow 5` → `13 · Événements`,
+  `Flow 6` (previously named/targeting `Flow 8 · Générosité`) → `23 · Envies de recevoir`.
+- **Created `"0 · Parcours complet"`** starting at `1 · Bienvenue` — the actual main-path entry
+  point, previously missing.
+- **Created 10 more Flows, one per orphan-cluster local root**, so the 14 alternate-take/variant
+  screens (mostly the `N · Claude · ...` set) that the BFS from `1 · Bienvenue` doesn't reach stay
+  individually selectable in the Play dropdown without being merged into the main path (explicit
+  user instruction — these are deliberate alternates, not missing main-path steps): `Authentification
+  — retour` (`6 · Bon retour`), `Auth — email seul (variante)` (`5 · Claude · email seul`), `Carte
+  des relations — variante foyer` (`6 · Claude · carte foyer`), `Fiche contact` (`7 · Fiche
+  contact`), `Envie — variante émission Claude` (`10 · Claude · émission`), `Envie — variante 1:1`
+  (`10 bis · Claude · envie 1:1`), `Envie — variante émission v2` (`10 ter · Claude · émission
+  v2`), `Coïncidence — variante Claude` (`12 · Claude · coïncidence`), `Coïncidence — frôlement →
+  accordage` (`12 bis · Claude · frôlement` — chains into the already-wired `12 ter · Claude ·
+  accordage`, no separate flow needed for that screen), `Événement — variante deuil` (`16 · Claude
+  · deuil`). **16 `page.flows` entries total**, every one verified pointing at a real 418×890
+  screen board (never a wrapper) by re-reading `startingBoard.width`/`.height` after each write.
+- **Fixed 3 stale click-wiring bugs** found while tracing the flows for playability (confident
+  inferences from cluster-internal logic, flagged for the user to override if wrong):
+  - `3 · Code de vérification`'s `Text` click interaction went to `4 · Onboarding · terminé`
+    (several screens past where OTP verification should land — a stale leftover from before
+    `Flow 0 · Authentification` was restructured in) — repointed to `6 · Bon retour`, which
+    previously had zero inbound clicks. Fixes both problems in one move.
+  - `23 · Envies de recevoir`'s 3 `rowi` list rows pointed to `9 · Sous-groupe · détail` (a
+    cross-flow copy-paste artifact flagged in a prior session, never fixed) — repointed to
+    `24 · Offrir · pioche scellée`.
+  - `24 · Offrir · pioche scellée`'s button pointed to `19 · Événement · paiement` — repointed to
+    `25 · Réception`, so the Générosité flow now completes end-to-end.
+  - Mutation mechanics: reassigning `flow.startingBoard = <Board>` directly works for Flows. For
+    interactions there's no destination-reassign method — had to read the interaction's `trigger`,
+    call `.remove()` on the stale one, then `shape.addInteraction(trigger, { type: "navigate-to",
+    destination: <newBoard> })` to recreate it.
+- **Verified before/after:** BFS over the click graph from `1 · Bienvenue` reached 25 screens
+  before this pass and 26 after — the +1 (`6 · Bon retour`) is the direct, intended effect of the
+  `3 · Code de vérification` fix, confirming the wiring fixes didn't accidentally leak the 14
+  intentionally-separate orphan screens into the main path. `export_shape` spot-checks of
+  `1 · Bienvenue`, `13 · Événements`, and `23 · Envies de recevoir` (three different Flow starting
+  boards) all confirmed genuine single phone screens, not malformed/oversized boards.
+- **Gotcha for future sessions:** Penpot's Play/Present mode reads `page.flows`, entirely separate
+  from click-wiring health — a page can have perfect `NavigateTo` wiring end to end and still be
+  unplayable if no Flow points at a real screen. Check both when auditing prototype playability.
+
+## 2026-07-17 — [area:design] Penpot prototype click-walkability pass — 7 interactions wired, non-nav gaps confirmed deliberate
+
+- **Context:** the "Prototype — Parcours consolidé" Penpot page currently holds 33 screens across
+  9 flows (STATUS.md's previous 22/7 figures were stale — corrected in the same edit as this entry).
+  A prior session's live query found a set of screens with zero or partial `NavigateTo` click
+  interactions; this pass worked through that gap list against `blueprints/swab-app-prototype.html`'s
+  `show()` navigation graph (the source of truth where a Penpot screen has an HTML equivalent) and,
+  for the `N · Claude · ...` variant screens and all of `Flow 8 · Générosité` (no HTML equivalent),
+  against each screen's own visible copy read via `export_shape`/structure dump.
+- **Wired (7 new `click → navigate-to` interactions, verified by reading `action.destination.name`
+  back after writing, plus two `export_shape` visual spot-checks):**
+  - `6 · Claude · carte foyer` Button "+ Nouvelle envie" → `10 · Envie · émission` (inferred from
+    its wired sibling `6 · Carte des relations`, whose own "+ Nouvelle envie" tile targets the same
+    screen).
+  - `23 · Envies de recevoir` Button "Sceller une envie de recevoir" → `24 · Offrir · pioche scellée`
+    (Flow 8's own screen order, no HTML equivalent to check against; documented as a click-walkthrough
+    continuity choice — in the real product these three screens are three different people's
+    perspectives, not one person's linear path, but the prototype needs a forward click somewhere).
+  - `18 · Événement · budget`, all 4 `rowi` gift rows (Livre, Chocolats, Fleurs, Coffret gourmand) →
+    `19 · Événement · paiement`, in addition to the screen's own "Suivant" Button which already
+    targeted the same destination. In the HTML these rows only *select* (`evPick()`, local state,
+    committed by a separate "Suivant" click); wiring them directly was an explicit instruction for
+    this pass rather than something independently derived from the HTML's non-nav pattern — flagging
+    that provenance here in case it's reconsidered later.
+  - `12 bis · Claude · frôlement` Button "S'accorder" → `12 ter · Claude · accordage` (strong copy
+    match: 12 bis's CTA literally means "get in sync," 12 ter is titled "accordage" — tuning/syncing —
+    and shows the resulting negotiation thread).
+- **Confirmed correctly left unwired (no HTML/copy support for navigation — local UI state, per the
+  no-forced-nav rule):** `16 · Événement · répondre` "Ne rien faire", `16 · Claude · deuil` "Plus
+  tard", `17 · Événement · message` "Envoyer le message", `21 · Attention reçue` both buttons,
+  `22 · Paramètres` "Exporter mes données" + the "Quitter SWAB" text, `14 · Événement · déclarer`'s
+  switchrow, `25 · Réception` both buttons (copy is near-verbatim `21 · Attention reçue`, itself
+  confirmed non-nav), `12 · Coïncidence` "Proposer" (matches the HTML's `proposeMeet()`, a same-screen
+  state toggle, not a screen change), `12 · Claude · coïncidence` both buttons, `12 bis`'s "Laisser
+  passer", `12 ter`'s "Passer cette fois" (all share the established silent-decline pattern). Also
+  re-confirmed: `3 · Onboarding · calibration`'s CTA was already wired to `4 · Onboarding · terminé`
+  going into this session (someone/something fixed it before this pass started), and `6 · Carte des
+  relations`'s `tilegrid`/`tilerow` "unwired" containers are false positives — their child tiles
+  already carry the real interactions.
+- **Flagged, not guessed — needs the user's call:** `12 ter · Claude · accordage` Button "Confirmer
+  samedi 11h" has no HTML equivalent and no copy that names a destination; the plausible inference
+  (return to the `6 · Carte des relations` hub, matching every other terminal `donehead` screen in
+  the file) felt too speculative to commit without confirmation, so it was left unwired rather than
+  fabricated.
+- **Also noticed, out of this pass's scope, not touched:** `23 · Envies de recevoir`'s 3 `rowi` rows
+  are each wired to `9 · Sous-groupe · détail`, which looks like a copy-paste artifact unrelated to
+  this screen's content (recevoir-wish rows, not a subgroup list) — flagging for a follow-up, not
+  fixed here since it wasn't part of the assigned gap list and a wrong guess at the "correct" target
+  seemed worse than leaving the existing (likely wrong) wiring alone pending the user's input.
+- **Gotcha:** total on-page interaction count read back as 59 after this pass, not the expected
+  50 (pre-existing) + 7 (this pass) = 57 — the page was flagged as possibly being edited live by
+  someone else this session, so the discrepancy is noted but not chased down.
+>>>>>>> 1e1b35b (chore(mobile): remove frozen RN reference implementation)
 
 ## 2026-07-12 — [area:design] Flow 0 follow-up: simplified Bienvenue, new optional "Vos coordonnées" screen
 

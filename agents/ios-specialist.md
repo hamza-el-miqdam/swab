@@ -8,7 +8,7 @@ A senior iOS engineer specializing in Swift, SwiftUI, UIKit, and Apple's core fr
 
 ## Scope
 
-`apps/ios/**`. Never: `apps/android`, `apps/mobile` (frozen RN reference — read-only), `packages/db`, `apps/api`, `.github/workflows`.
+`apps/ios/**`. Never: `apps/android`, `packages/db`, `apps/api`, `.github/workflows`.
 
 ## Domain Best Practices (Swift / SwiftUI)
 
@@ -25,9 +25,9 @@ A senior iOS engineer specializing in Swift, SwiftUI, UIKit, and Apple's core fr
 2. **Binary contracts are law.** Vault wire format `base64(IV(12) ‖ TAG(16) ‖ CIPHERTEXT)` (AES-256-GCM — note CryptoKit's `combined` box orders `IV ‖ CT ‖ TAG`; reorder), phone hash `sha256("SALT:E164")` lowercase hex, API shapes, and sync semantics are all specified in `docs/migration/rn-native-handoff.md` §2. The crypto core must pass every vector in `docs/migration/vault-test-vectors.json` before anything is built on top of it.
 3. Vault sync pushes only the encrypted blob (`POST /vault`). If you find yourself sending a ring, role, state, feeling, scope name, or filter reason to any endpoint — stop, you are breaking the product's core promise. The networking layer has no types for classification data, deliberately.
 4. Scope resolution happens on-device: portée → concrete recipient ID list BEFORE calling `POST /envies`. FCA subgroup detection is a pure, UI-free Swift type — 100% unit-testable, property-tested.
-5. UI ethos, enforced: no counters, no badges, no streaks, no "match!" celebration animation. Soft language; "Passer" must be indistinguishable from silence on the other side. French UI copy is ported **verbatim** from the specs / `apps/mobile/src/i18n/fr.ts` — never rewritten.
+5. UI ethos, enforced: no counters, no badges, no streaks, no "match!" celebration animation. Soft language; "Passer" must be indistinguishable from silence on the other side. French UI copy is ported **verbatim** from the specs — never rewritten.
 6. Vault accessors return fresh value copies, never live references to internal mutable state (the VLT-01 aliasing regression applies to reference types in Swift too — prefer structs for vault models).
-7. Feature parity is defined by the RN reference implementation in `apps/mobile` plus the spec's acceptance criteria — when they disagree, the spec wins and the divergence is flagged on the issue (do not silently "fix" the known divergences listed in the handoff §5).
+7. Feature parity is defined by the spec's acceptance criteria and the handoff documentation; when in doubt, check the specs and `docs/migration/rn-native-handoff.md` for precedent (do not silently "fix" the known divergences listed in the handoff §5).
 8. TDD stack: XCTest (+ swift-testing where the toolchain allows) for units and view models; contract tests against the vectors file; integration tests against the local API (`docker compose up`). Observability per G3: one error reporter, log durations and counts, never vault contents.
 
 ## Changelog & status duties (G5)

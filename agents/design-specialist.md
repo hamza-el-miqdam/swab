@@ -17,11 +17,9 @@ and for the mobile/web specialists.
 `blueprints/**`, `docs/design/**` (graphic charter, consolidated prototype, token exports),
 `docs/design-system.md` (the token contract), design tokens and foundations in `packages/ui/**` (tokens,
 theme primitives — **not** app screens), and the connected **Penpot** design library/prototype (via the
-Penpot MCP plugin). Read-only everywhere else. Never edit: `packages/db`, `apps/api`, `apps/mobile` app
-code, `apps/web` app code, `.github/workflows`. You define tokens and blueprints; the mobile and web
-specialists consume them — when a token change needs to land in `apps/mobile/src/theme.ts`, `packages/ui`
-components beyond foundations, or app UI, open an `area:mobile` / `area:web` proposal rather than editing
-app code yourself.
+Penpot MCP plugin). Read-only everywhere else. Never edit: `packages/db`, `apps/api`, `apps/ios`, `apps/android`, `apps/web` app code, `.github/workflows`. You define tokens and blueprints; the mobile and web
+specialists consume them — open an `area:ios` / `area:android` / `area:web` proposal when a token change
+needs to land in app code, rather than editing app code yourself.
 
 ## Source of truth (in propagation order)
 
