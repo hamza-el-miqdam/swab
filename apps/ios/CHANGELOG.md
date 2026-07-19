@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-07-19 — CarteTheme sourced from the canonical design-token SSOT, not the stale RN palette
+
+- `CarteTheme` hardcoded a brown/gold palette ported from the long-deleted `apps/mobile/src/theme.ts` (`bg #16120D`, `accent #D9A441`) that never matched the real Nuit graphic charter (`docs/design-system.md`). Now every property is repointed to `DesignTokens.Color.*` (the generated SSOT from `packages/ui/tokens/tokens.json`): `bg→nuit`, `surface→voile`, `text→ivoire`, `textDim→brume`, `accent→etoile`, `accentInk→étoile-encre`.
+- `line`/`ringLine` map to `hair`/`hair-fort`, which are opacity-bearing tokens (rgba, not solid hex) — since `CarteTheme`'s contract is a single hex `String` with no separate opacity channel, alpha is baked into an 8-digit RRGGBBAA hex via a small private helper. `ringLine` uses `hair-fort` (not `hair`): the radial map's distance-ring circles/spokes need more contrast than a plain hairline to stay legible, matching the old palette's own ringLine-brighter-than-line pattern.
+- Public API shape unchanged (same property names/types), so `ColorHex.swift` and `EtatColors.swift` needed no changes. `EtatColorsTests` (6/6) already asserted symbolically against `CarteTheme.surface`/`.line`, not literal hex — passed unchanged. Full `xcrun swift test`: 110/110.
+- `EtatColors`'s own état palette (`available`/`busy`/`away`) is a separate, intentionally-flagged divergence (see its own comment) — not touched.
+
 ## 2026-07-12 — [ONB-01..09, MAP-02/04/06/08, FCH-01/04/07/08, VLT-01] Wave 4 — XCUITest E2E suite green (13/13), code-signing root cause fixed
 
 - New `SwabAppUITests` XCUITest target: 13 tests across `OnboardingE2ETests`, `MapAndFicheE2ETests`, `RegressionAndResilienceE2ETests`, driven on a booted "iPhone 17" Simulator against the live `docker compose up` API. Final run: `xcodebuild test` → **13/13 passed, 0 failures** (~290s).
