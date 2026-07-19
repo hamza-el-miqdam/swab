@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-07-19 — [area:design] packages/ui: canonical design-token SSOT + codegen for iOS/Android/web
+
+- New `packages/ui/tokens/tokens.json` — single hand-edited export of the Nuit token set (color, typography,
+  spacing, radius, component), pulled verbatim from Penpot's "Nuit" token set, cross-checked clean against
+  `docs/design-system.md`. New `packages/ui/scripts/generate.mjs` (styled after `scripts/render-agents.mjs`,
+  same `--check` drift gate) renders it to `packages/ui/src/tokens.{ts,css}`,
+  `apps/ios/Sources/SwabCore/Generated/DesignTokens.swift`, and
+  `apps/android/.../ui/theme/DesignTokens.kt` — banner-commented, never hand-edited. `@repo/ui` registered
+  (mirrors `packages/db`'s shape); Swift type-checked, Kotlin compiled, TS lint/typecheck all clean.
+- `agents/design-specialist.md` Scope gained "Design reference ownership": `tokens.json` + the generator are
+  the one exception to "never edit apps/ios/apps/android" (generated output only); `render-agents.mjs` re-run.
+- Updated `docs/design-system.md` §5 and `docs/STATUS.md` for the real chain; wiring tokens into the actual
+  iOS/Android theme code is left to `area:ios`/`area:android`.
+- **Gotchas:** Kotlin has no implicit Int→Double conversion for literal args (Swift does) — caught by
+  actually compiling, not just parsing. `packages/ui/eslint.config.mjs` composes the root config + adds Node
+  globals for `scripts/**`, since (unlike root-level scripts, which no turbo package lints) this one is.
+
 ## 2026-07-19 — Agents review: spec-specialist added, stale references fixed, changelogs/STATUS compacted
 
 - New `agents/spec-specialist.md` (area:specs) — owns `docs/specs/FS-*.md` authoring (stable requirement IDs, testable acceptance criteria, frozen French copy, OQ-* open questions) and the spec-kit pipeline (`specs/**`, `/speckit-*`, constitution resync). Registered in `scripts/render-agents.mjs`; renders to `.github/instructions/specs.instructions.md` + `.claude/agents/spec-specialist.md`. Notion translation stays with the notion-liaison (boundary stated in both files). New Claude Code subagents need a session restart.
