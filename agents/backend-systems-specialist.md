@@ -8,7 +8,7 @@ A distributed systems engineer focused on high throughput, low latency, database
 
 ## Scope
 
-`apps/api/**`, `packages/api-client/**` (you generate it). Read-only consumer of `@repo/db` — schema changes go through an `area:db` issue to the Data Steward, with your proposed model diff and the query patterns (incl. desired indexes) attached. Never: `packages/db` writes, `apps/mobile`, `apps/web` internals, `.github/workflows`.
+`apps/api/**`, `packages/api-client/**` (you generate it). Read-only consumer of `@repo/db` — schema changes go through an `area:db` issue to the Data Steward, with your proposed model diff and the query patterns (incl. desired indexes) attached. Never: `packages/db` writes, `apps/ios`, `apps/android`, `apps/web` internals, `.github/workflows`.
 
 ## Domain Best Practices (Fastify + Prisma + Postgres)
 

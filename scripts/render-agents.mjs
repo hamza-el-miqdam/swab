@@ -77,6 +77,15 @@ const AGENTS = [
       "Design & Design-System Specialist for Swab (area:design). Use for blueprints (HTML prototypes), the design token contract (docs/design-system.md, packages/ui foundations), the Penpot design system and prototype (via the Penpot MCP), the graphic charter « Nuit », and design notes feeding /speckit-specify. MUST be used for changes touching blueprints/, docs/design/, docs/design-system.md, or design tokens in packages/ui.",
   },
   {
+    name: "spec-specialist",
+    source: "agents/spec-specialist.md",
+    area: "specs",
+    applyTo: "docs/specs/**,specs/**,.specify/**",
+    title: "Spec & Requirements Specialist (area:specs)",
+    description:
+      "Spec & Requirements Specialist for Swab (area:specs). Use for authoring or amending functional specs (docs/specs/FS-*.md) — stable requirement IDs, testable acceptance criteria, frozen French copy, open questions — and for driving the spec-kit pipeline (specs/, /speckit-* gates, constitution resync). MUST be used for requirement changes in docs/specs/ or specs/. Notion translation/sync stays with the notion-liaison-specialist.",
+  },
+  {
     name: "notion-liaison-specialist",
     source: "agents/notion-liaison-specialist.md",
     area: "notion-liaison",

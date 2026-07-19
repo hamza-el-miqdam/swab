@@ -6,58 +6,16 @@
 
 _Last updated: 2026-07-19_
 
-> **Native migration complete:** mobile has moved from Expo/React Native to
-> native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose). The frozen RN reference implementation (`apps/mobile`) has been removed; knowledge is preserved in `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json` + `docs/migration/rn-audit-map.md`.
-> Module statuses below describe the native implementations. **Wave 1 (FS-07 client scope + FS-01),
-> Wave 2 (FS-02 Relationship Map), and Wave 3 (FS-03 Contact Card, greenfield — no RN
-> equivalent to port) all landed 2026-07-10**: `apps/ios` (110/110 tests, 93.9% `SwabCore`
-> coverage) and `apps/android` (108/108 tests, 98.32% domain coverage). Waves 1–2 were built and
-> run for real on Simulator/emulator; Android additionally got a full live walkthrough against
-> `docker compose up`'s API (welcome → phone → OTP → contacts → calibrate → done → Carte,
-> including tapping a contact node to open the peek sheet and toggling list mode), which found
-> and fixed four real bugs along the way — emulator-to-host networking, an Android Keystore IV
-> restriction, a Compose navigation state-loss bug, and a density-scaling bug in the radial map's
-> `Canvas` rendering — see `apps/android/CHANGELOG.md`'s two 2026-07-10 entries. iOS is confirmed
-> running on the "iPhone 17" Simulator (Welcome screen live, Carte screen screenshot-verified via
-> a temporary seeded view) but not interactively walked — this environment has no assistive-access
-> permission for scripted Simulator input. Wave 3 (FS-03) landed test-suite-verified plus an
-> independent build check on both platforms, but has **not** had a live on-device walkthrough yet
-> on either platform — flagged as a follow-up. A pre-existing bug was also found in the RN-ported
-> `CalibrateScreen`'s ring-picker (unrelated to Wave 2, not yet fixed) — see
-> `docs/migration/rn-audit-map.md`. Full per-criterion status is tracked in that file's Wave 1,
-> Wave 2, and Wave 3 checklists, not duplicated here. **Wave 4 (E2E/QA), Android side, landed
-> 2026-07-10:** a Compose UI instrumented test suite (`apps/android/app/src/androidTest/kotlin/com/swab/android/e2e/`,
-> 8 tests + regression coverage for the Wave 1 nav-state-loss bug and the Wave 2 density-scaling
-> bug) ran end-to-end via `./gradlew connectedAndroidTest` against a booted Pixel_6_Pro emulator
-> and the live `docker compose up` API — **10/10 instrumented tests passed, 0 failures** (includes
-> the pre-existing Keystore-IV regression test). One real test bug was found and fixed along the
-> way (a stale assumption about `CarteViewModel` not refreshing on return from Fiche — it does);
-> see `apps/android/CHANGELOG.md`'s 2026-07-10 Wave 4 entry. The `CalibrateScreen` ring-picker
-> text-wrap bug remains open and un-regression-tested (rings 3/4 are still out of scope for
-> automated calibration flows). **Wave 4 completed 2026-07-12 on both platforms:** Android's
-> suite grew to 16 tests (added a legacy-vault backward-compat test — compile-time-excluded
-> debug-only seed hook, `E2ESeedHooks`, plus ONB-09/MAP-02/MAP-06/FCH-04/FCH-08 gap coverage) —
-> **16/16 passed** on a clean `./gradlew :app:clean :app:connectedDebugAndroidTest`. iOS built a
-> from-scratch `SwabAppUITests` XCUITest target (13 tests: the original 8 plus the same five gap
-> requirements) — first full run found every onboarding-touching test failing with a Keychain
-> entitlement error (`errSecMissingEntitlement`, traced to `CODE_SIGNING_ALLOWED = NO` on all six
-> `project.pbxproj` build configs, a stale Wave-1 default that predates any app-process Keychain
-> use); switched to ad hoc signing (`CODE_SIGN_IDENTITY = "-"`, Simulator-only) and re-ran —
-> **13/13 passed**. Both platforms verified independently from clean by the lead, not just agent
-> self-report. E2E is now a hard Definition-of-Done gate (`agents/_global-directives.md` G2,
-> both specialists' DoD) enforced via `scripts/e2e-{ios,android}.sh` → `test-results/e2e/e2e-report.md`,
-> with a per-requirement scenario/coverage manifest in `docs/qa/` (see `docs/qa/e2e-scenarios.md`,
-> `docs/qa/e2e-coverage.json`) covering all 40 FS-01/02/03/07 requirement IDs. CI wiring
-> (macOS/emulator runners) is a filed follow-up, not yet built — see `docs/migration/rn-audit-map.md`.
+> **Native migration complete.** Mobile is native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose); the Expo RN reference app was removed 2026-07-19 (knowledge in `docs/migration/rn-native-handoff.md`, `vault-test-vectors.json`, `rn-audit-map.md`). Waves 1–3 (FS-07 client + FS-01, FS-02, FS-03) landed 2026-07-10 on both platforms; Wave 4 (E2E) completed 2026-07-12 — Android 16/16 instrumented tests, iOS 13/13 XCUITests, both verified from clean against the live local API. E2E is a hard Definition-of-Done gate (`scripts/e2e-{ios,android}.sh` → PASS report, zero drift) with a per-requirement manifest in `docs/qa/` covering all 40 FS-01/02/03/07 IDs. Known open items: `CalibrateScreen` ring-picker text-wrap bug (rings 3/4), FS-03 live walkthrough not yet done on-device, CI wiring for E2E (macOS/emulator runners) filed as a follow-up — details in `docs/migration/rn-audit-map.md` and the area changelogs.
 
 ## Modules (functional specs)
 
 | Spec | Module | Status | Lead | Notes |
 |---|---|---|---|---|
-| FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth (`/auth/otp`), JWT sessions, opaque vault store (`/vault`, versioned), `/health` + `/ready`. Mobile vault client done (AES-256-GCM on-device, SecureStore key). **Missing:** contact discovery endpoint, web invite landing. |
-| FS-01 | Onboarding | 🟢 Implemented | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Test names carry ONB-02/03/04/07/08. Dev-mode OTP returned in API response (no SMS provider yet). |
-| FS-02 | Relationship Map | 🟢 Implemented | Mobile | Radial map + list fallback from the vault, nav Carte/Envie/Sous-groupes, peek sheet, pan/zoom. MAP-01..09 tests green. Fiche transition now wired to FS-03 in both apps; clustering deferred (OQ-MAP-1). |
-| FS-03 | Contact Card | 🟢 Implemented (iOS + Android native) | Mobile | Greenfield — never built in the RN reference. Four tap-editable axes, 12-month history feed, FCH-05 staleness nudge, FCH-06 filter-consequence text (with a documented `en pause` taxonomy divergence), FCH-08 pending-contact support. FCH-01..08 tests green in both `apps/ios` and `apps/android`; no reciprocity signal shown (FCH-03 deviation, see `apps/android/CHANGELOG.md`), FCH-04 relationship/match events deferred pending FS-04/05. |
+| FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth (`/auth/otp`), JWT sessions, opaque vault store (`/vault`, versioned), `/health` + `/ready`. Mobile vault client done (AES-256-GCM on-device, OS-keystore key). **Missing:** contact discovery endpoint, web invite landing. |
+| FS-01 | Onboarding | 🟢 Implemented | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). |
+| FS-02 | Relationship Map | 🟢 Implemented | Mobile | Radial map + list fallback from the vault, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). |
+| FS-03 | Contact Card | 🟢 Implemented | Mobile | Greenfield (no RN equivalent). Four tap-editable axes, 12-month history, staleness nudge, pending-contact support. FCH-01..08 green on both platforms; `en pause` taxonomy divergence documented; FCH-04 match events deferred pending FS-04/05. |
 | FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | Pure on-device domain module. |
 | FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | The only two-agent spec; OpenAPI seam not yet drafted. |
 | FS-06 | Filtering rules | ⚪ Not started | Mobile | Rules live in the vault. |
@@ -68,16 +26,15 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 
 | Item | Status | Notes |
 |---|---|---|
-| Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/api`, `packages/db`. `apps/ios` (Swift Package, not yet an Xcode app) and `apps/android` (Gradle/Compose) exist with Waves 1–4 built but are deliberately outside the turbo/pnpm pipeline — run `xcrun swift test` / `./gradlew test` directly. `apps/web`, `packages/ui`, `packages/api-client`, `tools/orchestrator` not created yet. |
+| Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/api`, `packages/db`. `apps/ios` + `apps/android` are deliberately outside the turbo/pnpm pipeline (`xcrun swift test` / `./gradlew test` directly). `apps/web`, `packages/ui`, `packages/api-client`, `tools/orchestrator` not created yet. |
 | Database schema v0.1 | 🟢 | `users`, `vaults`, `envies` + seed. Privacy invariant holds: no classification columns. |
 | Local dev stack | 🟢 | `docker compose up --build` → Postgres :5432, API :3001, Adminer :8080. |
-| Mobile dev clients | 🟢 | iOS + Android via `expo run:*` (native crypto → Expo Go unsupported). Android SDK/emulator setup scripted in `scripts/`. |
 | CI | 🟡 | `ci.yml` skeleton exists. Missing: scope guard, privacy-audit job, coverage enforcement, OpenAPI diff gate, native E2E workflow (macOS + emulator runners — filed follow-up). |
-| Mobile E2E gate (Wave 4) | 🟢 | Local, agent-enforced Definition-of-Done gate — `scripts/e2e-ios.sh` / `scripts/e2e-android.sh` → `test-results/e2e/e2e-report.md`, requirement coverage manifest in `docs/qa/`. Not yet wired into CI. |
+| Mobile E2E gate (Wave 4) | 🟢 | Local, agent-enforced DoD gate — `scripts/e2e-{ios,android}.sh` → `test-results/e2e/e2e-report.md` + requirement manifest in `docs/qa/`. Not yet wired into CI. |
 | Lint (repo-wide ESLint) | 🟢 | Flat config: root `eslint.config.mjs` (type-aware typescript-eslint). All packages run `eslint .`. |
-| Design system (« Nuit ») | 🟡 | Token contract in `docs/design-system.md` + prototype in `docs/design/`. Penpot library (colour styles, typographies, components, tokens) is built on the **Swab — Design System « Nuit »** page. **2026-07-17: Play/Present mode now works** — `page.flows` (16 real Flows, each `startingBoard` a genuine 418×890 phone screen: `"0 · Parcours complet"` starting at `1 · Bienvenue`, 5 repointed Flows for main sections, 10 new Flows per orphan/variant-cluster root kept separate from main path). 3 stale click-wiring bugs fixed. **2026-07-12: "Prototype — Parcours consolidé"** restructured (22 screens into 7 `Flow N · <Title>` boards, 32 verified `NavigateTo` interactions). Token drift fixed (segmented-control radius now on `radius.input` scale). 39 micro-spacing values (1/6/10/13px) flagged as **design-system.md gap**. **Flow 0 · Authentification** (5 screens: phone+OTP sign-up/sign-in, IDT-01..03). New components: Text field, OTP input. **`1 · Bienvenue` simplified** (removed paycard cohort-info). **`5 · Vos coordonnées` added** (optional Adresse/Email). **Flags postal address, email fields** needing `area:db` proposal. **`22 · Paramètres` split** "Mariages & naissances" → two independent rows. |
-| Agents (AIDD) | 🟢 | Single source of truth in `agents/`; `node scripts/render-agents.mjs` generates the Copilot (`.github/`) and Claude Code (`.claude/agents/`) copies (`--check` for CI). Areas: ios, android, backend, web, db, devops, design, notion-liaison. 2026-07-09: mobile-specialist (Expo RN) decommissioned; replaced by ios-specialist (area:ios) + android-specialist (area:android), knowledge inherited via `docs/migration/rn-native-handoff.md`. 2026-07-12: the design-blueprint agent and the design-system-token agent were merged into one `area:design` specialist (`agents/design-specialist.md`) covering blueprints, the Nuit token contract, and the Penpot library. |
-| Spec ↔ Notion sync (French mirror) | 🟢 | All 7 `docs/specs/FS-*.md` mirrored, translated to French, under Notion page "Swab — Spécifications (FS-*)" for the non-dev co-founder to read/comment/edit. `docs/specs/.notion-sync.json` tracks per-spec snapshots; re-diffed on every invocation of the notion-liaison-specialist agent. Code stays canonical; conflicts are flagged, never auto-resolved. |
+| Design system (« Nuit ») | 🟡 | Token contract in `docs/design-system.md` + prototype in `docs/design/`. Penpot library + "Prototype — Parcours consolidé" built and Play-mode-able (16 Flows, 33 screens, click-wired; 2026-07-17). Open: 39 micro-spacing values flagged as a design-system.md gap; new components not yet placed on the Design System page; postal-address/email fields need an `area:db` proposal. History in root `CHANGELOG.md`. |
+| Agents (AIDD) | 🟢 | Source of truth in `agents/`; `node scripts/render-agents.mjs` renders Copilot (`.github/`) + Claude Code (`.claude/agents/`) copies (`--check` for CI). Areas: ios, android, backend, web, db, devops, design, specs, notion-liaison. 2026-07-19: spec-specialist (area:specs) added — owns `docs/specs/FS-*.md` authoring + spec-kit pipeline. |
+| Spec ↔ Notion sync (French mirror) | 🟢 | All 7 specs mirrored in French under Notion "Swab — Spécifications (FS-*)" for the non-dev co-founder. `docs/specs/.notion-sync.json` tracks snapshots; re-diffed on every liaison invocation. Code stays canonical; conflicts flagged, never auto-resolved. |
 | SMS provider (OTP) | ⚪ | Dev mode returns the code in the response; provider selection is an open question. |
 | Privacy audit (playbook §6) | ⚪ | Must run before any external tester and after every schema/API change. |
 
@@ -85,11 +42,11 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 
 Every change lands with an entry in its area changelog (rule G5 in `agents/_global-directives.md`):
 
-- `apps/ios/CHANGELOG.md` — `area:ios`
-- `apps/android/CHANGELOG.md` — `area:android`
+- [apps/ios/CHANGELOG.md](../apps/ios/CHANGELOG.md) — `area:ios`
+- [apps/android/CHANGELOG.md](../apps/android/CHANGELOG.md) — `area:android`
 - [apps/api/CHANGELOG.md](../apps/api/CHANGELOG.md) — `area:backend`
 - [packages/db/CHANGELOG.md](../packages/db/CHANGELOG.md) — `area:db`
-- [CHANGELOG.md](../CHANGELOG.md) (repo root) — `area:devops`, docs, agents, tooling, cross-cutting
+- [CHANGELOG.md](../CHANGELOG.md) (repo root) — `area:devops`, docs, agents, design, specs, tooling, cross-cutting
 
 ## How to update this file
 

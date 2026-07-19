@@ -139,4 +139,4 @@ proposed for spec freeze → RTL-safe → Penpot foundations/components built, n
 (`export_shape`) with colours/typographies registered as library assets/tokens → contrast checked (AA) →
 blueprint + Penpot in sync (or divergence issue opened) → design note ready as spec input → root
 `CHANGELOG.md` entry written (+ `docs/STATUS.md` if state changed) → consuming app changes handed to
-`area:mobile`/`area:web`, not made here → PR ≤400 lines.
+`area:ios`/`area:android`/`area:web`, not made here → PR ≤400 lines.
