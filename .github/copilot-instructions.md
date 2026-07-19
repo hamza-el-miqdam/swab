@@ -3,7 +3,7 @@
 
 ## Project
 
-Swab (صواب) — an app to express desires ("envies") to scopes of friends, revealed only on mutual match. Monorepo: Turborepo + pnpm, strict TypeScript on the JS/TS side. Mobile clients: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Jetpack Compose, native) are being built to replace `apps/mobile` (Expo/React Native), which is the **frozen reference implementation** — read-only except critical fixes — until native parity; its knowledge is captured in `docs/migration/rn-native-handoff.md`. Also: `apps/web` (Next.js), `apps/api` (standalone Node service, container-ready), `packages/db` (Prisma + Postgres/Neon), `packages/ui`, `packages/api-client`, `tools/orchestrator`. Read `/docs/specs/*.md` and `swab-domain-spec.md` before any task.
+Swab (صواب) — an app to express desires ("envies") to scopes of friends, revealed only on mutual match. Monorepo: Turborepo + pnpm, strict TypeScript on the JS/TS side. Mobile clients: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Jetpack Compose, native) replace the frozen Expo/React Native reference implementation (knowledge in `docs/migration/rn-native-handoff.md`). Also: `apps/web` (Next.js), `apps/api` (standalone Node service, container-ready), `packages/db` (Prisma + Postgres/Neon), `packages/ui`, `packages/api-client`, `tools/orchestrator`. Read `/docs/specs/*.md` and `swab-domain-spec.md` before any task.
 
 ## G1 — Zero-Trust Security
 
@@ -37,6 +37,6 @@ Swab (صواب) — an app to express desires ("envies") to scopes of friends, r
 
 ## G5 — Documentation & Changelogs (all agents — part of Definition of Done)
 
-- **Every change updates its area changelog, in the same commit/PR.** Locations: `apps/ios/CHANGELOG.md` (area:ios), `apps/android/CHANGELOG.md` (area:android), `apps/mobile/CHANGELOG.md` (frozen RN reference — critical fixes only), `apps/api/CHANGELOG.md` (area:backend), `packages/db/CHANGELOG.md` (area:db, Data Steward only), root `CHANGELOG.md` (area:devops, docs, agents, tooling, cross-cutting). Entry format, newest first: `## YYYY-MM-DD — [REQ-IDs] title` + bullets covering what changed, why, and anything a future developer must know (gotchas, pinned versions, follow-ups). A PR without a changelog entry is incomplete.
+- **Every change updates its area changelog, in the same commit/PR.** Locations: `apps/ios/CHANGELOG.md` (area:ios), `apps/android/CHANGELOG.md` (area:android), `apps/api/CHANGELOG.md` (area:backend), `packages/db/CHANGELOG.md` (area:db, Data Steward only), root `CHANGELOG.md` (area:devops, docs, agents, tooling, cross-cutting). Entry format, newest first: `## YYYY-MM-DD — [REQ-IDs] title` + bullets covering what changed, why, and anything a future developer must know (gotchas, pinned versions, follow-ups). A PR without a changelog entry is incomplete.
 - **`docs/STATUS.md` is the single summary of what is done.** Update it in the same PR whenever a module starts (⚪→🟡), completes (🟡→🟢, acceptance tests green — also flip the spec's `Status:` header to `Implemented`), or an infrastructure item changes state. Keep notes to 1–2 lines; history belongs in changelogs.
 - Docs stay truthful: if your change makes README/DEVELOPMENT.md/spec text wrong (commands, ports, flows), fix that text in the same PR. Code and docs never disagree on `main`.
