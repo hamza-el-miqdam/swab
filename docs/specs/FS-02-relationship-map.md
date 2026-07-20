@@ -34,7 +34,7 @@ The app's home: a radial, at-a-glance view of « ton cercle, à l'instant » —
 
 ## Non-functional
 
-The map is the most render-intensive surface: `react-native-reanimated` UI-thread animation, no JS-thread work during gestures, memoized contact nodes (mobile agent rules 3–4 apply).
+The map is the most render-intensive surface: GPU/UI-thread animation on each platform (SwiftUI / Compose), no main-thread blocking work during gestures, contact nodes cheap to recompose (ios/android specialist performance rules apply).
 
 ## Open questions
 

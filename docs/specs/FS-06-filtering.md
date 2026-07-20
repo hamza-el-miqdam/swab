@@ -23,7 +23,7 @@
 | FLT-03 | L2 exclusions appear at send with the causing rule visible per person; re-inclusion is per-envie and never mutates the standing rule (« Ces règles s'appliquent par défaut… te laisse forcer l'inclusion »). |
 | FLT-04 | L3 members are in the final recipient set; de-emphasis is purely presentational and local. |
 | FLT-05 | The settings surface shows a live preview of a concrete effect (blueprint: « Aperçu sur Théo · en pause ») so the user sees what a rule does to a real contact before saving. |
-| FLT-06 | Rules, levels, and their evaluation exist only on-device (vault). Evaluation is a pure function: `applyFilters(members, axes, rules) → {included, filtered:[{contact, rule}], lowPriority}` in `apps/mobile/src/domain/filtering.ts`. |
+| FLT-06 | Rules, levels, and their evaluation exist only on-device (vault). Evaluation is a pure function: `applyFilters(members, axes, rules) → {included, filtered:[{contact, rule}], lowPriority}`, implemented as a pure, UI-framework-free domain module on each platform (`apps/ios` Swift / `apps/android` Kotlin), behavior-locked by shared cross-platform test vectors (pattern: `docs/migration/vault-test-vectors.json`). |
 | FLT-07 | Per-contact overrides are possible on top of case rules (fiche-level exception), contact rule wins over case rule; precedence documented and property-tested. |
 | FLT-08 | Changing a rule takes effect on the NEXT emission; active envies are never retroactively re-resolved. |
 

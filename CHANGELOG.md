@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-07-20 — [VLT-01, FLT-06, SGR-01] retire stale Expo/RN wording from normative spec text
+
+- FS-07 (VLT-01), FS-06 (FLT-06), FS-04 (non-functional), FS-02 (non-functional) still named the
+  retired Expo RN app and dead `apps/mobile` paths (removed 2026-07-19) — fixed per SUG-SPEC-005.
+- VLT-01 now says the vault key lives in "the platform secure store (iOS Keychain via CryptoKit /
+  Android Keystore)", matching `docs/STATUS.md:15` and the ios/android changelogs. FLT-06 and the
+  FS-04 non-functional section now describe evaluation/FCA as a pure, UI-framework-free domain
+  module per platform (`apps/ios` Swift / `apps/android` Kotlin), behavior-locked by shared
+  cross-platform test vectors (pattern: `docs/migration/vault-test-vectors.json`) rather than one
+  `apps/mobile/src/domain/*.ts` file. FS-02's non-functional section drops
+  `react-native-reanimated` for platform-native GPU/UI-thread animation guidance.
+- No requirement semantics changed: FLT-06's `applyFilters` contract, SGR-01 determinism, VLT-01's
+  AES-256-GCM + recovery-phrase assumption, and FS-02 perf budgets are word-for-word preserved.
+- Gotcha: `docs/specs/.notion-sync.json` (Notion mirror cache) still has the old English text —
+  intentionally not hand-edited here; needs an actual notion-liaison-specialist sync pass.
+
 ## 2026-07-20 — [none] resync .specify/memory/constitution.md against agents/_global-directives.md
 
 - Ran `/speckit-constitution` to fix drift called out in SUG-SPEC-003: Principle V's changelog area list

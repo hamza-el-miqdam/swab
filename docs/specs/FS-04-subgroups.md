@@ -34,7 +34,7 @@
 
 ## Non-functional
 
-FCA on 150 contacts × ~40 attributes completes < 1s on mid-range hardware, off the UI thread. Module is pure TS (`apps/mobile/src/domain/fca.ts`), 100% unit-testable, no React imports (mobile agent rule 4).
+FCA on 150 contacts × ~40 attributes completes < 1s on mid-range hardware, off the UI thread. Module is a pure, UI-framework-free domain module on each platform (`apps/ios` Swift / `apps/android` Kotlin), 100% unit-testable, deterministic per SGR-01, behavior-locked by shared cross-platform test vectors (ios/android specialist purity rules apply).
 
 ## Open questions
 
