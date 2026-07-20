@@ -1,6 +1,6 @@
 # FS-02 — Relationship Map (Carte des relations)
 
-**Status:** Implemented (iOS + Android native, 2026-07-10 — Wave 2, see `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`) · **Agents:** Mobile (sole) · **Depends on:** FS-01, FS-07 · **Blueprint:** `swab - Carte des relations (standalone)`
+**Status:** Implemented (iOS + Android native, 2026-07-10 — Wave 2, see `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`) · **Agents:** iOS + Android (sole) · **Depends on:** FS-01, FS-07 · **Blueprint:** `swab - Carte des relations (standalone)`
 
 ## Purpose
 

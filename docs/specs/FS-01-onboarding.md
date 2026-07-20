@@ -1,6 +1,6 @@
 # FS-01 — Onboarding & Relationship Calibration
 
-**Status:** Implemented (iOS + Android native, 2026-07-10 — Wave 1, see `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`) · **Agents:** Mobile (lead), Backend (auth endpoints) · **Depends on:** FS-07 · **Blueprint:** `swab - Onboarding (standalone)`
+**Status:** Implemented (iOS + Android native, 2026-07-10 — Wave 1, see `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`) · **Agents:** iOS + Android (lead), Backend (auth endpoints) · **Depends on:** FS-07 · **Blueprint:** `swab - Onboarding (standalone)`
 
 ## Purpose
 
