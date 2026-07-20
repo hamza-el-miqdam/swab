@@ -29,7 +29,7 @@ The trust foundation: who you are (phone-OTP identity), who you're connected to 
 
 | ID | Requirement |
 |---|---|
-| VLT-01 | Vault content (four axes, filter rules, subgroup lattice+names+pins, relation history) is encrypted on-device (AES-256-GCM; key in `expo-secure-store`, derived key backed up via a user-held recovery phrase ⚠️ ASSUMPTION). |
+| VLT-01 | Vault content (four axes, filter rules, subgroup lattice+names+pins, relation history) is encrypted on-device (AES-256-GCM; key held in the platform secure store (iOS Keychain via CryptoKit / Android Keystore), derived key backed up via a user-held recovery phrase ⚠️ ASSUMPTION). |
 | VLT-02 | Server API is dumb storage: `GET/POST /vault` moves one opaque `Bytes` blob + integer `version`. Optimistic concurrency: POST with stale version → 409; client re-pulls, merges locally, retries. Single-device POC ⇒ last-write-wins is acceptable. |
 | VLT-03 | Server code MUST NOT decode, log, index, or size-analyze blob contents beyond byte length for quota (≤1 MB per user ⚠️ free-tier budget). |
 | VLT-04 | Sync triggers: app background, post-onboarding, after any vault write burst (debounced ≥30s). Full offline operation between syncs. |
