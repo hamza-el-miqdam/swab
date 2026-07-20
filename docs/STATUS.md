@@ -12,7 +12,7 @@ _Last updated: 2026-07-19_
 
 | Spec | Module | Status | Lead | Notes |
 |---|---|---|---|---|
-| FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth (`/auth/otp`), JWT sessions, opaque vault store (`/vault`, versioned), `/health` + `/ready`. Mobile vault client done (AES-256-GCM on-device, OS-keystore key). **Missing:** contact discovery endpoint, web invite landing. |
+| FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth (`/auth/otp`), JWT sessions, opaque vault store (`/vault`, versioned), `/health` + `/ready`. Mobile vault client done (AES-256-GCM on-device, OS-keystore key). **Missing:** refresh rotation (IDT-02), account deletion (IDT-04), contact discovery (IDT-06), invite links + web invite landing (IDT-07/09). |
 | FS-01 | Onboarding | 🟢 Implemented | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). |
 | FS-02 | Relationship Map | 🟢 Implemented | Mobile | Radial map + list fallback from the vault, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). |
 | FS-03 | Contact Card | 🟢 Implemented | Mobile | Greenfield (no RN equivalent). Four tap-editable axes, 12-month history, staleness nudge, pending-contact support. FCH-01..08 green on both platforms; `en pause` taxonomy divergence documented; FCH-04 match events deferred pending FS-04/05. |

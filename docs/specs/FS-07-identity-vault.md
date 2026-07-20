@@ -1,6 +1,6 @@
 # FS-07 — Identity, Contacts & Vault Sync (foundation)
 
-**Status:** Implemented (API + native vault clients, 2026-07-10 — Wave 1; multi-device/recovery-phrase items remain POC assumptions, see IDT-05/VLT-05) · **Agents:** Backend (lead), Mobile (vault client), Data Steward (models), Web (invite landing) · **Depends on:** nothing — everything depends on it. · **Blueprint:** implied by Onboarding + the privacy promise.
+**Status:** In progress (identity core + vault Implemented 2026-07-10 — Wave 1: OTP auth, JWT sessions, opaque vault store, native vault clients. Pending: refresh rotation/reuse detection (IDT-02), account deletion (IDT-04), contact discovery (IDT-06), invite links + web landing (IDT-07/09). Multi-device/recovery-phrase remain POC assumptions, see IDT-05/VLT-05) · **Agents:** Backend (lead), Mobile (vault client), Data Steward (models), Web (invite landing) · **Depends on:** nothing — everything depends on it. · **Blueprint:** implied by Onboarding + the privacy promise.
 
 ## Purpose
 
