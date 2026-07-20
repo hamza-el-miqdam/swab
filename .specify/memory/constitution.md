@@ -1,13 +1,28 @@
 <!--
 Sync Impact Report
-- Version change: [TEMPLATE UNPOPULATED] → 1.0.0
-- Rationale: first real population of the template (initial ratification), not a
-  semantic bump from a prior version. Treated as MAJOR/1.0.0 baseline per semver
-  convention for "first stable release" of a governance document.
-- Modified principles: n/a (template placeholders → concrete principles, not a rename)
-- Added sections: I–V Principles, Additional Constraints, Development Workflow,
-  Governance
+- Version change: 1.0.0 → 1.1.0
+- Rationale: MINOR — principles materially expanded/reworded from the source
+  (agents/_global-directives.md), none removed or redefined incompatibly.
+  This is a drift resync, not a new ratification.
+- Modified principles:
+  - II. Test-Driven Development (G2) — added the E2E gate paragraph (mobile
+    Definition of Done: docs/qa/e2e-scenarios.md scenarios, e2e-coverage.json
+    manifest with five verification classes, scripts/e2e-{ios,android}.sh
+    PASS with zero drift-guard failures pasted into the PR, requirement IDs
+    in E2E test names).
+  - V. Documentation & Changelogs (G5) — changelog area list corrected:
+    removed the retired Expo/React Native app's changelog entry
+    (area:mobile, that app was retired 2026-07-19), added the two native
+    apps' changelog paths (area:ios, area:android), and added design/specs
+    to the root CHANGELOG area list; added the "summaries not session logs,
+    ≤15 lines" rule; added "also flip the spec's Status: header to
+    Implemented" to the STATUS.md bullet.
+- Added sections: none (existing I–V Principles, Additional Constraints,
+  Development Workflow, Governance sections retained)
 - Removed sections: none
+- Resolved: the ratification-date placeholder — set to 2026-07-04, the date
+  of the first commit touching agents/_global-directives.md
+  (`git log --follow --format=%ad --date=short -- agents/_global-directives.md | tail -1`).
 - Templates requiring updates:
   ✅ .specify/templates/plan-template.md — Constitution Check gate is generic
      ("Gates determined based on constitution file"), no edit needed.
@@ -15,9 +30,7 @@ Sync Impact Report
   ✅ .specify/templates/tasks-template.md — no constitution-specific references found.
   ✅ .specify/templates/commands/*.md — not present in this install (skills-based
      integration instead); no stale agent-name references found.
-- Follow-up TODOs:
-  - TODO(RATIFICATION_DATE): original adoption date of agents/_global-directives.md
-    is not recorded in repo history at the time of this sync. Set once known.
+- Follow-up TODOs: none
 -->
 
 # Swab Constitution
@@ -61,6 +74,20 @@ Tests validate the contract, not the implementation: table-driven tests for
 pure logic, integration tests against a real Postgres (Neon CI branch), no
 mocking of Prisma in integration tests. Every bug fix starts with a
 regression test that reproduces it before the fix is written.
+
+**E2E gate (mobile — part of Definition of Done)**: every functional
+requirement of an implemented spec MUST have a scenario in
+`docs/qa/e2e-scenarios.md` and an entry in `docs/qa/e2e-coverage.json`,
+honestly classified into one of five verification classes — `automated`,
+`unit-covered`, `api-integration`, `manual`, `not-e2e-verifiable` — never
+silently dropped. Before any `area:ios`/`area:android` task is Done, the
+platform's full on-device E2E suite MUST run via `scripts/e2e-ios.sh` /
+`scripts/e2e-android.sh` (booted Simulator/emulator + live local API): the
+generated `test-results/e2e/e2e-report.md` must be PASS with zero
+drift-guard failures, and its summary is pasted into the PR. E2E test names
+carry their requirement IDs (`test_ONB05_...`) so the report generator can
+join results to requirements through the manifest. New or changed
+user-facing requirements update scenarios + manifest in the same PR.
 
 Rationale: a solo-maintained, AI-assisted codebase has no second reviewer
 catching behavioral drift by eye — the test suite is the actual reviewer.
@@ -115,14 +142,23 @@ Full detail: `agents/_global-directives.md` (G4).
 ### V. Documentation & Changelogs (G5)
 
 Every change updates its area changelog in the same commit/PR:
-`apps/mobile/CHANGELOG.md` (area:mobile), `apps/api/CHANGELOG.md`
-(area:backend), `packages/db/CHANGELOG.md` (area:db, Data Steward only), root
-`CHANGELOG.md` (area:devops, docs, agents, tooling, cross-cutting). Entry
-format, newest first: `## YYYY-MM-DD — [REQ-IDs] title` plus what/why/gotchas.
+`apps/ios/CHANGELOG.md` (area:ios), `apps/android/CHANGELOG.md`
+(area:android), `apps/api/CHANGELOG.md` (area:backend),
+`packages/db/CHANGELOG.md` (area:db, Data Steward only), root
+`CHANGELOG.md` (area:devops, docs, agents, design, specs, tooling,
+cross-cutting). Entry format, newest first: `## YYYY-MM-DD — [REQ-IDs] title`
+plus what/why/gotchas. A PR without a changelog entry is incomplete.
+
+Changelog entries are summaries, not session logs — target ≤ 15 lines per
+entry: what/why in 2–4 bullets, then only the gotchas and follow-ups a future
+developer genuinely needs. If an entry needs more, the PR should have been
+split.
 
 `docs/STATUS.md` is the single summary of what is done — updated in the same
-PR whenever a module starts (⚪→🟡), completes (🟡→🟢), or an infrastructure
-item changes state.
+PR whenever a module starts (⚪→🟡), completes (🟡→🟢, acceptance tests green
+— also flip the spec's `Status:` header to `Implemented`), or an
+infrastructure item changes state. Keep notes to 1–2 lines; history belongs
+in changelogs.
 
 Docs stay truthful: if a change makes README/DEVELOPMENT.md/spec text wrong,
 that text is fixed in the same PR. Code and docs never disagree on `main`.
@@ -174,5 +210,4 @@ move together. All specs and plans produced by spec-kit are expected to
 comply with the current version of this file; violations must be justified
 in the plan's Complexity Tracking section or rejected.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption
-date of agents/_global-directives.md not recorded in repo | **Last Amended**: 2026-07-09
+**Version**: 1.1.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-20

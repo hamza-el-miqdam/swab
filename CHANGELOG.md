@@ -4,6 +4,18 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-07-20 — [none] resync .specify/memory/constitution.md against agents/_global-directives.md
+
+- Ran `/speckit-constitution` to fix drift called out in SUG-SPEC-003: Principle V's changelog area list
+  still named the retired `apps/mobile/CHANGELOG.md` (area:mobile) and was missing `apps/ios`/`apps/android`
+  and design/specs in the root list; Principle II was missing the mobile E2E Definition-of-Done gate
+  (`docs/qa/e2e-scenarios.md`, `e2e-coverage.json`, `scripts/e2e-{ios,android}.sh` PASS + zero drift).
+- Also carried over the "≤15-line changelog summary" rule and "flip spec Status: header to Implemented"
+  detail, and resolved the standing `TODO(RATIFICATION_DATE)` — set to 2026-07-04 (first commit touching
+  `agents/_global-directives.md`). Version bumped 1.0.0 → 1.1.0 (MINOR: principles expanded, none removed).
+- No constitution-only substance introduced; Additional Constraints / Development Workflow sections
+  untouched — governance rule is the source-of-truth directives file always wins.
+
 ## 2026-07-19 — [area:design] packages/ui: canonical design-token SSOT + codegen for iOS/Android/web
 
 - New `packages/ui/tokens/tokens.json` — single hand-edited export of the Nuit token set (color, typography,
