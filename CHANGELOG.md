@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-07-20 — [SUG-SPEC-010] sync French Notion mirror for FS-01..07 "iOS + Android" agent headers
+
+- Notion-liaison pass on all 7 FS-* pages: fetched live content + comments (zero pending edits/
+  discussions found on any page — no conflicts, clean "code changed only" case throughout).
+  Translated "Mobile" → "iOS + Android" in the **Agents :** line of FS-01, FS-02, FS-03, FS-05,
+  FS-06, FS-07 (FS-04 too, same fix). "iOS + Android" kept as-is per SUG-SPEC-010.
+- Also caught and fixed pre-existing unsynced drift the mandatory full-snapshot diff surfaced:
+  FS-01/02/03 **Statut** headers were still "Approuvé" on Notion although disk had carried
+  "Implémenté (Vague 1/2/3, 2026-07-10)" since the Wave 1-3 landings — never synced. And the
+  stale Expo/RN wording fix (previous entry, SUG-SPEC-005) for FS-02 non-functional, FS-04
+  non-functional, FS-06 FLT-06, FS-07 VLT-01 had likewise never reached the French mirror.
+  All translated and pushed in this pass.
+- `docs/specs/.notion-sync.json`: `lastSyncedEnglish`/`lastSyncedFrench` snapshots refreshed to
+  exact disk/Notion content for all 7 specs, `lastSyncedAt` → 2026-07-20.
+- Gotcha: one Notion `update_content` call with 2 batched edits silently applied only the first
+  (no error) — always re-fetch and verify after multi-edit batches, don't trust a bare success.
+
 ## 2026-07-20 — retire "Mobile" agent references from playbook and all FS specs
 
 - `docs/agent-playbook.md`: ownership matrix (§1) and build order (§2) replaced every "Mobile" cell/line
