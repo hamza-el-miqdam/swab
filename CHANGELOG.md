@@ -30,6 +30,29 @@
 - **Follow-up:** re-run `/speckit-constitution` to mirror the amended G5 into `.specify/memory/constitution.md`.
 - `ci.yml` now runs `node scripts/render-agents.mjs --check` — the `.github/` Copilot copies are deliberate generated duplication (Copilot can't follow imports, unlike the `.claude/agents/` `@`-import wrappers); the CI guard is what makes keeping them safe.
 
+## 2026-07-20 — [IDT-02, IDT-04, IDT-06, IDT-07, IDT-09] Sync FS-07 Status header to Notion French mirror
+
+- Re-checked the FS-07 Notion page (and comments) before syncing per the liaison workflow: no
+  independent edits, no unresolved comments — content matched `lastSyncedFrench` exactly, so this
+  was a clean "code changed only" push, not a conflict.
+- Translated the corrected `**Status:**` header (SUG-SPEC-002, commit 6fc1161, branch
+  `spec/fs07-status-header-drift`) into French and pushed it to the Notion page via a targeted
+  `update_content` replace — no other page content touched.
+- Updated `docs/specs/.notion-sync.json` (`lastSyncedEnglish`, `lastSyncedFrench`, `lastSyncedAt`)
+  for FS-07 so the next liaison run doesn't re-flag this as a pending diff.
+
+## 2026-07-20 — [IDT-02, IDT-04, IDT-06, IDT-07, IDT-09] Fix FS-07 Status header drift
+
+- `docs/specs/FS-07-identity-vault.md`'s header claimed full "Implemented" while `docs/STATUS.md`
+  already showed FS-07 as 🟡 In progress and `apps/api/src/routes/` has no refresh, deletion, or
+  discovery endpoints — spec and status disagreed on the same module's completeness.
+- Corrected the header to "In progress", enumerating the same four pending items STATUS.md already
+  listed: refresh rotation/reuse detection (IDT-02), account deletion (IDT-04), contact discovery
+  (IDT-06), invite links + web landing (IDT-07/09).
+- Extended STATUS.md's FS-07 row "Missing:" list to name all four items explicitly (previously only
+  named two), so the row and the spec header now enumerate identical pending work.
+- No code changed; docs-only drift fix (`area:specs`).
+
 ## 2026-07-19 — chore: remove frozen apps/mobile RN reference implementation
 
 - Deleted `apps/mobile` (Expo/RN reference) — native `apps/ios` + `apps/android` reached parity (Waves 1–4). Knowledge preserved in `docs/migration/rn-native-handoff.md`, `vault-test-vectors.json`, `rn-audit-map.md`.
