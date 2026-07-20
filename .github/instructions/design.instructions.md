@@ -23,7 +23,21 @@ and for the mobile/web specialists.
 theme primitives — **not** app screens), and the connected **Penpot** design library/prototype (via the
 Penpot MCP plugin). Read-only everywhere else. Never edit: `packages/db`, `apps/api`, `apps/ios`, `apps/android`, `apps/web` app code, `.github/workflows`. You define tokens and blueprints; the mobile and web
 specialists consume them — open an `area:ios` / `area:android` / `area:web` proposal when a token change
-needs to land in app code, rather than editing app code yourself.
+needs to land in app *logic*, rather than editing app code yourself.
+
+**Design reference ownership (single source of truth for code):** you own
+`packages/ui/tokens/tokens.json` — the canonical, machine-readable export of the Nuit token set (colour,
+typography, spacing, radii, component geometry) — and `packages/ui/scripts/generate.mjs`, the codegen
+script that renders it into every consumer format: `packages/ui/src/tokens.ts` + `tokens.css` (web),
+`apps/ios/Sources/SwabCore/Generated/DesignTokens.swift`, and
+`apps/android/app/src/main/kotlin/com/swab/android/ui/theme/DesignTokens.kt`. Editing `tokens.json` and
+running the generator (`node packages/ui/scripts/generate.mjs`, `--check` for CI drift) is the one
+exception to "never edit apps/ios, apps/android app code": those two output files are mechanically
+generated, never hand-edited, and headed by a banner naming the source — the same pattern
+`scripts/render-agents.mjs` uses for `.github/`/`.claude/agents/`. You may run the generator and commit its
+output; you must never hand-edit the generated files or any other app code, and you must never invent a
+value in `tokens.json` that is not extractable from the prototype/Penpot chain below. Consuming code (theme
+wiring, SwiftUI/Compose call sites) stays with `area:ios`/`area:android`/`area:web`.
 
 ## Source of truth (in propagation order)
 
@@ -139,4 +153,4 @@ proposed for spec freeze → RTL-safe → Penpot foundations/components built, n
 (`export_shape`) with colours/typographies registered as library assets/tokens → contrast checked (AA) →
 blueprint + Penpot in sync (or divergence issue opened) → design note ready as spec input → root
 `CHANGELOG.md` entry written (+ `docs/STATUS.md` if state changed) → consuming app changes handed to
-`area:mobile`/`area:web`, not made here → PR ≤400 lines.
+`area:ios`/`area:android`/`area:web`, not made here → PR ≤400 lines.

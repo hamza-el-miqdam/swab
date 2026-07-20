@@ -89,7 +89,9 @@ Two families, self-hosted (no external font requests in production — `next/fon
 ## 4. Component grammar
 
 Derived from the prototype. Each becomes a Penpot component (with variants where a `.sel`/state axis
-exists) and, on mobile, a primitive in `apps/mobile/src/ui.tsx` (later `packages/ui`).
+exists); its geometry tokens live in `packages/ui/tokens/tokens.json` (`component` section), and each
+native app builds its own primitive from the generated `DesignTokens` (SwiftUI in `apps/ios/Sources/SwabUI`,
+Compose in `apps/android`).
 
 | Component | Variants / states | Notes |
 |---|---|---|
@@ -120,11 +122,21 @@ exists) and, on mobile, a primitive in `apps/mobile/src/ui.tsx` (later `packages
 
 ## 5. How this maps out
 
-| Consumer | Location | Derives |
-|---|---|---|
-| Penpot library | connected Penpot file → **Swab — Design System** page | colour styles, typographies, components, tokens |
-| Mobile | `apps/mobile/src/theme.ts` | `colors`, `typography`, `spacing`, `radii` |
-| Web (future) | `packages/ui` tokens | same token names via CSS custom properties |
+The token chain has exactly one hand-edited link; everything past it is generated and mechanically
+regenerated from that link — see the "Design reference ownership" paragraph in
+`agents/design-specialist.md` for the full rule.
 
-When any of these changes, update this file **and** the prototype in the same PR so code and design never
-disagree (rule G5).
+| Stage | Location | Status |
+|---|---|---|
+| 1. Penpot library | connected Penpot file → **Swab — Design System** page, token set "Nuit" | colour styles, typographies, components, tokens (source of the values below) |
+| 2. Canonical export (hand-edited) | [`packages/ui/tokens/tokens.json`](../packages/ui/tokens/tokens.json) | `color`, `typography`, `spacing`, `radius`, `component` — the ONLY place these values are hand-edited in code |
+| 3. Generated — web/TS | `packages/ui/src/tokens.ts`, `packages/ui/src/tokens.css` | typed `as const` exports + `:root` custom properties; consumed once `apps/web` exists |
+| 3. Generated — iOS | `apps/ios/Sources/SwabCore/Generated/DesignTokens.swift` | plain hex/numeric constants, no SwiftUI import; consumed by `Carte/CarteTheme.swift` (wired 2026-07-19, `area:ios`) |
+| 3. Generated — Android | `apps/android/app/src/main/kotlin/com/swab/android/ui/theme/DesignTokens.kt` | plain Kotlin object, no Compose import; consumed by `ui/theme/Theme.kt` (wired 2026-07-19, `area:android`) |
+
+Regenerate stage 3 from stage 2 with `node packages/ui/scripts/generate.mjs` (`--check` for CI drift — the
+same convention as `scripts/render-agents.mjs`). Never hand-edit a generated file; the banner comment at the
+top of each names its source.
+
+When any of these changes, update this file, the prototype, and `tokens.json` (+ regenerate) in the same PR
+so code and design never disagree (rule G5).

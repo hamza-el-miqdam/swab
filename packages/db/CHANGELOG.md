@@ -2,7 +2,7 @@
 
 > Newest first. One entry per schema/seed/migration change. **Only the Data Steward writes here** (same rule as `schema.prisma`).
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: model diff summary, motivating query patterns, privacy-audit note.
-> Agents: updating this file is part of your Definition of Done (G4.7).
+> Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
 ## 2026-07-05 — Schema v0.1 (commit e2914a0)
 

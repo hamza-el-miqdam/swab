@@ -2,7 +2,7 @@
 
 > Newest first. One entry per merged change.
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
-> Agents: updating this file is part of your Definition of Done (G4.7).
+> Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
 ## 2026-07-06 — [G3] Error handler hardened for fastify 5.9 `unknown` errors
 
