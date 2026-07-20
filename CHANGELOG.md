@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-07-20 — retire "Mobile" agent references from playbook and all FS specs
+
+- `docs/agent-playbook.md`: ownership matrix (§1) and build order (§2) replaced every "Mobile" cell/line
+  with "iOS + Android". Added clarifying sentence: "'iOS + Android' means the same requirement is
+  implemented per-platform by ios-specialist and android-specialist, each gated by its own E2E suite."
+  Also fixed: line 57 "The SRE agent" → "The DevOps agent (area:sre)" and line 22 "Neon GC" reference.
+- All spec headers FS-01..07 replaced "Mobile" with "iOS + Android" in their Agents line (e.g.
+  FS-01: "iOS + Android (lead)" instead of "Mobile (lead)", FS-07: "iOS + Android (vault client)"
+  instead of "Mobile (vault client)").
+- Mobile-specialist (Expo RN) decommissioned 2026-07-09; work now split to ios-specialist + android-specialist.
+  Reference: `docs/migration/rn-native-handoff.md`, SUG-SPEC-010.
+- Notion mirror re-sync needed for French translation of "iOS + Android" — pending notion-liaison pass.
+
 ## 2026-07-20 — [VLT-01, FLT-06, SGR-01] retire stale Expo/RN wording from normative spec text
 
 - FS-07 (VLT-01), FS-06 (FLT-06), FS-04 (non-functional), FS-02 (non-functional) still named the

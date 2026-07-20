@@ -6,24 +6,26 @@ How the AI agents (and their human) turn the functional specs into shipped code.
 
 | Spec | Lead agent | Supporting | Key seam |
 |---|---|---|---|
-| FS-01 Onboarding | Mobile | Backend (OTP) | `POST /auth/otp`, `POST /vault` |
-| FS-02 Relationship Map | Mobile | — | vault read only |
-| FS-03 Contact Card | Mobile | — | vault read/write only |
-| FS-04 Subgroups | Mobile | — | pure domain module, vault |
-| FS-05 Envie & Match | Mobile + Backend | Data (constraints) | `POST /envies` contract (OpenAPI normative) |
-| FS-06 Filtering | Mobile | — | pure domain module, vault |
-| FS-07 Identity & Vault | Backend | Mobile, Data, Web | auth + vault + discovery endpoints |
+| FS-01 Onboarding | iOS + Android | Backend (OTP) | `POST /auth/otp`, `POST /vault` |
+| FS-02 Relationship Map | iOS + Android | — | vault read only |
+| FS-03 Contact Card | iOS + Android | — | vault read/write only |
+| FS-04 Subgroups | iOS + Android | — | pure domain module, vault |
+| FS-05 Envie & Match | iOS + Android + Backend | Data (constraints) | `POST /envies` contract (OpenAPI normative) |
+| FS-06 Filtering | iOS + Android | — | pure domain module, vault |
+| FS-07 Identity & Vault | Backend | iOS + Android, Data, Web | auth + vault + discovery endpoints |
 | Schema (all) | **Data Steward — exclusive** | proposals from Backend | `area:db` issues |
 | CI/CD (all) | DevOps | — | required checks |
+
+*"iOS + Android" means the same requirement is implemented per-platform by ios-specialist and android-specialist, each gated by its own E2E suite (G2).*
 
 ## 2. Build order (pipeline stages, from the blueprint)
 
 ```
 Sprint 0  DevOps: CI skeleton, Neon GC, migrate-prod.yml, scope guard
 Sprint 1  Data: schema v0.1 migration ──► Backend: FS-07 (auth, vault, discovery)
-Sprint 2  Mobile: FS-01 onboarding + FS-02 map (offline core)   [parallel] Web: FS-07 invite landing
-Sprint 3  Mobile: FS-03 fiche + FS-06 filtering + FS-04 FCA     [parallel] Backend: FS-05 matching engine
-Sprint 4  Mobile+Backend: FS-05 end-to-end · hardening · privacy audit (§6)
+Sprint 2  iOS + Android: FS-01 onboarding + FS-02 map (offline core)   [parallel] Web: FS-07 invite landing
+Sprint 3  iOS + Android: FS-03 fiche + FS-06 filtering + FS-04 FCA     [parallel] Backend: FS-05 matching engine
+Sprint 4  iOS + Android + Backend: FS-05 end-to-end · hardening · privacy audit (§6)
 ```
 Rule: a spec's Depends-on list must be `Implemented` (or explicitly stubbed by agreement in the issue) before its issues are assigned.
 
@@ -54,7 +56,7 @@ Before any external tester touches a build, and after every schema or API change
 3. **Log audit:** grep structured logs for verbs, recipient lists, phone hashes, tokens (G3 forbidden list) — zero hits.
 4. **Non-observability audit:** the ENV-11 and ENV-15 tests (non-match invisibility, silent pass) pass with response-shape equality.
 
-The SRE agent wires 1–3 as a CI job (`privacy-audit.yml`); 4 lives in the backend integration suite. A red privacy audit blocks all merges, in every area, until resolved.
+The DevOps agent (area:sre) wires 1–3 as a CI job (`privacy-audit.yml`); 4 lives in the backend integration suite. A red privacy audit blocks all merges, in every area, until resolved.
 
 ## 7. Escalation & communication
 

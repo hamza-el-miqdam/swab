@@ -1,6 +1,6 @@
 # FS-06 — Send-time Filtering Rules (Paramètres de filtrage)
 
-**Status:** Approved · **Agents:** Mobile (sole — rules live in the vault, applied at resolution) · **Depends on:** FS-03 (état/ressenti), feeds FS-05 · **Blueprint:** `swab - Paramètres modaux (standalone)`
+**Status:** Approved · **Agents:** iOS + Android (sole — rules live in the vault, applied at resolution) · **Depends on:** FS-03 (état/ressenti), feeds FS-05 · **Blueprint:** `swab - Paramètres modaux (standalone)`
 
 ## Purpose
 

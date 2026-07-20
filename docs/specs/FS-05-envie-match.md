@@ -1,6 +1,6 @@
 # FS-05 — Envie & Match Flow
 
-**Status:** Approved · **Agents:** Mobile (flow UI, local resolution) + Backend (envies, matching, proposals) — the only two-agent spec; the API contract section is the seam. · **Depends on:** FS-04, FS-06, FS-07 · **Blueprint:** `swab - Flux envie et match (standalone)`
+**Status:** Approved · **Agents:** iOS + Android (flow UI, local resolution) + Backend (envies, matching, proposals) — the only two-agent spec; the API contract section is the seam. · **Depends on:** FS-04, FS-06, FS-07 · **Blueprint:** `swab - Flux envie et match (standalone)`
 
 ## Purpose
 

@@ -1,6 +1,6 @@
 # FS-04 — Subgroups (Sous-groupes)
 
-**Status:** Approved · **Agents:** Mobile (sole — FCA runs on-device) · **Depends on:** FS-03 (tags) · **Blueprint:** `swab - Sous-groupes (standalone)`
+**Status:** Approved · **Agents:** iOS + Android (sole — FCA runs on-device) · **Depends on:** FS-03 (tags) · **Blueprint:** `swab - Sous-groupes (standalone)`
 
 ## Purpose
 
