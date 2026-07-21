@@ -111,7 +111,7 @@ Once matched, two people need a lightweight way to actually meet — without tur
 ## Assumptions
 
 - Category taxonomy v0 is a small fixed set (~12 categories, e.g. sortir, manger, sport, ciné, parler, aider, jouer, voyager, boire un truc, se voir, travailler, autre) pending final confirmation with the product owner (FS-05 OQ-ENV-1). Not reopened as a clarification here since a reasonable default already exists and is documented.
-- Default envie expiry is 24 hours from creation (FS-05 OQ-ENV-2); same-day-midnight semantics were considered and rejected in favor of a fixed rolling window, pending final confirmation.
+- Default envie expiry is a 24-hour rolling window from creation — FS-05's documented buildable default (ENV-07 ⚠️ ASSUMPTION). OQ-ENV-2 (24h vs same-day-midnight) **remains open with the product owner**; build behind an expiry-policy seam so switching semantics is not a rewrite (playbook §4 rule 6).
 - The proposal loop is single-proposal-at-a-time for this POC — no multi-turn negotiation, no counter-proposals beyond accept/decline of the single active proposal (ENV-14).
 - Unanswered proposals (no accept/decline from the counterpart) are out of scope for this spec's acceptance criteria; timeout/reminder behavior, if any, is a follow-up decision.
 - This spec assumes FS-04 (subgroup detection) and FS-06 (filtering rules, including the absolute veto) are implemented and available as inputs — this feature does not re-specify them.
