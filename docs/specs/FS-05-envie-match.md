@@ -51,7 +51,7 @@ The core loop. Emission: « verbe → portée → filtrage transparent → envoi
 
 - **Given** users A and B mutually in scope with same-category active envies, **when** B emits, **then** exactly one match exists and both receive notification (integration + concurrency hammer test, DAT rule 5).
 - **Given** A's envie including B, **when** B never reciprocates, **then** B's app state and network traces contain zero evidence of A's envie (ENV-11 — the product's foundational promise).
-- **Given** B passed, **when** A polls `GET /matches`, **then** the response is byte-equivalent (modulo timestamps) to the pre-pass response (ENV-15).
+- **Given** B passed, **when** A polls `GET /matches`, **then** the response is byte-equivalent (identical field set and values; the ONLY permitted differences are server-clock response metadata — no entity field, including updatedAt-style columns, may change on the counterpart's side because of a pass) to the pre-pass response (ENV-15).
 - **Given** a filtered contact revoked back in at send, **when** the envie is created, **then** they appear in `recipientIds` and the FS-06 default rule is untouched for future envies.
 
 ## Open questions
