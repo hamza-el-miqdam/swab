@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-07-21 — [ENV-07, OQ-ENV-2] resolve decided-vs-open contradiction on envie expiry semantics
+
+- `specs/001-envie-match/spec.md`'s Assumptions section stated OQ-ENV-2 (24h vs same-day-midnight
+  expiry) was "considered and rejected" — a resolution that never happened. FS-05 still lists it
+  open (`docs/specs/FS-05-envie-match.md:60`) and the checklist still says "pending final
+  product-owner sign-off" (`specs/001-envie-match/checklists/requirements.md:36`); no PO decision
+  is recorded anywhere (verified via `git log --all --grep` and `gh issue list`, both empty).
+- Reworded the bullet to state the 24h rolling window as FS-05's buildable default (ENV-07 ⚠️
+  ASSUMPTION) while explicitly keeping OQ-ENV-2 open with the product owner, and to call for an
+  expiry-policy seam so a later switch to same-day-midnight isn't a rewrite (playbook §4 rule 6).
+  FS-05 itself needed no change — its open-question state was already correct.
+- Per SUG-SPEC-011. Playbook §7: agents never resolve OQs implicitly.
+
 ## 2026-07-20 — [SUG-SPEC-010] sync French Notion mirror for FS-01..07 "iOS + Android" agent headers
 
 - Notion-liaison pass on all 7 FS-* pages: fetched live content + comments (zero pending edits/
