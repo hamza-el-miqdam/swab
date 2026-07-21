@@ -18,7 +18,7 @@ Take a new user from install to a populated relationship map, establishing the p
 | ID | Requirement |
 |---|---|
 | ONB-01 | Welcome screen shows brand (swab · صواب), tagline, privacy promise, single CTA « Commencer ». No account creation before this screen is acknowledged. |
-| ONB-02 | Phone-OTP signup per FS-07 (IDT-01…04). On success a device vault key is generated (FS-07) before any classification input is possible. |
+| ONB-02 | Phone-OTP signup per FS-07 (IDT-01…03). On success a device vault key is generated (FS-07) before any classification input is possible. |
 | ONB-03 | Contact addition offers « Importer mes contacts » (permission-gated, hashed client-side per IDT-06) and manual entry. « Passer » skips with no penalty and no nag. |
 | ONB-04 | Calibration is radial: « moi » center; dragging/tapping a contact assigns it to an intimacy ring. The layout must visually prefigure the FS-02 map. |
 | ONB-05 | Rings, roles, état, ressenti are written to the local vault only. Zero classification data in any network request during onboarding (assertable in tests via network mock). |
