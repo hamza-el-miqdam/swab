@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-04 — [OQ-FCH-1, OQ-FCH-2, FCH-06, FLT-01] promote FS-03 taxonomy gaps to tracked open questions
+
+- OQ-FCH-1 (`docs/specs/FS-03-contact-card.md`) still described a pre-implementation world
+  ("Architect to extract with Hamza before implementation") even though FS-03 shipped 2026-07-10
+  (`docs/STATUS.md`) with placeholder Rôles·contexte / Ressenti vocabularies. Reworded to state
+  it's still open post-implementation and that changing the vocabulary later is a vault-content
+  migration (existing user tags must map forward) — resolve before external testers.
+- Added OQ-FCH-2: the état-vs-ressenti axis ambiguity for « en pause », previously only flagged
+  in QA notes (`docs/qa/e2e-coverage.json` FCH-06), was never promoted to a spec-level OQ despite
+  playbook §7 requiring every OQ-* to be spec-tracked. Spec's position is état (FCH-06, FLT-01);
+  audit both native apps before FS-06 implementation starts.
+- Filed GitHub issues #15 (OQ-FCH-1) and #16 (OQ-FCH-2), both `question`-labeled, owned by the
+  Architect — neither resolved here (G4: don't guess product behavior).
+- Per SUG-SPEC-007. Notion mirror re-sync for FS-03's Open questions section still needed
+  (notion-liaison-specialist).
+
 ## 2026-08-04 — [IDT-02, IDT-03, IDT-04, IDT-06, IDT-07] fix coverage classes overstating apps/api test existence
 
 - `docs/qa/e2e-coverage.json` + `docs/qa/e2e-scenarios.md` (FS-07 section) claimed `api-integration`

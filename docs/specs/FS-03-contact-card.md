@@ -33,4 +33,6 @@ Per-relation detail and editing: « Les quatre axes, éditables d'un tap — tu 
 
 ## Open questions
 
-OQ-FCH-1: exact vocabulary sets for Rôles·contexte and Ressenti (blueprint shows the axes but not full option lists) — Architect to extract with Hamza before implementation; placeholder taxonomies acceptable for the walking skeleton.
+OQ-FCH-1 (**still open post-implementation**): FS-03 shipped 2026-07-10 with placeholder vocabulary sets for Rôles·contexte and Ressenti. Final vocabularies still need extraction from the blueprint with Hamza; changing them later is a vault-content migration (existing user tags must map forward) — resolve before external testers.
+
+OQ-FCH-2: Platform implementations flagged an état-vs-ressenti axis ambiguity for « en pause » in Wave 3 (see `docs/qa/e2e-coverage.json` FCH-06 note). The spec's position is état (FCH-06, FLT-01) — audit both native apps against this and either fix the implementations or amend the spec, **before FS-06 implementation starts** (its default rule targets état = en pause).
