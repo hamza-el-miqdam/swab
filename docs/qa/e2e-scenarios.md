@@ -178,16 +178,16 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - Verification note: the mobile-side flow is automated via onboarding; the storage guarantee is an API/DB integration assertion.
 
 ### IDT-02 — JWT access + rotating refresh, reuse detection
-- Server-session behavior (rotation, family revocation on refresh reuse) — `api-integration`; no mobile UI surface.
+- Server-session behavior (rotation, family revocation on refresh reuse) — `not-e2e-verifiable`; no `/auth/refresh` endpoint exists yet and no test covers rotation or reuse detection. Only the refresh-token-rejected-as-access case is covered (apps/api `vault.test.ts`). Reclass to `api-integration` when the FS-07 backend session work lands.
 
 ### IDT-03 — OTP throttling, single-use, ≤ 5 min
-- Server rate-limit behavior per phoneHash/IP — `api-integration`; deliberately not driveable from a mobile E2E (would require abusive request volume from a device).
+- Server rate-limit behavior per phoneHash/IP — `api-integration`; deliberately not driveable from a mobile E2E (would require abusive request volume from a device). Per-phoneHash throttle and single-use are tested (apps/api `auth.test.ts`); the per-IP half is not implemented or tested yet.
 
 ### IDT-04 — Account deletion, cascade erasure, 7-day grace
 - **Given** an account with data,
 - **When** in-app deletion is triggered,
 - **Then** full cascade erasure follows (irreversible after 7-day grace) and the phoneHash can re-register fresh.
-- Verification note: no native deletion UI exists yet (not part of Waves 1–3 scope); cascade behavior is an API integration test. Mobile E2E pending that UI.
+- Verification note: no native deletion UI exists yet (not part of Waves 1–3 scope); cascade erasure has no endpoint or test yet (FS-07 in progress) — add the apps/api integration test with the deletion endpoint. Mobile E2E pending that UI.
 
 ### IDT-05 — Multi-device / recovery phrase
 - Out of POC scope by spec (new device = re-import via backup phrase, assumption) — `not-e2e-verifiable` until designed.
@@ -196,10 +196,10 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Given** contact import,
 - **When** contacts are submitted for discovery,
 - **Then** numbers are hashed locally before transmission and the response reveals nothing beyond the membership boolean.
-- Verification note: hashing-before-network is unit/wire covered; response-shape guarantees are API tests. The import UI path itself is exercised by the onboarding E2E.
+- Verification note: hashing-before-network is unit/wire covered; response-shape guarantees will be apps/api tests — the discovery endpoint does not exist yet (STATUS: missing). The import UI path itself is exercised by the onboarding E2E.
 
 ### IDT-07 — Invite non-members, pending links resolve on join
-- Web landing + link resolution — web/backend scope (`api-integration` + web tests); the mobile-side "non-member contact exists with editable fiche" half is FCH-08.
+- Web landing + link resolution — `not-e2e-verifiable`; no contact-link endpoints or web landing exist yet, reclass when FS-07 discovery/invite work lands. The mobile-side "non-member contact exists with editable fiche" half is FCH-08 (automated).
 
 ### IDT-08 — Directional, private links
 - « No "X added you" notifications, ever » — absence of a notification is asserted server-side (no such event/payload exists) — `api-integration`.

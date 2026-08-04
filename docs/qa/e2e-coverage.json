@@ -186,23 +186,23 @@
     "IDT-02": {
       "fs": "FS-07",
       "title": "JWT access + rotating refresh; reuse detection revokes family",
-      "ios": { "status": "api-integration" },
-      "android": { "status": "api-integration" },
-      "notes": "Server-session behavior — apps/api integration suite; no mobile UI surface."
+      "ios": { "status": "not-e2e-verifiable" },
+      "android": { "status": "not-e2e-verifiable" },
+      "notes": "Refresh rotation + reuse detection not yet implemented server-side (no /auth/refresh endpoint) — no test exists yet. Reclass to api-integration when the FS-07 backend session work lands. Only the refresh-token-rejected-as-access case is covered (apps/api vault.test.ts)."
     },
     "IDT-03": {
       "fs": "FS-07",
       "title": "OTP throttling per phoneHash/IP; single-use, ≤5 min codes",
       "ios": { "status": "api-integration" },
       "android": { "status": "api-integration" },
-      "notes": "Rate-limit behavior — deliberately not driven from a device (abusive request volume)."
+      "notes": "Rate-limit behavior — deliberately not driven from a device (abusive request volume). Per-phoneHash throttle and single-use are tested (apps/api auth.test.ts); the per-IP half of IDT-03 is not implemented or tested yet."
     },
     "IDT-04": {
       "fs": "FS-07",
       "title": "In-app account deletion → cascade erasure, 7-day grace",
       "ios": { "status": "not-e2e-verifiable" },
       "android": { "status": "not-e2e-verifiable" },
-      "notes": "No native deletion UI exists yet (outside Waves 1–3 scope); cascade erasure is an apps/api integration test. Reclass to automated when the UI lands."
+      "notes": "No native deletion UI exists yet (outside Waves 1–3 scope); cascade erasure has no endpoint or test yet (FS-07 in progress); add the apps/api integration test with the deletion endpoint. Reclass to automated when the UI lands."
     },
     "IDT-05": {
       "fs": "FS-07",
@@ -216,14 +216,14 @@
       "title": "Hashed contact discovery; boolean-only responses",
       "ios": { "status": "unit-covered" },
       "android": { "status": "unit-covered" },
-      "notes": "Hash-before-network is unit/wire covered; response-shape guarantees are apps/api tests. Import UI path exercised by onboarding E2E."
+      "notes": "Hash-before-network is unit/wire covered; response-shape guarantees will be apps/api tests — the discovery endpoint does not exist yet (STATUS: missing). Import UI path exercised by onboarding E2E."
     },
     "IDT-07": {
       "fs": "FS-07",
       "title": "Non-member links + invite via web landing; pending links resolve on join",
-      "ios": { "status": "api-integration" },
-      "android": { "status": "api-integration" },
-      "notes": "Web/backend scope. The mobile-side half (non-member contact has an editable fiche) is FCH-08 (automated)."
+      "ios": { "status": "not-e2e-verifiable" },
+      "android": { "status": "not-e2e-verifiable" },
+      "notes": "No contact-link endpoints or web landing exist yet; reclass when FS-07 discovery/invite work lands. Mobile half is FCH-08 (automated)."
     },
     "IDT-08": {
       "fs": "FS-07",

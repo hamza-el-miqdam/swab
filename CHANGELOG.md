@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-04 — [IDT-02, IDT-03, IDT-04, IDT-06, IDT-07] fix coverage classes overstating apps/api test existence
+
+- `docs/qa/e2e-coverage.json` + `docs/qa/e2e-scenarios.md` (FS-07 section) claimed `api-integration`
+  verification (or notes asserting apps/api tests) for behavior with no endpoint and no test:
+  IDT-02 (refresh rotation/reuse — no `/auth/refresh` route exists), IDT-07 (invite links/web
+  landing — no routes, no `apps/web`). Both reclassed to `not-e2e-verifiable` with notes pointing
+  to the FS-07 gap and a reclass-when-implemented instruction.
+- IDT-03 (per-IP throttle half untested), IDT-04 (deletion endpoint/test both missing), IDT-06
+  (discovery endpoint missing) kept their existing class but had notes corrected to stop claiming
+  tests/endpoints that don't exist yet, per grep of `apps/api/src/routes/` and `apps/api/tests/`.
+- G2 requires honest classification, never silently dropped; these read as verified when they
+  weren't. `automated` entries untouched (drift guard depends on them). Verified via
+  `node scripts/e2e-report.mjs --android <existing device run>`: overall PASS, 0 drift failures.
+- Per SUG-SPEC-001. Gotcha for future agent: when FS-07 backend session/deletion/discovery/invite
+  work lands, reclass these entries back to `api-integration` in that same PR (notes say so).
+
 ## 2026-07-21 — [ENV-07, OQ-ENV-2] resolve decided-vs-open contradiction on envie expiry semantics
 
 - `specs/001-envie-match/spec.md`'s Assumptions section stated OQ-ENV-2 (24h vs same-day-midnight
