@@ -5,7 +5,7 @@
 # NOTE (DevOps agent hard constraint 2): this is the dev image. The hardened
 # production image (multi-stage `pnpm deploy`, pinned digest, Trivy zero
 # HIGH/CRITICAL gate) ships with the CI pipeline issue [area:sre].
-FROM node:22-slim
+FROM node:22-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436
 
 # pnpm via corepack — version pinned by "packageManager" in package.json
 RUN corepack enable
@@ -18,13 +18,11 @@ RUN apt-get update -y \
 WORKDIR /app
 
 # Layer-cache dependency resolution: manifests first, sources after
-COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/db/package.json packages/db/
 COPY apps/api/package.json apps/api/
 
-# No --frozen-lockfile: the repo may not have a committed lockfile yet.
-# Once pnpm-lock.yaml is committed, add it to the COPY above and freeze.
-RUN pnpm install --filter @repo/db --filter @repo/api
+RUN pnpm install --frozen-lockfile --filter @repo/db --filter @repo/api
 
 COPY packages/db packages/db
 COPY apps/api apps/api

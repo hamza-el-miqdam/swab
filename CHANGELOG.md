@@ -4,6 +4,20 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-008] `apps/api/Dockerfile` uses the committed lockfile + pinned base digest
+
+- `pnpm-lock.yaml` IS committed at repo root (the file's own stale comment said otherwise) — COPYed
+  in and `pnpm install` now runs `--frozen-lockfile --filter @repo/db --filter @repo/api`, matching
+  CI's own install step. Verified this doesn't need extra workspace manifests beyond `packages/db`
+  and `apps/api` (`Scope: 2 of 3 workspace projects`, install succeeds) — the risk flagged in the
+  suggestion's gotchas didn't materialize.
+- `FROM node:22-slim` pinned to a resolved digest (`@sha256:d649c27d...`), tag kept alongside the
+  digest for human readability and Dependabot's `docker` ecosystem (SUG-OPS-004, next in this batch).
+- Verified: `docker build` succeeds; negative test — corrupted one dependency version in a scratch
+  copy of `pnpm-lock.yaml` → build fails with pnpm's `ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY` (proves
+  the flag bites), reverted cleanly. `docker compose up --build` (fresh volume) → API healthy,
+  `curl localhost:3001/health` → `{"status":"ok"}` 200.
+
 ## 2026-08-08 — [SUG-OPS-011] AWS-portability lint (no Vercel APIs, no Neon-specific code)
 
 - Added `scripts/portability-lint.mjs` (dependency-free — only `node:` built-ins + `git ls-files`):
