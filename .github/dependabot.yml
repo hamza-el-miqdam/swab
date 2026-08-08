@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+    labels: ["deps"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    labels: ["deps"]
+  - package-ecosystem: gradle
+    directory: /apps/android
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    labels: ["deps"]
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule: { interval: weekly }
+    labels: ["deps"]
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: { interval: weekly }
+    labels: ["deps"]

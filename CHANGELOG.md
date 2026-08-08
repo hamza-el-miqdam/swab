@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-004] Dependabot config (npm, github-actions, gradle, docker, docker-compose)
+
+- Added `.github/dependabot.yml`: 5 ecosystems, weekly cadence (protects free-tier Actions minutes —
+  devops project rule 1), `npm` grouped by `minor`/`patch` (one PR/week instead of many for a solo
+  maintainer), `open-pull-requests-limit` capped (5 npm / 3 gradle). All five carry `labels: ["deps"]`;
+  created the `deps` repo label (`gh label create`) so it actually applies instead of silently no-op'ing.
+- **Deviation from the written plan's step 3**: did NOT add an `ignore:` entry for the dead
+  `react-native-quick-base64` pnpm override (`package.json`'s `pnpm.overrides`). The plan's own text
+  flagged it "for removal... propose separately" — but SUG-OPS-019 (this same devops batch, later
+  today) removes that override outright, which would make an `ignore:` entry for it dead config
+  within the same day. Skipped rather than added-then-immediately-stale.
+- Verified: `.github/dependabot.yml` parses as valid YAML with the exact structure GitHub's schema
+  expects (checked via a scratch `pyyaml` parse). Live validation (Dependency graph → Dependabot tab,
+  first scheduled run) only happens once this reaches GitHub — noted, not something verifiable
+  offline before push.
+
 ## 2026-08-08 — [SUG-OPS-015] `.dockerignore`: exclude native apps + local artifacts, drop stale entries
 
 - Added `apps/ios`, `apps/android` (a real on-disk Gradle `build/` dir lives there — can be hundreds
