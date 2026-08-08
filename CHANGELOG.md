@@ -4,6 +4,35 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-007] Production API image (`apps/api/Dockerfile` `prod` target)
+
+- `apps/api/Dockerfile` is now multi-stage: `base` → `dev` (unchanged behavior, compose pins
+  `target: dev`) and `base` → `build` → `prod` (new). `prod`: compiled `dist/`, devDependencies
+  stripped, pinned base digest, non-root `USER node`, `HEALTHCHECK`.
+- **`pnpm deploy` and `pnpm prune --prod` both verified broken for this workspace and abandoned**
+  (see the Dockerfile's own NOTE comment for the full story): `pnpm deploy`/`--legacy` copies
+  `@repo/db`'s raw `.ts` source into `node_modules`, and Node 22 refuses to type-strip anything
+  resolved from inside `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`) — confirmed by
+  actually booting the container. `pnpm prune --prod` triggered an unexplained "reinstall from
+  scratch" that dropped runtime deps (fastify, `@prisma/client`) while keeping root-only
+  devDependencies (eslint, turbo) — reproduced twice, not a fluke.
+- **What actually works:** install once with workspace symlinks kept (`@repo/db` resolves to
+  `/app/packages/db/src/index.ts`, outside `node_modules` — type-stripping allowed there), generate
+  + build, then explicitly `rm -rf` the known devDependency packages by name (both per-package
+  top-level symlinks and their `.pnpm` store entries). 413M → 190M `node_modules`; final image
+  817MB vs dev's 1.17GB.
+- Verified end-to-end against local Postgres: `docker build --target prod`, container reaches
+  Docker's own `HEALTHCHECK` "healthy" status, `/health` → 200, `/ready` → 200 (real DB round-trip),
+  `/auth/otp/request` → 200 (real Prisma write). `docker compose up --build` (dev target,
+  unchanged) still boots and serves `/health`.
+- `security.yml`'s `trivy-api-image` job now builds `--target prod` (was building the dev image).
+  Prod image cuts Trivy findings from 35 (33 HIGH/2 CRITICAL, dev image) to 23 (22 HIGH/1
+  CRITICAL) — real, still-red, mostly transitive deps of Prisma's own tooling (`tar`, `nanoid`,
+  `brace-expansion`, etc.) with upstream fixes not yet adopted in the lockfile. Left red on
+  purpose — a `.trivyignore` waiver is for genuinely unfixed CVEs, not "haven't bumped yet";
+  SUG-OPS-004 (next in this batch) wires Dependabot's npm ecosystem to chip away at this over time.
+- `docs/STATUS.md` infra table updated.
+
 ## 2026-08-08 — [SUG-OPS-008] `apps/api/Dockerfile` uses the committed lockfile + pinned base digest
 
 - `pnpm-lock.yaml` IS committed at repo root (the file's own stale comment said otherwise) — COPYed

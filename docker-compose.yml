@@ -30,6 +30,7 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      target: dev
     environment:
       DATABASE_URL: postgresql://swab:swab_local_dev@db:5432/swab
       JWT_SECRET: local-dev-only-secret-change-me-0000000000
