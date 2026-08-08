@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-001] Six pre-Nuit standalone blueprints flagged SUPERSEDED
+
+- The six per-flow standalone blueprints (`blueprints/swab - {Carte des relations, Fiche contact, Flux
+  envie et match, Onboarding, Paramètres modaux, Sous-groupes} (standalone)*.html`) still carry the
+  retired brown/gold palette (`#16120D` etc.) and Hanken Grotesk — none of the Nuit tokens. They're
+  normative inputs to `/speckit-specify`, so a reader could silently pick up the wrong charter.
+- **Option A (per the suggestion's recommendation)**: prepended an HTML comment banner + a visible,
+  fixed, high-z-index top-of-page notice to all six, pointing at
+  `docs/design/swab-prototype-consolidated.html` + `docs/design-system.md` as the normative visual
+  reference. Flow structure/copy is unchanged and may still be consulted; visual values may not.
+- Did not re-skin (Option B): these are ~950 KB tool-exported bundles (embedded
+  `__bundler_thumbnail`, data-URL fonts) — brittle to hand-edit, and each would need its own ≤400-line
+  PR per G4. Files not deleted — copy/flow still feed specs.
+- Verified: `grep -L "SUPERSEDED" blueprints/swab\ -\ *.html` returns nothing (all six carry the
+  banner). `docs/STATUS.md` design row updated.
+
 ## 2026-08-08 — [SUG-DES-002] `ombre` text token changed to fix WCAG AA contrast failure
 
 - `ombre` was `#6A7194` — 3.83:1 on `nuit`, 3.44:1 on `encre`, 2.99:1 on `voile`, 2.60:1 on `voile-2`
