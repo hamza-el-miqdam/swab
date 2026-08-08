@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-009] Turborepo cache persisted in CI + cache-hit job summary
+
+- `ci.yml`: `actions/cache` step (keyed `turbo-${{ runner.os }}-${{ github.sha }}`, prefix
+  `restore-keys`) persists `.turbo/cache` across runs, placed after `pnpm install` and before the
+  turbo step. The turbo invocation now passes `--cache-dir=.turbo/cache --summarize` explicitly.
+- Replaced the old placeholder job-summary line with a real cache-hit readout: parses the latest
+  `.turbo/runs/*.json` (turbo's `--summarize` output) and appends `- turbo cache: N/M tasks hit` to
+  `$GITHUB_STEP_SUMMARY`. Used `find ... -print -quit` instead of `ls -t | head -1` — `actionlint`
+  (shellcheck SC2012) flagged the `ls` form.
+- Verified locally against the real local Postgres (`docker compose up -d db`): cold run → `0/10
+  cached`; immediate re-run → `9/10 cached` (only `db:generate` is `cache: false`, correctly not
+  cached — Prisma client generation must always run against the current schema).
+- Deferred (per the suggestion's own step 5, noted as a follow-up, not implemented here): affected-only
+  `--filter="...[origin/main]"` execution. Skipped for the same reason the suggestion gives — 3 JS
+  packages today, small win — and left as a documented future step rather than added speculatively.
+
 ## 2026-08-08 — [SUG-DES-013] De-duplicate the consolidated prototype (Option A: pointer stub)
 
 - `blueprints/swab-app-prototype.html` and `docs/design/swab-prototype-consolidated.html` were
