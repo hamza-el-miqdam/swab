@@ -19,7 +19,7 @@ Per-relation detail and editing: « Les quatre axes, éditables d'un tap — tu 
 | FCH-01 | The four axes render as tap-editable controls; every edit writes to the vault immediately (optimistic, offline-capable) and appends a history event locally. |
 | FCH-02 | Classification is asymmetric and private: nothing on this screen reflects how the other person classified the user. UI copy must never imply symmetry. |
 | FCH-03 | Reciprocity signal, if shown, stays « volontairement doux » — qualitative, never numeric. No counters or metrics anywhere on the fiche (« Aucun compteur, aucune métrique »). |
-| FCH-04 | History feed shows axis changes and relationship events (matches with this person, at coarse grain) over 12 months, newest first, sourced from the vault only. |
+| FCH-04 | History feed shows axis changes and relationship events (matches with this person, at coarse grain) over 12 months, newest first, sourced from the vault only (match events are written by the FS-05 client per ENV-19; grain defined there — deferred until FS-05 lands). |
 | FCH-05 | Staleness nudge: if no axis changed for a fixed period (6 months ⚠️ ASSUMPTION; a user-visible setting is deliberately out of scope — revisit only if testers ask for one), show the discreet prompt with exactly two actions: « C'est toujours ça » (re-confirms, resets timer) and « À revoir plus tard » (dismisses quietly, re-eligible after 30 days). Never a modal, never blocking. |
 | FCH-06 | État values include at least the blueprint-attested `en pause`; the fiche shows the FS-06 filter consequence for the current état (e.g., "en pause → exclu par défaut à l'envoi") so filtering stays legible. |
 | FCH-07 | Navigation: back to map preserving position (MAP-04 reverse transition). |

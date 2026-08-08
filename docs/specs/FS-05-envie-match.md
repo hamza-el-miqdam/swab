@@ -44,6 +44,7 @@ The core loop. Emission: « verbe → portée → filtrage transparent → envoi
 | ENV-14 | Proposals (place and/or time) go to the counterpart, who accepts/declines; accepted → match state SCHEDULED. Simple single-proposal loop for POC — no negotiation threads. |
 | ENV-15 | « Passer cette fois » sets PASSED for the passer only. The counterpart's views/API responses remain bit-identical to a still-open match (« qui ne dit rien à l'autre »); their side quietly reaches EXPIRED later (backend agent rule 3 test). |
 | ENV-16 | No « match ! » celebration, no counters, ever (product law 5). Notification copy is soft — the blueprint's reference tone: « swab · à l'instant ». |
+| ENV-19 | On receiving a match notification, the client appends a coarse-grain relationship event to the local vault history for the matched contact — proposed grain: `{date, category}` only, never the verb ⚠️ PROPOSED ASSUMPTION (pending Hamza's sign-off) — feeding FCH-04 (`docs/specs/FS-03-contact-card.md`). Server keeps no per-relation history beyond the `Match` row (G1 privacy invariant: server never learns per-relation history shape). |
 
 ## API contract (the Mobile↔Backend seam — OpenAPI is normative once generated)
 

@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [ENV-19, FCH-04] specify the vault path for FCH-04's "match events" history entries
+
+- `docs/specs/FS-05-envie-match.md`: added ENV-19 to the Post-match table — on receiving a match
+  notification, the client appends a coarse-grain relationship event to the local vault history for
+  the matched contact. Grain proposed as `{date, category}` only, never the verb — flagged
+  `⚠️ PROPOSED ASSUMPTION`, pending Hamza's sign-off (playbook §7), NOT added to
+  `docs/product-overview.md` §6 here. Server keeps no per-relation history beyond the `Match` row.
+- `docs/specs/FS-03-contact-card.md` FCH-04: appended a citation to ENV-19 as the producing
+  requirement, noting the match-events clause stays deferred until FS-05 lands. Closes the
+  traceability gap where FCH-04 required vault-sourced match events but no requirement wrote them.
+- No `docs/qa/e2e-coverage.json` change — the existing "not yet testable, FS-05 not implemented"
+  note is still honest. No `docs/STATUS.md` change — FS-05 stays "Not started", FS-03 stays
+  "Implemented"; this is a spec-text-only addition.
+- Per SUG-SPEC-008. French Notion mirror needs a sync pass for FS-03/FS-05 (notion-liaison-specialist,
+  not done here).
+
 ## 2026-08-08 — [ENV-17, ENV-18, OQ-ENV-3] add server-side validation requirements for `POST /envies`
 
 - `docs/specs/FS-05-envie-match.md`: added ENV-17 (server validates `verb` length, `category`
