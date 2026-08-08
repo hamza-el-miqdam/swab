@@ -4,6 +4,21 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-012] `ci.yml` hardening: timeouts, main-safe concurrency, `workflow_dispatch`, actionlint, job summary
+
+- `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}` — PR branches still cancel superseded
+  runs; back-to-back merges to `main` no longer leave the first merge commit with no completed CI.
+- `timeout-minutes` added to all four jobs now in the file (`changes: 5`, `ci: 20`, `android-unit: 30`,
+  `ios-unit: 30`) — one more job than the plan's estimate of three, since SUG-OPS-001 (landed just
+  before this item in the same batch) added the `changes` path-filter job.
+- `workflow_dispatch:` trigger added — required for the devops DoD's "tested on a branch
+  (`workflow_dispatch` dry-run)" and now exercised by `scope-guard.yml` too.
+- `actionlint` step added to the `ci` job (docker-based, zero new third-party action pin — see the
+  suggestion's own zero-action alternative) right after checkout, before install.
+- Minimal job-summary step (`$GITHUB_STEP_SUMMARY`) at the end of `ci`; cache-hit-rate enrichment is
+  SUG-OPS-009's job, not this one's.
+- `docs/STATUS.md` not changed here — no module/infra state changed, only CI robustness.
+
 ## 2026-08-08 — [SUG-OPS-001] Native iOS/Android unit tests now run in CI
 
 - Added `android-unit` (`ubuntu-latest`, JDK 17 Temurin, `gradle/actions/setup-gradle@v4`,
