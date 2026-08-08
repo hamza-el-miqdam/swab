@@ -4,6 +4,18 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-017] `tsconfig.base.json` added to turbo's `globalDependencies`
+
+- `turbo.json`: `"globalDependencies": ["eslint.config.mjs", "tsconfig.base.json"]` — every package's
+  `tsconfig.json` extends the root base file, but it wasn't a hashed input, so a compiler-flag change
+  there didn't invalidate cached `typecheck`/`build` results. Matters more now that SUG-OPS-009 (this
+  same batch) persists the turbo cache across CI runs — a false-green cache hit in CI is worse than
+  one on a laptop.
+- Verified locally: cold `pnpm turbo run typecheck` → 0/4 cached; immediate re-run → 3/4 cached
+  (`db:generate` stays uncached, as always); appending a blank line to `tsconfig.base.json` → next
+  run 0/4 cached (full invalidation, as intended); reverted the touch (`git status` confirms no
+  residue).
+
 ## 2026-08-08 — [SUG-OPS-016] Helper scripts get strict mode (`-u`/`pipefail`), matching the E2E gates
 
 - `scripts/{run-ios,run-android,setup-android-emulator,test-ios-functional,test-android-functional}.sh`:
