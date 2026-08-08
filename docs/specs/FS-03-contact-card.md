@@ -16,7 +16,7 @@ Per-relation detail and editing: « Les quatre axes, éditables d'un tap — tu 
 
 | ID | Requirement |
 |---|---|
-| FCH-01 | The four axes render as tap-editable controls; every edit writes to the vault immediately (optimistic, offline-capable) and appends a history event locally. |
+| FCH-01 | The four axes render as tap-editable controls; every edit writes to the vault immediately (optimistic, offline-capable) and appends a history event locally. Intimité's control offers the ring enumeration per ONB-04 (currently OQ-ONB-1). |
 | FCH-02 | Classification is asymmetric and private: nothing on this screen reflects how the other person classified the user. UI copy must never imply symmetry. |
 | FCH-03 | Reciprocity signal, if shown, stays « volontairement doux » — qualitative, never numeric. No counters or metrics anywhere on the fiche (« Aucun compteur, aucune métrique »). |
 | FCH-04 | History feed shows axis changes and relationship events (matches with this person, at coarse grain) over 12 months, newest first, sourced from the vault only (match events are written by the FS-05 client per ENV-19; grain defined there — deferred until FS-05 lands). |

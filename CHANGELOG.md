@@ -4,6 +4,25 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [ONB-04, MAP-01, FCH-01] pin the intimacy ring enumeration to an open question, not an invented value
+
+- `docs/specs/FS-01-onboarding.md`: ONB-04 no longer leaves the ring count/labels unstated (SUG-SPEC-009).
+  Investigated the Onboarding blueprint (`blueprints/swab - Onboarding (standalone) (1).html`, `INTIMACY`
+  constant) against both shipped apps before writing anything: the blueprint defines **5** rings
+  (`intime`/`proche`/`ami`/`lien faible`/`connaissance`), but both native apps consistently ship **4**
+  rings with entirely different labels (`Très proche`/`Proche`/`Familier`/`Plus loin` — identical between
+  `apps/ios/Sources/SwabCore/L10n/Fr.swift` and `apps/android/.../l10n/Fr.kt`). iOS and Android agree
+  with each other, so this is a blueprint-vs-shipped divergence, not a cross-platform bug. Recorded as
+  **OQ-ONB-1** (blocking) rather than freezing either side unilaterally — spec standard #3 forbids
+  inventing French copy from app code, and the shipped 4-ring model is too load-bearing (QA manifest,
+  E2E suites, the known rings-3/4 `CalibrateScreen` text-wrap bug) to silently overwrite with the
+  blueprint's 5-ring set.
+- `docs/specs/FS-02-relationship-map.md` (MAP-01) and `docs/specs/FS-03-contact-card.md` (FCH-01) now
+  cross-reference "ring enumeration per ONB-04 (currently OQ-ONB-1)" instead of duplicating it.
+- Follow-up: product must pick a canonical ring model (update blueprint, retrofit both apps, or re-freeze
+  shipped labels) before FS-04's SGR-01 shared enumeration / SUG-SPEC-005 test vectors can be written.
+- notion-liaison-specialist: FS-01/FS-02/FS-03 mirror needs a sync pass (not done here).
+
 ## 2026-08-08 — [ENV-13, ENV-14] resolve "exactly three actions" vs accept/decline contradiction; require non-empty proposals
 
 - `docs/specs/FS-05-envie-match.md`: ENV-13 is now state-dependent — an OPEN match with no pending
