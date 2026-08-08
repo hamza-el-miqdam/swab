@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-019] Remove dead RN-era pnpm override, document the `tools/*` glob
+
+- Root `package.json`: deleted the `"pnpm": { "overrides": { "react-native-quick-base64": "2.2.2" } }`
+  block — a pin for the retired Expo/RN app's autolinking (`apps/mobile`, removed 2026-07-19).
+  Verified zero references anywhere (`grep -rn "quick-base64" apps packages` → none) before removing.
+- Regenerated `pnpm-lock.yaml`; diff is exactly the 3-line override record removal, nothing else
+  (confirms nothing was transitively resolving that pin — the check the suggestion asked for).
+- `pnpm-workspace.yaml`: kept the `tools/*` glob (option (a) — `tools/orchestrator` is still named in
+  `aidd-multi-agent-blueprint.md`) but added a comment noting it's planned, not yet created, per
+  `docs/STATUS.md`.
+- Verified: `pnpm install --frozen-lockfile` succeeds; `grep -rn "quick-base64" package.json
+  pnpm-lock.yaml` → no hits; `pnpm turbo run lint typecheck test build` → 10/10 tasks green.
+
 ## 2026-08-08 — [SUG-OPS-017] `tsconfig.base.json` added to turbo's `globalDependencies`
 
 - `turbo.json`: `"globalDependencies": ["eslint.config.mjs", "tsconfig.base.json"]` — every package's

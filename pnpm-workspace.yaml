@@ -1,4 +1,5 @@
 packages:
   - "apps/*"
   - "packages/*"
+  # tools/orchestrator planned — not created yet (docs/STATUS.md)
   - "tools/*"
