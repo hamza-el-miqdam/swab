@@ -4,6 +4,25 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-002] CODEOWNERS + scope-guard check (G4 enforcement, not yet required)
+
+- Added `.github/CODEOWNERS` (review-routing only — solo repo, `@hamza-el-miqdam` everywhere) and
+  `.github/workflows/scope-guard.yml`, which runs `scripts/scope-guard.mjs` on every PR: unions the
+  allowed path prefixes of the PR's `area:*` label(s) (derived from each `agents/*-specialist.md`
+  Scope section) and fails if the diff escapes them. Hard gate: `packages/db/prisma/schema.prisma`
+  touched without `area:db` always fails, independent of other matches.
+- `scripts/scope-guard.mjs` exports a pure `computeViolations(labels, changedFiles)`, table-driven
+  tested in `scripts/scope-guard.test.mjs` (15 cases, `node --test` — no new dependency) and run as a
+  step inside `scope-guard.yml` itself.
+- Deviation from the plan draft: accepts both label spellings the repo actually uses for the same
+  area (`area:api`/`area:backend`, `area:sre`/`area:devops`) rather than picking one — verified by
+  grep, the repo itself is inconsistent.
+- Known gap, not covered: `agents/*.md` and top-level governance docs (`docs/product-overview.md`,
+  `swab-domain-spec.md`, …) aren't owned by any single agent's Scope section, so they're absent from
+  the mapping — left alone rather than guessed.
+- PRs without a recognized `area:*` label warn-and-pass (not required in branch protection yet, per
+  plan step 5 — flip once green on a few real PRs). `docs/STATUS.md` CI row updated.
+
 ## 2026-08-08 — [SUG-DES-003] wire the token drift guard into `packages/ui`'s `test` script
 
 - `packages/ui/package.json`: added `test` (= `node scripts/generate.mjs --check`) and `generate:check`

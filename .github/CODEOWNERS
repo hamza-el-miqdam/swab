@@ -1,0 +1,44 @@
+# Swab CODEOWNERS
+#
+# Solo-maintainer repo (hamza-el-miqdam): this file documents intent and
+# drives review-request routing. Real scope enforcement is the scope-guard
+# check (.github/workflows/scope-guard.yml + scripts/scope-guard.mjs), which
+# fails a PR whose diff escapes its declared `area:*` label — see G4 in
+# agents/_global-directives.md. Keep both in sync when an agent's Scope
+# section in agents/*-specialist.md changes.
+
+# Fallback — everything not listed below
+*                                    @hamza-el-miqdam
+
+# area:db — single writer of the schema, no exceptions (G4)
+/packages/db/                       @hamza-el-miqdam
+
+# area:ios
+/apps/ios/                          @hamza-el-miqdam
+
+# area:android
+/apps/android/                      @hamza-el-miqdam
+
+# area:api (backend, also referred to as area:backend)
+/apps/api/                          @hamza-el-miqdam
+/packages/api-client/               @hamza-el-miqdam
+
+# area:web
+/apps/web/                          @hamza-el-miqdam
+
+# area:design
+/blueprints/                        @hamza-el-miqdam
+/docs/design/                       @hamza-el-miqdam
+/docs/design-system.md              @hamza-el-miqdam
+/packages/ui/tokens/                @hamza-el-miqdam
+
+# area:specs
+/docs/specs/                        @hamza-el-miqdam
+/specs/                             @hamza-el-miqdam
+
+# area:sre (this agent's own scope)
+/.github/                           @hamza-el-miqdam
+/turbo.json                         @hamza-el-miqdam
+/apps/api/Dockerfile                @hamza-el-miqdam
+/docker-compose.yml                 @hamza-el-miqdam
+/scripts/                           @hamza-el-miqdam
