@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-014] Compose: API healthcheck, db/adminer loopback-only, `.env.example` fix
+
+- `api` service gets a `HEALTHCHECK` (`node -e fetch(...)`, no curl/wget in `node:22-slim`; generous
+  30 retries / 5s interval / 20s start period since first boot runs `prisma migrate deploy`) — agents
+  can now use `docker compose up --build --wait` instead of racing the API's boot.
+- `db` (`5432`) and `adminer` (`8080`) ports rebound to `127.0.0.1` only — full DB CRUD UI and
+  Postgres no longer reachable from the LAN (G1). `api` (`3001`) stays on all interfaces on purpose:
+  physical-phone on-device testing needs it; simulator/emulator flows use localhost regardless.
+- Fixed `apps/api/.env.example` and `packages/db/.env.example`: `DATABASE_URL` now matches compose's
+  actual creds (`swab`/`swab_local_dev`), was `postgres`/`postgres` — copying the old placeholder to
+  run the API on the host against the compose DB failed auth (G5: code and docs must agree).
+- Verified: `docker compose up --build --wait` returns only once `api` reports healthy;
+  `docker compose ps` shows `api (healthy)`, db/adminer bound to `127.0.0.1` only, api on
+  `0.0.0.0`/`[::]`; `DATABASE_URL` from the corrected `.env.example`, run from the host,
+  connects (`prisma migrate status` → "Database schema is up to date!").
+
 ## 2026-08-08 — [SUG-OPS-007] Production API image (`apps/api/Dockerfile` `prod` target)
 
 - `apps/api/Dockerfile` is now multi-stage: `base` → `dev` (unchanged behavior, compose pins

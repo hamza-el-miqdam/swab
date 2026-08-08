@@ -17,7 +17,8 @@ services:
       POSTGRES_PASSWORD: swab_local_dev
       POSTGRES_DB: swab
     ports:
-      - "5432:5432"
+      # Loopback-only (G1): Postgres never needs LAN exposure for this stack.
+      - "127.0.0.1:5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -39,7 +40,18 @@ services:
       # Fail-closed (G1): local dev only — must never be "enabled" in production.
       OTP_DEV_CODE: enabled
     ports:
+      # Exposed on the LAN deliberately (not loopback-only) so a physical
+      # phone can reach the API during on-device testing; simulator/emulator
+      # flows use localhost regardless.
       - "3001:3001"
+    healthcheck:
+      # curl/wget aren't in node:22-slim; Node's global fetch is. Generous
+      # retries because first boot includes `prisma migrate deploy`.
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
@@ -67,7 +79,9 @@ services:
       ADMINER_DEFAULT_SERVER: db
       ADMINER_DESIGN: dracula
     ports:
-      - "8080:8080"
+      # Loopback-only (G1): full DB CRUD UI, LAN exposure would let anyone
+      # on the same network reach it.
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
