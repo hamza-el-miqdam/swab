@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-005] Pin all third-party GitHub Actions to commit SHAs
+
+- Every `uses:` in `ci.yml` and `scope-guard.yml` (`actions/checkout`, `pnpm/action-setup`,
+  `actions/setup-node`, `actions/setup-java`, `gradle/actions/setup-gradle`) now pins a full commit
+  SHA with a trailing `# vX.Y.Z` comment, resolved at implementation time via `git ls-remote --tags`
+  (annotated tags dereferenced with `^{}` to their commit, not the tag object).
+- `pnpm/action-setup` and `gradle/actions` use annotated tags — pinned to the commit each tag's `^{}`
+  deref points to, not the intermediate tag-object SHA GitHub's ref API returns on the first hop.
+- Not changed: the docker-based `rhysd/actionlint:latest` step in `ci.yml` — that's a `docker run`
+  image reference, not a `uses:` action, out of this suggestion's scope (SUG-OPS-005 covers Actions).
+- Verification: `grep -E "uses:.*@v[0-9]" .github/workflows/*.yml` → empty. Dependabot's
+  `github-actions` ecosystem (SUG-OPS-004, later in this batch) keeps the `# vX.Y.Z` comments in sync.
+
 ## 2026-08-08 — [SUG-DES-005] Input validation for the token generator
 
 - Added `packages/ui/scripts/validate.mjs` (`validate(tokens)`, pure/no I/O) and wired it into
