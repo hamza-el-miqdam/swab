@@ -53,6 +53,21 @@
 - Per SUG-SPEC-001. Gotcha for future agent: when FS-07 backend session/deletion/discovery/invite
   work lands, reclass these entries back to `api-integration` in that same PR (notes say so).
 
+## 2026-07-21 — [ONB-02, FCH-05, ENV-15] Notion mirror sync for SUG-SPEC-013 wording-precision fixes
+
+- Follow-up to the SUG-SPEC-013 commit (6a65f64): pushed the three French Notion mirror pages
+  (FS-01, FS-03, FS-05) to match the English spec edits.
+- Pre-sync check: `.notion-sync.json` snapshots, live Notion content, and comments for all three
+  pages all matched the pre-fix state exactly — no drift, no unresolved comments, no conflict.
+  Code-changed-only case; translated and pushed directly.
+- ONB-02: `IDT-01…04` → `IDT-01…03` in the French table row.
+- FCH-05: "période configurable (par défaut 6 mois ⚠️ HYPOTHÈSE)" → "période fixe (6 mois
+  ⚠️ HYPOTHÈSE ; un réglage visible par l'utilisateur est délibérément hors périmètre — à revisiter
+  seulement si des testeurs le demandent)".
+- ENV-15 acceptance criterion: "(modulo les timestamps)" → explicit bound naming server-clock
+  metadata as the only permitted difference, no entity field (incl. `updatedAt`-style) may change.
+- `.notion-sync.json` snapshots refreshed for FS-01/FS-03/FS-05 (English + French + lastSyncedAt).
+
 ## 2026-07-21 — [ONB-02, FCH-05, ENV-15] wording-precision fixes: IDT range, "configurable", "modulo timestamps"
 
 - ONB-02 cited `IDT-01…04`; IDT-04 is account deletion (FS-07:16), unrelated to signup. Narrowed to
