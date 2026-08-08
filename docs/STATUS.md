@@ -28,6 +28,7 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 |---|---|---|
 | Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/api`, `packages/db`, `packages/ui` (design tokens only — see below). `apps/ios` + `apps/android` are deliberately outside the turbo/pnpm pipeline (`xcrun swift test` / `./gradlew test` directly). `apps/web`, `packages/api-client`, `tools/orchestrator` not created yet. |
 | Database schema v0.1 | 🟢 | `users`, `vaults`, `envies` + seed. Privacy invariant holds: no classification columns. |
+| DB migrations | 🟢 | Baseline `prisma/migrations/20260719000000_init` landed 2026-08-08 (SUG-DB-002) — schema is no longer `db push`-only. Drift-checked and seed-verified against a scratch Postgres. `docker-compose.yml` still runs `db push` and CI has no migrate-deploy check yet — filed as an `area:sre` follow-up. |
 | Local dev stack | 🟢 | `docker compose up --build` → Postgres :5432, API :3001, Adminer :8080. |
 | CI | 🟡 | `ci.yml` skeleton exists. Missing: scope guard, privacy-audit job, coverage enforcement, OpenAPI diff gate, native E2E workflow (macOS + emulator runners — filed follow-up). |
 | Mobile E2E gate (Wave 4) | 🟢 | Local, agent-enforced DoD gate — `scripts/e2e-{ios,android}.sh` → `test-results/e2e/e2e-report.md` + requirement manifest in `docs/qa/`. Not yet wired into CI. |
