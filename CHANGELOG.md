@@ -4,6 +4,24 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-005] Input validation for the token generator
+
+- Added `packages/ui/scripts/validate.mjs` (`validate(tokens)`, pure/no I/O) and wired it into
+  `generate.mjs` right after `JSON.parse`, before any build/write: checks `meta` shape, an exact
+  top-level key allowlist (`meta, color, typography, spacing, radius, component`, plus `motion` —
+  pre-allowlisted for SUG-DES-007, landing next in this batch), hex color format, opacity in `(0,1)`,
+  typography field types incl. a `family` allowlist (`Space Grotesk` | `Inter`, charter rule 5),
+  positive spacing/radius, and component `*Token` references resolving to a real key. Violations
+  collect into one `Error` with JSON-path-prefixed lines (e.g. `color.voile-2.value: ...`).
+- On failure: `console.error` the full message, `process.exit(1)` — same in write and `--check` mode,
+  before any file is touched.
+- Added `packages/ui/scripts/generate.test.mjs` (`node:test`, no new dependency) covering bad hex,
+  dangling ref, out-of-range opacity, missing size, unknown top-level key, disallowed family,
+  negative spacing, invalid `textTransform`. `packages/ui/package.json`'s `test` script now runs
+  `node --test scripts/generate.test.mjs` before the existing `--check` drift guard.
+- Verified: 9/9 tests pass; valid `tokens.json` still regenerates byte-identical output
+  (`generate.mjs --check` → "Design tokens up to date.").
+
 ## 2026-08-08 — [SUG-OPS-006] Named CI step for the design-token drift guard
 
 - Added `node packages/ui/scripts/generate.mjs --check` as its own named step in `ci.yml`

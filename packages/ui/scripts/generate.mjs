@@ -17,6 +17,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validate } from "./validate.mjs";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(packageRoot, "..", "..");
@@ -27,6 +28,17 @@ const BANNER =
 
 const tokensPath = join(packageRoot, "tokens", "tokens.json");
 const tokens = JSON.parse(readFileSync(tokensPath, "utf8"));
+
+// Validate before any build/write — a hand-edit typo in the SSOT must fail
+// loudly here, not surface as NaN in tokens.css or a late native compile
+// error (SUG-DES-005).
+try {
+  validate(tokens);
+} catch (e) {
+  console.error("tokens.json failed validation:\n");
+  console.error(e.message);
+  process.exit(1);
+}
 
 // ---------------------------------------------------------------------------
 // Naming helpers — tokens.json keys are kebab-case ("voile-2") or camelCase
