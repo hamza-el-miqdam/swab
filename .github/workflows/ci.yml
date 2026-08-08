@@ -79,6 +79,10 @@ jobs:
       - name: Design tokens in sync (packages/ui/tokens/tokens.json is the source of truth)
         run: node packages/ui/scripts/generate.mjs --check
       - run: pnpm install --frozen-lockfile
+      - name: Prisma schema valid
+        run: pnpm --filter @repo/db db:validate
+        env:
+          DATABASE_URL: postgresql://swab:swab_ci@localhost:5432/swab_test
       - name: Turborepo cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:

@@ -3,6 +3,7 @@
   "globalDependencies": ["eslint.config.mjs"],
   "tasks": {
     "db:generate": { "cache": false },
+    "db:validate": { "cache": false },
     "build": {
       "dependsOn": ["^build", "^db:generate"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]

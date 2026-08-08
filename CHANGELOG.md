@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-018] `prisma validate` is now a named, first-class CI gate
+
+- Added `db:validate` to `turbo.json`'s tasks (`{ "cache": false }`, mirrors `db:generate`) and a
+  named `Prisma schema valid` step in `ci.yml` (`pnpm --filter @repo/db db:validate`) right after
+  `pnpm install --frozen-lockfile`, using the job's real Postgres service `DATABASE_URL` rather than
+  a dummy value. Verified locally: `prisma validate` → "The schema at prisma/schema.prisma is valid".
+  Previously a broken schema was only caught indirectly via `db:generate` failing as a `typecheck`/
+  `test` dependency — same protection, but now a named, unambiguous failure point.
+- **Deliberately did NOT wire `openapi:check`** — it's still an `echo ... && exit 0` stub
+  (`apps/api/package.json`), owned by backend (area:api). Wiring it would be an always-green placebo
+  check, worse than no gate. Filed #23 asking backend to implement it for real; CI wiring is a
+  one-line devops follow-up once it is.
+- **Not implemented** (per the suggestion's own scope note): "clean migration apply on a fresh
+  branch" — blocked on nothing beyond what SUG-OPS-013 already covers (`prisma migrate deploy`
+  against the CI Postgres service already runs on every CI job); a dedicated fresh-branch/shadow-DB
+  drift check (`prisma migrate diff --exit-code`) remains a possible stronger follow-up, not built here.
+
 ## 2026-08-08 — [SUG-DES-014] Off-token colors in the prototype fixed
 
 - `#4A5170` (carte illustration depth-cue node) demoted (option 1(b)) rather than promoted to a new
