@@ -104,4 +104,20 @@ public enum DesignTokens {
             public static let paddingBottom: Double = 20
         }
     }
+
+    public enum Motion {
+        public enum ScreenTransition {
+            public static let durationMs: Double = 280
+            public static let riseDistance: Double = 4
+            public static let easing: String = "ease"
+        }
+        public enum BorderTransition {
+            public static let durationMs: Double = 150
+        }
+        public enum ControlTransition {
+            public static let durationMs: Double = 200
+        }
+        public static let pressScale: Double = 0.985
+        public static let reducedMotion: String = "disable-all"
+    }
 }

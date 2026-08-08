@@ -79,3 +79,19 @@ export const component = {
     paddingBottom: 20,
   },
 } as const;
+
+export const motion = {
+  screenTransition: {
+    durationMs: 280,
+    riseDistance: 4,
+    easing: "ease",
+  },
+  borderTransition: {
+    durationMs: 150,
+  },
+  controlTransition: {
+    durationMs: 200,
+  },
+  pressScale: 0.985,
+  reducedMotion: "disable-all",
+} as const;

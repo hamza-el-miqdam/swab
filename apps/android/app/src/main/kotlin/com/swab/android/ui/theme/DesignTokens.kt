@@ -96,4 +96,20 @@ object DesignTokens {
             const val PADDING_BOTTOM = 20.0
         }
     }
+
+    object Motion {
+        object ScreenTransition {
+            const val DURATION_MS = 280.0
+            const val RISE_DISTANCE = 4.0
+            const val EASING = "ease"
+        }
+        object BorderTransition {
+            const val DURATION_MS = 150.0
+        }
+        object ControlTransition {
+            const val DURATION_MS = 200.0
+        }
+        const val PRESS_SCALE = 0.985
+        const val REDUCED_MOTION = "disable-all"
+    }
 }

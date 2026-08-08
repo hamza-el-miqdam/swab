@@ -108,4 +108,13 @@
   --component-screen-padding-top: 14px;
   --component-screen-padding-horizontal: 20px;
   --component-screen-padding-bottom: 20px;
+
+  /* Motion */
+  --motion-screen-transition-duration: 280ms;
+  --motion-screen-transition-rise-distance: 4px;
+  --motion-screen-transition-easing: ease;
+  --motion-border-transition-duration: 150ms;
+  --motion-control-transition-duration: 200ms;
+  --motion-press-scale: 0.985;
+  --motion-reduced-motion: disable-all;
 }

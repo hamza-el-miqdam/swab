@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-007] Motion tokens added (screen transition, border/control transition, press scale)
+
+- Added `tokens.json`'s `motion` section — `screenTransition` (280ms/4px/`ease`), `borderTransition`
+  (150ms), `controlTransition` (200ms), `pressScale` (0.985), `reducedMotion` (`"disable-all"`) —
+  extracted verbatim from `docs/design/swab-prototype-consolidated.html` (`animation:fade .28s ease`,
+  `transform:scale(.985)`, `transition:border-color .15s`, switch's `transition:transform .2s,background .2s`,
+  the `prefers-reduced-motion` kill-switch), not invented.
+- Extended `generate.mjs` with a `motion` renderer for all four targets, following the `component`
+  group pattern: nested groups (`screenTransition` etc.) and top-level scalars (`pressScale`,
+  `reducedMotion`) both render; CSS strips the `Ms` suffix from property names and appends the unit
+  to the value instead (`--motion-screen-transition-duration: 280ms;`).
+- `docs/design-system.md` §4 now names the token paths instead of only prose numbers.
+- `validate.mjs`'s `motion` allowlist (pre-added in SUG-DES-005) needed no further change.
+- Verified: `generate.mjs --check` green; spot-checked all four generated files contain the constants
+  with byte-matching values.
+
 ## 2026-08-08 — [SUG-DES-009] Spacing scale reconciled between design-system.md and tokens.json
 
 - `docs/design-system.md:82` published `4 · 8 · 12 · 14 · 16 · 20 · 24`; `tokens.json` had

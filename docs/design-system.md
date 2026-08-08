@@ -120,8 +120,19 @@ Compose in `apps/android`).
 
 ### Interaction & motion
 
-- Screen transitions: 0.28s fade + 4px rise. Respect `prefers-reduced-motion` (disable all).
-- No progress bars, no "match!" moment, no confetti — success is a quiet ring + one sentence.
+Tokenized in `packages/ui/tokens/tokens.json`'s `motion` section (`DesignTokens.Motion` on native,
+`--motion-*` custom properties on web) since 2026-08-08 (SUG-DES-007) — consumers reference the token,
+not hand-copied prose numbers.
+
+- Screen transitions: 0.28s fade + 4px rise, `ease` easing — `motion.screenTransition`
+  (`durationMs`/`riseDistance`/`easing`). Respect `prefers-reduced-motion` — `motion.reducedMotion`
+  = `"disable-all"` is a documented behavior contract; enforcement is per-platform (Compose
+  `LocalAccessibilityManager`, iOS `UIAccessibility.isReduceMotionEnabled`, web media query).
+- Border-color transitions (text field/tag/tile focus & selection): 0.15s — `motion.borderTransition`.
+- Switch thumb transform/background transition: 0.2s — `motion.controlTransition`.
+- Primary button `:active` scale: `.985` — `motion.pressScale`.
+- No progress bars, no "match!" moment, no confetti — success is a quiet ring + one sentence. Motion
+  tokens are for calm fades/transitions only; no `celebration*` tokens.
 
 ## 5. How this maps out
 

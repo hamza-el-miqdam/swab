@@ -88,6 +88,19 @@ function toKotlinDouble(v) {
   return Number.isInteger(v) ? `${v}.0` : `${v}`;
 }
 
+/** "durationMs" -> "duration" (CSS custom-property name; the unit is appended to the value instead). */
+function stripMsSuffix(field) {
+  return field.endsWith("Ms") ? field.slice(0, -2) : field;
+}
+
+/** CSS unit for a motion field, inferred from its name — "" for unitless scalars (pressScale) and strings. */
+function motionCssUnit(field, value) {
+  if (typeof value !== "number") return "";
+  if (field.endsWith("Ms")) return "ms";
+  if (field === "riseDistance") return "px";
+  return "";
+}
+
 // ---------------------------------------------------------------------------
 // packages/ui/src/tokens.ts
 // ---------------------------------------------------------------------------
@@ -139,6 +152,20 @@ function buildTs() {
       }
     }
     lines.push("  },");
+  }
+  lines.push("} as const;", "");
+
+  lines.push("export const motion = {");
+  for (const [key, m] of Object.entries(tokens.motion)) {
+    if (typeof m === "object" && m !== null) {
+      lines.push(`  ${key}: {`);
+      for (const [field, v] of Object.entries(m)) {
+        lines.push(`    ${field}: ${typeof v === "string" ? `"${v}"` : v},`);
+      }
+      lines.push("  },");
+    } else {
+      lines.push(`  ${key}: ${typeof m === "string" ? `"${m}"` : m},`);
+    }
   }
   lines.push("} as const;", "");
 
@@ -196,6 +223,20 @@ function buildCss() {
         const unit = typeof v === "number" ? "px" : "";
         lines.push(`  --component-${groupKebab}-${kKebab}: ${v}${unit};`);
       }
+    }
+  }
+
+  lines.push("", "  /* Motion */");
+  for (const [key, m] of Object.entries(tokens.motion)) {
+    const groupKebab = toKebab(key);
+    if (typeof m === "object" && m !== null) {
+      for (const [field, v] of Object.entries(m)) {
+        const fieldKebab = toKebab(stripMsSuffix(field));
+        const unit = motionCssUnit(field, v);
+        lines.push(`  --motion-${groupKebab}-${fieldKebab}: ${v}${unit};`);
+      }
+    } else {
+      lines.push(`  --motion-${groupKebab}: ${m};`);
     }
   }
 
@@ -290,6 +331,24 @@ function buildSwift() {
     }
     lines.push("        }");
   }
+  lines.push("    }", "");
+
+  lines.push("    public enum Motion {");
+  for (const [key, m] of Object.entries(tokens.motion)) {
+    if (typeof m === "object" && m !== null) {
+      lines.push(`        public enum ${pascalCase(key)} {`);
+      for (const [field, v] of Object.entries(m)) {
+        const isString = typeof v === "string";
+        lines.push(
+          `            public static let ${field}: ${isString ? "String" : "Double"} = ${isString ? `"${v}"` : v}`,
+        );
+      }
+      lines.push("        }");
+    } else {
+      const isString = typeof m === "string";
+      lines.push(`        public static let ${key}: ${isString ? "String" : "Double"} = ${isString ? `"${m}"` : m}`);
+    }
+  }
   lines.push("    }", "}", "");
 
   return lines.join("\n");
@@ -374,6 +433,24 @@ function buildKotlin() {
       }
     }
     lines.push("        }");
+  }
+  lines.push("    }", "");
+
+  lines.push("    object Motion {");
+  for (const [key, m] of Object.entries(tokens.motion)) {
+    if (typeof m === "object" && m !== null) {
+      lines.push(`        object ${pascalCase(key)} {`);
+      for (const [field, v] of Object.entries(m)) {
+        const name = toUpperSnake(field);
+        const isString = typeof v === "string";
+        lines.push(`            const val ${name} = ${isString ? `"${v}"` : toKotlinDouble(v)}`);
+      }
+      lines.push("        }");
+    } else {
+      const name = toUpperSnake(key);
+      const isString = typeof m === "string";
+      lines.push(`        const val ${name} = ${isString ? `"${m}"` : toKotlinDouble(m)}`);
+    }
   }
   lines.push("    }", "}", "");
 
