@@ -4,6 +4,25 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [ENV-13, ENV-14] resolve "exactly three actions" vs accept/decline contradiction; require non-empty proposals
+
+- `docs/specs/FS-05-envie-match.md`: ENV-13 is now state-dependent — an OPEN match with no pending
+  incoming proposal offers exactly Proposer un lieu / Proposer une heure / Passer cette fois; an OPEN
+  match with a pending incoming proposal instead offers accept/decline/pass. ENV-14 gained "a proposal
+  MUST carry at least one of {place, timeslot}; the API rejects an empty proposal (422)" — closes the
+  empty-proposal gap in the seam contract.
+- Two things are flagged, not guessed: accept/decline French copy does not exist in any blueprint or
+  spec (verified — zero matches in the "Flux envie et match" blueprint or product-overview.md), routed
+  through the missing-copy protocol (playbook §4 rule 5) as **OQ-ENV-4**; whether Passer cette fois
+  stays available while a proposal is pending is a genuine product question, marked
+  ⚠️ PROPOSED ASSUMPTION (assumed yes) as **OQ-ENV-5**. Both filed as `question` issues (#19, #20)
+  owned by the Architect per playbook §7.
+- `specs/001-envie-match/spec.md` re-synced: US3 acceptance scenario 1 split per-state, new scenario
+  for empty-proposal rejection, FR-013/FR-014 updated, Assumptions bullet added.
+- No `docs/STATUS.md` change — FS-05 stays "Not started" (spec-text-only amendment).
+- Per SUG-SPEC-012. French Notion mirror needs a sync pass for FS-05 (notion-liaison-specialist, not
+  done here).
+
 ## 2026-08-08 — [ENV-19, FCH-04] specify the vault path for FCH-04's "match events" history entries
 
 - `docs/specs/FS-05-envie-match.md`: added ENV-19 to the Post-match table — on receiving a match

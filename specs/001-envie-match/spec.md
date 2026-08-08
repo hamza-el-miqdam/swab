@@ -53,14 +53,15 @@ Once matched, two people need a lightweight way to actually meet — without tur
 
 **Why this priority**: This completes the loop into a real-world outcome, but the match's core guarantees (Story 2) must be correct first; the proposal mechanics are comparatively simple and can follow.
 
-**Independent Test**: Can be fully tested against an already-existing match fixture, independent of how that match was produced — verify the three-action surface, the accept/decline behavior, and pass-invisibility.
+**Independent Test**: Can be fully tested against an already-existing match fixture, independent of how that match was produced — verify the per-state action surface, the accept/decline behavior, and pass-invisibility.
 
 **Acceptance Scenarios**:
 
-1. **Given** an open match, **When** either side views it, **Then** exactly three actions are available: propose a place, propose a time, or pass — no other actions, no negotiation thread (ENV-13, ENV-14).
+1. **Given** an open match with no pending incoming proposal, **When** either side views it, **Then** exactly three actions are available: propose a place, propose a time, or pass — no other actions, no negotiation thread (ENV-13). **Given** an open match with a pending incoming proposal, **When** the recipient views it, **Then** the surface instead offers exactly accept, decline, and pass (accept/decline copy pending OQ-ENV-4; pass availability pending OQ-ENV-5 confirmation) — no negotiation thread (ENV-13, ENV-14).
 2. **Given** a proposal is sent, **When** the counterpart accepts it, **Then** the match moves to a scheduled state visible to both sides (ENV-14).
-3. **Given** one side passes, **When** the counterpart later views the match or polls for it, **Then** their view is bit-identical (identical field set and values; the ONLY permitted differences are server-clock response metadata — no entity field, including updatedAt-style columns, may change on the counterpart's side because of a pass) to a still-open match; the passer's own side reflects the pass immediately, and the counterpart's side only quietly reaches an expired state later with no signal that a pass occurred (ENV-15).
-4. **Given** any match reaches a mutual or scheduled state, **When** the UI renders it, **Then** there is no celebratory animation, badge, or counter of any kind (ENV-16).
+3. **Given** a proposal with neither place nor timeslot set, **When** it is submitted, **Then** the API rejects it with `422` and no proposal is created (ENV-14).
+4. **Given** one side passes, **When** the counterpart later views the match or polls for it, **Then** their view is bit-identical (identical field set and values; the ONLY permitted differences are server-clock response metadata — no entity field, including updatedAt-style columns, may change on the counterpart's side because of a pass) to a still-open match; the passer's own side reflects the pass immediately, and the counterpart's side only quietly reaches an expired state later with no signal that a pass occurred (ENV-15).
+5. **Given** any match reaches a mutual or scheduled state, **When** the UI renders it, **Then** there is no celebratory animation, badge, or counter of any kind (ENV-16).
 
 ### Edge Cases
 
@@ -86,8 +87,8 @@ Once matched, two people need a lightweight way to actually meet — without tur
 - **FR-010**: Both matched parties MUST be notified as part of one logical operation, with no observable ordering advantage to either side (ENV-10).
 - **FR-011**: The system MUST guarantee that a non-reciprocated envie is completely unobservable to its would-be recipient — no API response, timing signature, or notification behavior may differ from a world where no envie was ever sent toward them (ENV-11).
 - **FR-012**: A withdrawn or expired envie MUST NOT produce new matches; matches already created from it MUST remain unaffected (ENV-12).
-- **FR-013**: A matched pair MUST be offered exactly three actions on the match surface: propose a place, propose a time, or pass (ENV-13).
-- **FR-014**: A proposal MUST support accept/decline by the counterpart; acceptance MUST move the match to a scheduled state. Multiple simultaneous negotiation threads are out of scope (ENV-14).
+- **FR-013**: On an open match with no pending incoming proposal, a matched pair MUST be offered exactly three actions: propose a place, propose a time, or pass. On an open match with a pending incoming proposal, the recipient MUST instead be offered exactly accept, decline, and pass (ENV-13; accept/decline copy pending OQ-ENV-4, pass availability pending OQ-ENV-5).
+- **FR-014**: A proposal MUST support accept/decline by the counterpart; acceptance MUST move the match to a scheduled state. Multiple simultaneous negotiation threads are out of scope. A proposal MUST carry at least one of place or timeslot; the API MUST reject an empty proposal with `422` (ENV-14).
 - **FR-015**: A pass MUST update the passer's own view immediately while leaving the counterpart's view/API responses bit-identical (identical field set and values; the ONLY permitted differences are server-clock response metadata — no entity field, including updatedAt-style columns, may change on the counterpart's side because of a pass) to a still-open match; the counterpart's side MUST only reach an expired state later, with no signal that a pass caused it (ENV-15).
 - **FR-016**: The system MUST NOT present any celebration animation, badge, or counter at any stage of the match or proposal lifecycle (ENV-16).
 - **FR-017**: `POST /envies` MUST server-side validate every field per G1 (never trust the client): `verb` length-bounded; `category` restricted to the v0 taxonomy; `recipientIds` non-empty, distinct, excluding the author, all referencing existing users, and count-bounded; `expiresAt` bounded to a window strictly after now and no further than a maximum cap. Any violation MUST reject the whole request (`422`) with no partial creation (ENV-17).
@@ -97,7 +98,7 @@ Once matched, two people need a lightweight way to actually meet — without tur
 
 - **Envie**: One user's expressed desire — verb/category, expiry, and the final resolved recipient ID list. Does not carry scope name or filter reasoning. Belongs to exactly one author; may be withdrawn or may expire.
 - **Match**: A pairing formed between exactly two envies whose authors mutually included each other with matching category, both active. Has a lifecycle: open → (proposal exchanged) → scheduled, or → passed/expired per side independently.
-- **Proposal**: A place and/or time suggestion attached to an open match, sent by one side to the other; resolves to accepted (→ scheduled match) or declined.
+- **Proposal**: A place and/or time suggestion attached to an open match, sent by one side to the other; MUST carry at least one of place/timeslot (empty proposals are rejected); resolves to accepted (→ scheduled match) or declined.
 
 ## Success Criteria *(mandatory)*
 
@@ -115,6 +116,7 @@ Once matched, two people need a lightweight way to actually meet — without tur
 - Category taxonomy v0 is a small fixed set (~12 categories, e.g. sortir, manger, sport, ciné, parler, aider, jouer, voyager, boire un truc, se voir, travailler, autre) pending final confirmation with the product owner (FS-05 OQ-ENV-1). Not reopened as a clarification here since a reasonable default already exists and is documented.
 - Default envie expiry is a 24-hour rolling window from creation — FS-05's documented buildable default (ENV-07 ⚠️ ASSUMPTION). OQ-ENV-2 (24h vs same-day-midnight) **remains open with the product owner**; build behind an expiry-policy seam so switching semantics is not a rewrite (playbook §4 rule 6).
 - The proposal loop is single-proposal-at-a-time for this POC — no multi-turn negotiation, no counter-proposals beyond accept/decline of the single active proposal (ENV-14).
+- The match surface's action set is state-dependent (ENV-13): three actions (propose place/time/pass) with no pending incoming proposal; accept/decline/pass with one pending. Two things are explicitly unresolved, not guessed: the accept/decline button copy does not exist in any blueprint or spec (FS-05 OQ-ENV-4, missing-copy protocol per playbook §4 rule 5); and whether "Passer cette fois" stays available while a proposal is pending is a ⚠️ PROPOSED ASSUMPTION (assumed yes here) pending Hamza's confirmation (FS-05 OQ-ENV-5).
 - Unanswered proposals (no accept/decline from the counterpart) are out of scope for this spec's acceptance criteria; timeout/reminder behavior, if any, is a follow-up decision.
 - This spec assumes FS-04 (subgroup detection) and FS-06 (filtering rules, including the absolute veto) are implemented and available as inputs — this feature does not re-specify them.
 - `POST /envies` server-side caps (ENV-17) are proposed at `recipientIds` count ≤ 150 (the MAP-07 circle bound) and `expiresAt` ≤ 48h from creation — both ⚠️ PROPOSED ASSUMPTIONs pending Hamza's sign-off (FS-05), not yet settled in `docs/product-overview.md` §6. Whether `recipientIds` must be a subset of the author's FS-07 `ContactLink` edges is deliberately undecided (FS-05 OQ-ENV-3), not an oversight.
