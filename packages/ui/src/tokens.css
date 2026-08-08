@@ -15,6 +15,12 @@
   --color-ombre: #6a7194;
   --color-etoile: #e4be6a;
   --color-etoile-encre: #1c1505;
+  --color-etoile-voile: rgba(228, 190, 106, 0.14);
+  --color-etoile-voile-hex: #e4be6a;
+  --color-etoile-piste: rgba(228, 190, 106, 0.3);
+  --color-etoile-piste-hex: #e4be6a;
+  --color-etoile-lueur: rgba(228, 190, 106, 0.05);
+  --color-etoile-lueur-hex: #e4be6a;
   --color-sauge: #6fbfa3;
   --color-ciel: #84a9e6;
   --color-corail: #d98a73;

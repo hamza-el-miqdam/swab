@@ -21,7 +21,7 @@ names in Penpot and the keys in the app theme). Neutrals descend from deepest su
 
 | Token | Hex / value | Role |
 |---|---|---|
-| `nuit` | `#0F1426` | App background (deepest). Carries a faint radial gold glow, top-left. |
+| `nuit` | `#0F1426` | App background (deepest). Carries a faint radial gold glow, top-left (`etoile-lueur`, `rgba(228,190,106,.05)`). |
 | `encre` | `#171E38` | Screen / primary card surface. |
 | `voile` | `#202949` | Raised surface — tags, tiles, list rows, inputs. |
 | `voile-2` | `#28325A` | Higher surface — avatars, switch track (off). |
@@ -43,7 +43,13 @@ names in Penpot and the keys in the app theme). Neutrals descend from deepest su
 | `etoile` | `#E4BE6A` | Primary accent — primary button, selected state, links, eyebrow. |
 | `etoile-encre` | `#1C1505` | Ink **on** `étoile` (text/icon over the gold button). |
 
-Accent tints (derived, used for chip/selected fills): `rgba(228,190,106,.14)` fill, `rgba(228,190,106,.30)` switch-on track.
+Accent tints (derived, base `#E4BE6A` at reduced opacity — tokenized 2026-08-08, SUG-DES-008):
+
+| Token | Value | Role |
+|---|---|---|
+| `etoile-voile` | `rgba(228,190,106,.14)` | Chip / selected fill. |
+| `etoile-piste` | `rgba(228,190,106,.30)` | Switch-on track. |
+| `etoile-lueur` | `rgba(228,190,106,.05)` | `nuit` background's radial gold glow — decoration, not a status hue. |
 
 ### Status hues (semantic, never decorative)
 

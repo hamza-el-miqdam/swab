@@ -19,6 +19,12 @@ public enum DesignTokens {
         public static let ombre = "#6a7194"
         public static let etoile = "#e4be6a"
         public static let etoileEncre = "#1c1505"
+        public static let etoileVoile = "#e4be6a"
+        public static let etoileVoileOpacity: Double = 0.14
+        public static let etoilePiste = "#e4be6a"
+        public static let etoilePisteOpacity: Double = 0.3
+        public static let etoileLueur = "#e4be6a"
+        public static let etoileLueurOpacity: Double = 0.05
         public static let sauge = "#6fbfa3"
         public static let ciel = "#84a9e6"
         public static let corail = "#d98a73"

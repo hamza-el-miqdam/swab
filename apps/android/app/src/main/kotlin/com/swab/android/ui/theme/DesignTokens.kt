@@ -20,6 +20,12 @@ object DesignTokens {
         const val OMBRE = "#6a7194"
         const val ETOILE = "#e4be6a"
         const val ETOILE_ENCRE = "#1c1505"
+        const val ETOILE_VOILE = "#e4be6a"
+        const val ETOILE_VOILE_OPACITY = 0.14
+        const val ETOILE_PISTE = "#e4be6a"
+        const val ETOILE_PISTE_OPACITY = 0.3
+        const val ETOILE_LUEUR = "#e4be6a"
+        const val ETOILE_LUEUR_OPACITY = 0.05
         const val SAUGE = "#6fbfa3"
         const val CIEL = "#84a9e6"
         const val CORAIL = "#d98a73"

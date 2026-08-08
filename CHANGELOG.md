@@ -4,6 +4,21 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-008] Étoile accent tints tokenized
+
+- Added `etoile-voile` (`#e4be6a` @ `.14`, chip/selected fill), `etoile-piste` (`.30`, switch-on
+  track), `etoile-lueur` (`.05`, `nuit`'s radial gold glow) to `tokens.json` `color`, reusing the
+  `hair`/`hair-fort` base-hex-plus-opacity shape the generators already handle. Values confirmed
+  verbatim against `docs/design/swab-prototype-consolidated.html` (`rgba(228,190,106,.05|.14|.3)` at
+  lines 20, 59, 151) — no generator change needed.
+- French names follow the charter's name-by-role rule (`voile` = veil/fill, `piste` = track,
+  `lueur` = glow), consistent with existing `voile`/`voile-2` naming.
+- `docs/design-system.md` §1: `nuit`'s glow row now cites `etoile-lueur`; the old one-line "accent
+  tints (derived)" prose became a proper token table with all three tints (closing the gap where
+  `.05` existed in the prototype but nowhere in the contract).
+- Verified: `generate.mjs --check` green; `tokens.css`/Swift/Kotlin all gained the three tokens +
+  opacity constants (spot-checked).
+
 ## 2026-08-08 — [SUG-DES-007] Motion tokens added (screen transition, border/control transition, press scale)
 
 - Added `tokens.json`'s `motion` section — `screenTransition` (280ms/4px/`ease`), `borderTransition`
