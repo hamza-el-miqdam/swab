@@ -6,10 +6,10 @@
 > 402 × 874 pt (@3x). The Penpot design library and `packages/ui` primitives derive from this file. **Do not invent values** — if something is
 > missing here, add it to the prototype first, then reflect it here (design agent, `area:design`).
 >
-> Owner: Design System Steward (`agents/design-system-specialist.md`). Product law 5 (calm by design)
-> is binding: nothing here may introduce counters, celebration, or urgency affordances.
+> Owner: Design & Design-System Specialist (`agents/design-specialist.md`, `area:design`). Product law 5
+> (calm by design) is binding: nothing here may introduce counters, celebration, or urgency affordances.
 
-_Last updated: 2026-07-19_
+_Last updated: 2026-08-08_
 
 ## 1. Colour tokens
 

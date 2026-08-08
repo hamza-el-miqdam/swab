@@ -4,6 +4,16 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-015] Fix stale owner link in design-system.md
+
+- `docs/design-system.md`'s header named a nonexistent owner file (`agents/design-system-specialist.md`)
+  — corrected to `agents/design-specialist.md` (`area:design`), the actual file that declares
+  ownership of this doc. Bumped the "Last updated" date to reflect today's batch of edits.
+- Sanity-swept the rest of the header's pointers per the suggestion's own audit — prototype link,
+  tokens.json link, generator path all already correct, no other stale references found.
+- Verified: `grep -rn "design-system-specialist" docs/ agents/ .github/ .claude/` → nothing;
+  `test -f agents/design-specialist.md` → exists.
+
 ## 2026-08-08 — [SUG-OPS-018] `prisma validate` is now a named, first-class CI gate
 
 - Added `db:validate` to `turbo.json`'s tasks (`{ "cache": false }`, mirrors `db:generate`) and a
