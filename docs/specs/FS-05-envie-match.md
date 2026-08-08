@@ -33,6 +33,8 @@ The core loop. Emission: « verbe → portée → filtrage transparent → envoi
 | ENV-10 | Notification fires to both parties in the same logical operation (outbox pattern) — no ordering where one side can observe the match meaningfully earlier. |
 | ENV-11 | Non-matches are absolutely unobservable: no API response, timing signature, or push behavior may differ between "recipient hasn't reciprocated" and "recipient doesn't use the feature". |
 | ENV-12 | A withdrawn (ENV-06) or expired envie can no longer produce matches; existing matches survive. |
+| ENV-17 | `POST /envies` validates per G1 (never trust the client): `verb` ≤ 200 chars; `category` ∈ the v0 taxonomy (OQ-ENV-1); `recipientIds` non-empty, distinct, excludes the author, all reference existing users, and count ≤ N (⚠️ PROPOSED ASSUMPTION — pending Hamza's sign-off: N=150, the MAP-07 circle bound); `expiresAt` strictly within `(now, now + 48h]` (⚠️ PROPOSED ASSUMPTION — pending Hamza's sign-off, and pending OQ-ENV-2's 24h-vs-midnight resolution). Any violation → `422`, no partial creation. |
+| ENV-18 | `idempotencyKey` is unique per author. Retrying `POST /envies` with a key already used by that author returns the original envie unchanged (`200`, not `201`) — never a duplicate envie, never a recomputed match, and never a second outbox notification (ENV-09 atomicity, ENV-10 notification-once — the retry path must not double-fire either). |
 
 ## Functional requirements — Post-match (both)
 
@@ -58,3 +60,4 @@ The core loop. Emission: « verbe → portée → filtrage transparent → envoi
 
 OQ-ENV-1: category taxonomy v0 (proposed: ~12 categories — sortir, manger, sport, ciné, parler, aider, jouer, voyager, boire un truc, se voir, travailler, autre) — Architect finalizes with Hamza.
 OQ-ENV-2: default expiry 24h vs same-day-midnight semantics.
+OQ-ENV-3: should `POST /envies` enforce `recipientIds ⊆ author's ContactLink targets` (FS-07 edges)? Enforcing it has privacy value (rejects recipient IDs the author has no server-visible relationship to); NOT enforcing it avoids the server ever learning "this recipient set is a subset of this author's links" at all — a real trade-off in both directions. Not decided here — Architect resolves with Hamza; implementers must not decide this implicitly by whichever behavior is easiest to write.

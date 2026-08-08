@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [ENV-17, ENV-18, OQ-ENV-3] add server-side validation requirements for `POST /envies`
+
+- `docs/specs/FS-05-envie-match.md`: added ENV-17 (server validates `verb` length, `category`
+  taxonomy membership, `recipientIds` non-empty/distinct/author-excluded/existing-users/count-capped,
+  `expiresAt` window-capped — `422` + no partial creation on violation) and ENV-18
+  (`idempotencyKey` unique per author; retry returns the original envie, `200`, never a duplicate,
+  a recomputed match, or a second outbox notification — explicitly ties into ENV-09/ENV-10).
+  Every field in the `POST /envies` contract line now traces to at least one requirement ID.
+- Added OQ-ENV-3 (Open questions): whether `recipientIds ⊆ author's ContactLink targets` is
+  enforced — a genuine privacy trade-off either way, left for the Architect, not decided here.
+- Two ⚠️ PROPOSED ASSUMPTION values inside ENV-17 (`recipientIds` cap N=150 / MAP-07 circle bound;
+  `expiresAt` cap 48h) are flagged, NOT yet added to `docs/product-overview.md` §6 — per playbook
+  §7 they need Hamza's sign-off first.
+- `specs/001-envie-match/spec.md` re-synced: FR-017/FR-018 added with (ENV-17)/(ENV-18) tags, plus
+  an Assumptions bullet noting the same two proposed caps and the OQ-ENV-3 non-decision.
+- Per SUG-SPEC-006. French Notion mirror needs a sync pass (notion-liaison-specialist, not done here).
+
 ## 2026-08-08 — [ENV-03, ENV-04, FLT-02] resolve L1 veto visibility contradiction between spec-kit artifact, FS-05, and FS-06
 
 - `specs/001-envie-match/spec.md` (US1 scenario 3, FR-004) and `docs/specs/FS-05-envie-match.md`

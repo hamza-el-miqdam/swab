@@ -90,6 +90,8 @@ Once matched, two people need a lightweight way to actually meet — without tur
 - **FR-014**: A proposal MUST support accept/decline by the counterpart; acceptance MUST move the match to a scheduled state. Multiple simultaneous negotiation threads are out of scope (ENV-14).
 - **FR-015**: A pass MUST update the passer's own view immediately while leaving the counterpart's view/API responses bit-identical (identical field set and values; the ONLY permitted differences are server-clock response metadata — no entity field, including updatedAt-style columns, may change on the counterpart's side because of a pass) to a still-open match; the counterpart's side MUST only reach an expired state later, with no signal that a pass caused it (ENV-15).
 - **FR-016**: The system MUST NOT present any celebration animation, badge, or counter at any stage of the match or proposal lifecycle (ENV-16).
+- **FR-017**: `POST /envies` MUST server-side validate every field per G1 (never trust the client): `verb` length-bounded; `category` restricted to the v0 taxonomy; `recipientIds` non-empty, distinct, excluding the author, all referencing existing users, and count-bounded; `expiresAt` bounded to a window strictly after now and no further than a maximum cap. Any violation MUST reject the whole request (`422`) with no partial creation (ENV-17).
+- **FR-018**: `idempotencyKey` MUST be unique per author; retrying `POST /envies` with an already-used key MUST return the original envie unchanged and MUST NOT create a duplicate envie, recompute a match, or fire a second notification (ENV-18).
 
 ### Key Entities
 
@@ -115,3 +117,4 @@ Once matched, two people need a lightweight way to actually meet — without tur
 - The proposal loop is single-proposal-at-a-time for this POC — no multi-turn negotiation, no counter-proposals beyond accept/decline of the single active proposal (ENV-14).
 - Unanswered proposals (no accept/decline from the counterpart) are out of scope for this spec's acceptance criteria; timeout/reminder behavior, if any, is a follow-up decision.
 - This spec assumes FS-04 (subgroup detection) and FS-06 (filtering rules, including the absolute veto) are implemented and available as inputs — this feature does not re-specify them.
+- `POST /envies` server-side caps (ENV-17) are proposed at `recipientIds` count ≤ 150 (the MAP-07 circle bound) and `expiresAt` ≤ 48h from creation — both ⚠️ PROPOSED ASSUMPTIONs pending Hamza's sign-off (FS-05), not yet settled in `docs/product-overview.md` §6. Whether `recipientIds` must be a subset of the author's FS-07 `ContactLink` edges is deliberately undecided (FS-05 OQ-ENV-3), not an oversight.
