@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-04 — [OQ-FCH-1, OQ-FCH-2, FCH-05] sync FS-03 Open questions to French Notion mirror; merge an unrelated FCH-05 drift found in the process
+
+- Mandatory check found the Notion side untouched for Open questions (still only the old
+  pre-implementation OQ-FCH-1) while `docs/specs/FS-03-contact-card.md` (branch
+  `spec/fs03-taxonomy-oqs-unresolved`, SUG-SPEC-007) had reworded OQ-FCH-1 and added OQ-FCH-2 —
+  code-changed-only case. Translated both into French and pushed to the Notion page's
+  "Questions ouvertes" section (issues #15, #16 stay the Architect's to resolve; not touched here).
+- Also found FCH-06's neighbor, FCH-05, had drifted the other way: Notion's French text had been
+  edited directly ("période configurable" → "période fixe ; réglage utilisateur hors périmètre —
+  à revisiter seulement si des testeurs le demandent") with no corresponding English change on
+  disk. Not a structural edit (no ID touched, no requirement invented/reversed), so merged the
+  clarification back into the English FCH-05 row per the liaison's routine "Notion changed only"
+  case, rather than treating it as a conflict.
+- No comments/discussions were pending on the FS-03 page.
+- `docs/specs/.notion-sync.json` FS-03 snapshots (English + French) and `lastSyncedAt` updated to
+  match; disk English snapshot verified byte-identical to `docs/specs/FS-03-contact-card.md`.
+
 ## 2026-08-04 — [OQ-FCH-1, OQ-FCH-2, FCH-06, FLT-01] promote FS-03 taxonomy gaps to tracked open questions
 
 - OQ-FCH-1 (`docs/specs/FS-03-contact-card.md`) still described a pre-implementation world
