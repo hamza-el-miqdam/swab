@@ -4,6 +4,24 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-003] gitleaks + Trivy scanning wired into CI (`security.yml`)
+
+- New `.github/workflows/security.yml`: `gitleaks` job (full-history scan, `fetch-depth: 0`) and a
+  path-filtered `trivy-api-image` job (same zero-new-action `changes`-job diff pattern as `ci.yml`'s
+  own path filter, scoped to `apps/api/**`, `packages/db/**`, lockfile/workspace manifests).
+- Added `.gitleaks.toml`: allowlists 10 verified non-secret findings surfaced by a real local scan
+  (`docker run zricethezav/gitleaks detect --redact -v`) — vault test-vector fixtures, a stable
+  Keychain key-store-ID constant, and a fixed test-only `JWT_SECRET` literal in `apps/api/tests/helpers.ts`.
+  Allowlisted by path with comments, per hard constraint 1 ("never silently"); re-verified clean
+  (`gitleaks detect` → "no leaks found") before landing.
+- **Known red gate, by design of this batch's ordering:** built and scanned `swab-api:pr` locally
+  (`docker build` + `aquasec/trivy image --severity HIGH,CRITICAL --ignore-unfixed`) against today's
+  single-stage **dev** Dockerfile (installs devDependencies) → 35 findings (33 HIGH, 2 CRITICAL,
+  mostly transitive `tar`/`pnpm` CVEs pulled in by dev tooling), exit code 1. SUG-OPS-007 (later in
+  this batch) adds a `prod` build target and this workflow's build step must be repointed at
+  `--target prod` then — noted as a TODO in that step, not fixed here per the given task order.
+- `docs/STATUS.md` CI row updated.
+
 ## 2026-08-08 — [SUG-DES-001] Six pre-Nuit standalone blueprints flagged SUPERSEDED
 
 - The six per-flow standalone blueprints (`blueprints/swab - {Carte des relations, Fiche contact, Flux

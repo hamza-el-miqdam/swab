@@ -1,0 +1,98 @@
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  # Same main-safe rule as ci.yml: don't leave a merge commit on main without
+  # a completed run; PR branches still cancel superseded runs.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # gitleaks scans commit history, not just the working tree
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Auto-detects the committed .gitleaks.toml at repo root (verified
+          # locally: `gitleaks detect` picks it up with no extra flag). That
+          # file allowlists known non-secret test fixtures/constants only —
+          # never a blanket rule disable (devops hard constraint 1).
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## security / gitleaks summary"
+            echo "- result: ${{ job.status }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  changes:
+    # Cheap path filter (same pattern as ci.yml's own `changes` job — no new
+    # third-party action) so the image build+scan only runs when the API
+    # image's inputs actually changed (devops hard constraint 2: "built on
+    # every PR touching it").
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      api-image: ${{ steps.diff.outputs.api-image }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - name: Determine if API image inputs changed
+        id: diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            BASE="${{ github.event.before }}"
+          else
+            # workflow_dispatch or a base we can't diff against (first push,
+            # force-push): fail open and scan.
+            echo "api-image=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          echo "$CHANGED" | grep -qE '^(apps/api/|packages/db/|pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml)' \
+            && echo "api-image=true" >> "$GITHUB_OUTPUT" \
+            || echo "api-image=false" >> "$GITHUB_OUTPUT"
+
+  trivy-api-image:
+    needs: changes
+    if: needs.changes.outputs.api-image == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Build API image
+        run: docker build -f apps/api/Dockerfile -t swab-api:pr .
+      - name: Trivy scan (blocking on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: swab-api:pr
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+          # Unfixed CVEs are never silently ignored (devops hard constraint 2):
+          # documented waivers go in a committed .trivyignore with an expiry
+          # date comment, added only when a real unfixed finding shows up.
+          ignore-unfixed: true
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## security / trivy-api-image summary"
+            echo "- result: ${{ job.status }}"
+          } >> "$GITHUB_STEP_SUMMARY"

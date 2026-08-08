@@ -1,0 +1,35 @@
+title = "Swab gitleaks config"
+
+# Extends gitleaks' default ruleset (do not disable it — this file only adds
+# an allowlist for verified non-secret findings, per devops hard constraint 1:
+# "a leaked-secret finding is a blocking failure" — waivers must be explicit
+# and per-path, never a blanket rule disable.
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Verified non-secret test fixtures and stable constant identifiers (SUG-OPS-003,
+2026-08-08). Each entry below is a fixed, low-entropy, non-production string
+that gitleaks' generic-api-key rule flags on assignment shape alone. Re-verify
+with `gitleaks detect --redact -v` before adding new paths here — this is a
+waiver list, not a way to silence real findings.
+"""
+paths = [
+  # Cross-platform vault key-store identifier constant (not a secret; a stable
+  # string name, documented in apps/ios/App/SwabApp.swift itself).
+  '''apps/ios/App/SwabApp\.swift''',
+  # Test-only Keychain probe key name (KeychainSecureStoreTests).
+  '''apps/ios/Tests/SwabCoreTests/KeychainSecureStoreTests\.swift''',
+  # Synthetic vault test vectors (base64 ciphertext/keys for unit tests, not
+  # real key material) — mirrored across iOS/Android fixtures + migration docs.
+  '''apps/ios/Tests/SwabCoreTests/Fixtures/vault-test-vectors\.json''',
+  '''apps/android/app/src/test/resources/vault-test-vectors\.json''',
+  '''docs/migration/vault-test-vectors\.json''',
+  # Synthetic test env (apps/api/tests/helpers.ts): JWT_SECRET is a fixed
+  # literal used only by vitest, never a real deployment secret (G1).
+  '''apps/api/tests/helpers\.ts''',
+  # Retired Expo/RN app (removed 2026-07-19) — same vault key-store constant
+  # as the iOS entry above, present only in git history now.
+  '''apps/mobile/src/vault/crypto\.ts''',
+]
