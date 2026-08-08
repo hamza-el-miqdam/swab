@@ -11,6 +11,8 @@
   },
   "scripts": {
     "generate": "node scripts/generate.mjs",
+    "generate:check": "node scripts/generate.mjs --check",
+    "test": "node scripts/generate.mjs --check",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

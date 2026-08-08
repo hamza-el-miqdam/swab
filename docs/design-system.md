@@ -136,7 +136,8 @@ regenerated from that link — see the "Design reference ownership" paragraph in
 
 Regenerate stage 3 from stage 2 with `node packages/ui/scripts/generate.mjs` (`--check` for CI drift — the
 same convention as `scripts/render-agents.mjs`). Never hand-edit a generated file; the banner comment at the
-top of each names its source.
+top of each names its source. The `--check` drift guard runs as `packages/ui`'s `test` script
+(`pnpm --filter @repo/ui test`, also exercised by `pnpm turbo run test`) — SUG-DES-003.
 
 When any of these changes, update this file, the prototype, and `tokens.json` (+ regenerate) in the same PR
 so code and design never disagree (rule G5).

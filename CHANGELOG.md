@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-003] wire the token drift guard into `packages/ui`'s `test` script
+
+- `packages/ui/package.json`: added `test` (= `node scripts/generate.mjs --check`) and `generate:check`
+  (same command, explicit name) scripts. `pnpm turbo run test` already runs every workspace's `test`
+  task, so this closes the gap where hand-edited `DesignTokens.swift`/`.kt`/`tokens.ts`/`tokens.css` or
+  an un-regenerated `tokens.json` change could land without CI ever exercising `--check`.
+- Verified locally: `pnpm --filter @repo/ui test` → "Design tokens up to date."; hand-touched
+  `packages/ui/src/tokens.css` (flipped `--color-nuit`) → re-ran → `STALE: packages/ui/src/tokens.css`
+  + exit 1; reverted the hand-touch, re-ran → passes again.
+- `docs/design-system.md` §5: noted the `--check` guard now runs via the package's `test` script.
+- Scope note: `.github/workflows/ci.yml` is untouched here (out of design-specialist scope) — a named
+  CI step for a clearer failure message is tracked separately as SUG-OPS-006 (devops-specialist).
+
 ## 2026-08-08 — [ONB-04, MAP-01, FCH-01, FCH-04, ENV-03, ENV-04, ENV-13, ENV-14, ENV-17, ENV-18, ENV-19] sync FS-01/FS-02/FS-03/FS-05 French Notion mirrors after today's direct-to-main spec commits
 
 - Mandatory version check (`.notion-sync.json` snapshots vs live Notion fetch + comments) found all
