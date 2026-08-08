@@ -45,8 +45,10 @@ wiring, SwiftUI/Compose call sites) stays with `area:ios`/`area:android`/`area:w
 3. The **Penpot library** mirrors both: colour styles/tokens, typographies, and components carry the exact
    French token names (`nuit`, `encre`, `étoile`, `sauge`…) and prototype geometry.
 4. **HTML blueprints** in `blueprints/**` — self-contained (inline CSS/JS, Google-Fonts link only), one file
-   per flow plus a consolidated prototype file. Living documents: when a spec or the Penpot prototype
-   changes a flow, update the blueprint in the same PR or open an issue flagging the divergence.
+   per flow; the consolidated prototype lives at `docs/design/swab-prototype-consolidated.html` (the
+   single normative copy — `blueprints/swab-app-prototype.html` is a pointer stub to it, not a second
+   copy, per SUG-DES-013). Living documents: when a spec or the Penpot prototype changes a flow, update
+   the blueprint in the same PR or open an issue flagging the divergence.
 
 A change anywhere in this chain must propagate down or be flagged — never let the prototype, token
 contract, Penpot, and blueprints tell different stories silently.

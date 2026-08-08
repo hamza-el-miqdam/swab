@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-013] De-duplicate the consolidated prototype (Option A: pointer stub)
+
+- `blueprints/swab-app-prototype.html` and `docs/design/swab-prototype-consolidated.html` were
+  byte-identical (verified MD5 match before this change) with nothing guarding it — a first edit to
+  only one would have silently drifted, contradicting the "prototype/token contract/Penpot/blueprints
+  never tell different stories" rule.
+- Replaced `blueprints/swab-app-prototype.html`'s content with a small Nuit-styled pointer stub
+  ("Moved — normative at `docs/design/swab-prototype-consolidated.html`"), kept under its original
+  filename so existing links/previews don't 404.
+- Amended `agents/design-specialist.md`'s blueprint rule: "one file per flow; the consolidated
+  prototype lives at `docs/design/swab-prototype-consolidated.html`" (dropped "plus a consolidated
+  prototype file", which institutionalized the copy); re-ran `node scripts/render-agents.mjs` —
+  only `.github/instructions/design.instructions.md` needed re-rendering (`.claude/agents/` is a thin
+  `@`-import wrapper, no duplicated content to update). `--check` green.
+- Verified: only one path (`docs/design/swab-prototype-consolidated.html`) is now cited as normative
+  across `agents/design-specialist.md`, `docs/design-system.md`, and `tokens.json`'s `meta.rule`.
+
 ## 2026-08-08 — [SUG-OPS-003] gitleaks + Trivy scanning wired into CI (`security.yml`)
 
 - New `.github/workflows/security.yml`: `gitleaks` job (full-history scan, `fetch-depth: 0`) and a
