@@ -8,6 +8,7 @@ export const testEnv: Env = {
   JWT_SECRET: "test-secret-0123456789abcdef0123456789abcdef",
   PORT: 3001,
   NODE_ENV: "test",
+  OTP_DEV_CODE: "enabled",
 };
 
 // Synthetic phoneHashes shaped like real client-side hashes — never E.164.

@@ -35,6 +35,8 @@ services:
       JWT_SECRET: local-dev-only-secret-change-me-0000000000
       NODE_ENV: development
       PORT: "3001"
+      # Fail-closed (G1): local dev only — must never be "enabled" in production.
+      OTP_DEV_CODE: enabled
     ports:
       - "3001:3001"
     depends_on:

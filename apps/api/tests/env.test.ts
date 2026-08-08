@@ -34,4 +34,23 @@ describe("loadEnv", () => {
       }),
     ).toThrowError(/PORT/);
   });
+
+  it("G1: OTP_DEV_CODE=enabled in production fails boot", () => {
+    expect(() =>
+      loadEnv({
+        DATABASE_URL: "postgresql://u:p@h:5432/db",
+        JWT_SECRET: "a".repeat(32),
+        NODE_ENV: "production",
+        OTP_DEV_CODE: "enabled",
+      }),
+    ).toThrowError(/OTP_DEV_CODE/);
+  });
+
+  it("G1: OTP_DEV_CODE defaults to disabled", () => {
+    const env = loadEnv({
+      DATABASE_URL: "postgresql://u:p@h:5432/db",
+      JWT_SECRET: "a".repeat(32),
+    });
+    expect(env.OTP_DEV_CODE).toBe("disabled");
+  });
 });

@@ -49,12 +49,13 @@ export function registerAuthRoutes(app: FastifyInstance, deps: AuthRouteDeps): v
     }
     req.log.info("otp code issued");
     // POC (OQ-IDT-1): no SMS provider yet — the code is returned to the caller
-    // in non-production environments ONLY, so the flow is exercisable
-    // end-to-end. In production this field is absent and delivery is via SMS.
+    // only when explicitly opted in via OTP_DEV_CODE (fail-closed; boot refuses
+    // this flag in production — see env.ts), so the flow is exercisable
+    // end-to-end in dev/test. In production this field is absent and delivery is via SMS.
     return reply.code(200).send({
       sent: true,
       expiresInSeconds: OTP_TTL_SECONDS,
-      ...(env.NODE_ENV !== "production" ? { devCode: result.code } : {}),
+      ...(env.OTP_DEV_CODE === "enabled" ? { devCode: result.code } : {}),
     });
   });
 

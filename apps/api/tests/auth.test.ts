@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeApp, PHONE_HASH_A, PHONE_HASH_B, signup, type TokenPair } from "./helpers.js";
+import { makeApp, PHONE_HASH_A, PHONE_HASH_B, signup, testEnv, type TokenPair } from "./helpers.js";
 
 describe("POST /auth/otp/request + POST /auth/otp/verify", () => {
   it("IDT-01: signup happy path — OTP request then verify creates the user and returns a token pair", async () => {
@@ -151,5 +151,17 @@ describe("POST /auth/otp/request + POST /auth/otp/verify", () => {
       payload: { phoneHash: PHONE_HASH_A, code: devCode, displayName: "Amina" },
     });
     expect(retried.statusCode).toBe(200);
+  });
+
+  it("IDT-03/G1: devCode is absent unless OTP_DEV_CODE is explicitly enabled", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, OTP_DEV_CODE: "disabled" } });
+    const requested = await app.inject({
+      method: "POST",
+      url: "/auth/otp/request",
+      payload: { phoneHash: PHONE_HASH_A },
+    });
+    expect(requested.statusCode).toBe(200);
+    const body = requested.json<{ sent: boolean; devCode?: string }>();
+    expect(body.devCode).toBeUndefined();
   });
 });
