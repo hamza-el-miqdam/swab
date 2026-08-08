@@ -4,6 +4,21 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-001] Native iOS/Android unit tests now run in CI
+
+- Added `android-unit` (`ubuntu-latest`, JDK 17 Temurin, `gradle/actions/setup-gradle@v4`,
+  `./gradlew test --stacktrace`) and `ios-unit` (`macos-15`, `xcrun swift test`) jobs to `ci.yml`.
+  Both verified locally first (`./gradlew test` → BUILD SUCCESSFUL; `xcrun swift test` → 110 tests
+  passed) before landing.
+- **Deviation from the plan's suggested tooling** (`dorny/paths-filter`): implemented the path filter
+  as a plain `changes` job doing its own `git diff --name-only` against the PR base / previous push
+  SHA, gating `android-unit`/`ios-unit` via `if: needs.changes.outputs.{android,ios} == 'true'` — no
+  new third-party action dependency (G4). Fails open (runs both) on `workflow_dispatch` or when no
+  diffable base exists (first push, force-push).
+- Explicitly NOT added: emulator/simulator E2E jobs — out of scope per the suggestion; tracked
+  separately in `docs/STATUS.md`.
+- `docs/STATUS.md` CI row updated.
+
 ## 2026-08-08 — [SUG-OPS-013] CI Postgres service + docker-compose on `prisma migrate deploy` (closes #21)
 
 - `ci.yml`: added a `postgres:17` service (fake `swab`/`swab_ci` creds, health-checked), a
