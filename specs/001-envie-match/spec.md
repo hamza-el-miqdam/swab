@@ -59,7 +59,7 @@ Once matched, two people need a lightweight way to actually meet — without tur
 
 1. **Given** an open match, **When** either side views it, **Then** exactly three actions are available: propose a place, propose a time, or pass — no other actions, no negotiation thread (ENV-13, ENV-14).
 2. **Given** a proposal is sent, **When** the counterpart accepts it, **Then** the match moves to a scheduled state visible to both sides (ENV-14).
-3. **Given** one side passes, **When** the counterpart later views the match or polls for it, **Then** their view is bit-identical (modulo timestamps) to a still-open match; the passer's own side reflects the pass immediately, and the counterpart's side only quietly reaches an expired state later with no signal that a pass occurred (ENV-15).
+3. **Given** one side passes, **When** the counterpart later views the match or polls for it, **Then** their view is bit-identical (identical field set and values; the ONLY permitted differences are server-clock response metadata — no entity field, including updatedAt-style columns, may change on the counterpart's side because of a pass) to a still-open match; the passer's own side reflects the pass immediately, and the counterpart's side only quietly reaches an expired state later with no signal that a pass occurred (ENV-15).
 4. **Given** any match reaches a mutual or scheduled state, **When** the UI renders it, **Then** there is no celebratory animation, badge, or counter of any kind (ENV-16).
 
 ### Edge Cases
@@ -88,7 +88,7 @@ Once matched, two people need a lightweight way to actually meet — without tur
 - **FR-012**: A withdrawn or expired envie MUST NOT produce new matches; matches already created from it MUST remain unaffected (ENV-12).
 - **FR-013**: A matched pair MUST be offered exactly three actions on the match surface: propose a place, propose a time, or pass (ENV-13).
 - **FR-014**: A proposal MUST support accept/decline by the counterpart; acceptance MUST move the match to a scheduled state. Multiple simultaneous negotiation threads are out of scope (ENV-14).
-- **FR-015**: A pass MUST update the passer's own view immediately while leaving the counterpart's view/API responses bit-identical to a still-open match; the counterpart's side MUST only reach an expired state later, with no signal that a pass caused it (ENV-15).
+- **FR-015**: A pass MUST update the passer's own view immediately while leaving the counterpart's view/API responses bit-identical (identical field set and values; the ONLY permitted differences are server-clock response metadata — no entity field, including updatedAt-style columns, may change on the counterpart's side because of a pass) to a still-open match; the counterpart's side MUST only reach an expired state later, with no signal that a pass caused it (ENV-15).
 - **FR-016**: The system MUST NOT present any celebration animation, badge, or counter at any stage of the match or proposal lifecycle (ENV-16).
 
 ### Key Entities
