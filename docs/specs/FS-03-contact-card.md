@@ -20,7 +20,7 @@ Per-relation detail and editing: « Les quatre axes, éditables d'un tap — tu 
 | FCH-02 | Classification is asymmetric and private: nothing on this screen reflects how the other person classified the user. UI copy must never imply symmetry. |
 | FCH-03 | Reciprocity signal, if shown, stays « volontairement doux » — qualitative, never numeric. No counters or metrics anywhere on the fiche (« Aucun compteur, aucune métrique »). |
 | FCH-04 | History feed shows axis changes and relationship events (matches with this person, at coarse grain) over 12 months, newest first, sourced from the vault only. |
-| FCH-05 | Staleness nudge: if no axis changed for a configurable period (default 6 months ⚠️ ASSUMPTION), show the discreet prompt with exactly two actions: « C'est toujours ça » (re-confirms, resets timer) and « À revoir plus tard » (dismisses quietly, re-eligible after 30 days). Never a modal, never blocking. |
+| FCH-05 | Staleness nudge: if no axis changed for a fixed period (6 months ⚠️ ASSUMPTION; a user-visible setting is deliberately out of scope — revisit only if testers ask for one), show the discreet prompt with exactly two actions: « C'est toujours ça » (re-confirms, resets timer) and « À revoir plus tard » (dismisses quietly, re-eligible after 30 days). Never a modal, never blocking. |
 | FCH-06 | État values include at least the blueprint-attested `en pause`; the fiche shows the FS-06 filter consequence for the current état (e.g., "en pause → exclu par défaut à l'envoi") so filtering stays legible. |
 | FCH-07 | Navigation: back to map preserving position (MAP-04 reverse transition). |
 | FCH-08 | A contact who hasn't joined Swab yet (pending `ContactLink.targetId = null`) has a fiche too — axes fully editable; envie eligibility clearly indicated as inactive until they join. |
@@ -33,4 +33,6 @@ Per-relation detail and editing: « Les quatre axes, éditables d'un tap — tu 
 
 ## Open questions
 
-OQ-FCH-1: exact vocabulary sets for Rôles·contexte and Ressenti (blueprint shows the axes but not full option lists) — Architect to extract with Hamza before implementation; placeholder taxonomies acceptable for the walking skeleton.
+OQ-FCH-1 (**still open post-implementation**): FS-03 shipped 2026-07-10 with placeholder vocabulary sets for Rôles·contexte and Ressenti. Final vocabularies still need extraction from the blueprint with Hamza; changing them later is a vault-content migration (existing user tags must map forward) — resolve before external testers.
+
+OQ-FCH-2: Platform implementations flagged an état-vs-ressenti axis ambiguity for « en pause » in Wave 3 (see `docs/qa/e2e-coverage.json` FCH-06 note). The spec's position is état (FCH-06, FLT-01) — audit both native apps against this and either fix the implementations or amend the spec, **before FS-06 implementation starts** (its default rule targets état = en pause).
