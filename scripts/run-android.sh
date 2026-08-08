@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Quick script to set up environment and run Swab on Android emulator
 # Usage: ./scripts/run-android.sh [avd-name]
 
-set -e
+set -euo pipefail
 
 # Colors
 GREEN='\033[0;32m'

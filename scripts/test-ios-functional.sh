@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Swab iOS Functional Test Script
 # Automated walkthrough: Onboarding (FS-01) + Relationship Map (FS-02)
@@ -32,7 +32,10 @@ if ! xcrun simctl list | grep "Booted" > /dev/null; then
   sleep 5
 fi
 
-SIMULATOR_UDID=$(xcrun simctl list | grep "Booted" | grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}" | head -1)
+# || true: a zero-match here (no booted simulator yet, e.g. still booting) is
+# legitimate — the next `-z "$SIMULATOR_UDID"` check below handles it with a
+# clear error instead of letting pipefail abort the script silently here.
+SIMULATOR_UDID=$(xcrun simctl list | grep "Booted" | grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}" | head -1 || true)
 
 if [ -z "$SIMULATOR_UDID" ]; then
   log_error "Could not find booted simulator"
@@ -161,8 +164,10 @@ log_info "Checking Postgres for user/vault records..."
 sleep 2
 
 # Connect to Postgres and query
-USER_COUNT=$(psql -h localhost -U postgres -d postgres -t -c "SELECT COUNT(*) FROM users;" 2>/dev/null | tr -d ' ')
-VAULT_COUNT=$(psql -h localhost -U postgres -d postgres -t -c "SELECT COUNT(*) FROM vaults;" 2>/dev/null | tr -d ' ')
+# || true: psql failure (unreachable DB, bad creds) degrades gracefully below
+# (log_warn, not a hard failure) — preserve that instead of a pipefail abort.
+USER_COUNT=$(psql -h localhost -U postgres -d postgres -t -c "SELECT COUNT(*) FROM users;" 2>/dev/null | tr -d ' ' || true)
+VAULT_COUNT=$(psql -h localhost -U postgres -d postgres -t -c "SELECT COUNT(*) FROM vaults;" 2>/dev/null | tr -d ' ' || true)
 
 if [ -n "$USER_COUNT" ] && [ "$USER_COUNT" -ge 1 ]; then
   log_pass "User record created (count: $USER_COUNT)"
@@ -183,7 +188,8 @@ log_info "Checking Console for errors/crashes..."
 # Get Console logs from simulator
 CONSOLE_LOG=$(log stream --predicate 'process == "SwabApp"' --timeout 5 2>/dev/null || echo "")
 
-EXCEPTIONS=$(echo "$CONSOLE_LOG" | grep -i "exception\|fatal\|crash" | wc -l)
+# || true: zero matches (no exceptions) is the expected/good outcome.
+EXCEPTIONS=$(echo "$CONSOLE_LOG" | grep -i "exception\|fatal\|crash" | wc -l || true)
 
 if [ "$EXCEPTIONS" -eq 0 ]; then
   log_pass "No exceptions in console"

@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Swab Android Functional Test Script
 # Automated walkthrough: Onboarding (FS-01) + Relationship Map (FS-02)
@@ -112,7 +112,9 @@ wait_for_screen "OtpScreen" || log_warn "OTP screen transition delayed"
 
 # Get OTP code from logcat (dev mode returns it in response)
 log_info "Extracting OTP code from logs..."
-OTP_CODE=$(adb logcat -d | grep -oE "code.*([0-9]{6})" | tail -1 | grep -oE "[0-9]{6}")
+# || true: a zero-match here is legitimate — the fallback test vector below
+# (log_warn) handles it instead of letting pipefail abort the script here.
+OTP_CODE=$(adb logcat -d | grep -oE "code.*([0-9]{6})" | tail -1 | grep -oE "[0-9]{6}" || true)
 
 if [ -z "$OTP_CODE" ]; then
   # Fallback: check recent HTTP response or use known test vector
@@ -297,7 +299,8 @@ fi
 
 # ===== LOGCAT VERIFICATION =====
 log_info "=== Logcat Verification ==="
-EXCEPTIONS=$(adb logcat -d | grep -i "exception\|fatal\|crash" | grep -v "Google Play" | wc -l)
+# || true: zero matches (no exceptions) is the expected/good outcome.
+EXCEPTIONS=$(adb logcat -d | grep -i "exception\|fatal\|crash" | grep -v "Google Play" | wc -l || true)
 
 if [ "$EXCEPTIONS" -eq 0 ]; then
   log_pass "No exceptions in logcat"

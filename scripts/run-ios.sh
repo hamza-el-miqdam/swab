@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Quick script to run Swab on iOS Simulator
 
-set -e
+set -euo pipefail
 
 # Colors
 GREEN='\033[0;32m'

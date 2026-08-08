@@ -4,6 +4,25 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-016] Helper scripts get strict mode (`-u`/`pipefail`), matching the E2E gates
+
+- `scripts/{run-ios,run-android,setup-android-emulator,test-ios-functional,test-android-functional}.sh`:
+  `#!/bin/bash` → `#!/usr/bin/env bash` (picks up PATH's bash, not macOS system 3.2) and `set -e` →
+  `set -euo pipefail`, matching `scripts/e2e-{ios,android}.sh`'s existing convention.
+- `-u` audit found no unset-variable risk needing an explicit default in any of the five (all `$1`/`$2`
+  reads are either always-passed function args or already `${1:-default}`-guarded).
+- `pipefail` audit found 5 pipelines with a **legitimate** zero-match outcome (booted-simulator lookup,
+  OTP-code scrape, two "count exceptions found" checks, two Postgres count queries) that already had
+  a graceful fallback a few lines later (`-z` check, log_warn) — without `|| true` on those specific
+  pipelines, pipefail would let `set -e` abort the script *before* reaching that graceful path.
+  Added `|| true` with a one-line comment on each, per the suggestion's own guidance.
+- `shellcheck` (via `docker run koalaman/shellcheck:stable`): zero new warnings from this change; a
+  handful of pre-existing style/info-level findings (SC2034, SC2086, SC2126, SC2329) are unrelated to
+  strict mode and left untouched (out of this suggestion's scope).
+- **Not verified end-to-end on real hardware** (no Xcode/Android SDK/simulator/emulator in this
+  environment) — the suggestion's own risk note flags this as something only verifiable on a machine
+  with those installed; `bash -n` syntax-checked all five, and shellcheck ran clean of new issues.
+
 ## 2026-08-08 — [SUG-OPS-004] Dependabot config (npm, github-actions, gradle, docker, docker-compose)
 
 - Added `.github/dependabot.yml`: 5 ecosystems, weekly cadence (protects free-tier Actions minutes —

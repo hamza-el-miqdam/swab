@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Setup Android Emulator for Swab
 # This script configures the Android SDK environment and lists/creates AVDs for local testing
 # Usage: ./scripts/setup-android-emulator.sh [--create] [--avd-name NAME]
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
