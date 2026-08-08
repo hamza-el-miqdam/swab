@@ -17,7 +17,7 @@ object DesignTokens {
         const val HAIR_FORT_OPACITY = 0.22
         const val IVOIRE = "#edebe2"
         const val BRUME = "#9aa1c2"
-        const val OMBRE = "#6a7194"
+        const val OMBRE = "#8a91b5"
         const val ETOILE = "#e4be6a"
         const val ETOILE_ENCRE = "#1c1505"
         const val ETOILE_VOILE = "#e4be6a"

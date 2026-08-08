@@ -4,6 +4,25 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-002] `ombre` text token changed to fix WCAG AA contrast failure
+
+- `ombre` was `#6A7194` — 3.83:1 on `nuit`, 3.44:1 on `encre`, 2.99:1 on `voile`, 2.60:1 on `voile-2`
+  (relative-luminance formula, independently re-verified before landing this — see PR/report), all
+  below the charter's 4.5:1 AA floor, at sizes (11px `flab` labels, 11–12.5px meta/caption) that don't
+  qualify for the large-text 3:1 relief.
+- Changed to **`#8A91B5`**: 5.92:1 / 5.31:1 / 4.61:1 / 4.01:1 on `nuit`/`encre`/`voile`/`voile-2` —
+  AA-passing on the three surfaces `ombre` is actually used on for text (screen/card/row backgrounds);
+  `voile-2` (avatars, switch track) stays below AA, so a new usage rule in `docs/design-system.md` §1
+  forbids `ombre` text on `voile-2` and names `brume` (4.87:1) as the floor there instead. Considered
+  and rejected `#8289AD` (5.34/4.79/4.16/3.62 — fails on `voile` too, a real text surface).
+- Propagated through the full chain in this commit: both prototype copies' `:root --ombre`
+  (`docs/design/swab-prototype-consolidated.html` + `blueprints/swab-app-prototype.html`, still
+  byte-identical pending SUG-DES-013), `docs/design-system.md` §1, `tokens.json`, then regenerated.
+- French token name unchanged, only the hex value changed. `ombre` stays visibly dimmer than `brume`
+  on every surface, preserving the secondary/tertiary text hierarchy.
+- No app-code change needed — `apps/ios`/`apps/android` reference `DesignTokens.Color.ombre` and pick
+  up the new value automatically; flagged for `area:ios`/`area:android` awareness in the PR.
+
 ## 2026-08-08 — [SUG-DES-008] Étoile accent tints tokenized
 
 - Added `etoile-voile` (`#e4be6a` @ `.14`, chip/selected fill), `etoile-piste` (`.30`, switch-on

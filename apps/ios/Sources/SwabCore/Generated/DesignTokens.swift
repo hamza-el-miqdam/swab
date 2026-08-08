@@ -16,7 +16,7 @@ public enum DesignTokens {
         public static let hairFortOpacity: Double = 0.22
         public static let ivoire = "#edebe2"
         public static let brume = "#9aa1c2"
-        public static let ombre = "#6a7194"
+        public static let ombre = "#8a91b5"
         public static let etoile = "#e4be6a"
         public static let etoileEncre = "#1c1505"
         public static let etoileVoile = "#e4be6a"

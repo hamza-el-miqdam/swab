@@ -34,7 +34,12 @@ names in Penpot and the keys in the app theme). Neutrals descend from deepest su
 |---|---|---|
 | `ivoire` | `#EDEBE2` | Primary text / high-emphasis. |
 | `brume` | `#9AA1C2` | Secondary text — subtitles, descriptions. |
-| `ombre` | `#6A7194` | Tertiary text — labels, meta, muted values. |
+| `ombre` | `#8A91B5` | Tertiary text — labels, meta, muted values. **Not for use on `voile-2`** — see the AA note below (changed from `#6A7194` 2026-08-08, SUG-DES-002: the old value failed WCAG AA on every Nuit surface at the sizes it's used at). |
+
+> **Contrast rule:** `ombre` measures 5.92:1 on `nuit`, 5.31:1 on `encre`, 4.61:1 on `voile` — all ≥ 4.5:1
+> AA — but only 4.01:1 on `voile-2`, below the AA floor. `ombre` may not be used for text on `voile-2`;
+> the minimum text token on `voile-2` is `brume` (4.87:1). `ombre` remains visibly dimmer than `brume`
+> (7.18–4.87:1 across the same surfaces), preserving the primary/secondary/tertiary hierarchy.
 
 ### Brand accent
 

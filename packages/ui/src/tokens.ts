@@ -9,7 +9,7 @@ export const colors = {
   "hair-fort": { value: "#edebe2", opacity: 0.22 },
   "ivoire": "#edebe2",
   "brume": "#9aa1c2",
-  "ombre": "#6a7194",
+  "ombre": "#8a91b5",
   "etoile": "#e4be6a",
   "etoile-encre": "#1c1505",
   "etoile-voile": { value: "#e4be6a", opacity: 0.14 },
