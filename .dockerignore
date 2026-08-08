@@ -5,7 +5,6 @@ node_modules
 dist
 **/dist
 .next
-.expo
 coverage
 blueprints
 docs
@@ -14,4 +13,12 @@ agents
 .env
 .env.*
 .git
-apps/mobile
+# native apps never enter the API image (root build context)
+apps/ios
+apps/android
+# local artifacts
+test-results
+specs
+suggestions
+.claude
+.github

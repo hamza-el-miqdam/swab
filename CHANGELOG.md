@@ -4,6 +4,16 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-015] `.dockerignore`: exclude native apps + local artifacts, drop stale entries
+
+- Added `apps/ios`, `apps/android` (a real on-disk Gradle `build/` dir lives there — can be hundreds
+  of MB), `test-results`, `specs`, `suggestions`, `.claude`, `.github` to `.dockerignore` — none of
+  these are ever COPYed by `apps/api/Dockerfile` (verified: it only touches root manifests,
+  `packages/db`, `apps/api`).
+- Removed two dead entries: `.expo` and `apps/mobile` (the Expo RN app was removed 2026-07-19).
+- Verified: `docker build -f apps/api/Dockerfile --target dev .` still succeeds; `git grep
+  "apps/mobile" .dockerignore` → empty.
+
 ## 2026-08-08 — [SUG-OPS-014] Compose: API healthcheck, db/adminer loopback-only, `.env.example` fix
 
 - `api` service gets a `HEALTHCHECK` (`node -e fetch(...)`, no curl/wget in `node:22-slim`; generous
