@@ -4,6 +4,24 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-011] AWS-portability lint (no Vercel APIs, no Neon-specific code)
+
+- Added `scripts/portability-lint.mjs` (dependency-free — only `node:` built-ins + `git ls-files`):
+  scans all tracked files under `apps/`, `packages/`, `tools/` (excluding `*.md`) for
+  `@vercel/kv`/`@vercel/blob`/`@vercel/edge-config`, the Vercel KV REST hostname, `neon.tech`,
+  `@neondatabase/serverless`, and `pg_embedding`. Prints `file:line: pattern` and exits 1 on any hit.
+  Pattern list is a single exported const (`FORBIDDEN_PATTERNS`) for one-line additions.
+- Added `scripts/portability-lint.test.mjs`: 15 table-driven `node:test` cases covering the matcher
+  (`findViolations`) and the scan-path filter (`shouldScan`), following the `scope-guard.mjs`/
+  `scope-guard.test.mjs` pattern already in this repo (pure exported functions, `main()` guarded by
+  an `import.meta.url` check).
+- Wired two new steps into `ci.yml`'s pre-install block (same slot as `render-agents.mjs --check`):
+  the unit tests, then the lint itself.
+- Verified: `node scripts/portability-lint.mjs` → PASS on the current tree (214 files scanned).
+  Negative test: temporarily added `"@vercel/kv": "^1.0.0"` to `apps/api/package.json` → lint failed
+  naming the exact file:line; reverted (`git status` confirms no residue).
+
+## 2026-08-08 — [SUG-OPS-018] `prisma validate` is now a named, first-class CI gate
 ## 2026-08-08 — [SUG-DES-015] Fix stale owner link in design-system.md
 
 - `docs/design-system.md`'s header named a nonexistent owner file (`agents/design-system-specialist.md`)

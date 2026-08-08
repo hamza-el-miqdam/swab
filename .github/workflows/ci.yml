@@ -78,6 +78,10 @@ jobs:
         run: node scripts/render-agents.mjs --check
       - name: Design tokens in sync (packages/ui/tokens/tokens.json is the source of truth)
         run: node packages/ui/scripts/generate.mjs --check
+      - name: Portability lint unit tests (matcher function)
+        run: node --test scripts/portability-lint.test.mjs
+      - name: Portability lint (no Vercel APIs, no Neon-specific code — G4)
+        run: node scripts/portability-lint.mjs
       - run: pnpm install --frozen-lockfile
       - name: Prisma schema valid
         run: pnpm --filter @repo/db db:validate
