@@ -4,6 +4,26 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [ONB-04, MAP-01, FCH-01, FCH-04, ENV-03, ENV-04, ENV-13, ENV-14, ENV-17, ENV-18, ENV-19] sync FS-01/FS-02/FS-03/FS-05 French Notion mirrors after today's direct-to-main spec commits
+
+- Mandatory version check (`.notion-sync.json` snapshots vs live Notion fetch + comments) found all
+  four pages untouched since last sync — no co-founder edits, no unresolved comments — so every spec
+  was the code-only case, not a conflict. Confirmed by content diff, not by trusting the task framing.
+- Pushed French translations for: FS-01 ONB-04 + new OQ-ONB-1 (SUG-SPEC-009); FS-02 MAP-01
+  cross-reference; FS-03 FCH-01 cross-reference + FCH-04 ENV-19 citation (SUG-SPEC-008/009); FS-05
+  ENV-17/ENV-18 (new rows) + OQ-ENV-3, amended ENV-13/ENV-14 + new ENV-19 row, OQ-ENV-4/OQ-ENV-5
+  (SUG-SPEC-006/008/012).
+- Also caught and synced an **already-merged but never-pushed** delta on FS-05: PR #18
+  (`c615be7`/`8ce324f`, SUG-SPEC-004, merged today before the four direct commits) had reworded
+  ENV-03/ENV-04 on disk for the L1-veto-visibility fix, but the Notion page still showed the old
+  wording — the previous three sync-flagged commits since 08-04 were never actually synced. Pushed
+  that translation too so `lastSyncedFrench` now matches live Notion exactly, not just today's batch.
+- Requirement IDs, code identifiers, file paths, and already-frozen French UI quotes carried verbatim
+  in both directions per role rules; "source canonique" note left untouched on all four pages.
+- `.notion-sync.json`: `lastSyncedAt`/`lastSyncedEnglish`/`lastSyncedFrench` updated for FS-01, FS-02,
+  FS-03, FS-05 only. No `docs/STATUS.md` change — this sync resolves no open question and changes no
+  spec's implementation-readiness.
+
 ## 2026-08-08 — [ONB-04, MAP-01, FCH-01] pin the intimacy ring enumeration to an open question, not an invented value
 
 - `docs/specs/FS-01-onboarding.md`: ONB-04 no longer leaves the ring count/labels unstated (SUG-SPEC-009).
