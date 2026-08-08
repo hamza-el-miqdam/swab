@@ -97,6 +97,8 @@ Two families, self-hosted (no external font requests in production — `next/fon
 - **Radii** (px): input/row `10`, card/button `12`, tile `14`, pill/tag `999`, avatar `50%`, device screen `57`, device body `64`.
 - **Borders**: `1px` `hair` (default) / `hair-fort` (interactive & ghost).
 - **Device frame**: screen 402 × 874, status bar 62, top bar 44, home bar 34, Dynamic Island 124 × 35.
+  Shell/Dynamic-Island fill `#05070F` is presentation chrome only (the device bezel, not the app UI)
+  and is intentionally outside the token set (SUG-DES-014).
 - **Hit targets**: buttons pad `14`; tags pad `8 14`; segmented cells pad `10 2`.
 - **Touchable feedback**: primary button `:active` scales to `.985`; border-color transitions `.15s`.
 

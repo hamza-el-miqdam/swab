@@ -4,6 +4,24 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-014] Off-token colors in the prototype fixed
+
+- `#4A5170` (carte illustration depth-cue node) demoted (option 1(b)) rather than promoted to a new
+  token: forensics showed it equals the *old* `ombre` (`#6A7194`) alpha-blended at `.65` over `nuit`
+  almost exactly — it's a dimmed variant of the "en pause" legend state, not a new taxonomy category.
+  Now `fill="#8A91B5" opacity=".65"` (current `ombre`), consistent with the file's own convention of
+  literal hex + `opacity` attribute in SVGs (no `var()` used in `fill=` anywhere in this file).
+- **Self-caught while fixing the above:** the carte SVG's two "en pause" legend nodes
+  (`(238,60)`/`(66,160)`) had `fill="#6A7194"` hardcoded — the *pre*-SUG-DES-002 `ombre` value. Since
+  SVG `fill` attributes here are literal hex, not `var(--ombre)`, SUG-DES-002's `:root` edit never
+  reached them, leaving them visibly inconsistent with the legend swatch next to "en pause" (which
+  uses `color:var(--ombre)` and did update). Fixed to `#8A91B5` in this same commit.
+- `#05070F` (device shell / Dynamic Island): no token added — documented as intentional presentation
+  chrome in `docs/design-system.md` §3's device-frame bullet.
+- Verified: full lowercase hex inventory of the prototype (`grep -o "#[0-9a-fA-F]{6}"`, sorted/uniq)
+  now matches `tokens.json` color values exactly, plus the one documented `#05070f` chrome exception.
+  `generate.mjs --check` green (no token change this round).
+
 ## 2026-08-08 — [SUG-OPS-009] Turborepo cache persisted in CI + cache-hit job summary
 
 - `ci.yml`: `actions/cache` step (keyed `turbo-${{ runner.os }}-${{ github.sha }}`, prefix
