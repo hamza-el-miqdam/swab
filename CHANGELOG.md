@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [ENV-03, ENV-04, FLT-02] resolve L1 veto visibility contradiction between spec-kit artifact, FS-05, and FS-06
+
+- `specs/001-envie-match/spec.md` (US1 scenario 3, FR-004) and `docs/specs/FS-05-envie-match.md`
+  (ENV-03, ENV-04) both used wording ("never shows an override control" / "never appears as
+  revocable") that implied an L1-vetoed contact is rendered in the pre-send review minus a button
+  — contradicting FS-06's authoritative acceptance criterion (`FS-06:33`): an L1-vetoed contact
+  "appears nowhere in the review UI", confirmed by the property test
+  `included ∪ filtered ∪ (L1-vetoed) = scope members` (a disjoint third set).
+- Reworded all four sites to say consistently: an L1 veto-absolu exclusion does not appear in
+  either the Included or Filtered list, no override control anywhere (FLT-02).
+- Documentation-consistency fix only — no product/UX decision invented; FS-06 itself needed no
+  change and was left untouched. `specs/001-envie-match/checklists/requirements.md` has no
+  veto/L1 mentions; no `plan.md`/`tasks.md` exist yet for `001-envie-match` to patch.
+- Per SUG-SPEC-004. FS-05 wording changed — French Notion mirror needs a sync pass
+  (notion-liaison-specialist, not done here).
+
 ## 2026-08-04 — [OQ-FCH-1, OQ-FCH-2, FCH-05] sync FS-03 Open questions to French Notion mirror; merge an unrelated FCH-05 drift found in the process
 
 - Mandatory check found the Notion side untouched for Open questions (still only the old

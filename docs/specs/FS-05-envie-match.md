@@ -18,8 +18,8 @@ The core loop. Emission: « verbe → portée → filtrage transparent → envoi
 |---|---|
 | ENV-01 | Free-text verb input, present tense framing; client suggests a normalized `category` (⚠️ ASSUMPTION: category matching v0, product-overview §6). User can adjust the category suggestion. |
 | ENV-02 | Scope picker lists FS-04 subgroups only — « Une portée, pas une personne ». No individual selection, no ad-hoc multi-select. |
-| ENV-03 | Pre-send review shows the FULL resolution: **Inclus** list and **Filtrés par tes règles** list with the responsible rule level visible per person (FS-06). « Rien n'est masqué en silence. » |
-| ENV-04 | Every default exclusion is revocable in place (« Tu peux réintégrer qui tu veux ») — except veto absolu (FLT-02), which never appears as revocable. |
+| ENV-03 | Pre-send review shows the FULL resolution: **Inclus** list and **Filtrés par tes règles** list with the responsible rule level visible per person (FS-06). « Rien n'est masqué en silence. » (L1 veto-absolu members appear in neither list per FLT-02 — the review shows `scope members − L1`; the standing veto itself was user-authored, so law 2 holds.) |
+| ENV-04 | Every default exclusion is revocable in place (« Tu peux réintégrer qui tu veux ») — except veto absolu, which appears nowhere in the review (FLT-02). |
 | ENV-05 | Scope→recipients resolution happens entirely on-device. The send payload contains: verb, category, expiry, final recipient user IDs. No scope name, no filter reasons (product law 4). |
 | ENV-06 | Post-send state is calm: « C'est parti, doucement. » No delivery status, no seen-by, no pending counter. Active envies are listed with a withdraw option. |
 | ENV-07 | Envies expire (default 24h ⚠️ ASSUMPTION). Expiry is invisible to recipients (they never knew). |

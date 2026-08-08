@@ -24,7 +24,7 @@ A user wants to signal a present-tense desire ("envie de...") to a group of peop
 
 1. **Given** a user with at least one detected subgroup, **When** they start a new envie, **Then** the scope picker offers only subgroups — never individual contacts and never an ad-hoc multi-select (ENV-02).
 2. **Given** a chosen scope, **When** the pre-send screen renders, **Then** every member of the scope appears in either an "Included" or "Filtered" list, with the specific rule responsible for each filtered person shown (ENV-03).
-3. **Given** a person filtered by a default (non-absolute) rule, **When** the user taps to override, **Then** that person moves to Included for this send; a person excluded by the absolute veto rule never shows an override control (ENV-04).
+3. **Given** a person filtered by a default (non-absolute) rule, **When** the user taps to override, **Then** that person moves to Included for this send; a person excluded by the absolute veto rule (FLT-02) does not appear in the review at all — in neither the Included nor the Filtered list, with no override control anywhere (FS-06 L1 semantics) (ENV-04).
 4. **Given** a completed send, **When** the network payload is inspected, **Then** it contains only verb, category, expiry, and final recipient user IDs — no scope name, no filter reasoning (ENV-05).
 5. **Given** a sent envie, **When** the user views their own sent list, **Then** they see no delivery status, no seen-by indicator, and no pending counter — only a withdraw action (ENV-06).
 
@@ -77,7 +77,7 @@ Once matched, two people need a lightweight way to actually meet — without tur
 - **FR-001**: Users MUST be able to author an envie as free-text, present-tense phrasing, with the system suggesting a normalized category the user can adjust (ENV-01).
 - **FR-002**: The scope picker MUST offer only the user's own detected subgroups as sending targets — never individual contacts, never an ad-hoc multi-select (ENV-02).
 - **FR-003**: Before sending, the system MUST show the complete resolution of the chosen scope: every member as either Included or Filtered, with the specific responsible rule shown for each filtered member (ENV-03).
-- **FR-004**: Every default-rule exclusion MUST be revocable in place at send time; an absolute-veto exclusion MUST NOT expose an override control (ENV-04).
+- **FR-004**: Every default-rule exclusion MUST be revocable in place at send time; an absolute-veto (L1) exclusion MUST NOT appear in the pre-send review at all — neither list, no override control (ENV-04, FLT-02).
 - **FR-005**: Scope-to-recipient resolution MUST happen entirely on the user's device; the data that leaves the device for a send MUST be limited to verb, category, expiry, and final recipient user IDs (ENV-05). This is a privacy invariant, not a UX preference.
 - **FR-006**: Post-send state MUST be calm: no delivery status, no seen-by indicator, no pending counter; the user MUST be able to withdraw an active envie (ENV-06).
 - **FR-007**: Envies MUST expire automatically after a default period; expiry MUST be invisible to any would-be recipient (ENV-07).
