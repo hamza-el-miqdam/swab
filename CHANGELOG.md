@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-006] Named CI step for the design-token drift guard
+
+- Added `node packages/ui/scripts/generate.mjs --check` as its own named step in `ci.yml`
+  ("Design tokens in sync…"), right after the agent-render check and before `pnpm install` — same
+  pre-install slot as `render-agents.mjs --check`, since the generator only imports `node:` built-ins
+  (verified: runs clean with no `node_modules` present).
+- Checked first per the task's own instruction: `packages/ui/package.json` already has a `test` script
+  doing the same check (SUG-DES-003, landed earlier today) that `pnpm turbo run test` already exercises
+  in the long turbo step further down. Added this step anyway, per SUG-OPS-006's own reasoning it's
+  not redundant-therefore-skippable: a named, isolated step fails in seconds with an unambiguous
+  message, well before the multi-minute turbo run gets anywhere near it.
+- Verified locally: `node packages/ui/scripts/generate.mjs --check` → "Design tokens up to date.", exit 0.
+
 ## 2026-08-08 — [SUG-OPS-012] `ci.yml` hardening: timeouts, main-safe concurrency, `workflow_dispatch`, actionlint, job summary
 
 - `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}` — PR branches still cancel superseded

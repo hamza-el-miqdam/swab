@@ -76,6 +76,8 @@ jobs:
           cache: pnpm
       - name: Agent renders in sync (agents/ is the source of truth)
         run: node scripts/render-agents.mjs --check
+      - name: Design tokens in sync (packages/ui/tokens/tokens.json is the source of truth)
+        run: node packages/ui/scripts/generate.mjs --check
       - run: pnpm install --frozen-lockfile
       - name: Apply DB migrations to the CI Postgres service
         # Migrations now exist (packages/db/prisma/migrations/20260719000000_init,
