@@ -33,9 +33,10 @@ export const spacing = {
   xs: 4,
   s: 8,
   sm: 12,
-  m: 16,
-  l: 24,
-  xl: 32,
+  m: 14,
+  ml: 16,
+  l: 20,
+  xl: 24,
 } as const;
 
 export const radius = {
@@ -71,5 +72,10 @@ export const component = {
   },
   otp: {
     radius: radius.input,
+  },
+  screen: {
+    paddingTop: 14,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
 } as const;

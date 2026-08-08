@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-DES-009] Spacing scale reconciled between design-system.md and tokens.json
+
+- `docs/design-system.md:82` published `4 · 8 · 12 · 14 · 16 · 20 · 24`; `tokens.json` had
+  `xs:4, s:8, sm:12, m:16, l:24, xl:32` — missing `14`/`20`, and an unsourced `32`
+  (`grep -c "32px" docs/design/swab-prototype-consolidated.html` → 0, so dropped rather than blessed,
+  per the SSOT's own "do not hand-invent" rule).
+- New `spacing` keys: `xs:4, s:8, sm:12, m:14, ml:16, l:20, xl:24` — the clean rename (not the
+  additive `m14`/`l20` fallback the suggestion allowed) since a repo-wide grep found zero app-code
+  consumers of `DesignTokens.Spacing` today, making the rename free.
+- Added `component.screen` token (`paddingTop:14, paddingHorizontal:20, paddingBottom:20`) for the
+  charter's `14 20 20` screen content padding, previously prose-only.
+- Regenerated all four outputs (`node packages/ui/scripts/generate.mjs`); `--check` green.
+  `docs/design-system.md` §3 now cites the SSOT keys and the new component token name.
+  `docs/STATUS.md` design row updated (spacing-scale gap closed; the separate 39-micro-spacing-value
+  gap is unrelated and stays open).
+
 ## 2026-08-08 — [SUG-OPS-005] Pin all third-party GitHub Actions to commit SHAs
 
 - Every `uses:` in `ci.yml` and `scope-guard.yml` (`actions/checkout`, `pnpm/action-setup`,

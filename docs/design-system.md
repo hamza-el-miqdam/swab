@@ -79,7 +79,10 @@ Two families, self-hosted (no external font requests in production — `next/fon
 
 ## 3. Spacing, radii, sizing
 
-- **Spacing scale** (px): `4 · 8 · 12 · 14 · 16 · 20 · 24`. Screen content padding `14 20 20`. Section label top margin `15`.
+- **Spacing scale** (px): `4 · 8 · 12 · 14 · 16 · 20 · 24` — SSOT keys `spacing.xs/s/sm/m/ml/l/xl`
+  (`packages/ui/tokens/tokens.json`; reconciled 2026-08-08, SUG-DES-009 — this contract and the SSOT
+  previously disagreed). Screen content padding `14 20 20` — `component.screen.paddingTop/paddingHorizontal/paddingBottom`.
+  Section label top margin `15`.
 - **Radii** (px): input/row `10`, card/button `12`, tile `14`, pill/tag `999`, avatar `50%`, device screen `57`, device body `64`.
 - **Borders**: `1px` `hair` (default) / `hair-fort` (interactive & ghost).
 - **Device frame**: screen 402 × 874, status bar 62, top bar 44, home bar 34, Dynamic Island 124 × 35.

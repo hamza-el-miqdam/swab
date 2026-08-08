@@ -58,9 +58,10 @@ public enum DesignTokens {
         public static let xs: Double = 4
         public static let s: Double = 8
         public static let sm: Double = 12
-        public static let m: Double = 16
-        public static let l: Double = 24
-        public static let xl: Double = 32
+        public static let m: Double = 14
+        public static let ml: Double = 16
+        public static let l: Double = 20
+        public static let xl: Double = 24
     }
 
     public enum Radius {
@@ -96,6 +97,11 @@ public enum DesignTokens {
         }
         public enum OTP {
             public static let radius: Double = Radius.input
+        }
+        public enum Screen {
+            public static let paddingTop: Double = 14
+            public static let paddingHorizontal: Double = 20
+            public static let paddingBottom: Double = 20
         }
     }
 }

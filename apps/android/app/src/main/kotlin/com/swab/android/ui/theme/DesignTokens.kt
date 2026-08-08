@@ -50,9 +50,10 @@ object DesignTokens {
         const val XS = 4.0
         const val S = 8.0
         const val SM = 12.0
-        const val M = 16.0
-        const val L = 24.0
-        const val XL = 32.0
+        const val M = 14.0
+        const val ML = 16.0
+        const val L = 20.0
+        const val XL = 24.0
     }
 
     object Radius {
@@ -88,6 +89,11 @@ object DesignTokens {
         }
         object OTP {
             val RADIUS = Radius.INPUT
+        }
+        object Screen {
+            const val PADDING_TOP = 14.0
+            const val PADDING_HORIZONTAL = 20.0
+            const val PADDING_BOTTOM = 20.0
         }
     }
 }
