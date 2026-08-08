@@ -42,10 +42,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # Dev bootstrap: push the Prisma schema (no migration files exist yet —
-    # the Data Steward generates real migrations on its Neon dev branch;
-    # `db push` is the documented dev-loop equivalent), then start the API.
-    command: ["sh", "-c", "pnpm --filter @repo/db exec prisma db push --skip-generate && pnpm --filter @repo/api dev"]
+    # Dev bootstrap: apply committed migrations (packages/db/prisma/migrations/
+    # 20260719000000_init, SUG-DB-002), then start the API. `migrate deploy` (not
+    # `db push`) so local dev matches how CI and production apply schema changes.
+    # One-time step for anyone with an existing `db push`-created local database:
+    # run `pnpm --filter @repo/db exec prisma migrate resolve --applied 20260719000000_init`
+    # once before this will apply cleanly (see packages/db/CHANGELOG.md).
+    command: ["sh", "-c", "pnpm --filter @repo/db exec prisma migrate deploy && pnpm --filter @repo/api dev"]
     develop:
       watch:
         - action: sync

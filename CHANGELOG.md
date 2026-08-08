@@ -4,6 +4,27 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-013] CI Postgres service + docker-compose on `prisma migrate deploy` (closes #21)
+
+- `ci.yml`: added a `postgres:17` service (fake `swab`/`swab_ci` creds, health-checked), a
+  `prisma migrate deploy` step against it, and `DATABASE_URL` on the turbo step. `turbo.json`'s `test`
+  task now declares `"env": ["DATABASE_URL"]` so its cache key includes it.
+- **Deviation from the original SUG-OPS-013 plan's step 4** (`prisma db push --skip-generate`): the
+  baseline migration landed today (SUG-DB-002, `packages/db/prisma/migrations/20260719000000_init`),
+  making that step stale before it was ever implemented — used `prisma migrate deploy` instead, per
+  explicit instruction. Verified locally against a scratch `postgres:17` container: applies cleanly,
+  full `pnpm turbo run lint typecheck test build` green with `DATABASE_URL` set.
+- **Folded in GitHub issue #21's other half** (out of data-steward's file scope): `docker-compose.yml`'s
+  API command switched from `db push --skip-generate` to `prisma migrate deploy`; documented the
+  one-time `prisma migrate resolve --applied 20260719000000_init` step for anyone with an existing
+  `db push`-created local database.
+- Not implemented here (narrower than issue #21's optional ask): a `prisma migrate diff --exit-code`
+  schema-drift check against a shadow database. `migrate deploy` fails if the migration set can't
+  apply, but won't catch a `schema.prisma` edit that has no matching migration file — left as a
+  possible stronger follow-up, not requested in this batch's instructions.
+- Filed #22 (area:api, backend-specialist): `prisma-repo.ts` integration tests against this new
+  Postgres service — this PR only adds capacity, zero integration tests included.
+
 ## 2026-08-08 — [SUG-OPS-010] Node version single source of truth (`.nvmrc`, 20 → 22)
 
 - Added `.nvmrc` (`22.23.2`, current 22.x LTS "Jod" point release) at repo root. `ci.yml`'s

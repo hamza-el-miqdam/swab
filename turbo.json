@@ -10,6 +10,6 @@
     "dev": { "dependsOn": ["^db:generate"], "cache": false, "persistent": true },
     "lint": {},
     "typecheck": { "dependsOn": ["^db:generate"] },
-    "test": { "dependsOn": ["^db:generate"] }
+    "test": { "dependsOn": ["^db:generate"], "env": ["DATABASE_URL"] }
   }
 }
