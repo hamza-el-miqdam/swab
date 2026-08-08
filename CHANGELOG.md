@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [SUG-OPS-010] Node version single source of truth (`.nvmrc`, 20 → 22)
+
+- Added `.nvmrc` (`22.23.2`, current 22.x LTS "Jod" point release) at repo root. `ci.yml`'s
+  `setup-node` step now reads `node-version-file: .nvmrc` instead of a hardcoded `20`. Root
+  `package.json` `engines.node` tightened `>=20` → `>=22` to match reality.
+- Closes the drift: `apps/api/Dockerfile` (`node:22-slim`) was already 22; CI was silently testing on
+  20. `pnpm turbo run lint typecheck test build` verified green locally (all 10 tasks) before landing
+  — no code changes needed for the bump.
+- Grepped for other hardcoded Node majors (`README.md`, `DEVELOPMENT.md`, workflows): none found
+  outside the two now-aligned sources (`.nvmrc`, Dockerfile).
+- Gotcha for future dependency bumps: `.nvmrc` and the Dockerfile base image move together — bump
+  both in the same PR, per the original suggestion's note (Renovate/Dependabot won't sync them).
+
 ## 2026-08-08 — [SUG-OPS-002] CODEOWNERS + scope-guard check (G4 enforcement, not yet required)
 
 - Added `.github/CODEOWNERS` (review-routing only — solo repo, `@hamza-el-miqdam` everywhere) and
