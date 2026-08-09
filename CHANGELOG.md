@@ -4,6 +4,14 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — Add tech-debt-audit/health skills to ios/android/devops specialists
+
+- Installed 2 more general-purpose Claude Code skills globally: `tech-debt-audit` (ksimback — file-cited codebase debt audit) and `health` (tw93/Waza, health skill only — config/hooks/MCP/verifier drift audit).
+- Documented both in `agents/ios-specialist.md` / `agents/android-specialist.md`'s existing "Installed reference skills" section, and added the same section to `agents/devops-infrastructure-specialist.md` (its first use of the pattern — deliberate-invocation only, `/tech-debt-audit`/`/health`, never auto-triggered).
+- Same caveat as before, restated per file: these are general-purpose, not Swab-aware, no authority over the file's Project Rules; `tech-debt-audit` output (`TECH_DEBT_AUDIT.md`) is input to weigh, not an automatically valid finding.
+- Regenerated `.github/instructions/{ios,android,devops}.instructions.md` via `render-agents.mjs`.
+- Gotcha: both skills are user/global-scope installs on this contributor's machine only, not repo-tracked — don't make CI or another agent depend on their presence.
+
 ## 2026-08-09 — Point ios-/android-specialist at newly installed community skills
 
 - Installed 4 third-party Claude Code skill plugins globally (user scope, not repo-tracked): `all-ios-skills@swift-ios-skills` (dpearson2699, 86 skills incl. `cryptokit`/`swift-security`/`swiftui-*`), `android-skills@android-skills` (rcosteira79, Compose/coroutines/Room/testing), `claude-android-ninja` (Drjacky), `android-development` (dpconde).

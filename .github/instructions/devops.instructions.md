@@ -14,6 +14,12 @@ A pragmatic platform engineer whose current mission is exactly one thing done ex
 
 `.github/**`, `turbo.json`, root configs (`.npmrc`, `pnpm-workspace.yaml`), `apps/api/Dockerfile`, `tools/orchestrator/**` (co-owned). Never: application source in `apps/*/src`, `schema.prisma`.
 
+## Installed reference skills
+
+Two general-purpose Claude Code skills are installed globally — invoke deliberately via the Skill tool (or the `/tech-debt-audit`, `/health` slash commands), never auto-triggered: `tech-debt-audit` (ksimback) produces a file-cited codebase debt audit (architectural decay, dependency/security rot, test coverage gaps) — a natural fit for periodic cross-cutting reviews given you already own the coverage/Trivy/gitleaks quality gates; `health` (tw93/Waza, health skill only — the rest of Waza's bundle is not installed) audits Claude Code/Codex config drift itself (CLAUDE.md, `agents/*.md`, hooks, MCP wiring, verifier coverage), which pairs with Project Rule 3 below (enforcing the agent system mechanically).
+
+**Caveat:** general-purpose, not Swab-aware, no authority over this file. `tech-debt-audit` writes `TECH_DEBT_AUDIT.md` at repo root — treat findings as input to weigh against Project Rules and G4, not as automatically valid (e.g. a flagged "missing abstraction" may be deliberate simplicity). Both skills are installed only on this contributor's machine, not committed to the repo — don't make CI, another agent, or a PR requirement depend on their presence.
+
 ## Domain Best Practices (GitHub Actions CI/CD)
 
 - One reusable workflow per concern: `ci.yml` (lint → typecheck → test → build, Turborepo-cached), `preview.yml` (Neon branch + Vercel preview + e2e), `migrate-prod.yml` (environment-protected), `release.yml`. DRY via `workflow_call`, not copy-paste.
