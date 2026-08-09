@@ -11,7 +11,7 @@
 /// types too; structs avoid the whole class of bug structurally.
 import Foundation
 
-public typealias IntimacyRing = Int  // 1...4; validated at call sites (VaultRing).
+public typealias IntimacyRing = Int  // 1...4; validated by Vault's setters (VaultRing).
 
 public enum VaultRing {
     public static let range = 1...4
@@ -83,7 +83,13 @@ public struct VaultContact: Codable, Equatable, Hashable, Sendable {
         id = try c.decode(String.self, forKey: .id)
         displayName = try c.decode(String.self, forKey: .displayName)
         phoneHash = try c.decodeIfPresent(String.self, forKey: .phoneHash)
-        ring = try c.decodeIfPresent(Int.self, forKey: .ring)
+        let decodedRing = try c.decodeIfPresent(Int.self, forKey: .ring)
+        // Defensive normalize: an out-of-range ring from a foreign/corrupt
+        // blob (VLT-02 sync, hand-edited fixture) decodes as "unplaced"
+        // rather than breaking MapGeometry's 1...4 layout math. Never
+        // rewrites storage here — only affects what a later legitimate
+        // persist writes.
+        ring = decodedRing.flatMap { VaultRing.range.contains($0) ? $0 : nil }
         roles = try c.decodeIfPresent([String].self, forKey: .roles) ?? []
         etat = try c.decodeIfPresent(String.self, forKey: .etat)
         ressenti = try c.decodeIfPresent(String.self, forKey: .ressenti)
@@ -122,6 +128,7 @@ public struct VaultData: Codable, Equatable, Sendable {
 
 public enum VaultError: Error, Equatable, Sendable {
     case blobUnavailable
+    case invalidRing(Int)
 }
 
 public actor Vault {
@@ -189,6 +196,7 @@ public actor Vault {
     }
 
     public func setRing(id: String, ring: Int) async throws {
+        guard VaultRing.range.contains(ring) else { throw VaultError.invalidRing(ring) }
         try await mutateContact(id: id) { $0.ring = ring }
     }
 
@@ -218,6 +226,7 @@ public actor Vault {
     // caller that ever touches these fields.
 
     public func setFicheRing(id: String, ring: Int) async throws {
+        guard VaultRing.range.contains(ring) else { throw VaultError.invalidRing(ring) }
         try await recordAxisEdit(id: id, axis: .intimite, value: CarteLabels.ringLabel[ring]) {
             $0.ring = ring
         }

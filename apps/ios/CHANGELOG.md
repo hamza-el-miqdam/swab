@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [VLT-01, ONB-04, FCH-01] `Vault` enforces its own 1...4 ring invariant (SUG-IOS-014)
+
+- `Vault.setRing`/`setFicheRing` now throw new `VaultError.invalidRing(Int)` for any ring outside `VaultRing.range` (1...4, now spec-frozen per FS-01 ONB-04's 4-ring taxonomy) instead of persisting it silently — protects `MapGeometry`'s layout math (negative node sizes, nil ring labels) from a foreign/corrupt VLT-02-synced blob.
+- Defensive decode: `VaultContact.init(from:)` normalizes an out-of-range `ring` to `nil` ("unplaced", visible in the MAP-09 tray) rather than propagating it — never rewrites storage eagerly, only affects a later legitimate persist.
+- Existing UI call sites (`FicheViewModel.setRing`, `OnboardingViewModels` ring picker) already use `try?`; the throw is silently absorbed there since the UI only ever offers valid rings — acceptable per the suggestion, pairs with a future error-reporter seam.
+- Tests: `test_VLT01_setRing_outOfRange_throwsInvalidRing`, `test_VLT01_decodeContactWithOutOfRangeRing_normalizesToUnplaced`, `test_FCH01_setFicheRing_outOfRange_throwsAndAppendsNoHistory`. `xcrun swift test`: 116/116.
+
 ## 2026-08-09 — [SUG-DES-004] Typography/Radius tokens consumed; Inter + Space Grotesk bundled
 
 - Bundled Inter (400/500/600) + Space Grotesk (400/500/600) as OFL-licensed TTFs (`App/Resources/Fonts/`, source: `fonts.gstatic.com`, license text alongside), registered via `UIAppFonts` (`App/Info.plist`, merged into the auto-generated plist via `INFOPLIST_FILE` + `GENERATE_INFOPLIST_FILE=YES` since `UIAppFonts` is an array — no `INFOPLIST_KEY_*` covers that). No runtime network font fetches. Xcode project (`project.pbxproj`) hand-edited: new file refs, a `Resources` build-phase membership, and the `INFOPLIST_FILE` setting on both configs.

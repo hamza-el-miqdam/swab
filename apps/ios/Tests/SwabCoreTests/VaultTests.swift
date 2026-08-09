@@ -55,6 +55,37 @@ final class VaultTests: XCTestCase {
         XCTAssertEqual(contacts.first?.ring, 1)
     }
 
+    /// VLT-01: `Vault` owns the 1...4 ring invariant — rings outside
+    /// `VaultRing.range` must throw rather than persist, since blobs can
+    /// arrive via VLT-02 sync from a foreign/corrupt client.
+    func test_VLT01_setRing_outOfRange_throwsInvalidRing() async throws {
+        let vault = makeVault()
+        let contact = try await vault.addContact(displayName: "D")
+
+        for outOfRange in [0, 5] {
+            do {
+                try await vault.setRing(id: contact.id, ring: outOfRange)
+                XCTFail("expected invalidRing to throw for \(outOfRange)")
+            } catch VaultError.invalidRing(let ring) {
+                XCTAssertEqual(ring, outOfRange)
+            }
+        }
+
+        let contacts = try await vault.getContacts()
+        XCTAssertNil(contacts.first?.ring, "contact must be unchanged after a rejected ring")
+    }
+
+    /// A ring outside 1...4 in a decoded blob (foreign client, corruption)
+    /// must normalize to "unplaced" rather than breaking MapGeometry's
+    /// layout math, which assumes the 1...4 invariant.
+    func test_VLT01_decodeContactWithOutOfRangeRing_normalizesToUnplaced() throws {
+        let json = """
+        {"id":"c1","displayName":"Foreign","roles":[],"ring":9}
+        """
+        let decoded = try JSONDecoder().decode(VaultContact.self, from: Data(json.utf8))
+        XCTAssertNil(decoded.ring)
+    }
+
     func test_VLT01_setEtatAndRessenti_optionalAndClearable() async throws {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "C")

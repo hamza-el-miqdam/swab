@@ -31,6 +31,25 @@ final class FicheVaultTests: XCTestCase {
         }
     }
 
+    /// VLT-01/FCH-01: an out-of-range ring must throw before any mutation
+    /// or history entry is recorded — same invariant as `setRing`.
+    func test_FCH01_setFicheRing_outOfRange_throwsAndAppendsNoHistory() async throws {
+        let vault = makeVault()
+        let contact = try await vault.addContact(displayName: "Léa")
+
+        do {
+            try await vault.setFicheRing(id: contact.id, ring: 0)
+            XCTFail("expected invalidRing to throw")
+        } catch VaultError.invalidRing(let ring) {
+            XCTAssertEqual(ring, 0)
+        }
+
+        let updated = try await vault.getContact(id: contact.id)
+        XCTAssertNil(updated?.ring)
+        XCTAssertEqual(updated?.history.count, 0)
+        XCTAssertNil(updated?.lastAxisChangeAt)
+    }
+
     func test_FCH01_setFicheEtat_persistsAndAppendsHistory() async throws {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Sam")
