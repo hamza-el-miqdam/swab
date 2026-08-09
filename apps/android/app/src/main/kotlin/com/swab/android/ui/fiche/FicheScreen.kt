@@ -14,6 +14,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -122,7 +123,16 @@ private fun IntimiteAxis(ring: Int?, onSelect: (Int) -> Unit) {
         Text(Fr.FICHE_AXIS_INTIMITE, style = MaterialTheme.typography.titleSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((r, label) in Labels.RING_LABEL) {
-                FilterChip(selected = ring == r, onClick = { onSelect(r) }, label = { Text(label) })
+                // SUG-DES-011: visual geometry stays the charter's ~34dp cell;
+                // minimumInteractiveComponentSize() extends only the TAPPABLE
+                // region to Material's 48dp floor (matches
+                // DesignTokens.Component.Touch.MIN_TARGET intent).
+                FilterChip(
+                    selected = ring == r,
+                    onClick = { onSelect(r) },
+                    label = { Text(label) },
+                    modifier = Modifier.minimumInteractiveComponentSize(),
+                )
             }
         }
     }
@@ -134,7 +144,13 @@ private fun RolesAxis(selected: List<String>, onToggle: (String) -> Unit) {
         Text(Fr.FICHE_AXIS_ROLES, style = MaterialTheme.typography.titleSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (role in ROLES) {
-                FilterChip(selected = role in selected, onClick = { onToggle(role) }, label = { Text(role) })
+                // SUG-DES-011: hit area only, visual chip size unchanged.
+                FilterChip(
+                    selected = role in selected,
+                    onClick = { onToggle(role) },
+                    label = { Text(role) },
+                    modifier = Modifier.minimumInteractiveComponentSize(),
+                )
             }
         }
     }
@@ -146,7 +162,13 @@ private fun EtatAxis(etat: String?, onSelect: (String) -> Unit) {
         Text(Fr.FICHE_AXIS_ETAT, style = MaterialTheme.typography.titleSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (value in ETATS) {
-                FilterChip(selected = etat == value, onClick = { onSelect(value) }, label = { Text(value) })
+                // SUG-DES-011: hit area only, visual chip size unchanged.
+                FilterChip(
+                    selected = etat == value,
+                    onClick = { onSelect(value) },
+                    label = { Text(value) },
+                    modifier = Modifier.minimumInteractiveComponentSize(),
+                )
             }
         }
         FicheFilterConsequence.forValue(etat)?.let {
@@ -161,7 +183,13 @@ private fun RessentiAxis(ressenti: String?, onSelect: (String) -> Unit) {
         Text(Fr.FICHE_AXIS_RESSENTI, style = MaterialTheme.typography.titleSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (value in RESSENTIS) {
-                FilterChip(selected = ressenti == value, onClick = { onSelect(value) }, label = { Text(value) })
+                // SUG-DES-011: hit area only, visual chip size unchanged.
+                FilterChip(
+                    selected = ressenti == value,
+                    onClick = { onSelect(value) },
+                    label = { Text(value) },
+                    modifier = Modifier.minimumInteractiveComponentSize(),
+                )
             }
         }
     }

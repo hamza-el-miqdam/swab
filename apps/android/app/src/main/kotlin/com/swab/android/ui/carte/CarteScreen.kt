@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,10 +65,14 @@ fun CarteScreen(viewModel: CarteViewModel, onOpenFiche: (String) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(Fr.CARTE_LIST_MODE, style = MaterialTheme.typography.bodyMedium)
+            // SUG-DES-011: the 38×21 track visual stays charter-exact; only
+            // the tappable region grows to Material's 48dp floor.
             Switch(
                 checked = listMode,
                 onCheckedChange = viewModel::setListMode,
-                modifier = Modifier.semantics { contentDescription = Fr.CARTE_LIST_MODE },
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .semantics { contentDescription = Fr.CARTE_LIST_MODE },
             )
         }
 

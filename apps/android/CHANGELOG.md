@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-DES-011] Minimum touch targets on Fiche axis chips + Carte list-mode switch
+
+- Applied `Modifier.minimumInteractiveComponentSize()` (Material3 built-in, 48dp floor) to the Fiche axis `FilterChip`s — Intimité (segmented/intimacy-cell equivalent), Rôles, État, Ressenti (`FicheScreen.kt`) — and the Carte list-mode `Switch` (`CarteScreen.kt`). Visual geometry is untouched; only the tappable region grows, per the suggestion's "hit-area-only" rule.
+- No dedicated "Tag"/"Segmented" composable files exist in this codebase yet (only Material3 `FilterChip` calls) — mapped onto them per suggestions/design/SUG-DES-011.
+- Added `FicheTouchTargetsTest` (androidTest, instrumented) locking touch bounds >=48dp on all three. **Flagged, not silently substituted:** `assertTouchHeightIsAtLeast` (named in the suggestion's acceptance criteria) doesn't exist in this project's pinned Compose Test version (compose-bom 2024.09.00 -> ui-test 1.7.0, confirmed by decompiling `BoundsAssertionsKt`); used `assertTouchHeightIsEqualTo(48.dp)` instead, which is equivalent here since `minimumInteractiveComponentSize()` pads exactly to 48dp when the visual size is smaller. Did not bump compose-bom to chase one helper — no emulator in this environment to verify a wide-blast-radius bump end-to-end.
+- Test requires a booted emulator (`scripts/e2e-android.sh`) to actually run — not exercised by `./gradlew test` here, consistent with this repo's existing instrumented-test constraint (no emulator in this sandbox).
+- `./gradlew test` + `compileDebugAndroidTestKotlin`: BUILD SUCCESSFUL.
+
 ## 2026-08-09 — [MAP-03, SUG-DES-006] État palette repointed to token SSOT
 
 - `EtatColors.kt`'s 3 blueprint-sourced hex literals (disponible/occupé/ailleurs) now read from `DesignTokens.Color.ETAT_DISPONIBLE/ETAT_OCCUPE/ETAT_AILLEURS` (generated from `tokens.json`, landed on `main` by design-specialist in `9070165`). Pure indirection: tokens store lowercase hex, `.uppercase()`'d at the call site so the map's values stay byte-identical to the prior literals.
