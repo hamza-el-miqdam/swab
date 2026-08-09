@@ -30,10 +30,15 @@ public final class PhoneViewModel {
 
     private let apiClient: ApiClient
     private let pending: PendingSignup
+    /// Deployment-scoped (SUG-IOS-008) — defaults to `PhoneHash.defaultSalt`
+    /// so existing call sites/tests don't churn; the composition root passes
+    /// `AppConfig.phoneHashSalt` in a real run.
+    private let salt: String
 
-    public init(apiClient: ApiClient, pending: PendingSignup) {
+    public init(apiClient: ApiClient, pending: PendingSignup, salt: String = PhoneHash.defaultSalt) {
         self.apiClient = apiClient
         self.pending = pending
+        self.salt = salt
     }
 
     public var canSubmit: Bool {
@@ -47,7 +52,7 @@ public final class PhoneViewModel {
         showError = false
         defer { isBusy = false }
         do {
-            let phoneHash = PhoneHash.hash(rawPhone)
+            let phoneHash = PhoneHash.hash(rawPhone, salt: salt)
             let response = try await apiClient.requestOtp(phoneHash: phoneHash)
             pending.setPendingPhoneHash(phoneHash)
             pending.setDevCode(response.devCode)
@@ -137,11 +142,20 @@ public final class ContactsViewModel {
     private let vault: Vault
     private let importer: ContactsImporting
     private let onboarding: OnboardingStateStore
+    /// Deployment-scoped (SUG-IOS-008), same default/override contract as
+    /// `PhoneViewModel.salt`.
+    private let salt: String
 
-    public init(vault: Vault, importer: ContactsImporting, onboarding: OnboardingStateStore) {
+    public init(
+        vault: Vault,
+        importer: ContactsImporting,
+        onboarding: OnboardingStateStore,
+        salt: String = PhoneHash.defaultSalt
+    ) {
         self.vault = vault
         self.importer = importer
         self.onboarding = onboarding
+        self.salt = salt
     }
 
     public func refresh() async {
@@ -161,7 +175,7 @@ public final class ContactsViewModel {
     }
 
     public func pick(_ contact: DeviceContact) async {
-        let phoneHash = contact.phone.map { PhoneHash.hash($0) }
+        let phoneHash = contact.phone.map { PhoneHash.hash($0, salt: salt) }
         _ = try? await vault.addContact(displayName: contact.name, phoneHash: phoneHash)
         await refresh()
     }

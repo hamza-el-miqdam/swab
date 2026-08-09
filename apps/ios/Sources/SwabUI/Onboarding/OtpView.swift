@@ -32,9 +32,15 @@ public struct OtpView: View {
                 Text(Fr.t(.brandName)).swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
                 Text(Fr.t(.otpTitle)).swabType(DesignTokens.Typography.title, relativeTo: .title2)
 
+                #if DEBUG
+                // Dev-only convenience: the API only ever returns `devCode`
+                // outside `NODE_ENV=production` (`apps/api/src/routes/auth.ts`),
+                // but a Release build must never render it regardless — this
+                // is a compile-time gate, not a trust-the-server one (G1).
                 if let devCode = viewModel.devCode {
                     Text("Code (dev) : \(devCode)")
                 }
+                #endif
 
                 TextField(Fr.t(.otpPlaceholder), text: $viewModel.code)
                     #if os(iOS)

@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- SUG-IOS-008: G1 config seam. Values come from the SWAB_API_BASE_URL /
+	     SWAB_PHONE_HASH_SALT build settings (per-configuration, see
+	     project.pbxproj) — never hardcoded here. AppConfig.load() fails fast
+	     at boot if either is missing/invalid. -->
+	<key>SwabApiBaseURL</key>
+	<string>$(SWAB_API_BASE_URL)</string>
+	<key>SwabPhoneHashSalt</key>
+	<string>$(SWAB_PHONE_HASH_SALT)</string>
 	<!-- SUG-DES-004: charter fonts (Inter, Space Grotesk) bundled as OFL-licensed
 	     TTFs in App/Resources/Fonts/ — registered here so CoreText/UIKit can
 	     resolve them by PostScript name (see SwabUI/Components/Typography.swift).

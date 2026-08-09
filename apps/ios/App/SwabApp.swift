@@ -102,8 +102,17 @@ struct RootView: View {
     private let vault: Vault
     private let apiClient: ApiClient
     private let vaultSync: VaultSync
+    private let config: AppConfig
 
     init() {
+        // G1/SUG-IOS-008: fail fast at boot on missing/invalid config rather
+        // than silently compiling in a hardcoded URL/salt — Debug's build
+        // settings default to the same 127.0.0.1:3001 / poc salt this app
+        // has always used, so this changes nothing about Simulator/E2E runs.
+        // A crash here on a real build is the correct failure mode — there
+        // is no safe degraded state for "we don't know the API URL".
+        let config = try! AppConfig.load()
+        self.config = config
         let secureStore = KeychainSecureStore()
         #if DEBUG
         UITestHooks.apply(storeURL: RootView.storeURL(), secureStore: secureStore)
@@ -121,7 +130,7 @@ struct RootView: View {
         // a first shell run (see CHANGELOG note).
         let transport = URLSessionHTTPTransport()
         let apiClient = ApiClient(
-            baseURL: URL(string: "http://127.0.0.1:3001")!,
+            baseURL: config.apiBaseURL,
             transport: transport,
             session: session
         )
@@ -170,7 +179,9 @@ struct RootView: View {
                     onBackToPhone: { showingOtp = false }
                 )
             } else {
-                PhoneView(viewModel: PhoneViewModel(apiClient: apiClient, pending: pending)) {
+                PhoneView(
+                    viewModel: PhoneViewModel(apiClient: apiClient, pending: pending, salt: config.phoneHashSalt)
+                ) {
                     showingOtp = true
                 }
             }
@@ -179,7 +190,8 @@ struct RootView: View {
                 viewModel: ContactsViewModel(
                     vault: vault,
                     importer: FakeContactsImporter(granted: false),
-                    onboarding: onboarding
+                    onboarding: onboarding,
+                    salt: config.phoneHashSalt
                 )
             ) {
                 step = .calibrate

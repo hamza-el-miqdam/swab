@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [IDT-01, IDT-06, ONB-02] G1 config seam: base URL/salt no longer hardcoded; dev-OTP UI DEBUG-gated (SUG-IOS-008)
+
+- New `AppConfig` (`Sources/SwabCore/AppConfig.swift`): `load(bundle:)` reads `SwabApiBaseURL`/`SwabPhoneHashSalt` from Info.plist (fed by new `SWAB_API_BASE_URL`/`SWAB_PHONE_HASH_SALT` build settings, both configs, `project.pbxproj`), fails fast (`AppConfig.LoadError`) on missing/invalid values, and rejects non-loopback HTTP (ATS: ok for `127.0.0.1`/`localhost` only, a real deployment must be HTTPS). Testable via an internal `load(lookup:)` overload — no real `Bundle` needed in tests.
+- `RootView.init` (`App/SwabApp.swift`) now `try!`-loads config at boot (crash is the correct failure mode — no safe degraded state for "unknown API URL") and threads `config.apiBaseURL`/`config.phoneHashSalt` into `ApiClient`, `PhoneViewModel`, `ContactsViewModel`. Both view models gained a `salt: String = PhoneHash.defaultSalt` init param (default keeps existing call sites/tests unchanged).
+- Debug/Release build settings both currently default to `http://127.0.0.1:3001` / `swab-poc-phone-salt-v1` (no real deployment exists yet) — a future prod build overrides via `xcconfig`, no code change needed.
+- Dev-OTP text (`OtpView.swift`) wrapped in `#if DEBUG` — confirmed safe: the E2E suite's `DevBackend` fetches `devCode` directly from the API response, never reads it off the OtpView UI.
+- Tests: `Tests/SwabCoreTests/AppConfigTests.swift` (7 cases incl. `test_G1_missingBaseURL_throwsAtLoad`, `test_G1_nonLoopbackHttpURL_isRejected`, `test_IDT06_saltOverride_changesHashDeterministically` against a precomputed vector). `xcrun swift test`: 122/122. `xcodebuild build-for-testing` verified the app target still builds and the built `Info.plist` resolves `$(SWAB_API_BASE_URL)` correctly.
+
 ## 2026-08-09 — [ONB-02, IDT-01] E2E preflight probes `/ready` not `/health` (SUG-IOS-016)
 
 - `scripts/e2e-ios.sh` preflight and `DevBackend.waitForReady` (renamed from `waitForHealth`, `SwabAppUITests/Support/DevBackend.swift`) now hit `/ready` instead of `/health`. `/health` is liveness-only (no dependency checks, per G3); a `docker compose` partial-start state (Fastify up, Postgres down/unmigrated) passed `/health` and then died ~30s later inside `OnboardingFlow` with a generic "OTP screen not reached" failure — exactly what the preflight exists to prevent.
