@@ -4,6 +4,13 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [ENV-13] Resolve OQ-ENV-4: accept button copy frozen as « Accepter la proposition » (closes #19)
+
+- Design-specialist proposed 3 candidates (grounded in the existing "Flux envie et match" blueprint's tone/verb+object button pattern); Hamza picked **« Accepter la proposition »** — reuses "la proposition" verbatim from ENV-14's already-frozen "Envoyer la proposition" button.
+- `docs/specs/FS-05-envie-match.md` (ENV-13, OQ-ENV-4) and `specs/001-envie-match/spec.md` (Acceptance Scenario 1, FR-013, Assumptions) updated — both OQ-ENV-4 and OQ-ENV-5 (FS-05's ENV-13 open questions) are now resolved.
+- No prompt copy above the two buttons was requested — screen shows the bare button pair.
+- Gotcha: Penpot was checked for a more current source and was unreachable (OAuth needs an interactive session, can't complete non-interactively) — copy is grounded in the static blueprint export only. Worth re-checking against Penpot once it's authorized, in case a newer design disagrees.
+
 ## 2026-08-08 — [ENV-13, ENV-14] Resolve OQ-ENV-5: no separate "decline" action, pending-proposal surface is accept/pass only (closes #20)
 
 - Architect decision (issue #20): swab has no refusal philosophy distinct from the soft pass — declining a specific proposal and passing on the match are the same user-facing action. Consistent with `docs/product-overview.md`'s existing glossary entry ("passer cette fois" = soft pass = declining invisibly) and product law 5; nothing in that file needed to change.
