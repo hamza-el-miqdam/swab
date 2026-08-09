@@ -121,7 +121,7 @@ function buildTs() {
   lines.push("export const typography = {");
   for (const [key, t] of Object.entries(tokens.typography)) {
     lines.push(
-      `  ${key}: { family: "${t.family}", size: ${t.size}, weight: ${t.weight}, lineHeight: ${t.lineHeight}, letterSpacing: ${t.letterSpacing}, textTransform: "${t.textTransform}" },`,
+      `  ${key}: { family: "${t.family}", size: ${t.size}, weight: ${t.weight}, lineHeight: ${t.lineHeight}, letterSpacingEm: ${t.letterSpacingEm}, textTransform: "${t.textTransform}" },`,
     );
   }
   lines.push("} as const;", "");
@@ -195,7 +195,7 @@ function buildCss() {
     lines.push(`  --font-${kebab}-size: ${t.size}px;`);
     lines.push(`  --font-${kebab}-weight: ${t.weight};`);
     lines.push(`  --font-${kebab}-line-height: ${t.lineHeight};`);
-    lines.push(`  --font-${kebab}-letter-spacing: ${t.letterSpacing}px;`);
+    lines.push(`  --font-${kebab}-letter-spacing: ${t.letterSpacingEm}em;`);
     lines.push(`  --font-${kebab}-text-transform: ${t.textTransform};`);
   }
 
@@ -275,15 +275,15 @@ function buildSwift() {
     "        public let size: Double",
     "        public let weight: Int",
     "        public let lineHeight: Double",
-    "        public let letterSpacing: Double",
+    "        public let letterSpacingEm: Double",
     "        public let textTransform: String",
     "",
-    "        public init(family: String, size: Double, weight: Int, lineHeight: Double, letterSpacing: Double, textTransform: String) {",
+    "        public init(family: String, size: Double, weight: Int, lineHeight: Double, letterSpacingEm: Double, textTransform: String) {",
     "            self.family = family",
     "            self.size = size",
     "            self.weight = weight",
     "            self.lineHeight = lineHeight",
-    "            self.letterSpacing = letterSpacing",
+    "            self.letterSpacingEm = letterSpacingEm",
     "            self.textTransform = textTransform",
     "        }",
     "    }",
@@ -293,7 +293,7 @@ function buildSwift() {
   lines.push("    public enum Typography {");
   for (const [key, t] of Object.entries(tokens.typography)) {
     lines.push(
-      `        public static let ${key} = TypographyStyle(family: "${t.family}", size: ${t.size}, weight: ${t.weight}, lineHeight: ${t.lineHeight}, letterSpacing: ${t.letterSpacing}, textTransform: "${t.textTransform}")`,
+      `        public static let ${key} = TypographyStyle(family: "${t.family}", size: ${t.size}, weight: ${t.weight}, lineHeight: ${t.lineHeight}, letterSpacingEm: ${t.letterSpacingEm}, textTransform: "${t.textTransform}")`,
     );
   }
   lines.push("    }", "");
@@ -386,7 +386,7 @@ function buildKotlin() {
     "        val size: Double,",
     "        val weight: Int,",
     "        val lineHeight: Double,",
-    "        val letterSpacing: Double,",
+    "        val letterSpacingEm: Double,",
     "        val textTransform: String,",
     "    )",
     "",
@@ -395,7 +395,7 @@ function buildKotlin() {
   lines.push("    object Typography {");
   for (const [key, t] of Object.entries(tokens.typography)) {
     lines.push(
-      `        val ${toUpperSnake(key)} = TypographyStyle(family = "${t.family}", size = ${toKotlinDouble(t.size)}, weight = ${t.weight}, lineHeight = ${toKotlinDouble(t.lineHeight)}, letterSpacing = ${toKotlinDouble(t.letterSpacing)}, textTransform = "${t.textTransform}")`,
+      `        val ${toUpperSnake(key)} = TypographyStyle(family = "${t.family}", size = ${toKotlinDouble(t.size)}, weight = ${t.weight}, lineHeight = ${toKotlinDouble(t.lineHeight)}, letterSpacingEm = ${toKotlinDouble(t.letterSpacingEm)}, textTransform = "${t.textTransform}")`,
     );
   }
   lines.push("    }", "");

@@ -9,7 +9,7 @@
 > Owner: Design & Design-System Specialist (`agents/design-specialist.md`, `area:design`). Product law 5
 > (calm by design) is binding: nothing here may introduce counters, celebration, or urgency affordances.
 
-_Last updated: 2026-08-08_
+_Last updated: 2026-08-09_
 
 ## 1. Colour tokens
 
@@ -72,6 +72,17 @@ Two families, self-hosted (no external font requests in production — `next/fon
 |---|---|---|
 | **Space Grotesk** | 400, 500, 600 | Display & headings — wordmark, screen titles (`ptitle`), success titles. `font-weight:500`, `line-height:1.25`. Wordmark uses wide tracking (`.22em`). |
 | **Inter** | 400, 500, 600 | Everything else — body, UI, labels, buttons. Base `15px / 1.6`. |
+
+> **Scaling contract (SUG-DES-012):** every type style scales with the platform text-size setting — Dynamic
+> Type via `UIFontMetrics`/`relativeTo:` on iOS, `sp` units on Android, `rem` on web. SSOT `size` values
+> (`packages/ui/tokens/tokens.json`, `typography.*.size`) are the reference size at default scale (1.0), not
+> a fixed pixel ceiling. Letter-spacing is stored **em-relative** as `letterSpacingEm` (renamed from the
+> earlier absolute-px `letterSpacing` snapshot) and multiplies the *rendered* (scaled) size, so tracking
+> stays proportionally correct as text grows — never re-derive tracking from the unscaled reference size.
+> Fixed-height components sized against the type scale (e.g. the 48pt/48dp button, `component.button.height`)
+> declare a **minimum height that grows with text** — they must not clip a Dynamic-Type-scaled label.
+> The wordmark's charter range (`.22–.24em`, 26–30px) is canonicalized here to the smaller pair —
+> **26px / .22em** — as the single SSOT value; implementers must not average or otherwise reinterpret the range.
 
 ### Type scale (px)
 

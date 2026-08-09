@@ -77,8 +77,16 @@ export function validate(tokens) {
       if (!isPositiveNumber(t.lineHeight)) {
         fail(`typography.${key}.lineHeight`, `must be a positive number, got ${JSON.stringify(t.lineHeight)}`);
       }
-      if (typeof t.letterSpacing !== "number" || !Number.isFinite(t.letterSpacing) || t.letterSpacing < 0) {
-        fail(`typography.${key}.letterSpacing`, `must be a number >= 0, got ${JSON.stringify(t.letterSpacing)}`);
+      if (
+        typeof t.letterSpacingEm !== "number" ||
+        !Number.isFinite(t.letterSpacingEm) ||
+        t.letterSpacingEm < 0 ||
+        t.letterSpacingEm > 0.5
+      ) {
+        fail(
+          `typography.${key}.letterSpacingEm`,
+          `must be an em-relative number in [0, 0.5], got ${JSON.stringify(t.letterSpacingEm)}`,
+        );
       }
       if (!VALID_TRANSFORMS.has(t.textTransform)) {
         fail(

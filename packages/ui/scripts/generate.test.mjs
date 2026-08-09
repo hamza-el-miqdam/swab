@@ -19,7 +19,7 @@ function validTokens() {
       hair: { value: "#edebe2", opacity: 0.12, role: "Hairline separators." },
     },
     typography: {
-      base: { family: "Inter", size: 15, weight: 400, lineHeight: 1.6, letterSpacing: 0, textTransform: "none" },
+      base: { family: "Inter", size: 15, weight: 400, lineHeight: 1.6, letterSpacingEm: 0, textTransform: "none" },
     },
     spacing: { xs: 4, s: 8 },
     radius: { button: 12 },

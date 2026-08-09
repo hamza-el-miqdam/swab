@@ -36,20 +36,20 @@ object DesignTokens {
         val size: Double,
         val weight: Int,
         val lineHeight: Double,
-        val letterSpacing: Double,
+        val letterSpacingEm: Double,
         val textTransform: String,
     )
 
     object Typography {
-        val WORDMARK = TypographyStyle(family = "Space Grotesk", size = 26.0, weight = 500, lineHeight = 1.25, letterSpacing = 5.7, textTransform = "none")
-        val TITLE = TypographyStyle(family = "Space Grotesk", size = 20.0, weight = 500, lineHeight = 1.25, letterSpacing = 0.0, textTransform = "none")
-        val DONE_TITLE = TypographyStyle(family = "Space Grotesk", size = 16.0, weight = 500, lineHeight = 1.25, letterSpacing = 0.0, textTransform = "none")
-        val BASE = TypographyStyle(family = "Inter", size = 15.0, weight = 400, lineHeight = 1.6, letterSpacing = 0.0, textTransform = "none")
-        val BUTTON = TypographyStyle(family = "Inter", size = 15.0, weight = 500, lineHeight = 1.2, letterSpacing = 0.0, textTransform = "none")
-        val SUBTITLE = TypographyStyle(family = "Inter", size = 13.5, weight = 400, lineHeight = 1.5, letterSpacing = 0.0, textTransform = "none")
-        val TAG = TypographyStyle(family = "Inter", size = 14.0, weight = 400, lineHeight = 1.3, letterSpacing = 0.0, textTransform = "none")
-        val CAPTION = TypographyStyle(family = "Inter", size = 12.0, weight = 400, lineHeight = 1.5, letterSpacing = 0.0, textTransform = "none")
-        val LABEL = TypographyStyle(family = "Inter", size = 11.0, weight = 400, lineHeight = 1.3, letterSpacing = 1.1, textTransform = "uppercase")
+        val WORDMARK = TypographyStyle(family = "Space Grotesk", size = 26.0, weight = 500, lineHeight = 1.25, letterSpacingEm = 0.22, textTransform = "none")
+        val TITLE = TypographyStyle(family = "Space Grotesk", size = 20.0, weight = 500, lineHeight = 1.25, letterSpacingEm = 0.0, textTransform = "none")
+        val DONE_TITLE = TypographyStyle(family = "Space Grotesk", size = 16.0, weight = 500, lineHeight = 1.25, letterSpacingEm = 0.0, textTransform = "none")
+        val BASE = TypographyStyle(family = "Inter", size = 15.0, weight = 400, lineHeight = 1.6, letterSpacingEm = 0.0, textTransform = "none")
+        val BUTTON = TypographyStyle(family = "Inter", size = 15.0, weight = 500, lineHeight = 1.2, letterSpacingEm = 0.0, textTransform = "none")
+        val SUBTITLE = TypographyStyle(family = "Inter", size = 13.5, weight = 400, lineHeight = 1.5, letterSpacingEm = 0.0, textTransform = "none")
+        val TAG = TypographyStyle(family = "Inter", size = 14.0, weight = 400, lineHeight = 1.3, letterSpacingEm = 0.0, textTransform = "none")
+        val CAPTION = TypographyStyle(family = "Inter", size = 12.0, weight = 400, lineHeight = 1.5, letterSpacingEm = 0.0, textTransform = "none")
+        val LABEL = TypographyStyle(family = "Inter", size = 11.0, weight = 400, lineHeight = 1.3, letterSpacingEm = 0.1, textTransform = "uppercase")
     }
 
     object Spacing {
