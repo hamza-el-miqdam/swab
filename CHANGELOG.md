@@ -4,6 +4,15 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [ONB-04, MAP-01, FCH-01, OQ-ONB-1] Freeze 4-ring enumeration as canonical (SUG-SPEC-009)
+
+- **RESOLVED OQ-ONB-1** (founder decision): the shipped 4-ring model — `Très proche` / `Proche` / `Familier` / `Plus loin`, sourced identically from `apps/ios/.../L10n/Fr.swift:153-156` and `apps/android/.../l10n/Fr.kt:59-62` — is frozen as canonical. The Onboarding blueprint's 5-ring model (`intime`/`proche`/`ami`/`lien faible`/`connaissance`) was the artifact that disagreed with ship; it gets corrected to match, not the other way around. No retrofit of either app.
+- ONB-04 (`docs/specs/FS-01-onboarding.md`) now states the enumeration normatively instead of pointing at an open question.
+- MAP-01 (`docs/specs/FS-02-relationship-map.md`) and FCH-01 (`docs/specs/FS-03-contact-card.md`) updated to cross-reference ONB-04 instead of duplicating or pointing at the now-resolved OQ.
+- FS-04's SGR-01 (shared ring enumeration, SUG-SPEC-005 test vectors) can now depend on this fixed value.
+- Out of scope here: the `CalibrateScreen` rings-3/4 text-wrap bug and its coverage-manifest note (`docs/qa/e2e-coverage.json`) — unaffected by this freeze, tracked separately in `docs/STATUS.md`.
+- Follow-up: design-specialist owns correcting the blueprint HTML to the 4-ring model in parallel; notion-liaison-specialist should resync FS-01 (and FS-02/FS-03 if their tables changed) once both land.
+
 ## 2026-08-09 — [SUG-DES-011] Minimum touch target token + normative contract
 
 - Added `component.touch.minTarget: 44` to `tokens.json` — regenerated as `DesignTokens.Component.Touch.minTarget` (Swift) / `Component.Touch.MIN_TARGET` (Kotlin) / `component.touch.minTarget` (TS) / `--component-touch-min-target: 44px` (CSS). No `generate.mjs` code changes needed — the component renderers are already generic over arbitrary groups/keys.

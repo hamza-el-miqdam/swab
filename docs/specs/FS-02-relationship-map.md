@@ -16,7 +16,7 @@ The app's home: a radial, at-a-glance view of « ton cercle, à l'instant » —
 
 | ID | Requirement |
 |---|---|
-| MAP-01 | Radial layout: « moi » centered; each contact rendered on its declared intimacy ring (ring enumeration per ONB-04, currently OQ-ONB-1). Ring semantics come from the vault; no server call is needed to render. |
+| MAP-01 | Radial layout: « moi » centered; each contact rendered on its declared intimacy ring (ring enumeration per ONB-04). Ring semantics come from the vault; no server call is needed to render. |
 | MAP-02 | Primary navigation exposes exactly: Carte, Envie (FS-05 entry), Sous-groupes (FS-04). No badges or unread counters on nav items. |
 | MAP-03 | Contact visual encodes the axes non-textually where possible (ring = intimité; état variant per blueprint's A·chaud / B·froid treatments). Exact visual grammar per blueprint. |
 | MAP-04 | Tap contact → « Ouvrir la fiche » → FS-03. Transition keeps spatial continuity (contact grows from its map position). |
