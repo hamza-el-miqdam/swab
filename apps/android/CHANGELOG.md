@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-008, MAP-01, MAP-04, MAP-08] Map nodes now activatable by TalkBack; touch targets grow to 48dp
+
+- `RadialMap.kt`'s `ContactNode`: replaced raw `pointerInput`+`detectTapGestures` (advertised `role = Button` but registered no OnClick semantics action — TalkBack double-tap silently did nothing) with `Modifier.clickable(...)`, which registers a real click action.
+- Touch target grows to Material's 48dp floor (ring 4 nodes were 32dp) without changing the visual circle size: an outer Box owns size/click/semantics, an inner Box (visual circle, `testTag("carteNode-$ring-$index")`) stays at the true `MapGeometry.nodeSize`.
+- New `test_MAP08_mapNode_hasClickActionForTalkBack`: `assertHasClickAction()` + `performClick()` opens the peek sheet.
+- Updated `test_densityRegression_placedNodeSizeIsNotCollapsed` to measure the inner visual circle via its new testTag instead of the outer (now 48dp) semantics node, so the touch-target change doesn't trip the density guard.
+- Verified: `./gradlew test` green.
+
 ## 2026-08-09 — [SUG-AND-017, ONB-04, ONB-06, FCH-01, FCH-06] État/ressenti/ring vocab lists de-duplicated into `carte.Vocab`
 
 - New `carte/Vocab.kt`: `ETATS`/`RESSENTIS` defined once (JVM-testable, no Android imports, same convention as `EtatColors`/`Labels`) — previously copy-pasted verbatim across `CalibrateScreen.kt` and `FicheScreen.kt` with a "don't let them diverge" comment. These strings key `EtatColors.ETAT_COLORS`, `FicheFilterConsequence.forValue`, and the vault contents itself, so a silent divergence here would have been hard to migrate later.

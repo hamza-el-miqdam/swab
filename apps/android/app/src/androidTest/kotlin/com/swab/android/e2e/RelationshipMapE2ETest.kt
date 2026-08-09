@@ -5,9 +5,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso
@@ -43,6 +45,26 @@ class RelationshipMapE2ETest {
         composeTestRule.onNodeWithContentDescription(Fr.CARTE_ME).assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription(samLabel).assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription(linaLabel).assertIsDisplayed()
+    }
+
+    /**
+     * SUG-AND-008 — the map node previously advertised `role = Button`
+     * without registering a real OnClick semantics action, so TalkBack
+     * double-tap silently did nothing. `assertHasClickAction` is the
+     * compose-ui-test built-in for exactly this; `performClick()` (which
+     * dispatches via the semantics action, not raw coordinates) must open
+     * the peek sheet.
+     */
+    @Test
+    fun test_MAP08_mapNode_hasClickActionForTalkBack() {
+        composeTestRule.completeOnboarding("Nadia", listOf("Sam" to 1))
+
+        val node = composeTestRule.onNodeWithContentDescription(samLabel)
+        node.assertHasClickAction()
+        node.performClick()
+
+        composeTestRule.waitUntilTextExists(Fr.CARTE_SHEET_INTIMITE)
+        composeTestRule.onNodeWithContentDescription(Fr.CARTE_OPEN_FICHE).assertIsEnabled()
     }
 
     @Test
@@ -172,7 +194,11 @@ class RelationshipMapE2ETest {
     fun test_densityRegression_placedNodeSizeIsNotCollapsed() {
         composeTestRule.completeOnboarding("Nadia", listOf("Sam" to 1))
 
-        val node = composeTestRule.onNodeWithContentDescription(samLabel).fetchSemanticsNode()
+        // SUG-AND-008: the outer node Box grew to a 48dp touch target, which
+        // would no longer match MapGeometry.nodeSize(1)=44dp — measure the
+        // inner visual circle (stable per-slot testTag) instead, which is
+        // untouched by the touch-target change.
+        val node = composeTestRule.onNodeWithTag("carteNode-1-0").fetchSemanticsNode()
         val density = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
         val expectedPx = MapGeometry.nodeSize(1) * density
         val actualPx = node.size.width.toFloat()

@@ -4,8 +4,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -25,15 +26,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swab.android.carte.EtatColors
 import com.swab.android.carte.Labels
 import com.swab.android.carte.MapGeometry
+import com.swab.android.l10n.Fr
 import com.swab.android.vault.VaultContact
 
 private const val MIN_SCALE = 1f
@@ -168,27 +170,44 @@ private fun ContactNode(
     val background = palette.background?.let(::hexToColor) ?: MaterialTheme.colorScheme.surface
     val border = palette.border?.let(::hexToColor) ?: MaterialTheme.colorScheme.outlineVariant
 
-    // dp-equivalent units, wrapped directly (see RadialMap's mapSizeDp comment).
-    val leftDp = x.value.dp
-    val topDp = y.value.dp
+    // SUG-AND-008: `clickable` (not raw pointerInput+detectTapGestures)
+    // registers a real OnClick semantics action, so TalkBack double-tap
+    // actually opens the fiche — previously the node advertised
+    // `role = Button` without honoring ACTION_CLICK. The touch target also
+    // grows to Material's 48dp floor (ring 4 was 32dp) without changing the
+    // visual circle: an outer Box owns size/click/semantics, an inner Box
+    // (tagged for the density-regression E2E test) stays at the true
+    // MapGeometry.nodeSize.
+    val touchSize = maxOf(size, 48f)
+    val pad = (touchSize - size) / 2f
+    val touchLeftDp = (x.value - pad).dp
+    val touchTopDp = (y.value - pad).dp
+    val touchSizeDp = touchSize.dp
     val sizeDp = size.dp
 
     Box(
         modifier = Modifier
-            .offset(x = leftDp, y = topDp)
-            .size(sizeDp)
-            .clip(CircleShape)
-            .background(background)
-            .border(1.dp, border, CircleShape)
-            .semantics {
-                role = Role.Button
-                contentDescription = Labels.contactLabel(contact)
-            }
-            .pointerInput(contact.id) {
-                detectTapGestures(onTap = { onPress(contact) })
-            },
+            .offset(x = touchLeftDp, y = touchTopDp)
+            .size(touchSizeDp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClickLabel = Fr.CARTE_OPEN_FICHE,
+                role = Role.Button,
+            ) { onPress(contact) }
+            .semantics { contentDescription = Labels.contactLabel(contact) },
         contentAlignment = Alignment.Center,
     ) {
-        Text(Labels.initials(contact.displayName), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+        Box(
+            modifier = Modifier
+                .testTag("carteNode-$ring-$index")
+                .size(sizeDp)
+                .clip(CircleShape)
+                .background(background)
+                .border(1.dp, border, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(Labels.initials(contact.displayName), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
