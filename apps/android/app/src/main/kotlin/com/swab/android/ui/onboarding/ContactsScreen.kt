@@ -1,11 +1,13 @@
 package com.swab.android.ui.onboarding
 
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.swab.android.l10n.Fr
 import com.swab.android.onboarding.ContactsViewModel
 
@@ -36,7 +38,12 @@ fun ContactsScreen(
         if (deniedVisible) {
             BodyText(Fr.CONTACTS_DENIED)
         }
-        InputField(value = manualName, placeholder = Fr.CONTACTS_MANUAL_PLACEHOLDER, onValueChange = { manualName = it })
+        InputField(
+            value = manualName,
+            placeholder = Fr.CONTACTS_MANUAL_PLACEHOLDER,
+            onValueChange = { manualName = it },
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+        )
         GhostButton(Fr.CONTACTS_ADD, onClick = { viewModel.addManual(manualName); manualName = "" })
         if (contacts.isNotEmpty()) {
             BodyText(contacts.joinToString(" · ") { it.displayName })

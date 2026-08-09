@@ -1,11 +1,13 @@
 package com.swab.android.ui.onboarding
 
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
 import com.swab.android.l10n.Fr
 import com.swab.android.onboarding.SignupViewModel
 
@@ -19,7 +21,12 @@ fun PhoneScreen(viewModel: SignupViewModel, onOtpRequested: () -> Unit) {
         Brand()
         ScreenTitle(Fr.PHONE_TITLE)
         BodyText(Fr.PHONE_HINT)
-        InputField(value = raw, placeholder = Fr.PHONE_PLACEHOLDER, onValueChange = { raw = it })
+        InputField(
+            value = raw,
+            placeholder = Fr.PHONE_PLACEHOLDER,
+            onValueChange = { raw = it },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+        )
         if (uiState.phoneError) {
             BodyText(Fr.PHONE_ERROR)
         }

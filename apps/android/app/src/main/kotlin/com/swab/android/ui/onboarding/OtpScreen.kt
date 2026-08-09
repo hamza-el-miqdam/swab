@@ -1,11 +1,14 @@
 package com.swab.android.ui.onboarding
 
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import com.swab.android.l10n.Fr
 import com.swab.android.onboarding.SignupViewModel
 
@@ -34,9 +37,19 @@ fun OtpScreen(viewModel: SignupViewModel, onBackToPhone: () -> Unit, onVerified:
         Brand()
         ScreenTitle(Fr.OTP_TITLE)
         uiState.devCode?.let { BodyText("Code (dev) : $it") }
-        InputField(value = code, placeholder = Fr.OTP_PLACEHOLDER, onValueChange = { code = it.take(6) })
+        InputField(
+            value = code,
+            placeholder = Fr.OTP_PLACEHOLDER,
+            onValueChange = { code = it.take(6) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
         if (uiState.needsName) {
-            InputField(value = displayName, placeholder = Fr.OTP_NAME_PROMPT, onValueChange = { displayName = it })
+            InputField(
+                value = displayName,
+                placeholder = Fr.OTP_NAME_PROMPT,
+                onValueChange = { displayName = it },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+            )
         }
         if (uiState.otpError) {
             BodyText(Fr.OTP_ERROR)

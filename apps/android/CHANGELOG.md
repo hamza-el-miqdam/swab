@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-015, ONB-02, ONB-03] Phone/OTP/name inputs get the right keyboard type
+
+- `InputField` (Primitives.kt) gains an optional `keyboardOptions` parameter (default `KeyboardOptions.Default`, so untouched call sites are unaffected).
+- Phone field -> `KeyboardType.Phone`; OTP code -> `KeyboardType.Number`; display name + manual contact name -> `KeyboardCapitalization.Words`.
+- `contentDescription = placeholder` deliberately left in place — the whole E2E suite locates fields by it; removing it is a separate mechanical `testTag` migration, noted as a follow-up rather than mixed in here.
+- Dropped: SMS-OTP autofill content-type hints (`Modifier.semantics { contentType = ... }`) — `androidx.compose.ui.autofill.ContentType` is `internal` in this project's pinned compose-bom 2024.09.00 (confirmed by an actual compile failure, not guessed). Flagged as a follow-up for the next bom bump rather than forcing one now with no emulator available to verify end-to-end.
+- Verified: `./gradlew test` + `compileDebugAndroidTestKotlin` green. Keyboard type isn't independently assertable via `SemanticsProperties` on this compose-ui-test version, so this is a `manual`/visual check on-device — existing contentDescription-based E2E selectors are unaffected (regression-covered by the full suite).
+
 ## 2026-08-09 — [SUG-AND-005, ONB-03, IDT-01, IDT-06] Wire « Importer mes contacts » — was a no-op button
 
 - `MainActivity.kt`: `onImportContacts` was an empty lambda; now registers `ActivityResultContracts.RequestPermission()` (READ_CONTACTS) + `ActivityResultContracts.PickContact()` launchers on the Contacts `composable {}` — permission requested only right before launching the picker (genuinely used now, not held ambiently), denial sets `deniedVisible = true`.
