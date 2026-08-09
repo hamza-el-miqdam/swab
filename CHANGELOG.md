@@ -4,6 +4,14 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [OQ-ONB-1] Correct Onboarding blueprint's INTIMACY constant to the frozen 4-ring model
+
+- Blueprint side of OQ-ONB-1: `blueprints/swab - Onboarding (standalone) (1).html`'s embedded `INTIMACY` constant defined 5 rings (`intime`/`proche`/`ami`/`lien faible`/`connaissance`, r:34/55/78/102/130) that were never shipped. Replaced with the canonical 4 rings sourced identically from `apps/ios/Sources/SwabCore/L10n/Fr.swift:163-166` and `apps/android/.../l10n/Fr.kt:59-62`: `Très proche` (r:34) / `Proche` (r:66) / `Familier` (r:98) / `Plus loin` (r:130).
+- Radii: kept the original min (34) and max (130), evenly redistributed the 4 rings across that span (step 32) rather than dropping one of the original 5 values — no shipped code depends on these numbers, visual reference only.
+- Added a `CORRECTED 2026-08-09 (OQ-ONB-1)` header comment next to the existing `SUPERSEDED 2026-08-08` palette note, pointing at the two app L10n files as the actual source of truth for the intimacy taxonomy going forward.
+- Searched `docs/design-system.md` and `docs/design/swab-prototype-consolidated.html` for the old labels/radii — no matches, nothing else to fix there.
+- Found (not fixed, out of scope): 3 other blueprint files still embed the stale 5-ring labels/keys as unrelated local mock data — `swab - Carte des relations (standalone).html`, `swab - Fiche contact (standalone) (1).html`, `swab - Flux envie et match (standalone).html`. None define a canonical `INTIMACY` source; flagged for a follow-up sweep.
+
 ## 2026-08-09 — [ONB-04, MAP-01, FCH-01, OQ-ONB-1] Freeze 4-ring enumeration as canonical (SUG-SPEC-009)
 
 - **RESOLVED OQ-ONB-1** (founder decision): the shipped 4-ring model — `Très proche` / `Proche` / `Familier` / `Plus loin`, sourced identically from `apps/ios/.../L10n/Fr.swift:153-156` and `apps/android/.../l10n/Fr.kt:59-62` — is frozen as canonical. The Onboarding blueprint's 5-ring model (`intime`/`proche`/`ami`/`lien faible`/`connaissance`) was the artifact that disagreed with ship; it gets corrected to match, not the other way around. No retrofit of either app.
