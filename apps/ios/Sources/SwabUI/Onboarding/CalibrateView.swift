@@ -150,6 +150,7 @@ public struct CalibrateView: View {
                 }
                 .disabled(viewModel.selectedId == nil)
                 .accessibilityLabel("\(Fr.t(.calibrateRingPrefix)) \(ring) — \(Self.ringLabels[ring] ?? "")")
+                .minTouchTarget()
             }
         }
     }

@@ -154,6 +154,7 @@ public struct FicheView: View {
         }
         .accessibilityLabel(label)
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .minTouchTarget()
     }
 
     // MARK: - FCH-06 filter consequence (informational only)
@@ -274,6 +275,7 @@ private struct FlowRolesView: View {
                 }
                 .accessibilityLabel(role)
                 .accessibilityAddTraits(selected.contains(role) ? .isSelected : [])
+                .minTouchTarget()
             }
         }
     }

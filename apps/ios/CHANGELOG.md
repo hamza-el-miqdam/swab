@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-DES-011] Minimum touch target for Tag/Segmented wrapper views
+
+- New `MinTouchTarget` modifier (`SwabUI/Components/TouchTarget.swift`) — `.minTouchTarget()` extends a view's tappable region to `DesignTokens.Component.Touch.minTarget` (44pt) via `.frame(minWidth:minHeight:)` + `.contentShape(Rectangle())`, applied AFTER visual padding/background so drawn geometry is unchanged (charter-normative, per `docs/design-system.md` §3).
+- Adopted on the four sub-44pt interactive wrappers: `FicheView.axisChip` (état/ressenti/intimité tags, ≈30-32pt), `FlowRolesView` (rôles tags), `CarteView.unplacedTray` (unplaced-contact tags), `CalibrateView.ringButtons` (the intimacy-level selector — this app's segmented-control analog, `.lvl`/`.segb` in the prototype). Native `Toggle` (switch) rows left untouched — the system control already meets the 44pt minimum by itself.
+- New XCUITest `test_SUGDES011_tagTouchTarget_tapOutsideVisualEdgeStillSelects` (`MapAndFicheE2ETests.swift`): taps ~3pt inside the widened frame's top edge — above where the ≈30-32pt visual capsule would start — and asserts the ring chip still selects.
+- **Bundled fix** (unrelated pre-existing regression, needed to get the XCUITest target building at all): `test_FCH08_...` still referenced `Fr.ressentiPrecious`, renamed to `.ressentiPositive` by `c65202b` (OQ-FCH-1) — missed because the XCUITest target lives outside `Package.swift`'s glob, so `xcrun swift test` never caught it.
+- `xcrun swift test`: 111/111. `xcodebuild test -only-testing:SwabAppUITests/MapAndFicheE2ETests`: 8/8 (live Simulator + local API).
+
 ## 2026-08-09 — [MAP-03, SUG-DES-006] EtatColors repointed to the token SSOT
 
 - `EtatColors.available`/`.busy`/`.away` now derive from `DesignTokens.Color.etatDisponible`/`.etatOccupe`/`.etatAilleurs` (generated from `packages/ui/tokens/tokens.json` by the design-specialist's `9070165`) instead of hardcoded hex literals — the design persona flagged the duplication as a defect (SUG-DES-006).

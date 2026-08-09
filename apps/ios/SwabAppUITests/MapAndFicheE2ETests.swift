@@ -226,14 +226,53 @@ final class MapAndFicheE2ETests: SwabUITestCase {
 
         // Axes remain fully editable despite the pending link: a Ressenti
         // edit takes effect (selected state + FCH-04 history event).
-        let precieux = app.buttons[Fr.t(.ressentiPrecious)]
-        XCTAssertTrue(precieux.waitForExistence(timeout: 5))
-        if !precieux.isHittable { app.swipeUp() }
-        precieux.tap()
-        XCTAssertTrue(precieux.isSelected, "FCH-08: Ressenti chip did not select on a pending contact's fiche")
+        let positive = app.buttons[Fr.t(.ressentiPositive)]
+        XCTAssertTrue(positive.waitForExistence(timeout: 5))
+        if !positive.isHittable { app.swipeUp() }
+        positive.tap()
+        XCTAssertTrue(positive.isSelected, "FCH-08: Ressenti chip did not select on a pending contact's fiche")
         XCTAssertTrue(
-            app.staticTexts["\(Fr.t(.ficheAxisRessenti)) → \(Fr.t(.ressentiPrecious))"].waitForExistence(timeout: 10),
+            app.staticTexts["\(Fr.t(.ficheAxisRessenti)) → \(Fr.t(.ressentiPositive))"].waitForExistence(timeout: 10),
             "FCH-08: axis edit on a pending contact did not record"
+        )
+    }
+
+    /// SUG-DES-011: tag chips are drawn at ~30-32pt tall (`.padding(.vertical,
+    /// 6)` around subheadline text) — below the 44pt minimum. `MinTouchTarget`
+    /// (`SwabUI/Components/TouchTarget.swift`) widens the tappable frame
+    /// invisibly around the unchanged visual capsule. A tap a few points
+    /// inside the widened frame's top edge — outside where the small visual
+    /// capsule would have started — must still select the chip.
+    @MainActor
+    func test_SUGDES011_tagTouchTarget_tapOutsideVisualEdgeStillSelects() async throws {
+        try await onboardWithSam()
+
+        let samNode = app.buttons["Sam — \(Fr.t(.ring1))"]
+        XCTAssertTrue(samNode.waitForExistence(timeout: 10))
+        samNode.tap()
+        app.buttons[Fr.t(.carteOpenFiche)].tap()
+        XCTAssertTrue(app.navigationBars["Sam"].waitForExistence(timeout: 10), "Fiche did not open for Sam")
+
+        let familier = app.buttons[Fr.t(.ring3)]
+        XCTAssertTrue(familier.waitForExistence(timeout: 5))
+        XCTAssertFalse(familier.isSelected, "Precondition: ring3 chip must start unselected (Sam was calibrated to ring1)")
+
+        // MinTouchTarget guarantees a >= 44pt frame even though the drawn
+        // capsule (padding 6v/12h + subheadline text, ~30-32pt tall) is
+        // smaller — the visual top edge sits (44 - visualHeight)/2 (>= 6pt)
+        // below the frame's top edge.
+        XCTAssertGreaterThanOrEqual(familier.frame.height, 44, "SUG-DES-011: tag touch target must be >= 44pt")
+
+        // Tap ~3pt below the frame's top edge, centered horizontally: inside
+        // the widened touch target but above where the visual capsule would
+        // start — a miss before MinTouchTarget existed.
+        let justOutsideVisualEdge = familier.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: familier.frame.width / 2, dy: 3))
+        justOutsideVisualEdge.tap()
+
+        XCTAssertTrue(
+            familier.isSelected,
+            "SUG-DES-011: a tap ~2pt outside the tag's visual edge (inside the widened touch target) must still select it"
         )
     }
 }

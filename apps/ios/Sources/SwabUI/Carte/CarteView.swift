@@ -113,6 +113,7 @@ public struct CarteView: View {
                         )
                 }
                 .accessibilityLabel(contact.displayName)
+                .minTouchTarget()
             }
         }
     }
