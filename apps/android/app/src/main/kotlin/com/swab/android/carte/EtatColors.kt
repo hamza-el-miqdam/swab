@@ -1,6 +1,7 @@
 package com.swab.android.carte
 
 import com.swab.android.l10n.Fr
+import com.swab.android.ui.theme.DesignTokens
 
 /**
  * MAP-03 — état → node color. Blueprint palette mapped onto the SHIPPED
@@ -23,9 +24,13 @@ import com.swab.android.l10n.Fr
  */
 object EtatColors {
     val ETAT_COLORS: Map<String, String> = mapOf(
-        Fr.ETAT_AVAILABLE to "#8FB59A",
-        Fr.ETAT_BUSY to "#C8917E",
-        Fr.ETAT_AWAY to "#8AA0BE",
+        // SUG-DES-006: values now sourced from the token SSOT (tokens.json →
+        // DesignTokens.kt, generated). Tokens are stored lowercase; uppercased
+        // here so the hex strings — and EtatColorsTest — stay byte-identical
+        // to the pre-indirection literals. Pure indirection, no value change.
+        Fr.ETAT_AVAILABLE to DesignTokens.Color.ETAT_DISPONIBLE.uppercase(),
+        Fr.ETAT_BUSY to DesignTokens.Color.ETAT_OCCUPE.uppercase(),
+        Fr.ETAT_AWAY to DesignTokens.Color.ETAT_AILLEURS.uppercase(),
         Fr.ETAT_PAUSED to "#A69CB0",
     )
 

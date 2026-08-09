@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [MAP-03, SUG-DES-006] État palette repointed to token SSOT
+
+- `EtatColors.kt`'s 3 blueprint-sourced hex literals (disponible/occupé/ailleurs) now read from `DesignTokens.Color.ETAT_DISPONIBLE/ETAT_OCCUPE/ETAT_AILLEURS` (generated from `tokens.json`, landed on `main` by design-specialist in `9070165`). Pure indirection: tokens store lowercase hex, `.uppercase()`'d at the call site so the map's values stay byte-identical to the prior literals.
+- `en pause` → `#A69CB0` stays hardcoded (not blueprint-sourced, not in the token SSOT — out of SUG-DES-006's scope).
+- `Fr.t(...)` keying and null/fallback behavior (`etatColor(null)`, unknown état) untouched. `EtatColorsTest` passes with **zero test edits** — proves the refactor is value-neutral.
+- `grep -rn "8FB59A\|C8917E\|8AA0BE" app/src/main` now matches nothing (only the test file's expected-value literals remain, by design).
+- Verified: `./gradlew test` BUILD SUCCESSFUL, all JVM unit tests green (debug+release).
+
 ## 2026-08-09 — [FCH-01, OQ-FCH-1] Real Rôles·contexte and Ressenti vocabularies
 
 - Architect decision (issue #15, FS-03): replaced the invented placeholder vocabularies with the real ones extracted verbatim from the blueprint (`blueprints/swab - Fiche contact (standalone) (1).html`, embedded `ROLES`/`VALENCES` consts). **Rôles·contexte** is now a 6-value multi-select: `famille, partenaire, collègue, promo, communauté, voisin` (lowercase, matching blueprint casing and the État/Ressenti copy style). **Ressenti** is a full 3-value swap: `positive, ambivalente, négative`, replacing `léger`/`précieux` entirely.
