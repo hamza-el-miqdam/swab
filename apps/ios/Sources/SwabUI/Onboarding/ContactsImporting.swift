@@ -6,13 +6,23 @@
 /// path (ContactsViewModel.addManual) is fully capable on its own — ONB-03's
 /// acceptance criterion ("denied → manual entry, identical capabilities")
 /// holds regardless of which importer is wired in.
+import Foundation
 import SwabCore
 
-public struct DeviceContact: Equatable, Sendable {
+public struct DeviceContact: Identifiable, Equatable, Sendable {
+    /// System contact identity (`CNContact.identifier` once
+    /// `SystemContactsImporter` lands). Two device contacts can share a
+    /// `name` — real address books have duplicate display names as the
+    /// norm — so `id` (not `name`) is the ForEach/List identity and the
+    /// pick-dedupe key (SUG-IOS-013). Defaults to a fresh UUID so existing
+    /// `FakeContactsImporter` callers that don't care about identity don't
+    /// have to supply one.
+    public let id: String
     public let name: String
     public let phone: String?
 
-    public init(name: String, phone: String? = nil) {
+    public init(id: String = UUID().uuidString, name: String, phone: String? = nil) {
+        self.id = id
         self.name = name
         self.phone = phone
     }

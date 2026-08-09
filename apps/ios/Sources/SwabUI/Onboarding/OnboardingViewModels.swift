@@ -145,6 +145,12 @@ public final class ContactsViewModel {
     /// Deployment-scoped (SUG-IOS-008), same default/override contract as
     /// `PhoneViewModel.salt`.
     private let salt: String
+    /// Device-import bookkeeping only (SUG-IOS-013), not a product rule:
+    /// guards against re-picking the same `DeviceContact` (e.g. a rapid
+    /// double-tap before `importable` re-renders without it). Two
+    /// *different* device contacts sharing a display name stay independently
+    /// pickable — `addManual` never consults this set.
+    private var pickedIds: Set<String> = []
 
     public init(
         vault: Vault,
@@ -175,8 +181,11 @@ public final class ContactsViewModel {
     }
 
     public func pick(_ contact: DeviceContact) async {
+        guard !pickedIds.contains(contact.id) else { return }
+        pickedIds.insert(contact.id)
         let phoneHash = contact.phone.map { PhoneHash.hash($0, salt: salt) }
         _ = try? await vault.addContact(displayName: contact.name, phoneHash: phoneHash)
+        importable.removeAll { $0.id == contact.id }
         await refresh()
     }
 

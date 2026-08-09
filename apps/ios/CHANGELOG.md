@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [ONB-03] Contacts import list keyed by identity, not name; dedupe on pick (SUG-IOS-013)
+
+- `DeviceContact` gained `id: String` (defaults to a fresh `UUID`, will carry `CNContact.identifier` once the real `CNContactStore` importer lands) and conforms to `Identifiable`. `ContactsView`'s `List` now keys off it instead of `List(..., id: \.name)`, which collided for two device contacts sharing a display name (common in real address books).
+- `ContactsViewModel.pick` tracks picked ids in a `pickedIds` set (device-import bookkeeping, not a product rule) and guard-returns on a repeat pick, then removes the picked contact from `importable` — repicking the same device contact no longer creates a duplicate vault contact; two *different* contacts with the same name stay independently pickable. `addManual` deliberately does NOT dedupe by name — same-name manual entries are legitimate.
+- New `Tests/SwabUITests/ContactsViewModelTests.swift` (`ContactsViewModel` has no dedicated test file yet — SUG-IOS-006's SwabUI test target scaffolding wasn't in this batch, so these tests use the existing `SwabUITests` target directly): `test_ONB03_pickSameDeviceContactTwice_addsSingleVaultContact`, `test_ONB03_twoDeviceContactsWithSameName_bothPickable`, `test_ONB03_pickedContact_removedFromImportableList`.
+- `xcrun swift test`: 125/125. Vault dedupe intentionally stays name/id-based, not `phoneHash`-based (hash collisions across two legitimately-different entries are FS-07/IDT-06 territory, not this fix).
+
 ## 2026-08-09 — [IDT-01, IDT-06, ONB-02] G1 config seam: base URL/salt no longer hardcoded; dev-OTP UI DEBUG-gated (SUG-IOS-008)
 
 - New `AppConfig` (`Sources/SwabCore/AppConfig.swift`): `load(bundle:)` reads `SwabApiBaseURL`/`SwabPhoneHashSalt` from Info.plist (fed by new `SWAB_API_BASE_URL`/`SWAB_PHONE_HASH_SALT` build settings, both configs, `project.pbxproj`), fails fast (`AppConfig.LoadError`) on missing/invalid values, and rejects non-loopback HTTP (ATS: ok for `127.0.0.1`/`localhost` only, a real deployment must be HTTPS). Testable via an internal `load(lookup:)` overload — no real `Bundle` needed in tests.

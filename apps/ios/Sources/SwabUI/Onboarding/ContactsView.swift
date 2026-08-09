@@ -36,7 +36,7 @@ public struct ContactsView: View {
                 .accessibilityLabel(Fr.t(.contactsAdd))
             }
 
-            List(viewModel.importable, id: \.name) { contact in
+            List(viewModel.importable) { contact in
                 Button(contact.name) {
                     Task { await viewModel.pick(contact) }
                 }
