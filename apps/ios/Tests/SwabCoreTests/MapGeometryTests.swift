@@ -81,4 +81,21 @@ final class MapGeometryTests: XCTestCase {
         XCTAssertEqual(MapGeometry.nodeSize(ring: 3), 36)
         XCTAssertEqual(MapGeometry.nodeSize(ring: 4), 32)
     }
+
+    /// SUG-IOS-015: index is per-ring (which slot within that ring), not
+    /// the contact's position in the overall array — two contacts in ring 1
+    /// get indexes 0 and 1 even with other rings/unplaced contacts between
+    /// them in the source array.
+    func test_MAP01_perRingIndexes_countsPerRingNotGlobally() {
+        let indexes = MapGeometry.perRingIndexes([1, 2, 1, nil, 1])
+        XCTAssertEqual(indexes[0], 0)  // first ring-1 contact
+        XCTAssertEqual(indexes[1], 0)  // first ring-2 contact
+        XCTAssertEqual(indexes[2], 1)  // second ring-1 contact
+        // indexes[3] (the nil entry) is unspecified — not asserted.
+        XCTAssertEqual(indexes[4], 2)  // third ring-1 contact
+    }
+
+    func test_MAP01_perRingIndexes_emptyInput_returnsEmpty() {
+        XCTAssertEqual(MapGeometry.perRingIndexes([]), [])
+    }
 }

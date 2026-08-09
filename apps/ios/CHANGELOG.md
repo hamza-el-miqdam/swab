@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [ONB-04, ONB-06] CalibrateView consumes MapGeometry/CarteLabels/FicheVocabulary instead of private copies (SUG-IOS-015)
+
+- Deleted `CalibrateGeometry` (private `ringRadius`/`position` reimplementation) — `CalibrateView` now calls `MapGeometry.ringRadius`/`MapGeometry.positionOn` directly, same as `RadialMapView`. Deleted `Self.etats`/`.ressentis`/`.ringLabels`; replaced with `FicheVocabulary.etats`/`.ressentis` and `CarteLabels.ringLabel` (identical values, zero visual change).
+- New `MapGeometry.perRingIndexes(_ rings: [Int?]) -> [Int]` extracted from `RadialMapView.placedNodes`'s inline reduction (now shared by both views) — a per-ring placement index, not the contact's position in the source array.
+- **ONB-04 fidelity fix, user-visible**: calibrate previously placed contacts by their *global* array index; it now uses the same per-ring indexing as the carte, so a contact lands at the same angle during onboarding as it does on the map afterward — positions may legitimately shift for anyone with contacts spread across multiple rings.
+- Accessibility label formats (`"\(Fr.t(.calibrateRingPrefix)) \(ring) — ..."` etc.) kept byte-identical — `OnboardingFlow.swift`'s XCUITest lookups depend on the exact string.
+- New `test_MAP01_perRingIndexes_countsPerRingNotGlobally`/`test_MAP01_perRingIndexes_emptyInput_returnsEmpty` (`MapGeometryTests.swift`). `xcrun swift test`: 127/127. `xcodebuild build-for-testing` confirms the app + XCUITest target still build.
+
 ## 2026-08-09 — [ONB-03] Contacts import list keyed by identity, not name; dedupe on pick (SUG-IOS-013)
 
 - `DeviceContact` gained `id: String` (defaults to a fresh `UUID`, will carry `CNContact.identifier` once the real `CNContactStore` importer lands) and conforms to `Identifiable`. `ContactsView`'s `List` now keys off it instead of `List(..., id: \.name)`, which collided for two device contacts sharing a display name (common in real address books).

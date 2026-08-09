@@ -63,4 +63,20 @@ public enum MapGeometry {
     public static func nodeSize(ring: Int) -> Double {
         44 - Double(ring - 1) * 4
     }
+
+    /// Per-ring placement index (0-based), NOT the global array index — two
+    /// clients laying out the same contacts must agree on angular position,
+    /// and `positionOn`'s golden-angle spread is keyed by "which slot in
+    /// this ring", not "which slot overall". `nil` entries (unplaced
+    /// contacts) consume no index and their returned value is unspecified
+    /// (callers filter them out before using it — see `RadialMapView`).
+    public static func perRingIndexes(_ rings: [Int?]) -> [Int] {
+        var perRing: [Int: Int] = [:]
+        return rings.map { ring in
+            guard let ring else { return 0 }
+            let index = perRing[ring, default: 0]
+            perRing[ring] = index + 1
+            return index
+        }
+    }
 }

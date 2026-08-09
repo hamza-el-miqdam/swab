@@ -2,45 +2,20 @@
 /// then tap the ring that fits. Everything written here goes to the VAULT
 /// ONLY (ONB-05) — no network import exists in this file, by design.
 ///
-/// The radial placement math below is an inlined subset of FS-02's geometry
-/// (`apps/mobile/src/map/geometry.ts`, `ringRadius`/`positionOn`) just
-/// enough to visually prefigure the map per ONB-04. It is deliberately NOT
-/// the full `MapGeometry` port — that is Wave 2 scope (`rn-audit-map.md`)
-/// and lands as its own module with its own tests.
+/// Radial placement reuses `SwabCore/Carte/MapGeometry` directly (Wave 2
+/// landed; this view used to inline a private subset of the same math —
+/// see `apps/ios/CHANGELOG.md` SUG-IOS-015) so calibrate visually
+/// prefigures the map exactly, including per-ring placement indexing, not
+/// just the same formula.
 ///
 /// Accessibility: list mode offers identical placement capability with
 /// screen-reader-friendly rows (spec non-functional requirement).
 import SwabCore
 import SwiftUI
 
-private enum CalibrateGeometry {
-    static let mapSize: CGFloat = 320
-    static let nodeHalfWidth: CGFloat = 28
-
-    static func ringRadius(_ ring: Int) -> CGFloat {
-        (mapSize / 2) * (CGFloat(ring) / 4.6) + 24
-    }
-
-    static func position(ring: Int, index: Int) -> CGPoint {
-        let angle = Double(index) * 2.399963  // golden angle, avoids overlap clumping
-        let r = ringRadius(ring)
-        return CGPoint(
-            x: mapSize / 2 + r * CGFloat(cos(angle)),
-            y: mapSize / 2 + r * CGFloat(sin(angle))
-        )
-    }
-}
-
 public struct CalibrateView: View {
     @State private var viewModel: CalibrateViewModel
     private let onContinue: () -> Void
-
-    // Kept in sync with `FicheVocabulary.etats`/`.ressentis` (see that
-    // type's doc comment) — OQ-FCH-2 resolved 2026-08-09 (issue #16):
-    // "en pause" moved from ressenti to état.
-    private static let etats = [Fr.t(.etatAvailable), Fr.t(.etatBusy), Fr.t(.etatAway), Fr.t(.etatPaused)]
-    private static let ressentis = [Fr.t(.ressentiPositive), Fr.t(.ressentiAmbivalente), Fr.t(.ressentiNegative)]
-    private static let ringLabels: [Int: String] = [1: Fr.t(.ring1), 2: Fr.t(.ring2), 3: Fr.t(.ring3), 4: Fr.t(.ring4)]
 
     public init(viewModel: CalibrateViewModel, onContinue: @escaping () -> Void) {
         _viewModel = State(initialValue: viewModel)
@@ -93,40 +68,59 @@ public struct CalibrateView: View {
                 HStack {
                     Text(contact.displayName)
                     Spacer()
-                    Text(contact.ring.flatMap { Self.ringLabels[$0] } ?? "—")
+                    Text(contact.ring.flatMap { CarteLabels.ringLabel[$0] } ?? "—")
                 }
             }
             .accessibilityLabel(
-                contact.ring.flatMap { ring in "\(contact.displayName) — \(Self.ringLabels[ring] ?? "")" }
+                contact.ring.flatMap { ring in "\(contact.displayName) — \(CarteLabels.ringLabel[ring] ?? "")" }
                     ?? contact.displayName
             )
         }
+    }
+
+    /// Placement uses `MapGeometry.perRingIndexes` — a PER-RING index, same
+    /// as `RadialMapView.placedNodes` — not the contact's position in
+    /// `viewModel.contacts`, so a contact lands at the same angle here as
+    /// it will on the map (ONB-04 fidelity; see SUG-IOS-015).
+    private var placedForRadial: [(contact: VaultContact, ringIndex: Int)] {
+        let indexes = MapGeometry.perRingIndexes(viewModel.contacts.map(\.ring))
+        return zip(viewModel.contacts, indexes).compactMap { contact, index in
+            contact.ring != nil ? (contact, index) : nil
+        }
+    }
+
+    /// Chip CENTER for a given (ring, per-ring index) — `MapGeometry.positionOn`
+    /// returns the chip's top-left origin, so add back the half-footprint
+    /// offsets it already subtracted (same as `RadialMapView.ContactNodeView.center`).
+    private static func chipCenter(ring: Int, index: Int) -> CGPoint {
+        let chip = MapGeometry.positionOn(ring: ring, index: index)
+        return CGPoint(x: chip.left + MapGeometry.nodeHalfWidth, y: chip.top + MapGeometry.nodeHalfHeight)
     }
 
     @ViewBuilder
     private var radialBody: some View {
         if !viewModel.contacts.isEmpty {
             ZStack {
-                ForEach([1, 2, 3, 4], id: \.self) { ring in
+                ForEach(MapGeometry.rings, id: \.self) { ring in
+                    let r = CGFloat(MapGeometry.ringRadius(ring))
                     Circle()
                         .stroke(.secondary, lineWidth: 1)
-                        .frame(width: CalibrateGeometry.ringRadius(ring) * 2, height: CalibrateGeometry.ringRadius(ring) * 2)
+                        .frame(width: r * 2, height: r * 2)
                 }
                 Text(Fr.t(.calibrateMe))
                     .frame(width: 44, height: 44)
                     .background(Circle().fill(.tint))
 
-                let placed = viewModel.contacts.enumerated().filter { $0.element.ring != nil }
-                ForEach(Array(placed), id: \.element.id) { index, contact in
-                    let point = CalibrateGeometry.position(ring: contact.ring!, index: index)
-                    Button(contact.displayName) {
-                        viewModel.selectedId = contact.id
+                ForEach(placedForRadial, id: \.contact.id) { entry in
+                    let point = Self.chipCenter(ring: entry.contact.ring!, index: entry.ringIndex)
+                    Button(entry.contact.displayName) {
+                        viewModel.selectedId = entry.contact.id
                     }
-                    .accessibilityLabel("\(contact.displayName) — \(Self.ringLabels[contact.ring!] ?? "")")
-                    .position(x: point.x, y: point.y)
+                    .accessibilityLabel("\(entry.contact.displayName) — \(CarteLabels.ringLabel[entry.contact.ring!] ?? "")")
+                    .position(point)
                 }
             }
-            .frame(width: CalibrateGeometry.mapSize, height: CalibrateGeometry.mapSize)
+            .frame(width: CGFloat(MapGeometry.mapSize), height: CGFloat(MapGeometry.mapSize))
         }
 
         if !viewModel.unplaced.isEmpty {
@@ -144,12 +138,12 @@ public struct CalibrateView: View {
     @ViewBuilder
     private var ringButtons: some View {
         HStack {
-            ForEach([1, 2, 3, 4], id: \.self) { ring in
-                Button(Self.ringLabels[ring] ?? "") {
+            ForEach(MapGeometry.rings, id: \.self) { ring in
+                Button(CarteLabels.ringLabel[ring] ?? "") {
                     Task { await viewModel.place(ring: ring) }
                 }
                 .disabled(viewModel.selectedId == nil)
-                .accessibilityLabel("\(Fr.t(.calibrateRingPrefix)) \(ring) — \(Self.ringLabels[ring] ?? "")")
+                .accessibilityLabel("\(Fr.t(.calibrateRingPrefix)) \(ring) — \(CarteLabels.ringLabel[ring] ?? "")")
                 .minTouchTarget()
             }
         }
@@ -168,7 +162,7 @@ public struct CalibrateView: View {
             } else {
                 Text(Fr.t(.calibrateEtatTitle))
                 HStack {
-                    ForEach(Self.etats, id: \.self) { etat in
+                    ForEach(FicheVocabulary.etats, id: \.self) { etat in
                         Button(etat) {
                             Task { await viewModel.setEtat(etat) }
                         }
@@ -177,7 +171,7 @@ public struct CalibrateView: View {
                 }
                 Text(Fr.t(.calibrateRessentiTitle))
                 HStack {
-                    ForEach(Self.ressentis, id: \.self) { ressenti in
+                    ForEach(FicheVocabulary.ressentis, id: \.self) { ressenti in
                         Button(ressenti) {
                             Task { await viewModel.setRessenti(ressenti) }
                         }

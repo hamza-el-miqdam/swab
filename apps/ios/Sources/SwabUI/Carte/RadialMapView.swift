@@ -20,15 +20,10 @@ struct RadialMapView: View {
     @State private var lastOffset: CGSize = .zero
 
     private var placedNodes: [(contact: VaultContact, ringIndex: Int)] {
-        var perRing: [Int: Int] = [:]
-        var result: [(VaultContact, Int)] = []
-        for contact in contacts where contact.ring != nil {
-            let ring = contact.ring!
-            let index = perRing[ring, default: 0]
-            perRing[ring] = index + 1
-            result.append((contact, index))
+        let indexes = MapGeometry.perRingIndexes(contacts.map(\.ring))
+        return zip(contacts, indexes).compactMap { contact, index in
+            contact.ring != nil ? (contact, index) : nil
         }
-        return result
     }
 
     var body: some View {
