@@ -2,6 +2,16 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-014, ONB-04, ONB-05, ONB-06] Calibration screen gains the radial canvas — was a text list only
+
+- New `ui/carte/RingCanvas.kt`: `RingsAndSpokes`/`MeNode` extracted out of `RadialMap.kt` (now `internal`, cross-package within the module) so carte and calibrate share one spatial truth; `MeNode` takes a `label` param (was hardcoded `Fr.CARTE_ME`) so calibrate can pass `Fr.CALIBRATE_ME` without the two screens silently diverging.
+- New `MapGeometry.ringForDistance(radius): Int?` — annulus hit-testing (nearest ring, rejects the center/off-canvas) for tap-to-place on the canvas.
+- New `ui/onboarding/CalibrateRadial.kt`: the 320dp canvas — placed contacts as ring nodes (no état color/animation, unlike carte's `ContactNode` — this canvas is static), unplaced contacts in a tray below. Nodes use `clickable` (not raw `pointerInput`) from the start, so they don't carry the TalkBack bug SUG-AND-008 fixes on carte.
+- `CalibrateScreen.kt`: canvas renders by default (ONB-04 "visually prefigures the map"); the full text roster + per-ring buttons stay underneath, unconditionally — same `select`/`placeSelectedOnRing` calls either affordance uses, so the existing copy-driven E2E flow (`E2EFlows.kt`) needed zero changes. `Fr.CALIBRATE_LIST_MODE` (previously unused) now toggles the canvas off for a leaner TalkBack-only screen.
+- New tests: `MapGeometryTest` ringForDistance cases; `OnboardingE2ETest.test_ONB04_radialCanvas_showsMoiAndRingsOnCalibrate`.
+- Not done: on-device screenshot pair for the "visually prefigures the map" acceptance criterion — no booted emulator available while writing this; verify visually before considering ONB-04 fully closed.
+- Verified: `./gradlew test` green; `scripts/e2e-android.sh` to run after all SUG-AND items land this session (see session summary).
+
 ## 2026-08-09 — [SUG-AND-002, ONB-04, ONB-05, FCH-01] Fix rings 3/4 unreachable: chip Rows overflow on long French labels
 
 - `CalibrateScreen.kt`: ring-selection `Row` (4 long labels, e.g. « Anneau 3 — Familier ») replaced with a full-width `Column` — closes the documented production bug where rings 3/4 were unreachable during onboarding. Same treatment applied to the État/Ressenti rows (État now has 4 values since OQ-FCH-2).

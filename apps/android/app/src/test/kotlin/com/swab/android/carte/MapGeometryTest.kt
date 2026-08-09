@@ -99,6 +99,21 @@ class MapGeometryTest {
     }
 
     @Test
+    fun `ONB-04 ringForDistance maps radii to rings 1-4 and rejects center,outside`() {
+        for (ring in MapGeometry.RINGS) {
+            assertEquals(ring, MapGeometry.ringForDistance(MapGeometry.ringRadius(ring)))
+        }
+        // A tap right at the center ("moi" itself) is not any ring.
+        assertEquals(null, MapGeometry.ringForDistance(0f))
+        // A tap far outside the canvas is not any ring either.
+        assertEquals(null, MapGeometry.ringForDistance(MapGeometry.MAP_SIZE))
+        // Half-band tolerance: a tap between two ring radii resolves to the nearer one.
+        val midway12 = (MapGeometry.ringRadius(1) + MapGeometry.ringRadius(2)) / 2f
+        assertTrue(MapGeometry.ringForDistance(midway12 - 0.5f) == 1)
+        assertTrue(MapGeometry.ringForDistance(midway12 + 0.5f) == 2)
+    }
+
+    @Test
     fun `positionOn(1,0) matches the RN reference's first-slot placement`() {
         // angle = 0 * 2.399963 = 0 -> cos=1, sin=0
         val r = MapGeometry.ringRadius(1)

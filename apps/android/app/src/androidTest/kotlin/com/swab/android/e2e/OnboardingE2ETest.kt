@@ -37,6 +37,21 @@ class OnboardingE2ETest {
     }
 
     /**
+     * SUG-AND-014 — ONB-04 "the layout must visually prefigure the FS-02
+     * map": the radial canvas (« moi » + rings) renders by default on the
+     * calibrate screen, not just a text list.
+     */
+    @Test
+    fun test_ONB04_radialCanvas_showsMoiAndRingsOnCalibrate() {
+        composeTestRule.signUpThroughOtp("Nadia")
+        composeTestRule.waitUntilTextExists(Fr.CONTACTS_TITLE)
+        composeTestRule.onNodeWithText(Fr.CONTACTS_SKIP).performClick()
+
+        composeTestRule.waitUntilTextExists(Fr.CALIBRATE_TITLE)
+        composeTestRule.onNodeWithContentDescription(Fr.CALIBRATE_ME).assertIsDisplayed()
+    }
+
+    /**
      * SUG-AND-002 regression: rings 3 and 4 were unreachable (long French
      * labels overflowed an unscrollable Row) — this drives calibration onto
      * both to lock the fix.

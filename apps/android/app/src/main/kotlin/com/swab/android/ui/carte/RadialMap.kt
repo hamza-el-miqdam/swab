@@ -2,7 +2,6 @@ package com.swab.android.ui.carte
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -24,8 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
@@ -37,15 +34,10 @@ import androidx.compose.ui.unit.sp
 import com.swab.android.carte.EtatColors
 import com.swab.android.carte.Labels
 import com.swab.android.carte.MapGeometry
-import com.swab.android.l10n.Fr
 import com.swab.android.vault.VaultContact
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.PI
 
 private const val MIN_SCALE = 1f
 private const val MAX_SCALE = 3f
-private val SPOKE_ANGLES = listOf(0f, 45f, 90f, 135f)
 private const val MOVE_MS = 350
 
 /**
@@ -130,52 +122,6 @@ fun RadialMap(
                 }
             }
         }
-    }
-}
-
-/**
- * Ring circles + spokes — decorative, non-interactive, drawn once per frame
- * in one Canvas. A `Canvas` DrawScope draws in raw PIXELS, while
- * [MapGeometry]'s numbers are dp-equivalent units, so every value from it is
- * multiplied by this DrawScope's own `density` (px = dp * density) before
- * being handed to `drawCircle`/`drawLine` — the same fix as [ContactNode]'s
- * positioning, applied on the pixel side instead of the dp side.
- */
-@Composable
-private fun RingsAndSpokes(modifier: Modifier = Modifier) {
-    val lineColor = MaterialTheme.colorScheme.outlineVariant
-    Canvas(modifier = modifier) {
-        val center = Offset(size.width / 2f, size.height / 2f)
-        for (ring in MapGeometry.RINGS) {
-            val r = MapGeometry.ringRadius(ring) * density
-            drawCircle(color = lineColor, radius = r, center = center, style = Stroke(width = 1f))
-        }
-        for (angleDeg in SPOKE_ANGLES) {
-            val angle = angleDeg * (PI / 180.0)
-            val dx = cos(angle).toFloat()
-            val dy = sin(angle).toFloat()
-            val half = (MapGeometry.MAP_SIZE / 2f) * density
-            drawLine(
-                color = lineColor.copy(alpha = 0.6f),
-                start = Offset(center.x - dx * half, center.y - dy * half),
-                end = Offset(center.x + dx * half, center.y + dy * half),
-                strokeWidth = 1f,
-            )
-        }
-    }
-}
-
-@Composable
-private fun MeNode(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary)
-            .semantics { contentDescription = Fr.CARTE_ME },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(Fr.CARTE_ME, color = MaterialTheme.colorScheme.onPrimary, fontSize = 13.sp)
     }
 }
 

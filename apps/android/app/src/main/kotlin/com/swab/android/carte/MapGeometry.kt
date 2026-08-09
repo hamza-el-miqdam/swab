@@ -45,4 +45,23 @@ object MapGeometry {
 
     /** Node diameter steps down with distance: closer reads bigger (MAP-03). */
     fun nodeSize(ring: Int): Float = 44f - (ring - 1) * 4f
+
+    /**
+     * ONB-04 — annulus hit-testing for radial calibration: given a tap's
+     * distance from the « moi » center (dp-equivalent units), returns the
+     * nearest ring, or null if the tap is closer to the center than the
+     * innermost ring's half-radius (a beat at « moi » itself) or further out
+     * than half a ring-gap beyond the outermost ring (off the canvas). A
+     * half-band tolerance either side of a ring's own radius always resolves
+     * to *some* ring in between, matching the "tap roughly on/near a ring"
+     * intuition rather than requiring pixel-perfect precision.
+     */
+    fun ringForDistance(radius: Float): Int? {
+        val radii = RINGS.map(::ringRadius)
+        val innerBound = radii.first() / 2f
+        val outerGap = radii.last() - radii[radii.size - 2]
+        val outerBound = radii.last() + outerGap / 2f
+        if (radius < innerBound || radius > outerBound) return null
+        return RINGS.minByOrNull { ring -> kotlin.math.abs(radius - ringRadius(ring)) }
+    }
 }

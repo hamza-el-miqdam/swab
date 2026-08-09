@@ -1,8 +1,8 @@
 package com.swab.android.ui.onboarding
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -10,6 +10,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.swab.android.l10n.Fr
 import com.swab.android.onboarding.CalibrateViewModel
@@ -23,24 +27,51 @@ private val ETATS = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETA
 private val RESSENTIS = listOf(Fr.RESSENTI_POSITIVE, Fr.RESSENTI_AMBIVALENT, Fr.RESSENTI_NEGATIVE)
 
 /**
- * ONB-04/05/06: radial calibration. v0 keeps a list-mode toggle (accessible
- * fallback, non-functional spec requirement) as the primary interaction —
- * the true radial canvas ships with FS-02 (Wave 2), same as the RN reference
- * ("v0 interaction is tap-to-select + tap-ring-to-place").
+ * ONB-04/05/06: radial calibration. SUG-AND-014: the canvas
+ * ([CalibrateRadial]) visually prefigures the FS-02 map by default — « moi »
+ * centered, placed contacts as ring nodes, unplaced contacts in a tray below.
+ * The full text roster + per-ring `GhostButton`s beneath it are the
+ * always-available accessible path (both wire into the same
+ * select/placeSelectedOnRing calls, so screen-reader and sighted flows stay
+ * in lockstep); [Fr.CALIBRATE_LIST_MODE] hides the canvas for a leaner
+ * TalkBack-only screen — v0 interaction is tap-to-select + tap-ring-to-place,
+ * same as the RN reference.
  */
 @Composable
 fun CalibrateScreen(viewModel: CalibrateViewModel, onContinue: () -> Unit) {
     val contacts by viewModel.contacts.collectAsState()
     val selectedId by viewModel.selectedId.collectAsState()
     var optionalOpen by remember { mutableStateOf(false) } // ONB-06: collapsed by default
+    var listMode by remember { mutableStateOf(false) } // ONB-04: radial canvas is the default
 
     OnboardingScreen {
         Brand()
         ScreenTitle(Fr.CALIBRATE_TITLE)
         BodyText(Fr.CALIBRATE_HINT)
 
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BodyText(Fr.CALIBRATE_LIST_MODE)
+            Switch(
+                checked = listMode,
+                onCheckedChange = { listMode = it },
+                modifier = Modifier.semantics { contentDescription = Fr.CALIBRATE_LIST_MODE },
+            )
+        }
+
         if (contacts.isEmpty()) {
             BodyText(Fr.CALIBRATE_EMPTY)
+        }
+
+        if (!listMode) {
+            CalibrateRadial(
+                contacts = contacts,
+                selectedId = selectedId,
+                onSelectContact = viewModel::select,
+                onPlaceOnRing = viewModel::placeSelectedOnRing,
+            )
         }
 
         for (contact in contacts) {
