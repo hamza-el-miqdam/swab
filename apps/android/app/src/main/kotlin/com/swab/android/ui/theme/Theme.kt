@@ -50,5 +50,9 @@ private val SwabNuit = darkColorScheme(
 
 @Composable
 fun SwabTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = SwabNuit, content = content)
+    // SUG-DES-004: typography (Inter/Space Grotesk, res/font/) and shapes
+    // (charter radii) now flow through MaterialTheme alongside SwabNuit —
+    // previously only Color was consumed from DesignTokens (see the
+    // apps/android/CHANGELOG.md entry for the prior color-only state).
+    MaterialTheme(colorScheme = SwabNuit, typography = SwabTypography, shapes = SwabShapes, content = content)
 }

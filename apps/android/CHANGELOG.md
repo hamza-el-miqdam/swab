@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-DES-004] Typography + Shapes now consumed from DesignTokens; Inter/Space Grotesk bundled
+
+- Bundled Inter (400/500/600) + Space Grotesk (400/500/600) as `res/font/*.ttf` — real OFL 1.1-licensed static instances fetched from Google Fonts' CDN (`google/fonts` ofl/inter, ofl/spacegrotesk sources), never invented/stubbed. License text + attribution: `app/src/main/assets/font-licenses/` (`OFL-Inter.txt`, `OFL-SpaceGrotesk.txt`, `NOTICE.md`). No network font fetches at runtime.
+- New `ui/theme/Typography.kt`: builds `androidx.compose.material3.Typography` from `DesignTokens.Typography` — `titleLarge`<-TITLE, `bodyLarge`<-BASE, `labelLarge`<-BUTTON, `bodyMedium`<-SUBTITLE, `labelSmall`<-LABEL. `lineHeight` (unitless multiplier token) converted as `size * lineHeight` sp; `letterSpacingEm` via the `.em` TextUnit extension (not `.sp` — keeps SUG-DES-012's Dynamic-Type contract, sizes stay in `.sp` throughout). `textTransform: uppercase` (LABEL) is a no-op here — Compose has no textTransform, applied at call sites (none exist yet).
+- New `ui/theme/Shapes.kt`: `Shapes` from `DesignTokens.Radius` — small=INPUT(10), medium=CARD(12), large=TILE(14). `Theme.kt` now passes both into `MaterialTheme` alongside `SwabNuit`.
+- New tests: `SwabTypographyTest` (7 cases incl. the suggestion's named `bodyLarge.fontSize == BASE.size.sp` check, plus lineHeight/letterSpacing), `SwabShapesTest` (3 cases). Both plain-JVM (no emulator needed, same convention as `DesignTokens.kt`/`EtatColors.kt`).
+- Verified: `./gradlew test` and `./gradlew assembleDebug` both BUILD SUCCESSFUL (confirms fonts package correctly into a real APK).
+
 ## 2026-08-09 — [SUG-DES-011] Minimum touch targets on Fiche axis chips + Carte list-mode switch
 
 - Applied `Modifier.minimumInteractiveComponentSize()` (Material3 built-in, 48dp floor) to the Fiche axis `FilterChip`s — Intimité (segmented/intimacy-cell equivalent), Rôles, État, Ressenti (`FicheScreen.kt`) — and the Carte list-mode `Switch` (`CarteScreen.kt`). Visual geometry is untouched; only the tappable region grows, per the suggestion's "hit-area-only" rule.
