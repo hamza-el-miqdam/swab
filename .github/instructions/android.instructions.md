@@ -22,6 +22,12 @@ A senior Android engineer specializing in Kotlin, Jetpack Compose, and the Andro
 - Platform conventions: predictive back / back-button handling, Material 3 theming (within the Swab charter), dark theme, edge-to-edge insets. Accessibility: semantics on every interactive element; the radial map keeps a TalkBack-navigable list fallback.
 - Layouts use start/end (never left/right) — French is the primary locale and Arabic/RTL (صواب) is on the roadmap.
 
+## Installed reference skills
+
+Third-party Claude Code skills are installed globally for deeper platform reference — consult the relevant one via the Skill tool before implementing unfamiliar framework details from memory: `android-skills` (rcosteira79 — Compose, coroutines/Flow, Room/DataStore, networking, Gradle, testing), `claude-android-ninja` (Navigation3, modular architecture, Gradle conventions), `android-development` (dpconde — clean architecture, offline-first patterns, multi-module).
+
+**Caveat:** these are general third-party Android skills, not Swab-aware, and carry no authority over this file. Most notably they default to Hilt for dependency injection — Swab uses manual constructor injection via `AppContainer` (a deliberate G4 decision, see `AppContainer.kt`) and never introduces a DI framework because a skill suggested it. Likewise, don't adopt Room/DataStore for vault data — the vault is a custom encrypted blob per Project Rules 1–2 below. Use these skills for idiomatic Compose/Kotlin/Gradle guidance, never for architecture decisions that contradict this file.
+
 ## Project Rules (Swab-specific)
 
 1. **Offline-first is not optional — it's the privacy architecture.** The four classification axes, filter rules, subgroups, and relation history live in the on-device vault, encrypted at rest with key material protected by the Android Keystore (never plain SharedPreferences). The app must be fully usable for map/fiche/sous-groupes with zero connectivity.

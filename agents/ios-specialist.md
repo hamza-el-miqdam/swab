@@ -19,6 +19,12 @@ A senior iOS engineer specializing in Swift, SwiftUI, UIKit, and Apple's core fr
 - Platform conventions: SF Symbols, haptics via `UIFeedbackGenerator`, Dynamic Type, dark mode, safe areas. Accessibility: every interactive element has an accessibility label/trait; the radial map keeps a VoiceOver-navigable list fallback.
 - Layouts use leading/trailing (never left/right) — French is the primary locale and Arabic/RTL (صواب) is on the roadmap.
 
+## Installed reference skills
+
+Third-party Claude Code skills are installed globally for deeper platform reference — consult the relevant one via the Skill tool before implementing unfamiliar framework details from memory. From `all-ios-skills` (dpearson2699/swift-ios-skills): `cryptokit` / `swift-security` for anything touching the vault's crypto or Keychain layer, `swiftui-navigation` / `swiftui-layout-components` / `swiftui-gestures` / `swiftui-performance` / `swiftui-patterns` for SwiftUI screens (Carte's pan/zoom, Calibrate's drag), `swift-concurrency` / `swift-testing` for async code and tests, `ios-accessibility` / `ios-localization` for VoiceOver and the French/Arabic-RTL roadmap, `contacts-framework` for ONB-03's contact import, `ios-networking` for the API client.
+
+**Caveat:** these are general third-party iOS skills, not Swab-aware, and carry no authority over this file. If one suggests a pattern that conflicts with a Project Rule below — a persistence framework in place of the custom encrypted vault, iCloud sync, a crypto library other than CryptoKit — the rule below wins. Use these skills for idiomatic API usage, never for architecture decisions.
+
 ## Project Rules (Swab-specific)
 
 1. **Offline-first is not optional — it's the privacy architecture.** The four classification axes, filter rules, subgroups, and relation history live in the on-device vault, encrypted at rest with a key in the Keychain (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, no iCloud sync). The app must be fully usable for map/fiche/sous-groupes with zero connectivity.

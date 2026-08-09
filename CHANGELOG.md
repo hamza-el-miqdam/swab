@@ -4,6 +4,14 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — Point ios-/android-specialist at newly installed community skills
+
+- Installed 4 third-party Claude Code skill plugins globally (user scope, not repo-tracked): `all-ios-skills@swift-ios-skills` (dpearson2699, 86 skills incl. `cryptokit`/`swift-security`/`swiftui-*`), `android-skills@android-skills` (rcosteira79, Compose/coroutines/Room/testing), `claude-android-ninja` (Drjacky), `android-development` (dpconde).
+- Added an "Installed reference skills" section to `agents/ios-specialist.md` and `agents/android-specialist.md` naming the relevant skill per topic and instructing agents to consult it via the Skill tool before implementing unfamiliar framework details from memory.
+- **Explicit caveat added to both:** these are general third-party skills, not Swab-aware, and never override this file's Project Rules — most notably `android-development`/`claude-android-ninja` default to Hilt DI, which Swab deliberately doesn't use (manual `AppContainer` injection); reference for idiomatic API usage only, never architecture.
+- Regenerated `.github/instructions/{ios,android}.instructions.md` via `node scripts/render-agents.mjs` (Copilot copies only — the Claude Code `.claude/agents/*.md` wrappers are thin `@`-imports and don't duplicate content, so they needed no re-render).
+- Gotcha for future sessions: these skill installs are user/global scope, not part of this repo — a fresh clone or CI runner won't have them; they're a local productivity aid, not a build dependency.
+
 ## 2026-08-09 — [ONB-04, MAP-01, FCH-01, OQ-ONB-1] Propagate frozen 4-ring resolution to French Notion mirrors
 
 - Checked all three live Notion pages (FS-01/02/03) and their comments/discussions before touching anything — none had unresolved feedback or co-founder edits, so this was the "code changed only" case on all three, not a conflict.
