@@ -86,7 +86,7 @@ class FicheE2ETest {
      * Fresh onboarding leaves history empty (calibration writes rings via
      * `Vault.setRing` directly, without `recordAxisEdit` — only fiche edits
      * feed the feed), so the sequence asserted is:
-     * empty -> « État → occupé » -> « Ressenti → léger » above it.
+     * empty -> « État → occupé » -> « Ressenti → positive » above it.
      */
     @Test
     fun test_FCH04_axisEditAppendsVisibleHistory_newestFirst() {
@@ -102,9 +102,9 @@ class FicheE2ETest {
         composeTestRule.waitUntilTextExists(etatSummary)
         composeTestRule.waitUntilTextGone(Fr.FICHE_HISTORY_EMPTY)
 
-        // Second edit: ressenti -> léger.
-        composeTestRule.onNodeWithText(Fr.RESSENTI_LIGHT).performClick()
-        val ressentiSummary = "${Fr.FICHE_AXIS_RESSENTI} → ${Fr.RESSENTI_LIGHT}"
+        // Second edit: ressenti -> positive.
+        composeTestRule.onNodeWithText(Fr.RESSENTI_POSITIVE).performClick()
+        val ressentiSummary = "${Fr.FICHE_AXIS_RESSENTI} → ${Fr.RESSENTI_POSITIVE}"
         composeTestRule.waitUntilTextExists(ressentiSummary)
 
         // Both visible...

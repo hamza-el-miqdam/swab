@@ -39,7 +39,7 @@ public struct CalibrateView: View {
     // type's doc comment) — OQ-FCH-2 resolved 2026-08-09 (issue #16):
     // "en pause" moved from ressenti to état.
     private static let etats = [Fr.t(.etatAvailable), Fr.t(.etatBusy), Fr.t(.etatAway), Fr.t(.etatPaused)]
-    private static let ressentis = [Fr.t(.ressentiLight), Fr.t(.ressentiPrecious)]
+    private static let ressentis = [Fr.t(.ressentiPositive), Fr.t(.ressentiAmbivalente), Fr.t(.ressentiNegative)]
     private static let ringLabels: [Int: String] = [1: Fr.t(.ring1), 2: Fr.t(.ring2), 3: Fr.t(.ring3), 4: Fr.t(.ring4)]
 
     public init(viewModel: CalibrateViewModel, onContinue: @escaping () -> Void) {

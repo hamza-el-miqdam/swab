@@ -59,7 +59,7 @@ class FichePrivacyLeakTest {
         // état value, not ressenti — exercised here on its actual axis.
         vm.setEtat("en pause")
         advanceUntilIdle()
-        vm.setRessenti("précieux")
+        vm.setRessenti("négative")
         advanceUntilIdle()
 
         // Sanity: the edits actually landed (otherwise this test would prove nothing).
@@ -77,7 +77,7 @@ class FichePrivacyLeakTest {
             "Should Never Leak Either", // display name
             "Famille", "Travail", // role names
             "en pause", // état
-            "précieux", // ressenti
+            "négative", // ressenti
             "Intimité", "Rôles", "État", "Ressenti", // axis labels used in history summaries
             "ring", "roles", "etat", "ressenti", "targetId", // field names
         )

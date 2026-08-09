@@ -56,8 +56,18 @@ public enum I18nKey: String, CaseIterable, Sendable {
     case etatBusy = "etat.busy"
     case etatAway = "etat.away"
     case etatPaused = "etat.paused"
-    case ressentiLight = "ressenti.light"
-    case ressentiPrecious = "ressenti.precious"
+    case ressentiPositive = "ressenti.positive"
+    case ressentiAmbivalente = "ressenti.ambivalente"
+    case ressentiNegative = "ressenti.negative"
+
+    // FCH-01/OQ-FCH-1 — Rôles·contexte, verbatim from the blueprint's
+    // `ROLES` const (blueprints/swab - Fiche contact (standalone) (1).html).
+    case roleFamille = "role.famille"
+    case rolePartenaire = "role.partenaire"
+    case roleCollegue = "role.collegue"
+    case rolePromo = "role.promo"
+    case roleCommunaute = "role.communaute"
+    case roleVoisin = "role.voisin"
 
     case doneTitle = "done.title"
     case doneSubtitle = "done.subtitle"
@@ -159,8 +169,16 @@ public enum Fr {
         .etatBusy: "occupé",
         .etatAway: "ailleurs",
         .etatPaused: "en pause",
-        .ressentiLight: "léger",
-        .ressentiPrecious: "précieux",
+        .ressentiPositive: "positive",
+        .ressentiAmbivalente: "ambivalente",
+        .ressentiNegative: "négative",
+
+        .roleFamille: "famille",
+        .rolePartenaire: "partenaire",
+        .roleCollegue: "collègue",
+        .rolePromo: "promo",
+        .roleCommunaute: "communauté",
+        .roleVoisin: "voisin",
 
         .doneTitle: "Voilà, c’est posé.",
         .doneSubtitle: "Ta carte est prête.",

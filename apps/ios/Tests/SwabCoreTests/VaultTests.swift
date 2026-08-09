@@ -60,10 +60,10 @@ final class VaultTests: XCTestCase {
         let contact = try await vault.addContact(displayName: "C")
 
         try await vault.setEtat(id: contact.id, etat: "disponible")
-        try await vault.setRessenti(id: contact.id, ressenti: "léger")
+        try await vault.setRessenti(id: contact.id, ressenti: "positive")
         var contacts = try await vault.getContacts()
         XCTAssertEqual(contacts.first?.etat, "disponible")
-        XCTAssertEqual(contacts.first?.ressenti, "léger")
+        XCTAssertEqual(contacts.first?.ressenti, "positive")
 
         try await vault.setEtat(id: contact.id, etat: nil)
         contacts = try await vault.getContacts()

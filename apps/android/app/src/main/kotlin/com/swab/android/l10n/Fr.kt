@@ -67,8 +67,12 @@ object Fr {
     // OQ-FCH-2 (RESOLVED 2026-08-09, issue #16): "en pause" is a 4th état
     // value — moved off Ressenti, État is canonical per FS-03 FCH-06/FLT-01.
     const val ETAT_PAUSED: String = "en pause"
-    const val RESSENTI_LIGHT: String = "léger"
-    const val RESSENTI_PRECIOUS: String = "précieux"
+    // OQ-FCH-1 (RESOLVED 2026-08-09, issue #15): the léger/précieux placeholder
+    // pair is fully replaced — verbatim from the blueprint's embedded VALENCES
+    // const (blueprints/swab - Fiche contact (standalone) (1).html).
+    const val RESSENTI_POSITIVE: String = "positive"
+    const val RESSENTI_AMBIVALENT: String = "ambivalente"
+    const val RESSENTI_NEGATIVE: String = "négative"
 
     const val DONE_TITLE: String = "Voilà, c’est posé."
     const val DONE_SUBTITLE: String = "Ta carte est prête."
@@ -91,13 +95,18 @@ object Fr {
     const val FICHE_AXIS_ROLES: String = "Rôles·contexte"
     const val FICHE_AXIS_ETAT: String = "État"
     const val FICHE_AXIS_RESSENTI: String = "Ressenti"
-    // OQ-FCH-1: placeholder Rôles·contexte taxonomy — product hasn't fixed
-    // the vocabulary yet, per the spec's own open question.
-    const val FICHE_ROLE_FAMILLE: String = "Famille"
-    const val FICHE_ROLE_AMITIE: String = "Amitié"
-    const val FICHE_ROLE_TRAVAIL: String = "Travail"
-    const val FICHE_ROLE_VOISINAGE: String = "Voisinage"
-    const val FICHE_ROLE_AUTRE: String = "Autre"
+    // OQ-FCH-1 (RESOLVED 2026-08-09, issue #15): real, permanent taxonomy —
+    // extracted verbatim from the blueprint's embedded ROLES const
+    // (blueprints/swab - Fiche contact (standalone) (1).html, Component
+    // extends DCLogic). Replaces the invented famille/amitié/travail/
+    // voisinage/autre placeholder set entirely; lowercase, matching the
+    // blueprint and the État/Ressenti copy style above.
+    const val ROLE_FAMILLE: String = "famille"
+    const val ROLE_PARTENAIRE: String = "partenaire"
+    const val ROLE_COLLEGUE: String = "collègue"
+    const val ROLE_PROMO: String = "promo"
+    const val ROLE_COMMUNAUTE: String = "communauté"
+    const val ROLE_VOISIN: String = "voisin"
     const val FICHE_HISTORY_TITLE: String = "Le fil de ce qui a bougé"
     const val FICHE_HISTORY_EMPTY: String = "Rien n’a encore bougé."
     // ⚠️ ASSUMPTION: exact nudge copy isn't in the spec (only the two button
@@ -130,12 +139,13 @@ object Fr {
             CALIBRATE_OPTIONAL_LAYER, CALIBRATE_OPTIONAL_HINT, CALIBRATE_ETAT_TITLE, CALIBRATE_RESSENTI_TITLE,
             CALIBRATE_RING_PREFIX, CALIBRATE_CONTINUE,
             RING_1, RING_2, RING_3, RING_4,
-            ETAT_AVAILABLE, ETAT_BUSY, ETAT_AWAY, ETAT_PAUSED, RESSENTI_LIGHT, RESSENTI_PRECIOUS,
+            ETAT_AVAILABLE, ETAT_BUSY, ETAT_AWAY, ETAT_PAUSED,
+            RESSENTI_POSITIVE, RESSENTI_AMBIVALENT, RESSENTI_NEGATIVE,
             DONE_TITLE, DONE_SUBTITLE, DONE_PROMISE, DONE_CTA,
             CARTE_TITLE, CARTE_SUBTITLE, CARTE_EMPTY, CARTE_ME, CARTE_LIST_MODE, CARTE_LEGEND,
             CARTE_OPEN_FICHE, CARTE_SHEET_INTIMITE, CARTE_SHEET_ETAT, CARTE_SHEET_ROLES,
             FICHE_BACK, FICHE_AXIS_INTIMITE, FICHE_AXIS_ROLES, FICHE_AXIS_ETAT, FICHE_AXIS_RESSENTI,
-            FICHE_ROLE_FAMILLE, FICHE_ROLE_AMITIE, FICHE_ROLE_TRAVAIL, FICHE_ROLE_VOISINAGE, FICHE_ROLE_AUTRE,
+            ROLE_FAMILLE, ROLE_PARTENAIRE, ROLE_COLLEGUE, ROLE_PROMO, ROLE_COMMUNAUTE, ROLE_VOISIN,
             FICHE_HISTORY_TITLE, FICHE_HISTORY_EMPTY, FICHE_STALE_TITLE, FICHE_STALE_CONFIRM, FICHE_STALE_DISMISS,
             FICHE_ETAT_PAUSED_CONSEQUENCE, FICHE_PENDING_LABEL, FICHE_ENVIE_INACTIVE,
             NAV_CARTE, NAV_ENVIE, NAV_SOUS_GROUPES,

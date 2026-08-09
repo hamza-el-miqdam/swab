@@ -2,6 +2,15 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [FCH-01, OQ-FCH-1] Real Rôles·contexte and Ressenti vocabularies
+
+- Architect decision (issue #15, FS-03): replaced the invented placeholder vocabularies with the real ones extracted verbatim from the blueprint (`blueprints/swab - Fiche contact (standalone) (1).html`, embedded `ROLES`/`VALENCES` consts). **Rôles·contexte** is now a 6-value multi-select: `famille, partenaire, collègue, promo, communauté, voisin` (lowercase, matching blueprint casing and the État/Ressenti copy style). **Ressenti** is a full 3-value swap: `positive, ambivalente, négative`, replacing `léger`/`précieux` entirely.
+- `Fr.kt`: removed `FICHE_ROLE_FAMILLE/AMITIE/TRAVAIL/VOISINAGE/AUTRE` and `RESSENTI_LIGHT/PRECIOUS`; added `ROLE_FAMILLE/PARTENAIRE/COLLEGUE/PROMO/COMMUNAUTE/VOISIN` and `RESSENTI_POSITIVE/AMBIVALENT/NEGATIVE`. `ALL_STRINGS` updated to match (feeds `NoGamificationCopyTest`, unaffected by the new values).
+- `FicheScreen.kt`'s `ROLES`/`RESSENTIS` and `CalibrateScreen.kt`'s `RESSENTIS` arrays updated to the new constants. État is untouched (still 4 values, per #16).
+- Tests updated to lock the new vocab: `FicheFilterConsequenceTest` (asserts null across all 3 new Ressenti values), `FicheE2ETest` (drives `positive` instead of `léger`), `FicheViewModelTest`/`FichePrivacyLeakTest` (literal ressenti test values swapped to `positive`/`négative`). No real users existed yet, so this is a vocabulary swap, not a data migration.
+- Full `./gradlew test --rerun-tasks`: BUILD SUCCESSFUL, all JVM unit tests green (debug+release).
+- Mirrors the equivalent iOS fix (`apps/ios/CHANGELOG.md`) — kept conceptually aligned, Kotlin-idiomatic in structure.
+
 ## 2026-08-09 — [FCH-06, OQ-FCH-2] `en pause` moves from Ressenti to État
 
 - Architect decision (issue #16, FS-03): `en pause` is canonically an ÉTAT value. Moved `Fr.RESSENTI_PAUSED` → `Fr.ETAT_PAUSED`; État now ships 4 values (disponible/occupé/ailleurs/en pause), Ressenti drops to 2 (léger/précieux — still placeholder per OQ-FCH-1).

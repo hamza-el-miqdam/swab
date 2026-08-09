@@ -22,8 +22,9 @@ class FicheFilterConsequenceTest {
         assertNull(FicheFilterConsequence.forValue(Fr.ETAT_AVAILABLE))
         assertNull(FicheFilterConsequence.forValue(Fr.ETAT_BUSY))
         assertNull(FicheFilterConsequence.forValue(Fr.ETAT_AWAY))
-        assertNull(FicheFilterConsequence.forValue(Fr.RESSENTI_LIGHT))
-        assertNull(FicheFilterConsequence.forValue(Fr.RESSENTI_PRECIOUS))
+        assertNull(FicheFilterConsequence.forValue(Fr.RESSENTI_POSITIVE))
+        assertNull(FicheFilterConsequence.forValue(Fr.RESSENTI_AMBIVALENT))
+        assertNull(FicheFilterConsequence.forValue(Fr.RESSENTI_NEGATIVE))
     }
 
     @Test

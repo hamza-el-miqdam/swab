@@ -32,25 +32,28 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// OQ-FCH-1 — placeholder Rôles·contexte taxonomy (this task's brief); no
-// product decision on the final vocabulary yet.
+// OQ-FCH-1 (RESOLVED 2026-08-09, issue #15): real Rôles·contexte taxonomy,
+// verbatim from the blueprint's embedded ROLES const (blueprints/swab -
+// Fiche contact (standalone) (1).html).
 private val ROLES = listOf(
-    Fr.FICHE_ROLE_FAMILLE,
-    Fr.FICHE_ROLE_AMITIE,
-    Fr.FICHE_ROLE_TRAVAIL,
-    Fr.FICHE_ROLE_VOISINAGE,
-    Fr.FICHE_ROLE_AUTRE,
+    Fr.ROLE_FAMILLE,
+    Fr.ROLE_PARTENAIRE,
+    Fr.ROLE_COLLEGUE,
+    Fr.ROLE_PROMO,
+    Fr.ROLE_COMMUNAUTE,
+    Fr.ROLE_VOISIN,
 )
 
 // Same shipped value sets as CalibrateScreen.kt's private ETATS/RESSENTIS
 // (ONB-04/06) — redefined here (not imported) because those lists aren't
 // exported from that file. Do not add values here without touching
 // CalibrateScreen too, or the two screens will silently diverge.
-// OQ-FCH-2 (resolved 2026-08-09, issue #16): État now carries 4 values
-// (`en pause` moved here from Ressenti); Ressenti has 2, still placeholder
-// per OQ-FCH-1.
+// OQ-FCH-2 (resolved 2026-08-09, issue #16): État carries 4 values (`en
+// pause` moved here from Ressenti). OQ-FCH-1 (resolved 2026-08-09, issue
+// #15): Ressenti carries the 3 real values from the blueprint's VALENCES
+// const, replacing the léger/précieux placeholder pair entirely.
 private val ETATS = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED)
-private val RESSENTIS = listOf(Fr.RESSENTI_LIGHT, Fr.RESSENTI_PRECIOUS)
+private val RESSENTIS = listOf(Fr.RESSENTI_POSITIVE, Fr.RESSENTI_AMBIVALENT, Fr.RESSENTI_NEGATIVE)
 
 /**
  * FS-03 « Fiche contact » — the four tap-editable axes, the local history

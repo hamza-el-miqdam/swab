@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [FCH-01, OQ-FCH-1] Rôles·contexte and Ressenti replaced with real blueprint vocabulary (issue #15)
+
+- Architect decision (issue #15) resolves OQ-FCH-1: invented placeholders swapped for the blueprint's real `ROLES`/`VALENCES` consts (`blueprints/swab - Fiche contact (standalone) (1).html`). Rôles·contexte is now a 6-value multi-select — famille, partenaire, collègue, promo, communauté, voisin — newly routed through `Fr`/`I18nKey` (previously raw strings, unlike the other three axes). Ressenti is a full 3-value swap — positive, ambivalente, négative — replacing léger/précieux entirely, not an addition.
+- `Fr.swift`: added 6 `role.*` keys + 3 `ressenti.*` keys; removed `.ressentiLight`/`.ressentiPrecious` entirely (breaking rename, no back-compat alias — no shipped users to migrate).
+- `FicheVocabulary.roles`/`.ressentis` now built from `Fr.t(...)`; doc comment rewritten to cite the blueprint source instead of flagging OQ-FCH-1 as open. `CalibrateView`'s private `ressentis` array updated to match (roles are not calibrated at onboarding, so no change needed there).
+- État untouched by this change (separate divergence, `rn-native-handoff.md` §5) — still 4 values from the #16 fix.
+- Tests rewritten to lock in the new vocabularies (not just made to pass): `FicheVocabularyTests`, `FicheFilterConsequenceTests` (key rename), plus opaque passthrough string literals updated in `FicheVaultTests`/`VaultTests`/`FichePrivacyInvariantTests` (index-based, no changes needed there beyond literals). Full `xcrun swift test`: 111/111.
+
 ## 2026-08-09 — [FCH-06, OQ-FCH-2] "en pause" moved from Ressenti to État (issue #16)
 
 - Architect decision (issue #16) resolves OQ-FCH-2: `en pause` is an ÉTAT value, not Ressenti. `Fr.etatPaused` replaces `Fr.ressentiPaused` (copy unchanged, axis changed); `FicheVocabulary.etats` now has 4 values, `.ressentis` 2 (léger, précieux — OQ-FCH-1 still open on Ressenti's final vocabulary).

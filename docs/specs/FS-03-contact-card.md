@@ -33,6 +33,8 @@ Per-relation detail and editing: « Les quatre axes, éditables d'un tap — tu 
 
 ## Open questions
 
-OQ-FCH-1 (**still open post-implementation**): FS-03 shipped 2026-07-10 with placeholder vocabulary sets for Rôles·contexte and Ressenti. Final vocabularies still need extraction from the blueprint with Hamza; changing them later is a vault-content migration (existing user tags must map forward) — resolve before external testers.
+OQ-FCH-1: FS-03 shipped 2026-07-10 with placeholder vocabulary sets for Rôles·contexte and Ressenti. **RESOLVED (2026-08-09, issue #15):** final vocabularies extracted verbatim from the blueprint's embedded `ROLES`/`VALENCES` data (`blueprints/swab - Fiche contact (standalone) (1).html`, `Component extends DCLogic`). **Rôles·contexte** (multi-select, 6): famille, partenaire, collègue, promo, communauté, voisin. **Ressenti** (3, replaces the placeholder léger/précieux entirely): positive, ambivalente, négative. No real users existed yet to migrate, so this was a straight vocabulary swap, not a data migration. See `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`.
+
+Note: the same blueprint source also shows État itself has a richer 5-value taxonomy (établi / à apprivoiser / en sommeil / en pause / tendu) versus the 3(+1, post-OQ-FCH-2) shipped today — that is a separate, already-tracked, still-open divergence (`docs/migration/rn-native-handoff.md` §5), not resolved by this OQ or by OQ-FCH-2.
 
 OQ-FCH-2: Platform implementations flagged an état-vs-ressenti axis ambiguity for « en pause » in Wave 3 (see `docs/qa/e2e-coverage.json` FCH-06 note). **RESOLVED (2026-08-09, issue #16):** état is canonical, matching this spec's original position (FCH-06, FLT-01) unchanged — iOS and Android fixed to add `en pause` as a 4th état value and remove it from Ressenti (Ressenti now ships 2 values, still placeholder per OQ-FCH-1). See `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md` for the fix.

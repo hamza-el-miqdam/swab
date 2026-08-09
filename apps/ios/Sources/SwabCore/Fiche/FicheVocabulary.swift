@@ -1,22 +1,29 @@
-/// OQ-FCH-1 (spec, unresolved): exact vocabulary sets for Rôles·contexte and
-/// Ressenti weren't extracted from the blueprint before implementation.
+/// OQ-FCH-1 (RESOLVED 2026-08-09, issue #15): Rôles·contexte and Ressenti
+/// vocabularies extracted verbatim from the blueprint's embedded
+/// `Component extends DCLogic` script (`blueprints/swab - Fiche contact
+/// (standalone) (1).html`, `ROLES`/`VALENCES` consts) — no longer invented
+/// placeholders.
 ///
-/// ⚠️ ASSUMPTION — placeholder taxonomies, per the task brief:
-/// - Rôles·contexte (multi-select): Famille / Amitié / Travail / Voisinage /
-///   Autre — invented for this walking skeleton, not blueprint-sourced.
-/// - État / Ressenti: deliberately NOT a new list — reuses the exact
-///   values already shipped in Wave 1's calibration screen
-///   (`CalibrateView`'s private `etats`/`ressentis` arrays) and in
-///   `EtatColors.byLabel`, so the fiche and the map/calibrate screens never
-///   disagree about what an état/ressenti value even is.
-///
-/// OQ-FCH-2 (resolved 2026-08-09, issue #16): "en pause" moved from
-/// Ressenti to État — État is canonical per FCH-06/FLT-01. État now has 4
-/// values, Ressenti 2 (léger, précieux); OQ-FCH-1 still leaves Ressenti's
-/// final vocabulary open, so no replacement 3rd value was invented here.
+/// - Rôles·contexte (multi-select, 6): famille, partenaire, collègue,
+///   promo, communauté, voisin — routed through `Fr`/`I18nKey` like the
+///   other three axes, since this is real, permanent product vocabulary.
+/// - Ressenti (3, full swap — replaces the placeholder léger/précieux
+///   entirely, not an addition): positive, ambivalente, négative.
+/// - État: deliberately NOT touched by this resolution — reuses the exact
+///   4 values already shipped (disponible/occupé/ailleurs/en pause, see
+///   `CalibrateView`'s private `etats` array and `EtatColors.byLabel`),
+///   per OQ-FCH-2 (resolved 2026-08-09, issue #16), a separate divergence
+///   tracked in `rn-native-handoff.md` §5.
 public enum FicheVocabulary {
-    public static let roles = ["Famille", "Amitié", "Travail", "Voisinage", "Autre"]
+    public static let roles = [
+        Fr.t(.roleFamille),
+        Fr.t(.rolePartenaire),
+        Fr.t(.roleCollegue),
+        Fr.t(.rolePromo),
+        Fr.t(.roleCommunaute),
+        Fr.t(.roleVoisin),
+    ]
 
     public static let etats = [Fr.t(.etatAvailable), Fr.t(.etatBusy), Fr.t(.etatAway), Fr.t(.etatPaused)]
-    public static let ressentis = [Fr.t(.ressentiLight), Fr.t(.ressentiPrecious)]
+    public static let ressentis = [Fr.t(.ressentiPositive), Fr.t(.ressentiAmbivalente), Fr.t(.ressentiNegative)]
 }

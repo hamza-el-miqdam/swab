@@ -57,14 +57,14 @@ final class FicheVaultTests: XCTestCase {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Ali")
 
-        try await vault.setFicheRoles(id: contact.id, roles: ["Famille", "Travail"])
+        try await vault.setFicheRoles(id: contact.id, roles: ["famille", "collègue"])
 
         let updated = try await vault.getContact(id: contact.id)
-        XCTAssertEqual(updated?.roles, ["Famille", "Travail"])
+        XCTAssertEqual(updated?.roles, ["famille", "collègue"])
         XCTAssertEqual(updated?.history.count, 1)
         if case .axisChanged(let axis, let value) = updated?.history.first?.kind {
             XCTAssertEqual(axis, FicheAxis.roles.rawValue)
-            XCTAssertEqual(value, "Famille · Travail")
+            XCTAssertEqual(value, "famille · collègue")
         } else {
             XCTFail("expected an axisChanged history event")
         }
@@ -77,7 +77,7 @@ final class FicheVaultTests: XCTestCase {
 
         try await vault.setFicheRing(id: contact.id, ring: 1)
         try await vault.setFicheEtat(id: contact.id, etat: "disponible")
-        try await vault.setFicheRessenti(id: contact.id, ressenti: "léger")
+        try await vault.setFicheRessenti(id: contact.id, ressenti: "positive")
 
         let updated = try await vault.getContact(id: contact.id)
         let kinds = updated?.history.map(\.kind)
@@ -152,14 +152,14 @@ final class FicheVaultTests: XCTestCase {
 
         try await vault.setFicheRing(id: contact.id, ring: 3)
         try await vault.setFicheEtat(id: contact.id, etat: "ailleurs")
-        try await vault.setFicheRessenti(id: contact.id, ressenti: "précieux")
-        try await vault.setFicheRoles(id: contact.id, roles: ["Amitié"])
+        try await vault.setFicheRessenti(id: contact.id, ressenti: "ambivalente")
+        try await vault.setFicheRoles(id: contact.id, roles: ["partenaire"])
 
         let updated = try await vault.getContact(id: contact.id)
         XCTAssertEqual(updated?.ring, 3)
         XCTAssertEqual(updated?.etat, "ailleurs")
-        XCTAssertEqual(updated?.ressenti, "précieux")
-        XCTAssertEqual(updated?.roles, ["Amitié"])
+        XCTAssertEqual(updated?.ressenti, "ambivalente")
+        XCTAssertEqual(updated?.roles, ["partenaire"])
         XCTAssertNil(updated?.targetId, "still pending — editing axes must not silently mark it joined")
         XCTAssertFalse(FicheEligibility.isEnvieActive(targetId: updated?.targetId))
     }
@@ -190,8 +190,8 @@ final class FicheVaultTests: XCTestCase {
 
         try await vault.setFicheRing(id: "missing", ring: 1)
         try await vault.setFicheEtat(id: "missing", etat: "disponible")
-        try await vault.setFicheRessenti(id: "missing", ressenti: "léger")
-        try await vault.setFicheRoles(id: "missing", roles: ["Famille"])
+        try await vault.setFicheRessenti(id: "missing", ressenti: "positive")
+        try await vault.setFicheRoles(id: "missing", roles: ["famille"])
         try await vault.reconfirmFicheStaleness(id: "missing")
         try await vault.snoozeFicheStaleness(id: "missing")
 

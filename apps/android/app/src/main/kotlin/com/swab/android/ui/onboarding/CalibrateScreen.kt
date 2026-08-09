@@ -15,10 +15,11 @@ import com.swab.android.onboarding.CalibrateViewModel
 
 private val RING_LABELS = mapOf(1 to Fr.RING_1, 2 to Fr.RING_2, 3 to Fr.RING_3, 4 to Fr.RING_4)
 // OQ-FCH-2 (resolved 2026-08-09, issue #16): État carries 4 values (`en
-// pause` moved here from Ressenti); Ressenti has 2, still placeholder per
-// OQ-FCH-1.
+// pause` moved here from Ressenti). OQ-FCH-1 (resolved 2026-08-09, issue
+// #15): Ressenti carries the 3 real values from the blueprint's VALENCES
+// const, replacing the léger/précieux placeholder pair entirely.
 private val ETATS = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED)
-private val RESSENTIS = listOf(Fr.RESSENTI_LIGHT, Fr.RESSENTI_PRECIOUS)
+private val RESSENTIS = listOf(Fr.RESSENTI_POSITIVE, Fr.RESSENTI_AMBIVALENT, Fr.RESSENTI_NEGATIVE)
 
 /**
  * ONB-04/05/06: radial calibration. v0 keeps a list-mode toggle (accessible

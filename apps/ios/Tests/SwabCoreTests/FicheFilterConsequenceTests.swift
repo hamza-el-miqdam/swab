@@ -21,7 +21,7 @@ final class FicheFilterConsequenceTests: XCTestCase {
     }
 
     func test_FCH06_neitherAxisPaused_noConsequenceText() {
-        XCTAssertNil(FicheFilterConsequence.text(etat: Fr.t(.etatAvailable), ressenti: Fr.t(.ressentiLight)))
+        XCTAssertNil(FicheFilterConsequence.text(etat: Fr.t(.etatAvailable), ressenti: Fr.t(.ressentiPositive)))
     }
 
     func test_FCH06_bothNil_noConsequenceText() {

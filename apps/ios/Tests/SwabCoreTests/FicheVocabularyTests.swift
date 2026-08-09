@@ -1,16 +1,21 @@
-/// OQ-FCH-1 placeholder taxonomy — pins down the exact shipped lists so a
-/// future accidental edit is caught, and confirms État/Ressenti reuse the
-/// existing shipped sets rather than a newly invented one.
+/// OQ-FCH-1 resolved 2026-08-09 (issue #15): Rôles·contexte and Ressenti
+/// vocabularies extracted verbatim from the blueprint's `ROLES`/`VALENCES`
+/// consts — pins down the exact shipped lists so a future accidental edit
+/// is caught, and confirms État reuses the existing shipped set untouched.
 ///
 /// OQ-FCH-2 resolved 2026-08-09 (issue #16): État is canonical for
-/// "en pause" — État now has 4 values, Ressenti 2.
+/// "en pause" — État now has 4 values, Ressenti 3 (post OQ-FCH-1 swap).
 import XCTest
 
 @testable import SwabCore
 
 final class FicheVocabularyTests: XCTestCase {
-    func test_OQFCH1_rolesPlaceholderTaxonomy() {
-        XCTAssertEqual(FicheVocabulary.roles, ["Famille", "Amitié", "Travail", "Voisinage", "Autre"])
+    func test_OQFCH1_rolesMatchBlueprintVocabulary() {
+        XCTAssertEqual(
+            FicheVocabulary.roles,
+            ["famille", "partenaire", "collègue", "promo", "communauté", "voisin"]
+        )
+        XCTAssertEqual(FicheVocabulary.roles.count, 6)
     }
 
     func test_OQFCH2_etatIncludesEnPauseAsFourthValue() {
@@ -22,9 +27,11 @@ final class FicheVocabularyTests: XCTestCase {
         XCTAssertEqual(Fr.t(.etatPaused), "en pause")
     }
 
-    func test_OQFCH2_ressentiNoLongerIncludesEnPause() {
-        XCTAssertEqual(FicheVocabulary.ressentis, [Fr.t(.ressentiLight), Fr.t(.ressentiPrecious)])
-        XCTAssertEqual(FicheVocabulary.ressentis.count, 2)
+    func test_OQFCH1_ressentiMatchesBlueprintVocabulary() {
+        XCTAssertEqual(FicheVocabulary.ressentis, ["positive", "ambivalente", "négative"])
+        XCTAssertEqual(FicheVocabulary.ressentis.count, 3)
         XCTAssertFalse(FicheVocabulary.ressentis.contains("en pause"))
+        XCTAssertFalse(FicheVocabulary.ressentis.contains("léger"))
+        XCTAssertFalse(FicheVocabulary.ressentis.contains("précieux"))
     }
 }

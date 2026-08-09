@@ -67,12 +67,12 @@ class FicheViewModelTest {
         advanceUntilIdle()
         vm.setEtat("disponible")
         advanceUntilIdle()
-        vm.setRessenti("léger")
+        vm.setRessenti("positive")
         advanceUntilIdle()
 
         assertEquals(listOf("Famille", "Travail"), vm.contact.value?.roles)
         assertEquals("disponible", vm.contact.value?.etat)
-        assertEquals("léger", vm.contact.value?.ressenti)
+        assertEquals("positive", vm.contact.value?.ressenti)
         assertEquals(3, vm.history.value.size)
         assertEquals(setOf("roles", "etat", "ressenti"), vm.history.value.map { it.axis }.toSet())
     }
@@ -88,7 +88,7 @@ class FicheViewModelTest {
         vm.setEtat("disponible")
         advanceUntilIdle()
         now += 1000
-        vm.setRessenti("léger")
+        vm.setRessenti("positive")
         advanceUntilIdle()
 
         val axes = vm.history.value.map { it.axis }

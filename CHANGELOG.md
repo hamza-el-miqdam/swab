@@ -4,6 +4,13 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [FCH-01] Resolve OQ-FCH-1: real Rôles·contexte and Ressenti vocabularies (closes #15)
+
+- Extracted verbatim from the blueprint's embedded `ROLES`/`VALENCES` consts (`blueprints/swab - Fiche contact (standalone) (1).html`) instead of guessing — Architect approved adopting them as-is. Rôles·contexte (multi-select, 6): famille, partenaire, collègue, promo, communauté, voisin. Ressenti (3, full swap, not an addition): positive, ambivalente, négative — replaces the invented léger/précieux placeholder pair entirely.
+- iOS and Android both fixed in the same PR: vocab routed through each platform's localization constants like the other axes; onboarding calibration screens synced. See `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`.
+- `docs/specs/FS-03-contact-card.md` (OQ-FCH-1 marked resolved), `docs/STATUS.md` updated. No real users existed yet, so this was a straight vocabulary swap, not a vault-content migration.
+- Gotcha: the same blueprint also revealed État has its own richer 5-value taxonomy (établi/à apprivoiser/en sommeil/en pause/tendu) vs. the 4 shipped today — that's a separate, already-tracked, still-open divergence (`docs/migration/rn-native-handoff.md` §5), untouched by this fix or by #16.
+
 ## 2026-08-09 — [FCH-06] Resolve OQ-FCH-2: état is canonical for « en pause » (closes #16)
 
 - Architect decision (issue #16): `en pause` is an ÉTAT value, not Ressenti — resolves the Wave 3 divergence where the spec said état (FCH-06, FS-06 FLT-01) but shipped native code put it under Ressenti. FS-06 wasn't touched — its `état = en pause` default rule already assumed the now-confirmed axis.
