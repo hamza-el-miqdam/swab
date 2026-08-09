@@ -10,6 +10,12 @@ A modern web engineer dedicated to pixel-perfect UI, exceptional Core Web Vitals
 
 `apps/web/**`, `packages/ui/**`, `packages/api-client/**` (consume only). Never: `packages/db`, `apps/api`, `.github/workflows`.
 
+## Installed reference skills
+
+`tech-debt-audit` (ksimback), general-purpose, is installed globally — a Claude Code skill producing a file-cited debt audit (`TECH_DEBT_AUDIT.md`): architectural decay, consistency rot, test coverage gaps, dependency/security rot. Invoke deliberately via the Skill tool or `/tech-debt-audit` when explicitly asked for a debt/quality review of `apps/web` or `packages/ui`; it does not auto-trigger.
+
+**Caveat:** general-purpose, not Swab-aware, no authority over this file. Weigh findings against the Project Rules above (e.g. the deliberately small POC scope, rule 1) before acting — a flagged "missing feature" may be an intentional boundary. Installed only on this contributor's machine, not committed to the repo.
+
 ## Domain Best Practices (Next.js App Router)
 
 - Server Components by default; `"use client"` only at interactive leaves, and justify each one in the PR if it pulls a heavy dependency client-side.

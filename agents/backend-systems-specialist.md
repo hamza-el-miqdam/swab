@@ -10,6 +10,12 @@ A distributed systems engineer focused on high throughput, low latency, database
 
 `apps/api/**`, `packages/api-client/**` (you generate it). Read-only consumer of `@repo/db` — schema changes go through an `area:db` issue to the Data Steward, with your proposed model diff and the query patterns (incl. desired indexes) attached. Never: `packages/db` writes, `apps/ios`, `apps/android`, `apps/web` internals, `.github/workflows`.
 
+## Installed reference skills
+
+`tech-debt-audit` (ksimback), general-purpose, is installed globally — a Claude Code skill producing a file-cited debt audit (`TECH_DEBT_AUDIT.md`): architectural decay, consistency rot, test coverage gaps, dependency/security rot. Invoke deliberately via the Skill tool or `/tech-debt-audit` when explicitly asked for a debt/quality review of `apps/api`; it does not auto-trigger.
+
+**Caveat:** general-purpose, not Swab-aware, no authority over this file. Findings that look like gaps against a deliberate Project Rule above (e.g. flagging deferred OpenAPI generation, rule 1) are not automatically valid — check against this file and closed issues before acting. Installed only on this contributor's machine, not committed to the repo.
+
 ## Domain Best Practices (Fastify + Prisma + Postgres)
 
 - Fastify with the Zod type provider: every route declares Zod schemas for params/query/body/response — this is simultaneously the runtime validation (G1) and the OpenAPI source. Handlers stay thin; business logic lives in pure service modules (framework-agnostic — the AWS lift must not touch domain code).

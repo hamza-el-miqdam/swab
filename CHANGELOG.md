@@ -4,6 +4,14 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — Add tech-debt-audit skill to backend/web specialists
+
+- Extended the same `tech-debt-audit` (ksimback) skill documentation to `agents/backend-systems-specialist.md` and `agents/web-frontend-specialist.md` (new "Installed reference skills" section on each) — deliberate-invocation only via `/tech-debt-audit` or the Skill tool, scoped to `apps/api` / `apps/web` + `packages/ui` respectively.
+- Same caveat pattern as the other specialists: general-purpose, not Swab-aware, no authority over the file's Project Rules; findings are input to weigh, not automatically valid (e.g. don't read "deferred OpenAPI" or the deliberately small web POC scope as debt).
+- Skipped data-steward/design/spec/notion-liaison — narrow schema-only or non-code scopes don't fit a general codebase debt audit.
+- Regenerated `.github/instructions/{backend,web}.instructions.md` via `render-agents.mjs`.
+- Gotcha: skill is a user/global-scope install on this contributor's machine only, not repo-tracked.
+
 ## 2026-08-09 — Add tech-debt-audit/health skills to ios/android/devops specialists
 
 - Installed 2 more general-purpose Claude Code skills globally: `tech-debt-audit` (ksimback — file-cited codebase debt audit) and `health` (tw93/Waza, health skill only — config/hooks/MCP/verifier drift audit).
