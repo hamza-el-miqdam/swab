@@ -64,9 +64,11 @@ object Fr {
     const val ETAT_AVAILABLE: String = "disponible"
     const val ETAT_BUSY: String = "occupé"
     const val ETAT_AWAY: String = "ailleurs"
+    // OQ-FCH-2 (RESOLVED 2026-08-09, issue #16): "en pause" is a 4th état
+    // value — moved off Ressenti, État is canonical per FS-03 FCH-06/FLT-01.
+    const val ETAT_PAUSED: String = "en pause"
     const val RESSENTI_LIGHT: String = "léger"
     const val RESSENTI_PRECIOUS: String = "précieux"
-    const val RESSENTI_PAUSED: String = "en pause"
 
     const val DONE_TITLE: String = "Voilà, c’est posé."
     const val DONE_SUBTITLE: String = "Ta carte est prête."
@@ -128,7 +130,7 @@ object Fr {
             CALIBRATE_OPTIONAL_LAYER, CALIBRATE_OPTIONAL_HINT, CALIBRATE_ETAT_TITLE, CALIBRATE_RESSENTI_TITLE,
             CALIBRATE_RING_PREFIX, CALIBRATE_CONTINUE,
             RING_1, RING_2, RING_3, RING_4,
-            ETAT_AVAILABLE, ETAT_BUSY, ETAT_AWAY, RESSENTI_LIGHT, RESSENTI_PRECIOUS, RESSENTI_PAUSED,
+            ETAT_AVAILABLE, ETAT_BUSY, ETAT_AWAY, ETAT_PAUSED, RESSENTI_LIGHT, RESSENTI_PRECIOUS,
             DONE_TITLE, DONE_SUBTITLE, DONE_PROMISE, DONE_CTA,
             CARTE_TITLE, CARTE_SUBTITLE, CARTE_EMPTY, CARTE_ME, CARTE_LIST_MODE, CARTE_LEGEND,
             CARTE_OPEN_FICHE, CARTE_SHEET_INTIMITE, CARTE_SHEET_ETAT, CARTE_SHEET_ROLES,

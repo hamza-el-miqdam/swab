@@ -1,6 +1,7 @@
 /// MAP-03 — état → color mapping. Also locks in the flagged "blueprint has
-/// 5 états, we ship 3" divergence: this test enumerates exactly the 3
-/// shipped états and must fail loudly if a 4th silently appears.
+/// 5 états, we ship 4 (OQ-FCH-2 resolved 2026-08-09, issue #16: `en pause`
+/// moved from ressenti to état)" divergence: this test enumerates exactly
+/// the 4 shipped états and must fail loudly if a 5th silently appears.
 import XCTest
 
 @testable import SwabCore
@@ -22,6 +23,12 @@ final class EtatColorsTests: XCTestCase {
         XCTAssertEqual(color.background, "#8AA0BE")
     }
 
+    func test_MAP03_pausedMapsToItsColor() {
+        let color = EtatColors.color(for: Fr.t(.etatPaused))
+        XCTAssertEqual(color.background, "#9A8FB5")
+        XCTAssertEqual(color.border, "#9A8FB5")
+    }
+
     func test_MAP03_unsetEtatFallsBackToNeutralSurfaceColor() {
         let color = EtatColors.color(for: nil)
         XCTAssertEqual(color.background, CarteTheme.surface)
@@ -33,8 +40,8 @@ final class EtatColorsTests: XCTestCase {
         XCTAssertEqual(color.background, CarteTheme.surface)
     }
 
-    /// Divergence flag (do not silently expand): exactly 3 shipped états.
-    func test_MAP03_shippedEtatVocabularyIsExactlyThree() {
-        XCTAssertEqual(EtatColors.byLabel.count, 3)
+    /// Divergence flag (do not silently expand): exactly 4 shipped états.
+    func test_MAP03_shippedEtatVocabularyIsExactlyFour() {
+        XCTAssertEqual(EtatColors.byLabel.count, 4)
     }
 }

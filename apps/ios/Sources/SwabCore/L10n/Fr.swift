@@ -55,9 +55,9 @@ public enum I18nKey: String, CaseIterable, Sendable {
     case etatAvailable = "etat.available"
     case etatBusy = "etat.busy"
     case etatAway = "etat.away"
+    case etatPaused = "etat.paused"
     case ressentiLight = "ressenti.light"
     case ressentiPrecious = "ressenti.precious"
-    case ressentiPaused = "ressenti.paused"
 
     case doneTitle = "done.title"
     case doneSubtitle = "done.subtitle"
@@ -158,9 +158,9 @@ public enum Fr {
         .etatAvailable: "disponible",
         .etatBusy: "occupé",
         .etatAway: "ailleurs",
+        .etatPaused: "en pause",
         .ressentiLight: "léger",
         .ressentiPrecious: "précieux",
-        .ressentiPaused: "en pause",
 
         .doneTitle: "Voilà, c’est posé.",
         .doneSubtitle: "Ta carte est prête.",

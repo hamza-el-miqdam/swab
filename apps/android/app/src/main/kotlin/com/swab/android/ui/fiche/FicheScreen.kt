@@ -42,13 +42,15 @@ private val ROLES = listOf(
     Fr.FICHE_ROLE_AUTRE,
 )
 
-// Same shipped 3-value sets as CalibrateScreen.kt's private ETATS/RESSENTIS
+// Same shipped value sets as CalibrateScreen.kt's private ETATS/RESSENTIS
 // (ONB-04/06) — redefined here (not imported) because those lists aren't
-// exported from that file, and this task's brief says reuse them, not invent
-// a new vocabulary. Do not add values here without touching CalibrateScreen
-// too, or the two screens will silently diverge.
-private val ETATS = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY)
-private val RESSENTIS = listOf(Fr.RESSENTI_LIGHT, Fr.RESSENTI_PRECIOUS, Fr.RESSENTI_PAUSED)
+// exported from that file. Do not add values here without touching
+// CalibrateScreen too, or the two screens will silently diverge.
+// OQ-FCH-2 (resolved 2026-08-09, issue #16): État now carries 4 values
+// (`en pause` moved here from Ressenti); Ressenti has 2, still placeholder
+// per OQ-FCH-1.
+private val ETATS = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED)
+private val RESSENTIS = listOf(Fr.RESSENTI_LIGHT, Fr.RESSENTI_PRECIOUS)
 
 /**
  * FS-03 « Fiche contact » — the four tap-editable axes, the local history
@@ -158,11 +160,6 @@ private fun RessentiAxis(ressenti: String?, onSelect: (String) -> Unit) {
             for (value in RESSENTIS) {
                 FilterChip(selected = ressenti == value, onClick = { onSelect(value) }, label = { Text(value) })
             }
-        }
-        // FCH-06 — see FicheFilterConsequence's header comment for why this
-        // axis is also checked: "en pause" ships under ressenti today, not état.
-        FicheFilterConsequence.forValue(ressenti)?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

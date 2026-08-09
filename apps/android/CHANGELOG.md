@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [FCH-06, OQ-FCH-2] `en pause` moves from Ressenti to État
+
+- Architect decision (issue #16, FS-03): `en pause` is canonically an ÉTAT value. Moved `Fr.RESSENTI_PAUSED` → `Fr.ETAT_PAUSED`; État now ships 4 values (disponible/occupé/ailleurs/en pause), Ressenti drops to 2 (léger/précieux — still placeholder per OQ-FCH-1).
+- `EtatColors.kt`: added `en pause` → `#A69CB0` (new dusty-lavender, not blueprint-sourced like the other 3 — chosen to match their muted/desaturated style; Ressenti never had its own color map so nothing to remove there).
+- `FicheFilterConsequence.kt`: removed the dual-axis (`etat`/`ressenti`) workaround; now checks état only. `FicheScreen.kt`/`CalibrateScreen.kt`'s private `ETATS`/`RESSENTIS` arrays updated to match; stale "ships under ressenti" comment removed from `FicheScreen.kt`.
+- Updated tests to lock the new assignment: `FicheFilterConsequenceTest`, `EtatColorsTest` (new 4th-color case), `FichePrivacyLeakTest` (exercises `en pause` on État, a real Ressenti value on Ressenti). Full `./gradlew test`: 109/109 green (debug+release).
+- Mirrors the equivalent iOS fix (`apps/ios/CHANGELOG.md`) — kept conceptually aligned, Kotlin-idiomatic in structure.
+
 ## 2026-07-19 — [design-system] Wire real Nuit tokens into Theme.kt, retire placeholder
 
 - `Theme.kt`'s Wave-1 placeholder (`darkColorScheme`/`lightColorScheme` pair with invented `SwabLight` hex values) is replaced by a single `darkColorScheme` built from the now-generated `DesignTokens.kt`. `docs/design-system.md` §1 is explicit: Nuit is **one** dark theme, no light palette exists anywhere in the charter/Penpot/`tokens.json` — inventing one would violate the design agent's no-invented-values rule, so `isSystemInDarkTheme()` branching is removed; the app always renders Nuit regardless of OS setting. This is a behavior change, not just a color fill-in — flagging per instructions.

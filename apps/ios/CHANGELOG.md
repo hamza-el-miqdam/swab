@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [FCH-06, OQ-FCH-2] "en pause" moved from Ressenti to État (issue #16)
+
+- Architect decision (issue #16) resolves OQ-FCH-2: `en pause` is an ÉTAT value, not Ressenti. `Fr.etatPaused` replaces `Fr.ressentiPaused` (copy unchanged, axis changed); `FicheVocabulary.etats` now has 4 values, `.ressentis` 2 (léger, précieux — OQ-FCH-1 still open on Ressenti's final vocabulary).
+- `EtatColors.byLabel` gains a 4th color `#9A8FB5` (muted violet-grey, no prior value existed to reuse) — its own separate 5-état blueprint-divergence comment is untouched.
+- `FicheFilterConsequence` simplified to check `etat` only; removed the dual-axis workaround and its divergence-flag comment. `CalibrateView`'s private `etats`/`ressentis` arrays updated to match, per `FicheVocabulary`'s sync note.
+- Tests updated to lock in the new axis (not just made to pass): `EtatColorsTests`, `FicheVocabularyTests`, `FicheFilterConsequenceTests`, `FichePrivacyInvariantTests` (array-index fixups). Full `xcrun swift test`: 111/111.
+
 ## 2026-07-19 — CarteTheme sourced from the canonical design-token SSOT, not the stale RN palette
 
 - `CarteTheme` hardcoded a brown/gold palette ported from the long-deleted `apps/mobile/src/theme.ts` (`bg #16120D`, `accent #D9A441`) that never matched the real Nuit graphic charter (`docs/design-system.md`). Now every property is repointed to `DesignTokens.Color.*` (the generated SSOT from `packages/ui/tokens/tokens.json`): `bg→nuit`, `surface→voile`, `text→ivoire`, `textDim→brume`, `accent→etoile`, `accentInk→étoile-encre`.

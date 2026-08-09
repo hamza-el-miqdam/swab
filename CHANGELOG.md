@@ -4,6 +4,13 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [FCH-06] Resolve OQ-FCH-2: état is canonical for « en pause » (closes #16)
+
+- Architect decision (issue #16): `en pause` is an ÉTAT value, not Ressenti — resolves the Wave 3 divergence where the spec said état (FCH-06, FS-06 FLT-01) but shipped native code put it under Ressenti. FS-06 wasn't touched — its `état = en pause` default rule already assumed the now-confirmed axis.
+- `docs/specs/FS-03-contact-card.md` (OQ-FCH-2 marked resolved), `docs/qa/e2e-coverage.json` + `docs/qa/e2e-scenarios.md` (FCH-06 notes updated), `docs/STATUS.md` updated.
+- iOS and Android both fixed in the same PR: `en pause` added as a 4th état value, removed from Ressenti (now 2 values — OQ-FCH-1 still leaves its final vocabulary open), each platform's dual-axis filter-consequence workaround removed. See `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md` for platform detail.
+- Gotcha: no color previously existed for "en pause" on either axis, so each platform picked its own new muted/desaturated hex for the état mapping — not blueprint-sourced, flagged as such in-code.
+
 ## 2026-08-09 — [ENV-13] Resolve OQ-ENV-4: accept button copy frozen as « Accepter la proposition » (closes #19)
 
 - Design-specialist proposed 3 candidates (grounded in the existing "Flux envie et match" blueprint's tone/verb+object button pattern); Hamza picked **« Accepter la proposition »** — reuses "la proposition" verbatim from ENV-14's already-frozen "Envoyer la proposition" button.

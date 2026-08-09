@@ -55,9 +55,11 @@ class FichePrivacyLeakTest {
         advanceUntilIdle()
         vm.setRoles(listOf("Famille", "Travail"))
         advanceUntilIdle()
-        vm.setEtat("disponible")
+        // OQ-FCH-2 (resolved 2026-08-09, issue #16): "en pause" is a canonical
+        // état value, not ressenti — exercised here on its actual axis.
+        vm.setEtat("en pause")
         advanceUntilIdle()
-        vm.setRessenti("en pause")
+        vm.setRessenti("précieux")
         advanceUntilIdle()
 
         // Sanity: the edits actually landed (otherwise this test would prove nothing).
@@ -74,8 +76,8 @@ class FichePrivacyLeakTest {
         val forbidden = listOf(
             "Should Never Leak Either", // display name
             "Famille", "Travail", // role names
-            "disponible", // état
-            "en pause", // ressenti
+            "en pause", // état
+            "précieux", // ressenti
             "Intimité", "Rôles", "État", "Ressenti", // axis labels used in history summaries
             "ring", "roles", "etat", "ressenti", "targetId", // field names
         )

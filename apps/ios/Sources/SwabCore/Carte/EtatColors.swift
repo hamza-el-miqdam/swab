@@ -9,6 +9,12 @@ public enum EtatColors {
     public static let available = "#8FB59A"
     public static let busy = "#C8917E"
     public static let away = "#8AA0BE"
+    /// OQ-FCH-2 (resolved 2026-08-09, issue #16): "en pause" moved from
+    /// Ressenti to État. No prior color existed for it on this axis (it had
+    /// none as a Ressenti value either — Ressenti carries no colors), so
+    /// this is a new pick: muted violet-grey, desaturated to match the
+    /// existing three (none of which it's derived from).
+    public static let paused = "#9A8FB5"
 
     /// Keyed by the French copy value stored on `VaultContact.etat`
     /// (`Fr.t(.etatAvailable)` etc.) — matches the RN reference, which keys
@@ -17,6 +23,7 @@ public enum EtatColors {
         Fr.t(.etatAvailable): available,
         Fr.t(.etatBusy): busy,
         Fr.t(.etatAway): away,
+        Fr.t(.etatPaused): paused,
     ]
 
     public struct EtatColor: Equatable, Sendable {

@@ -6,16 +6,21 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * MAP-03 — état → node color, restricted to the SHIPPED 3-état vocabulary.
- * The blueprint's richer 5-état taxonomy is a flagged divergence (see the
- * doc comment on EtatColors) — this test locks the 3 shipped values and the
- * neutral fallback so nobody silently expands the map.
+ * MAP-03 — état → node color, restricted to the SHIPPED état vocabulary
+ * (now 4 values since OQ-FCH-2 moved `en pause` here, resolved 2026-08-09,
+ * issue #16). The blueprint's richer 5-état taxonomy remains a separate
+ * flagged divergence (see the doc comment on EtatColors) — this test locks
+ * the 4 shipped values and the neutral fallback so nobody silently expands
+ * the map further.
  */
 class EtatColorsTest {
 
     @Test
-    fun `exactly the 3 shipped etats are mapped`() {
-        assertEquals(setOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY), EtatColors.ETAT_COLORS.keys)
+    fun `exactly the 4 shipped etats are mapped`() {
+        assertEquals(
+            setOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED),
+            EtatColors.ETAT_COLORS.keys,
+        )
     }
 
     @Test
@@ -23,6 +28,11 @@ class EtatColorsTest {
         assertEquals("#8FB59A", EtatColors.etatColor(Fr.ETAT_AVAILABLE).background)
         assertEquals("#C8917E", EtatColors.etatColor(Fr.ETAT_BUSY).background)
         assertEquals("#8AA0BE", EtatColors.etatColor(Fr.ETAT_AWAY).background)
+    }
+
+    @Test
+    fun `en pause resolves to its new dedicated color`() {
+        assertEquals("#A69CB0", EtatColors.etatColor(Fr.ETAT_PAUSED).background)
     }
 
     @Test

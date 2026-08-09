@@ -157,7 +157,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Given** a contact whose état is « en pause »,
 - **When** the fiche renders,
 - **Then** the état vocabulary includes « en pause » and the fiche shows the FS-06 filter consequence for the current état (e.g. « en pause → exclu par défaut à l'envoi »).
-- Edge cases: the état-vs-ressenti axis ambiguity for « en pause » is flagged in Wave 3 — both axes checked until resolved.
+- Edge cases: the état-vs-ressenti axis ambiguity for « en pause » (flagged in Wave 3) is RESOLVED (2026-08-09, issue #16) — état is canonical; both apps fixed to stop checking Ressenti.
 
 ### FCH-07 — Back to map preserves position
 - **Given** a fiche opened from the map,

@@ -43,8 +43,8 @@ final class FichePrivacyInvariantTests: XCTestCase {
 
         let contact = try await vault.addContact(displayName: "SecretDisplayName")
         try await vault.setFicheRing(id: contact.id, ring: 3)
-        try await vault.setFicheEtat(id: contact.id, etat: FicheVocabulary.etats[0])
-        try await vault.setFicheRessenti(id: contact.id, ressenti: FicheVocabulary.ressentis[2]) // "en pause"
+        try await vault.setFicheEtat(id: contact.id, etat: FicheVocabulary.etats[3]) // "en pause"
+        try await vault.setFicheRessenti(id: contact.id, ressenti: FicheVocabulary.ressentis[1])
         try await vault.setFicheRoles(id: contact.id, roles: FicheVocabulary.roles)
         try await vault.reconfirmFicheStaleness(id: contact.id)
 
@@ -85,8 +85,8 @@ final class FichePrivacyInvariantTests: XCTestCase {
         let vault = Vault(kv: InMemoryKeyValueStore(), secureStore: InMemorySecureStore())
         let contact = try await vault.addContact(displayName: "SecretDisplayName")
         try await vault.setFicheRing(id: contact.id, ring: 1)
-        try await vault.setFicheEtat(id: contact.id, etat: FicheVocabulary.etats[1])
-        try await vault.setFicheRessenti(id: contact.id, ressenti: FicheVocabulary.ressentis[2])
+        try await vault.setFicheEtat(id: contact.id, etat: FicheVocabulary.etats[3]) // "en pause"
+        try await vault.setFicheRessenti(id: contact.id, ressenti: FicheVocabulary.ressentis[1])
         try await vault.setFicheRoles(id: contact.id, roles: [FicheVocabulary.roles[0]])
 
         let (blob, _) = try await vault.getEncryptedVault()

@@ -162,7 +162,7 @@
       "title": "« en pause » état + FS-06 filter consequence shown",
       "ios": { "status": "unit-covered" },
       "android": { "status": "unit-covered" },
-      "notes": "Vocabulary + consequence rendering covered in view-model unit tests. The état-vs-ressenti axis ambiguity for « en pause » remains flagged (Wave 3) — E2E once FS-06 lands and resolves it."
+      "notes": "Vocabulary + consequence rendering covered in view-model unit tests. État-vs-ressenti axis ambiguity for « en pause » RESOLVED 2026-08-09 (issue #16) — état is canonical, apps fixed. E2E once FS-06 lands."
     },
     "FCH-07": {
       "fs": "FS-03",
