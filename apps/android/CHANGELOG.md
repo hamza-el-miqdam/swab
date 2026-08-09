@@ -2,6 +2,15 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-016, n/a G1 hardening] Release build now minified — R8/ProGuard was disabled
+
+- `app/build.gradle.kts` release block: `isMinifyEnabled = true`, `isShrinkResources = true`, `proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")` — previously every Kotlin symbol name (`VaultCrypto`, key alias constants, …) shipped in cleartext in the distributed APK.
+- New `app/proguard-rules.pro`: the official kotlinx-serialization consumer keep rules (only reflective surface in this codebase — `VaultContact`/`VaultHistoryEvent`/`VaultData` in `Vault.kt`, the `ApiClient.kt` DTOs). No Hilt/Dagger/Gson — manual DI, so the keep surface stays tiny.
+- Verified: `./gradlew :app:assembleRelease` succeeds; resulting `app-release-unsigned.apk` is 1.53 MB (`app/build/outputs/apk/release/`). `./gradlew :app:testReleaseUnitTest` (the full JVM suite compiled against release/minified classes) is green — exercises the serialize/deserialize paths against the real keep rules, not just a manual APK launch.
+- Mapping file: `app/build/outputs/mapping/release/mapping.txt` — noted here for whenever a crash-symbolication seam (SUG-AND-012) lands.
+- Debug/instrumented builds unaffected (minification applies to `release` only): `./gradlew test` and `compileDebugAndroidTestKotlin` stay green.
+- Did not capture a pre-change APK size for a true before/after (a `git stash`-based comparison hit an unrelated pre-existing stash in this repo and was abandoned to avoid data loss — recovered cleanly, no repo state lost); the 1.53 MB figure is the post-minify size only.
+
 ## 2026-08-09 — [SUG-AND-015, ONB-02, ONB-03] Phone/OTP/name inputs get the right keyboard type
 
 - `InputField` (Primitives.kt) gains an optional `keyboardOptions` parameter (default `KeyboardOptions.Default`, so untouched call sites are unaffected).

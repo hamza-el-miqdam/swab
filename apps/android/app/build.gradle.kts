@@ -45,7 +45,18 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3001\"")
         }
         release {
-            isMinifyEnabled = false
+            // SUG-AND-016: release builds previously shipped unminified —
+            // every Kotlin symbol name (VaultCrypto, key alias constants,
+            // etc.) in cleartext for an app whose product promise is "nothing
+            // readable leaves the device". kotlinx-serialization needs the
+            // explicit keep rules below; nothing else in this codebase uses
+            // reflection (manual DI, no Hilt — AppContainer.kt).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             buildConfigField("String", "API_BASE_URL", "\"https://api.swab.app\"")
         }
     }
