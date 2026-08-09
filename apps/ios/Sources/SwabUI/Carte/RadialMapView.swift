@@ -116,6 +116,12 @@ private struct ContactNodeView: View {
 
     @State private var point: CGPoint
     @State private var hasAppeared = false
+    /// SUG-IOS-010: initials-only content mitigates but doesn't excuse a
+    /// fixed pixel size — scales with Dynamic Type like every other text
+    /// in the app. `.minimumScaleFactor` below keeps it inside the node's
+    /// fixed circle diameter (`MapGeometry.nodeSize`, unchanged — MAP-03's
+    /// visual grammar is spec'd) at the largest accessibility sizes.
+    @ScaledMetric(relativeTo: .footnote) private var nodeFontSize: CGFloat = 13
 
     init(contact: VaultContact, index: Int, onTap: @escaping (VaultContact) -> Void) {
         self.contact = contact
@@ -141,7 +147,8 @@ private struct ContactNodeView: View {
             onTap(contact)
         } label: {
             Text(CarteLabels.initials(contact.displayName))
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: nodeFontSize, weight: .semibold))
+                .minimumScaleFactor(0.7)
                 .foregroundStyle(Color(hex: CarteTheme.text))
                 .frame(width: size, height: size)
                 .background(Circle().fill(Color(hex: palette.background)))

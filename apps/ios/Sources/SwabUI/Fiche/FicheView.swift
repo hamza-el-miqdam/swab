@@ -84,49 +84,56 @@ public struct FicheView: View {
 
     // MARK: - FCH-01 four tap-editable axes
 
+    /// Ring number ↔ display label, in ring order — `WrappingChipRow`
+    /// operates on the label strings (its items ARE the display text, same
+    /// contract as the other three axes), so Intimité needs this pairing to
+    /// map a tapped label back to the `Int` `Vault.setRing` needs.
+    private var ringItems: [(ring: Int, label: String)] {
+        VaultRing.range.compactMap { ring in
+            CarteLabels.ringLabel[ring].map { (ring, $0) }
+        }
+    }
+
     @ViewBuilder
     private var axes: some View {
         VStack(alignment: .leading, spacing: 16) {
             axisSection(title: Fr.t(.ficheAxisIntimite)) {
-                HStack {
-                    ForEach(VaultRing.range, id: \.self) { ring in
-                        axisChip(
-                            label: CarteLabels.ringLabel[ring] ?? "",
-                            selected: viewModel.contact.ring == ring
-                        ) {
-                            Task { await viewModel.setRing(ring) }
-                        }
+                let items = ringItems
+                WrappingChipRow(
+                    items: items.map(\.label),
+                    isSelected: { label in
+                        guard let ring = viewModel.contact.ring else { return false }
+                        return CarteLabels.ringLabel[ring] == label
+                    },
+                    onTap: { label in
+                        guard let match = items.first(where: { $0.label == label }) else { return }
+                        Task { await viewModel.setRing(match.ring) }
                     }
-                }
+                )
             }
 
             axisSection(title: Fr.t(.ficheAxisRoles)) {
-                FlowRolesView(
-                    roles: FicheVocabulary.roles,
-                    selected: Set(viewModel.contact.roles)
-                ) { role in
-                    Task { await viewModel.toggleRole(role) }
-                }
+                WrappingChipRow(
+                    items: FicheVocabulary.roles,
+                    isSelected: { viewModel.contact.roles.contains($0) },
+                    onTap: { role in Task { await viewModel.toggleRole(role) } }
+                )
             }
 
             axisSection(title: Fr.t(.ficheAxisEtat)) {
-                HStack {
-                    ForEach(FicheVocabulary.etats, id: \.self) { etat in
-                        axisChip(label: etat, selected: viewModel.contact.etat == etat) {
-                            Task { await viewModel.setEtat(etat) }
-                        }
-                    }
-                }
+                WrappingChipRow(
+                    items: FicheVocabulary.etats,
+                    isSelected: { viewModel.contact.etat == $0 },
+                    onTap: { etat in Task { await viewModel.setEtat(etat) } }
+                )
             }
 
             axisSection(title: Fr.t(.ficheAxisRessenti)) {
-                HStack {
-                    ForEach(FicheVocabulary.ressentis, id: \.self) { ressenti in
-                        axisChip(label: ressenti, selected: viewModel.contact.ressenti == ressenti) {
-                            Task { await viewModel.setRessenti(ressenti) }
-                        }
-                    }
-                }
+                WrappingChipRow(
+                    items: FicheVocabulary.ressentis,
+                    isSelected: { viewModel.contact.ressenti == $0 },
+                    onTap: { ressenti in Task { await viewModel.setRessenti(ressenti) } }
+                )
             }
         }
     }
@@ -139,25 +146,6 @@ public struct FicheView: View {
                 .foregroundStyle(Color(hex: CarteTheme.text))
             content()
         }
-    }
-
-    @ViewBuilder
-    private func axisChip(label: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .swabType(DesignTokens.Typography.tag, relativeTo: .subheadline)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(selected ? Color(hex: CarteTheme.accent) : Color(hex: CarteTheme.surface))
-                )
-                .foregroundStyle(selected ? Color(hex: CarteTheme.accentInk) : Color(hex: CarteTheme.text))
-                .overlay(Capsule().stroke(Color(hex: CarteTheme.line), lineWidth: selected ? 0 : 1))
-        }
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .minTouchTarget()
     }
 
     // MARK: - FCH-06 filter consequence (informational only)
@@ -247,39 +235,6 @@ public struct FicheView: View {
         case .etat: return Fr.t(.ficheAxisEtat)
         case .ressenti: return Fr.t(.ficheAxisRessenti)
         case nil: return rawAxis
-        }
-    }
-}
-
-/// Simple wrapping multi-select for Rôles·contexte — a fixed, short list
-/// (`FicheVocabulary.roles`), so a plain `HStack`/wrap via `LazyVGrid` is
-/// enough; no need for a custom flow-layout algorithm.
-private struct FlowRolesView: View {
-    let roles: [String]
-    let selected: Set<String>
-    let onToggle: (String) -> Void
-
-    var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], alignment: .leading, spacing: 8) {
-            ForEach(roles, id: \.self) { role in
-                Button {
-                    onToggle(role)
-                } label: {
-                    Text(role)
-                        .swabType(DesignTokens.Typography.tag, relativeTo: .subheadline)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(selected.contains(role) ? Color(hex: CarteTheme.accent) : Color(hex: CarteTheme.surface))
-                        )
-                        .foregroundStyle(selected.contains(role) ? Color(hex: CarteTheme.accentInk) : Color(hex: CarteTheme.text))
-                        .overlay(Capsule().stroke(Color(hex: CarteTheme.line), lineWidth: selected.contains(role) ? 0 : 1))
-                }
-                .accessibilityLabel(role)
-                .accessibilityAddTraits(selected.contains(role) ? .isSelected : [])
-                .minTouchTarget()
-            }
         }
     }
 }

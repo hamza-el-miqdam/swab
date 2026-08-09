@@ -45,6 +45,7 @@ public struct OtpView: View {
                 TextField(Fr.t(.otpPlaceholder), text: $viewModel.code)
                     #if os(iOS)
                         .keyboardType(.numberPad)
+                        .textContentType(.oneTimeCode)
                     #endif
                     .accessibilityLabel(Fr.t(.otpTitle))
 
@@ -71,6 +72,12 @@ public struct OtpView: View {
                 .accessibilityLabel(Fr.t(.otpCta))
             }
             .padding()
+            // SUG-IOS-010: same silent-error gap as PhoneView.
+            .onChange(of: viewModel.showError) { _, isShowing in
+                if isShowing {
+                    AccessibilityNotification.Announcement(Fr.t(.otpError)).post()
+                }
+            }
         }
     }
 }

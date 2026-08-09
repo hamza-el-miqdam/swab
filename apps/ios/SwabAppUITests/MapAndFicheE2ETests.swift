@@ -275,4 +275,38 @@ final class MapAndFicheE2ETests: SwabUITestCase {
             "SUG-DES-011: a tap ~2pt outside the tag's visual edge (inside the widened touch target) must still select it"
         )
     }
+
+    /// SUG-IOS-010: at accessibility text sizes, four chips like « Très
+    /// proche » cannot fit a plain `HStack` — SwiftUI compresses/truncates
+    /// it out of the hittable area. `WrappingChipRow` (a `LazyVGrid`)
+    /// fixes it; this asserts the last chip of two different axis rows
+    /// stays genuinely tappable, not just present in the hierarchy.
+    @MainActor
+    func test_FCH01_axisChips_remainHittableAtAccessibilityTextSize() async throws {
+        app.launchArguments = [
+            "--uitesting-reset",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL",
+        ]
+        app.launch()
+        try await OnboardingFlow.run(
+            app: app,
+            displayName: "Nadia",
+            contacts: [OnboardingFlow.Contact(name: "Sam", ring: 1)]
+        )
+
+        let samNode = app.buttons["Sam — \(Fr.t(.ring1))"]
+        XCTAssertTrue(samNode.waitForExistence(timeout: 10))
+        samNode.tap()
+        app.buttons[Fr.t(.carteOpenFiche)].tap()
+        XCTAssertTrue(app.navigationBars["Sam"].waitForExistence(timeout: 10), "Fiche did not open for Sam")
+
+        let ring4 = app.buttons[Fr.t(.ring4)]
+        XCTAssertTrue(ring4.waitForExistence(timeout: 10))
+        XCTAssertTrue(ring4.isHittable, "SUG-IOS-010: Intimité's last ring chip must stay hittable at AX text sizes")
+
+        let etat = app.buttons[FicheVocabulary.etats[2]]
+        if !etat.isHittable { app.swipeUp() }
+        XCTAssertTrue(etat.waitForExistence(timeout: 5))
+        XCTAssertTrue(etat.isHittable, "SUG-IOS-010: État's third chip must stay hittable at AX text sizes")
+    }
 }

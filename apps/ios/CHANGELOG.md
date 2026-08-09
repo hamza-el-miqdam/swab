@@ -2,6 +2,15 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [FCH-01, ONB-02, MAP-03] Dynamic Type wrap for axis chips; phone/OTP input traits; VoiceOver error announcements (SUG-IOS-010)
+
+- New shared `WrappingChipRow` (`SwabUI/Components/WrappingChipRow.swift`, promoted from `FicheView`'s private `FlowRolesView`) — used by all four fiche axes (Intimité/Rôles/État/Ressenti) and `CalibrateView`'s état/ressenti/ring rows, replacing plain `HStack`s that couldn't wrap: at accessibility text sizes, four chips like « Très proche » were compressed/truncated out of the hittable area. Chip label/accessibility-label text unchanged (XCUITest lookups by exact French copy still resolve).
+- **Real regression found and fixed during this work**: the first draft used `LazyVGrid`, per the suggestion's own plan — but a `LazyVGrid` inside a `ScrollView` does not materialize off-screen children into the accessibility tree until they scroll near the viewport, so `waitForExistence` on a chip pushed below the fold (routine at AX5 sizes, and intermittently even at normal size under load) failed — reproduced live as `OnboardingFlow`'s calibrate step randomly not finding a ring button. Fixed by making `WrappingChipRow` and `CalibrateView.ringButtons` eager (`VStack`/`HStack`, chunked 2-per-row) instead — every vocabulary here is ≤ 6 items, so laziness bought nothing. Pre-existing `LazyVGrid` for the calibrate unplaced-contacts tray (`CalibrateView.swift:127`, untouched by this suggestion) carries the same latent risk — noted for whoever touches that next.
+- Map node initials (`RadialMapView.ContactNodeView`) now use `@ScaledMetric(relativeTo: .footnote)` instead of a fixed `size: 13`, with `.minimumScaleFactor(0.7)` to stay inside the node's fixed circle (`MapGeometry.nodeSize`, geometry unchanged — MAP-03 is spec'd).
+- `PhoneView`/`OtpView` gained `.textContentType(.telephoneNumber)`/`.oneTimeCode` — enables iOS's SMS-code autofill once real OTP delivery lands (OQ-IDT-1). Both views now post an `AccessibilityNotification.Announcement` when their error text appears — previously silent to VoiceOver.
+- New XCUITest `test_FCH01_axisChips_remainHittableAtAccessibilityTextSize` (`MapAndFicheE2ETests.swift`): relaunches at `UICTContentSizeCategoryAccessibilityL`, asserts the last Intimité ring chip and the third État chip stay `isHittable` — caught the `LazyVGrid` bug above.
+- `xcrun swift test`: 127/127. `xcodebuild test -only-testing:SwabAppUITests/MapAndFicheE2ETests`: full suite green after the eager-rendering fix (was flaky before it).
+
 ## 2026-08-09 — [ONB-04, ONB-06] CalibrateView consumes MapGeometry/CarteLabels/FicheVocabulary instead of private copies (SUG-IOS-015)
 
 - Deleted `CalibrateGeometry` (private `ringRadius`/`position` reimplementation) — `CalibrateView` now calls `MapGeometry.ringRadius`/`MapGeometry.positionOn` directly, same as `RadialMapView`. Deleted `Self.etats`/`.ressentis`/`.ringLabels`; replaced with `FicheVocabulary.etats`/`.ressentis` and `CarteLabels.ringLabel` (identical values, zero visual change).

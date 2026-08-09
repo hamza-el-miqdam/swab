@@ -135,16 +135,42 @@ public struct CalibrateView: View {
         }
     }
 
+    /// Ring number ↔ display label, in ring order — same pairing contract
+    /// `FicheView.ringItems` uses, so `WrappingChipRow`'s string-keyed
+    /// `isSelected`/`onTap` can map a tapped label back to the `Int`
+    /// `CalibrateViewModel.place` needs.
+    private var ringItems: [(ring: Int, label: String)] {
+        MapGeometry.rings.compactMap { ring in
+            CarteLabels.ringLabel[ring].map { (ring, $0) }
+        }
+    }
+
     @ViewBuilder
     private var ringButtons: some View {
-        HStack {
-            ForEach(MapGeometry.rings, id: \.self) { ring in
-                Button(CarteLabels.ringLabel[ring] ?? "") {
-                    Task { await viewModel.place(ring: ring) }
+        // `disabled`/accessibility label carry ring-specific text
+        // (`calibrateRingPrefix`) that a bare `isSelected`/`onTap` pair
+        // can't express, so ring buttons stay a dedicated wrap here rather
+        // than reusing `WrappingChipRow` verbatim. Deliberately EAGER
+        // (`VStack`/`HStack` row-chunked), NOT `LazyVGrid` — see
+        // `WrappingChipRow`'s doc comment for why: a `LazyVGrid` inside this
+        // `ScrollView` doesn't materialize off-screen children into the
+        // accessibility tree, which made `OnboardingFlow`'s calibrate step
+        // intermittently fail to find a ring button at all (SUG-IOS-010).
+        let rows = stride(from: 0, to: ringItems.count, by: 2).map {
+            Array(ringItems[$0..<Swift.min($0 + 2, ringItems.count)])
+        }
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 8) {
+                    ForEach(row, id: \.ring) { entry in
+                        Button(entry.label) {
+                            Task { await viewModel.place(ring: entry.ring) }
+                        }
+                        .disabled(viewModel.selectedId == nil)
+                        .accessibilityLabel("\(Fr.t(.calibrateRingPrefix)) \(entry.ring) — \(entry.label)")
+                        .minTouchTarget()
+                    }
                 }
-                .disabled(viewModel.selectedId == nil)
-                .accessibilityLabel("\(Fr.t(.calibrateRingPrefix)) \(ring) — \(CarteLabels.ringLabel[ring] ?? "")")
-                .minTouchTarget()
             }
         }
     }
@@ -161,23 +187,17 @@ public struct CalibrateView: View {
                 Text(Fr.t(.calibrateOptionalHint))
             } else {
                 Text(Fr.t(.calibrateEtatTitle))
-                HStack {
-                    ForEach(FicheVocabulary.etats, id: \.self) { etat in
-                        Button(etat) {
-                            Task { await viewModel.setEtat(etat) }
-                        }
-                        .accessibilityLabel(etat)
-                    }
-                }
+                WrappingChipRow(
+                    items: FicheVocabulary.etats,
+                    isSelected: { viewModel.selected?.etat == $0 },
+                    onTap: { etat in Task { await viewModel.setEtat(etat) } }
+                )
                 Text(Fr.t(.calibrateRessentiTitle))
-                HStack {
-                    ForEach(FicheVocabulary.ressentis, id: \.self) { ressenti in
-                        Button(ressenti) {
-                            Task { await viewModel.setRessenti(ressenti) }
-                        }
-                        .accessibilityLabel(ressenti)
-                    }
-                }
+                WrappingChipRow(
+                    items: FicheVocabulary.ressentis,
+                    isSelected: { viewModel.selected?.ressenti == $0 },
+                    onTap: { ressenti in Task { await viewModel.setRessenti(ressenti) } }
+                )
             }
         }
     }

@@ -22,6 +22,7 @@ public struct PhoneView: View {
             TextField(Fr.t(.phonePlaceholder), text: $viewModel.rawPhone)
                 #if os(iOS)
                     .keyboardType(.phonePad)
+                    .textContentType(.telephoneNumber)
                 #endif
                 .accessibilityLabel(Fr.t(.phoneTitle))
 
@@ -43,5 +44,12 @@ public struct PhoneView: View {
             .accessibilityLabel(Fr.t(.phoneCta))
         }
         .padding()
+        // SUG-IOS-010: the error Text renders silently otherwise — VoiceOver
+        // users get no notification a request failed.
+        .onChange(of: viewModel.showError) { _, isShowing in
+            if isShowing {
+                AccessibilityNotification.Announcement(Fr.t(.phoneError)).post()
+            }
+        }
     }
 }
