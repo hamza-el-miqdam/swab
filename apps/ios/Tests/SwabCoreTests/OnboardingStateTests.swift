@@ -53,14 +53,6 @@ final class OnboardingStateTests: XCTestCase {
         XCTAssertEqual(step, .welcome)
     }
 
-    func test_routeForStep_mapsCompleteToRoot() {
-        XCTAssertEqual(route(for: .complete), "/")
-        XCTAssertEqual(route(for: .welcome), "/onboarding/welcome")
-        XCTAssertEqual(route(for: .phone), "/onboarding/phone")
-        XCTAssertEqual(route(for: .contacts), "/onboarding/contacts")
-        XCTAssertEqual(route(for: .calibrate), "/onboarding/calibrate")
-        XCTAssertEqual(route(for: .done), "/onboarding/done")
-    }
 }
 
 final class PendingSignupTests: XCTestCase {

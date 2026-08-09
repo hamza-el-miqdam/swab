@@ -46,14 +46,3 @@ public actor OnboardingStateStore {
         cached = nil
     }
 }
-
-public func route(for step: OnboardingStep) -> String {
-    switch step {
-    case .welcome: return "/onboarding/welcome"
-    case .phone: return "/onboarding/phone"
-    case .contacts: return "/onboarding/contacts"
-    case .calibrate: return "/onboarding/calibrate"
-    case .done: return "/onboarding/done"
-    case .complete: return "/"
-    }
-}

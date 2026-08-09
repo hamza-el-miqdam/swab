@@ -2,6 +2,12 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [ONB-08] Remove dead `route(for:)` RN-era path table (SUG-IOS-017)
+
+- Deleted `route(for:)` from `OnboardingState.swift` and its sole caller, `test_routeForStep_mapsCompleteToRoot` — grep confirmed no other reference anywhere in `apps/ios`.
+- It was an Expo-Router path-string port (`"/onboarding/welcome"` etc.) from the RN reference; native navigation switches on `OnboardingStep` directly in `RootView.content`, so the function was dead public API padding `SwabCore`'s surface and testing nothing the app uses. Deliberate removal, not lost functionality — future deep-linking would target `NavigationStack` paths, not this shape.
+- `xcrun swift test`: 115/115 (was 116; one dead-code-only test removed with it).
+
 ## 2026-08-09 — [VLT-01, ONB-04, FCH-01] `Vault` enforces its own 1...4 ring invariant (SUG-IOS-014)
 
 - `Vault.setRing`/`setFicheRing` now throw new `VaultError.invalidRing(Int)` for any ring outside `VaultRing.range` (1...4, now spec-frozen per FS-01 ONB-04's 4-ring taxonomy) instead of persisting it silently — protects `MapGeometry`'s layout math (negative node sizes, nil ring labels) from a foreign/corrupt VLT-02-synced blob.
