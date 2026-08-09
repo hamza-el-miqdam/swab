@@ -7,10 +7,10 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**"],
-      // server.ts (boot wiring) and prisma-repo.ts (needs Postgres) are covered
-      // by the upcoming Testcontainers integration suite — documented gap,
-      // backend rule 7. repo.ts is types-only.
-      exclude: ["src/server.ts", "src/prisma-repo.ts", "src/repo.ts"],
+      // server.ts (boot wiring) is still uncovered — separate follow-up.
+      // prisma-repo.ts is now covered by tests/prisma-repo.test.ts (real
+      // Postgres, issue #22). repo.ts is types-only.
+      exclude: ["src/server.ts", "src/repo.ts"],
       thresholds: { lines: 80 },
     },
   },

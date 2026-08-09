@@ -4,6 +4,21 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
+## 2026-08-08 — [IDT-01, VLT-02] Real-Postgres integration tests for prisma-repo.ts (closes #22)
+
+- New `tests/prisma-repo.test.ts` exercises `findUserByPhoneHash`, `createUser`, `getVault`, `upsertVault` against a REAL Postgres — no Prisma mocking (G2). Covers the optimistic-concurrency conflict path and both the sequential and truly-concurrent `baseVersion === 0` race-to-create paths.
+- `vitest.config.ts`: dropped `src/prisma-repo.ts` from the coverage exclusion (now 100% lines) — `src/server.ts` and `src/repo.ts` stay excluded, out of scope here.
+- **Decision (product owner, issue #22): no Testcontainers** — reuses the real-Postgres pattern already wired: CI's `postgres:17` `services:` container, local dev's `docker-compose.yml` `db` service. `agents/backend-systems-specialist.md` rule 7 updated to match; re-rendered `.github/instructions/backend.instructions.md`.
+- `DATABASE_URL` resolution: the test file defaults it to the docker-compose value (`apps/api/.env.example`) via dynamic `import()` *before* `@repo/db` is loaded (its `PrismaClient` reads the env var at construction — static imports would hoist too early for a plain top-level assignment to win). CI's step-level `DATABASE_URL` is left untouched (`??=`). Unreachable Postgres fails once, up front, with one actionable message (redacted credentials) instead of a wall of per-test timeouts.
+- Test hygiene: every row uses a `test-prisma-repo-`-prefixed, `crypto.randomUUID()`-suffixed phoneHash/displayName; `afterEach` deletes only the User ids the file itself created (Vault cascades via schema `onDelete: Cascade`) — safe to rerun against a dev's live local DB.
+- Gotcha: requires `docker compose up -d db` + `pnpm --filter @repo/db db:deploy` once locally before `pnpm --filter @repo/api test` will pass — documented in the test file's header comment.
+
+## 2026-08-08 — Removed exit-0 `openapi:emit`/`openapi:check` stubs (closes #23)
+
+- Both scripts were `echo 'TODO...' && exit 0` placeholders — never generated a real spec, never actually gated anything. Decided not to build OpenAPI generation for now, so removed rather than leaving dead stubs in `apps/api/package.json`.
+- No other code depended on these scripts; CI never called them (devops deliberately kept them out per SUG-OPS-018).
+- Gotcha: `agents/backend-systems-specialist.md` rule 1 and `agents/devops-infrastructure-specialist.md` rule 4 still describe OpenAPI generation + `openapi:check` as a required gate — those references are now stale and should be revisited (out of scope for this change; not touched here) if/when OpenAPI work is picked back up.
+
 ## 2026-08-08 — [IDT-01, IDT-03, OQ-IDT-1] OTP devCode gate is now fail-closed (SUG-API-001)
 
 - `/auth/otp/request`'s `devCode` echo was gated on `NODE_ENV !== "production"` — since `NODE_ENV` defaults to `"development"`, any deployment that forgot to set it served every OTP code to an unauthenticated caller with just a phoneHash (account takeover + vault read).

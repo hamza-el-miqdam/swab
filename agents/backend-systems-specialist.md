@@ -20,13 +20,13 @@ A distributed systems engineer focused on high throughput, low latency, database
 
 ## Project Rules (Swab-specific)
 
-1. **Swagger is always current — mechanically, not by discipline.** OpenAPI 3.1 spec is generated from the Zod route schemas (`@fastify/swagger`), served at `/docs` in non-prod, and emitted to `apps/api/openapi.json` by `pnpm openapi:emit`. CI fails if the committed spec differs from the generated one (`openapi:check` diff gate). `packages/api-client` is regenerated from that spec in the same PR — clients never drift.
+1. **OpenAPI generation is deferred, not required.** No `openapi:emit`/`openapi:check` scripts, no committed spec, no `/docs` route — decided out of scope for now (issue #23, closed won't-do). Routes still declare Zod schemas for runtime validation (G1) per the Fastify + Zod type provider practice above; if OpenAPI generation is picked back up later, file a fresh `area:api` issue rather than reviving the old stubs.
 2. **The server is deliberately blind (privacy invariant, G1):** no endpoint accepts, and no table stores, classification axes, filter reasons, or scope names. `Vault.blob` is opaque bytes — any code attempting to decode it fails review. `Envie.verb` is user content: never logged, never indexed for search, excluded from error payloads.
 3. "Passer cette fois" is server-silent: state changes on the passer's side only; the counterpart's API responses must be bit-identical whether the other side passed or hasn't answered. Prove it with an integration test.
 4. Match notifications fire both sides atomically (same transaction outcome → one outbox record per side); expiry sweep is a `DELETE`-free status flip run by the daily Actions cron hitting an authenticated admin endpoint.
 5. Contact discovery: accepts client-side-hashed phone numbers only (raw E.164 must never reach the API), batch-limited, rate-limited, and returns matches without revealing non-matches' existence timing (constant-time-ish response shape).
 6. Postgres is vanilla: no Neon-specific extensions or SQL — verified by running the full test suite against the `postgres:17` Docker image, which is also the CI database for unit tests (Neon branches are for e2e/preview only).
-7. TDD stack: Vitest for services (pure logic), integration tests with `fastify.inject()` against real Postgres via Testcontainers, no Prisma mocks in integration. The matching engine gets property-based tests (fast-check): reciprocity, category compatibility, expiry windows.
+7. TDD stack: Vitest for services (pure logic), integration tests with `fastify.inject()` against real Postgres — no Testcontainers (decided in issue #22: no new dependency, G4); CI supplies it via the `postgres:17` `services:` container in `.github/workflows/ci.yml`, local dev via `docker-compose.yml`'s `db` service (integration test files default `DATABASE_URL` to that URL when unset, so `pnpm --filter @repo/api test` needs no manual export once `docker compose up -d db` has run). No Prisma mocks in integration. The matching engine gets property-based tests (fast-check): reciprocity, category compatibility, expiry windows.
 8. Observability (G3): `pino` with `requestId` propagation, `/health` + `/ready`, OpenTelemetry histograms for request/query/match durations, slow-query log (>100ms) with query IDs — never bound parameter values.
 
 ## Changelog & status duties (G5)
@@ -35,4 +35,4 @@ Every change appends an entry to `apps/api/CHANGELOG.md` (newest first: `## YYYY
 
 ## Definition of Done
 
-Failing test first → implementation → 80% coverage → `openapi:check` green + client regenerated → new hot-path queries have an `area:db` index request filed with EXPLAIN evidence → `apps/api/CHANGELOG.md` entry written (+ `docs/STATUS.md` if module state changed) → PR ≤400 lines.
+Failing test first → implementation → 80% coverage → new hot-path queries have an `area:db` index request filed with EXPLAIN evidence → `apps/api/CHANGELOG.md` entry written (+ `docs/STATUS.md` if module state changed) → PR ≤400 lines.

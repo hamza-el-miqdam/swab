@@ -2,10 +2,11 @@
  * Minimal persistence seam for the FS-07 walking skeleton.
  *
  * The app codes against this interface; production wires the Prisma
- * implementation (prisma-repo.ts) while tests use an in-memory double so they
- * run without a database. NOTE (backend rule 7 / G2): this is a temporary,
- * documented exception — Testcontainers Postgres integration tests replace the
- * in-memory double next sprint, and Prisma is never mocked in those.
+ * implementation (prisma-repo.ts) while route tests use an in-memory double
+ * (tests/fake-repo.ts) so they run without a database. prisma-repo.ts itself
+ * is covered separately by tests/prisma-repo.test.ts against real Postgres
+ * (issue #22, G2 — Prisma is never mocked there); the in-memory double stays
+ * for route-level tests, it was never meant to be replaced wholesale.
  */
 
 export interface UserRecord {

@@ -1,9 +1,9 @@
 /**
  * In-memory Repository double so route tests run WITHOUT a database.
- * Documented walking-skeleton exception to G2/backend rule 7: real Postgres
- * integration tests via Testcontainers replace DB-touching coverage next
- * sprint; Prisma is never mocked in those. Semantics mirror prisma-repo.ts
- * exactly (compare-and-swap on vault version).
+ * `prisma-repo.test.ts` covers `prisma-repo.ts` itself against real Postgres
+ * (issue #22, G2 — Prisma is never mocked there); this double stays for
+ * route-level tests. Semantics mirror prisma-repo.ts exactly (compare-and-swap
+ * on vault version).
  */
 import type { Repository, UserRecord, VaultRecord, VaultWriteResult } from "../src/repo.js";
 

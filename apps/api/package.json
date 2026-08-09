@@ -8,9 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run --coverage",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "openapi:emit": "echo 'TODO(backend rule 1): generate OpenAPI 3.1 from the Zod route schemas via @fastify/swagger and write apps/api/openapi.json — deferred to keep this PR small' && exit 0",
-    "openapi:check": "echo 'TODO(backend rule 1): CI diff gate — fail if committed openapi.json differs from the generated spec' && exit 0"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fastify/rate-limit": "^10.3.0",

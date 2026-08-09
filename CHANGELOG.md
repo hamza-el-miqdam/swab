@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-08 — [ENV-13, ENV-14] Resolve OQ-ENV-5: no separate "decline" action, pending-proposal surface is accept/pass only (closes #20)
+
+- Architect decision (issue #20): swab has no refusal philosophy distinct from the soft pass — declining a specific proposal and passing on the match are the same user-facing action. Consistent with `docs/product-overview.md`'s existing glossary entry ("passer cette fois" = soft pass = declining invisibly) and product law 5; nothing in that file needed to change.
+- `docs/specs/FS-05-envie-match.md`: ENV-13 rewritten — pending-incoming-proposal surface now offers exactly TWO actions (accept, **Passer cette fois**), the three-action framing and ⚠️ PROPOSED ASSUMPTION marker removed. ENV-14 reworded from "accepts/declines" to "accepts or passes"; terminal states are SCHEDULED (accept) / PASSED for that side (pass), per ENV-15. OQ-ENV-5 marked **RESOLVED (2026-08-08, issue #20)**, kept in place (not deleted) with the decision recorded.
+- OQ-ENV-4 (issue #19, left open) reworded: it was scoped to "accept/decline" copy; now scoped to "accept" copy only, since decline no longer exists as a distinct action. The accept button's French copy is still genuinely missing.
+- `specs/001-envie-match/spec.md` re-synced: Acceptance Scenario 1, FR-013, FR-014, the Proposal key entity, and the Assumptions bullet all updated to match.
+- API contract line (FS-05) and remaining "accept/decline" prose swept for staleness: `POST /proposals/:id/decline` dropped — a pending proposal is passed via the existing `POST /matches/:id/pass`, no separate proposal-decline endpoint needed.
+- Not touched: `docs/product-overview.md` (already consistent, verified), OQ-ENV-1/2/3, `docs/STATUS.md` (FS-05 still ⚪ Not started, unaffected by this wording fix).
+
+## 2026-08-08 — Drop OpenAPI generation requirement from backend/devops agent rules (closes #23)
+
+- Decided not to build OpenAPI generation for now; the `openapi:emit`/`openapi:check` scripts were exit-0 stubs anyway (removed in `apps/api`, see its changelog).
+- `agents/backend-systems-specialist.md` rule 1 rewritten from a mandatory "Swagger always current" rule to a note that it's deferred, with a pointer to file a fresh issue if picked back up. Its Definition of Done no longer requires `openapi:check` green.
+- `agents/devops-infrastructure-specialist.md` rule 4 (required status checks) drops `openapi:check` from the list.
+- Regenerated `.github/instructions/backend.instructions.md` and `.github/instructions/devops.instructions.md` via `node scripts/render-agents.mjs` — the two files that changed. `.claude/agents/*` wrappers needed no change (they `@`-import `/agents` at runtime).
+- Not touched: historical `suggestions/` docs and past `CHANGELOG.md` entries that reference the old stub — those are records of what happened, not current rules.
+
 ## 2026-08-08 — [SUG-OPS-019] Remove dead RN-era pnpm override, document the `tools/*` glob
 
 - Root `package.json`: deleted the `"pnpm": { "overrides": { "react-native-quick-base64": "2.2.2" } }`
