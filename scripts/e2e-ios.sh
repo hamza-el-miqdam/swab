@@ -7,8 +7,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "==> Preflight: local API"
-curl -sf http://localhost:3001/health >/dev/null || {
-  echo "ERROR: API not reachable at http://localhost:3001 — run: docker compose up --build -d" >&2; exit 1; }
+curl -sf http://localhost:3001/ready >/dev/null || {
+  echo "ERROR: API not ready at http://localhost:3001/ready (DB reachable?) — run: docker compose up --build -d" >&2; exit 1; }
 
 echo "==> Preflight: simulator"
 UDID="${SIMULATOR_UDID:-$(xcrun simctl list devices booted | sed -n 's/.*(\([0-9A-F-]\{36\}\)) (Booted).*/\1/p' | head -1)}"

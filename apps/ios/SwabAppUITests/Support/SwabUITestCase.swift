@@ -12,13 +12,13 @@ class SwabUITestCase: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        let expectation = expectation(description: "local API health check")
+        let expectation = expectation(description: "local API readiness check")
         Task {
             do {
-                try await DevBackend.waitForHealth()
+                try await DevBackend.waitForReady()
                 expectation.fulfill()
             } catch {
-                XCTFail("Local API stack unreachable at \(DevBackend.baseURL) — run `docker compose up --build -d` first: \(error)")
+                XCTFail("Local API stack not ready at \(DevBackend.baseURL) (DB reachable?) — run `docker compose up --build -d` first: \(error)")
                 expectation.fulfill()
             }
         }

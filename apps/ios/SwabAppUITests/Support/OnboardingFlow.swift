@@ -62,8 +62,8 @@ enum OnboardingFlow {
         // `log stream`: the whole process goes quiet — no XPC/CFNetwork
         // activity at all — for that entire span, then resolves and every
         // later request on the same process is <5ms). The Runner process's
-        // own calls (`DevBackend.waitForHealth`/`requestDevOtp`) don't pay
-        // this because `setUpWithError` already paid it during the health
+        // own calls (`DevBackend.waitForReady`/`requestDevOtp`) don't pay
+        // this because `setUpWithError` already paid it during the readiness
         // check, long before this timed wait starts. Not an app bug — the
         // local API itself answers in <50ms (verified with `curl`).
         let otpField = app.textFields[Fr.t(.otpTitle)]

@@ -22,15 +22,17 @@ enum DevBackendError: Error, CustomStringConvertible {
 enum DevBackend {
     static let baseURL = URL(string: "http://127.0.0.1:3001")!
 
-    /// Polls `/health` until it responds 2xx or `timeout` elapses. Fails the
-    /// whole run fast and legibly if `docker compose up` isn't running,
-    /// rather than letting every UI step time out mysteriously later.
-    static func waitForHealth(timeout: TimeInterval = 15) async throws {
+    /// Polls `/ready` until it responds 2xx or `timeout` elapses. Fails the
+    /// whole run fast and legibly if `docker compose up` isn't running (or
+    /// Postgres isn't reachable, even if the Fastify process itself is up —
+    /// `/health` is liveness-only and would pass through that partial-start
+    /// state), rather than letting every UI step time out mysteriously later.
+    static func waitForReady(timeout: TimeInterval = 15) async throws {
         let deadline = Date().addingTimeInterval(timeout)
         var lastError: Error = DevBackendError.unexpectedStatus(-1)
         while Date() < deadline {
             do {
-                var req = URLRequest(url: baseURL.appendingPathComponent("health"))
+                var req = URLRequest(url: baseURL.appendingPathComponent("ready"))
                 req.timeoutInterval = 3
                 let (_, response) = try await URLSession.shared.data(for: req)
                 if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {

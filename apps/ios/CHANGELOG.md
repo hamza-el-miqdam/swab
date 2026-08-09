@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [ONB-02, IDT-01] E2E preflight probes `/ready` not `/health` (SUG-IOS-016)
+
+- `scripts/e2e-ios.sh` preflight and `DevBackend.waitForReady` (renamed from `waitForHealth`, `SwabAppUITests/Support/DevBackend.swift`) now hit `/ready` instead of `/health`. `/health` is liveness-only (no dependency checks, per G3); a `docker compose` partial-start state (Fastify up, Postgres down/unmigrated) passed `/health` and then died ~30s later inside `OnboardingFlow` with a generic "OTP screen not reached" failure — exactly what the preflight exists to prevent.
+- Updated `SwabUITestCase.setUpWithError` call site + failure message ("DB reachable?"), and a stale comment in `OnboardingFlow.swift` referencing the old method name.
+- Did NOT touch `scripts/e2e-android.sh` (same pattern likely exists there) or the app's own runtime `ApiClient` — out of `area:ios` scope; flagging for android-specialist.
+- `xcrun swift test`: 115/115 (no unit coverage here — shell + XCUITest-support change); `xcodebuild build-for-testing -only-testing:SwabAppUITests` confirms the renamed symbol compiles.
+
 ## 2026-08-09 — [ONB-08] Remove dead `route(for:)` RN-era path table (SUG-IOS-017)
 
 - Deleted `route(for:)` from `OnboardingState.swift` and its sole caller, `test_routeForStep_mapsCompleteToRoot` — grep confirmed no other reference anywhere in `apps/ios`.
