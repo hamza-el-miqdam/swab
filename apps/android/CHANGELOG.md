@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [ONB-04] OnboardingScreen scrolls — SUG-AND-014's radial canvas made content taller than the viewport
+
+- Root-caused via on-device E2E verification, not guessed: SUG-AND-014 added a 320dp radial calibration canvas to `CalibrateScreen` (which reuses the shared `OnboardingScreen` wrapper). With contacts placed, the resulting content — canvas + per-ring buttons + `Fr.CALIBRATE_CONTINUE` — exceeded the viewport height, and the wrapper's `Column` had no scroll. The continue button and ring buttons below a selected contact ended up laid out off-screen with no way to reach them, not even a manual swipe.
+- This was the actual cause of `ComposeTimeoutException`/instrumentation crashes seen in `ActivityRecreationSmokeTest` and `FicheE2ETest` (both flow through `completeOnboarding`) — not environment flakiness as initially suspected during a contended E2E run.
+- Fix: `OnboardingScreen` (`ui/onboarding/Primitives.kt`) gained `.verticalScroll(rememberScrollState())` on its `Column`. `verticalScroll` is a no-op when content already fits its viewport, so every other onboarding screen (which all reuse this wrapper) is visually unaffected.
+- `./gradlew test`: BUILD SUCCESSFUL, all variants.
+
 ## 2026-08-09 — [SUG-AND-018, IDT-01, IDT-06] Hygiene sweep: cleartext default base URL, unguarded test seam, hardcoded salt
 
 - `ApiClient.baseUrl` is now a required constructor parameter (was `DEFAULT_BASE_URL = "http://localhost:3001"` — a footgun: a call site that forgot the parameter would silently point at cleartext localhost). Removed the companion object; updated `VaultSyncTest`'s 4 bare `ApiClient(transport)` constructions to pass `baseUrl = "http://test"`.

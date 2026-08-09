@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -22,12 +24,23 @@ import com.swab.android.l10n.Fr
 /**
  * Shared onboarding building blocks — start/end padding only (RTL-safe,
  * android-specialist.md layout rule), port of the apps/mobile/src/ui UI kit.
+ *
+ * Bug fix found during manual on-device verification of SUG-AND-014: adding
+ * the 320dp radial canvas to CalibrateScreen (which reuses this wrapper)
+ * made its content taller than the viewport with contacts placed, and this
+ * Column had no scroll — `Fr.CALIBRATE_CONTINUE` and the per-ring buttons
+ * below a selected contact became laid out off-screen with literally no way
+ * to reach them (not even a manual swipe), which is exactly what was timing
+ * out three E2E tests (`ActivityRecreationSmokeTest`/`FicheE2ETest`, both
+ * routed through `completeOnboarding`). `verticalScroll` is a no-op when
+ * content already fits, so every other onboarding screen is unaffected.
  */
 @Composable
 fun OnboardingScreen(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(PaddingValues(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 24.dp)),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
