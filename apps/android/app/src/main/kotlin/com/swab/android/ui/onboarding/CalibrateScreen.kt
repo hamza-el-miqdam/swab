@@ -15,16 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.swab.android.carte.Labels
+import com.swab.android.carte.Vocab
 import com.swab.android.l10n.Fr
 import com.swab.android.onboarding.CalibrateViewModel
 
-private val RING_LABELS = mapOf(1 to Fr.RING_1, 2 to Fr.RING_2, 3 to Fr.RING_3, 4 to Fr.RING_4)
-// OQ-FCH-2 (resolved 2026-08-09, issue #16): État carries 4 values (`en
-// pause` moved here from Ressenti). OQ-FCH-1 (resolved 2026-08-09, issue
-// #15): Ressenti carries the 3 real values from the blueprint's VALENCES
-// const, replacing the léger/précieux placeholder pair entirely.
-private val ETATS = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED)
-private val RESSENTIS = listOf(Fr.RESSENTI_POSITIVE, Fr.RESSENTI_AMBIVALENT, Fr.RESSENTI_NEGATIVE)
+// SUG-AND-017: ring labels and État/Ressenti vocab now come from the shared
+// carte.Labels/carte.Vocab single source — previously redefined here AND in
+// FicheScreen.kt with a "don't let them diverge" comment.
+private val RING_LABELS = Labels.RING_LABEL
 
 /**
  * ONB-04/05/06: radial calibration. SUG-AND-014: the canvas
@@ -105,13 +104,13 @@ fun CalibrateScreen(viewModel: CalibrateViewModel, onContinue: () -> Unit) {
                 // SUG-AND-002: same overflow risk as the ring row (ETATS now
                 // has 4 values since OQ-FCH-2) — Column avoids it.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    for (etat in ETATS) {
+                    for (etat in Vocab.ETATS) {
                         GhostButton(etat, onClick = { viewModel.setEtatForSelected(etat) })
                     }
                 }
                 BodyText(Fr.CALIBRATE_RESSENTI_TITLE)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    for (ressenti in RESSENTIS) {
+                    for (ressenti in Vocab.RESSENTIS) {
                         GhostButton(ressenti, onClick = { viewModel.setRessentiForSelected(ressenti) })
                     }
                 }

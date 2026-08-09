@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.swab.android.carte.Labels
+import com.swab.android.carte.Vocab
 import com.swab.android.fiche.FicheFilterConsequence
 import com.swab.android.fiche.FicheViewModel
 import com.swab.android.l10n.Fr
@@ -45,17 +46,6 @@ private val ROLES = listOf(
     Fr.ROLE_COMMUNAUTE,
     Fr.ROLE_VOISIN,
 )
-
-// Same shipped value sets as CalibrateScreen.kt's private ETATS/RESSENTIS
-// (ONB-04/06) — redefined here (not imported) because those lists aren't
-// exported from that file. Do not add values here without touching
-// CalibrateScreen too, or the two screens will silently diverge.
-// OQ-FCH-2 (resolved 2026-08-09, issue #16): État carries 4 values (`en
-// pause` moved here from Ressenti). OQ-FCH-1 (resolved 2026-08-09, issue
-// #15): Ressenti carries the 3 real values from the blueprint's VALENCES
-// const, replacing the léger/précieux placeholder pair entirely.
-private val ETATS = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED)
-private val RESSENTIS = listOf(Fr.RESSENTI_POSITIVE, Fr.RESSENTI_AMBIVALENT, Fr.RESSENTI_NEGATIVE)
 
 /**
  * FS-03 « Fiche contact » — the four tap-editable axes, the local history
@@ -171,7 +161,7 @@ private fun EtatAxis(etat: String?, onSelect: (String) -> Unit) {
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            for (value in ETATS) {
+            for (value in Vocab.ETATS) {
                 // SUG-DES-011: hit area only, visual chip size unchanged.
                 FilterChip(
                     selected = etat == value,
@@ -195,7 +185,7 @@ private fun RessentiAxis(ressenti: String?, onSelect: (String) -> Unit) {
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            for (value in RESSENTIS) {
+            for (value in Vocab.RESSENTIS) {
                 // SUG-DES-011: hit area only, visual chip size unchanged.
                 FilterChip(
                     selected = ressenti == value,

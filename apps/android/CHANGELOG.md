@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-017, ONB-04, ONB-06, FCH-01, FCH-06] État/ressenti/ring vocab lists de-duplicated into `carte.Vocab`
+
+- New `carte/Vocab.kt`: `ETATS`/`RESSENTIS` defined once (JVM-testable, no Android imports, same convention as `EtatColors`/`Labels`) — previously copy-pasted verbatim across `CalibrateScreen.kt` and `FicheScreen.kt` with a "don't let them diverge" comment. These strings key `EtatColors.ETAT_COLORS`, `FicheFilterConsequence.forValue`, and the vault contents itself, so a silent divergence here would have been hard to migrate later.
+- `CalibrateScreen.kt`'s `RING_LABELS` now points at `carte.Labels.RING_LABEL` (FicheScreen already imported it correctly).
+- New `VocabTest`: locks the shared lists' content against `EtatColors.ETAT_COLORS.keys` and the shipped value counts.
+- Pure de-duplication — rendering is byte-identical (French copy unchanged), verified by the unchanged copy-driven E2E suite.
+- Verified: `./gradlew test` green.
+
 ## 2026-08-09 — [SUG-AND-014, ONB-04, ONB-05, ONB-06] Calibration screen gains the radial canvas — was a text list only
 
 - New `ui/carte/RingCanvas.kt`: `RingsAndSpokes`/`MeNode` extracted out of `RadialMap.kt` (now `internal`, cross-package within the module) so carte and calibrate share one spatial truth; `MeNode` takes a `label` param (was hardcoded `Fr.CARTE_ME`) so calibrate can pass `Fr.CALIBRATE_ME` without the two screens silently diverging.
