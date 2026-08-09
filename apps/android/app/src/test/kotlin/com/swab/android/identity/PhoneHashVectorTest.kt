@@ -1,5 +1,6 @@
 package com.swab.android.identity
 
+import com.swab.android.BuildConfig
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -54,5 +55,18 @@ class PhoneHashVectorTest {
     @Test
     fun `IDT-01 default salt is swab-poc-phone-salt-v1`() {
         assertEquals("swab-poc-phone-salt-v1", PhoneHash.DEFAULT_SALT)
+    }
+
+    /**
+     * SUG-AND-018 tripwire: `BuildConfig.PHONE_HASH_SALT` (now the
+     * deployment-configurable value SignupViewModel/ContactsViewModel
+     * actually use) must equal `PhoneHash.DEFAULT_SALT` (the vector-pinned
+     * value). If someone changes the deployment salt in `build.gradle.kts`
+     * without realizing it, this fails loudly instead of silently breaking
+     * cross-platform contact discovery (iOS/API must change together).
+     */
+    @Test
+    fun `IDT-06 BuildConfig salt matches the vector-pinned default`() {
+        assertEquals(PhoneHash.DEFAULT_SALT, BuildConfig.PHONE_HASH_SALT)
     }
 }

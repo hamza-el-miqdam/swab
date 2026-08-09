@@ -205,8 +205,13 @@ class Vault(
         kv.set(VERSION_KEY, next.toString())
     }
 
-    /** Test seam: drops in-memory state, simulating a process restart. */
-    fun resetForTests() {
+    /**
+     * Test seam: drops in-memory state, simulating a process restart.
+     * SUG-AND-018: `internal` (not a public method on this production class)
+     * — unit tests live in the same Gradle module, so visibility still
+     * works, with no new `@VisibleForTesting` dependency needed.
+     */
+    internal fun resetForTests() {
         cache = null
         version = 1
     }

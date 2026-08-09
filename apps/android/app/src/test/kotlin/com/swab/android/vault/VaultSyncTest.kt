@@ -31,7 +31,7 @@ class VaultSyncTest {
         vault.addContact("Test")
 
         val transport = ScriptedTransport(mutableListOf("POST" to HttpResponse(200, """{"blob":"x","version":7}""")))
-        val apiClient = ApiClient(transport)
+        val apiClient = ApiClient(transport, baseUrl = "http://test")
         val sync = VaultSync(vault, apiClient)
 
         sync.syncVault()
@@ -52,7 +52,7 @@ class VaultSyncTest {
                 "POST" to HttpResponse(200, """{"blob":"server-blob","version":6}"""),
             ),
         )
-        val apiClient = ApiClient(transport)
+        val apiClient = ApiClient(transport, baseUrl = "http://test")
         val sync = VaultSync(vault, apiClient)
 
         sync.syncVault()
@@ -74,7 +74,7 @@ class VaultSyncTest {
                 "POST" to HttpResponse(409, ""),
             ),
         )
-        val apiClient = ApiClient(transport)
+        val apiClient = ApiClient(transport, baseUrl = "http://test")
         val sync = VaultSync(vault, apiClient)
 
         sync.syncVault()
@@ -89,7 +89,7 @@ class VaultSyncTest {
         vault.setRing(vault.getContacts().first().id, 1)
 
         val transport = ScriptedTransport(mutableListOf("POST" to HttpResponse(200, """{"blob":"x","version":2}""")))
-        val apiClient = ApiClient(transport)
+        val apiClient = ApiClient(transport, baseUrl = "http://test")
         VaultSync(vault, apiClient).syncVault()
 
         val (_, _, body) = transport.requests.single()

@@ -21,6 +21,15 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
+        // SUG-AND-018: the phone-hash salt is a per-deployment namespace
+        // (IDT-06) — must be identical across iOS/Android/API for contact
+        // discovery to work, but was hardcoded with no override channel on
+        // Android (the RN reference exposed it via EXPO_PUBLIC_PHONE_HASH_SALT).
+        // Same default value everywhere for now; a real salt rotation or a
+        // staging deployment with its own namespace is now a build-config
+        // change, not a code change.
+        buildConfigField("String", "PHONE_HASH_SALT", "\"swab-poc-phone-salt-v1\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // E2E test isolation (apps/android/CHANGELOG.md, e2e suite entry):
         // Android Test Orchestrator restarts the app process AND clears its

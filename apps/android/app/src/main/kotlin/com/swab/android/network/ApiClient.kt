@@ -36,15 +36,20 @@ sealed interface VaultPushResult {
     data object Conflict : VaultPushResult
 }
 
+/**
+ * SUG-AND-018: [baseUrl] is a required parameter — a default of
+ * `http://localhost:3001` existed only as a footgun: production wiring
+ * always overrides it (`AppContainer.kt` -> `BuildConfig.API_BASE_URL`), so
+ * a call site that forgot the parameter would silently point at cleartext
+ * localhost and fail opaquely on-device (network-security config blocks
+ * cleartext outside debug — the failure reads as a confusing
+ * `CleartextNotPermitted`, not a clear "you forgot baseUrl").
+ */
 class ApiClient(
     private val transport: HttpTransport,
-    private val baseUrl: String = DEFAULT_BASE_URL,
+    private val baseUrl: String,
     private val accessTokenProvider: suspend () -> String? = { null },
 ) {
-    companion object {
-        const val DEFAULT_BASE_URL: String = "http://localhost:3001"
-    }
-
     private val json = Json { ignoreUnknownKeys = true }
 
     private suspend fun headers(): Map<String, String> {

@@ -2,6 +2,7 @@ package com.swab.android.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.swab.android.BuildConfig
 import com.swab.android.identity.PhoneHash
 import com.swab.android.vault.Vault
 import com.swab.android.vault.VaultContact
@@ -41,7 +42,7 @@ class ContactsViewModel(private val vault: Vault) : ViewModel() {
     /** [rawPhone] is hashed on-device (IDT-01) before ever touching the vault. */
     fun addFromDevice(name: String, rawPhone: String?) {
         viewModelScope.launch {
-            val phoneHash = rawPhone?.let { PhoneHash.hashPhoneNumber(it) }
+            val phoneHash = rawPhone?.let { PhoneHash.hashPhoneNumber(it, salt = BuildConfig.PHONE_HASH_SALT) }
             vault.addContact(displayName = name, phoneHash = phoneHash)
             refresh()
         }

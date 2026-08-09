@@ -2,6 +2,15 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-018, IDT-01, IDT-06] Hygiene sweep: cleartext default base URL, unguarded test seam, hardcoded salt
+
+- `ApiClient.baseUrl` is now a required constructor parameter (was `DEFAULT_BASE_URL = "http://localhost:3001"` — a footgun: a call site that forgot the parameter would silently point at cleartext localhost). Removed the companion object; updated `VaultSyncTest`'s 4 bare `ApiClient(transport)` constructions to pass `baseUrl = "http://test"`.
+- `Vault.resetForTests()` -> `internal` (was a public method on the production vault class with no visibility marker) — unit tests are in the same Gradle module, so this needs no new `@VisibleForTesting` dependency.
+- Phone-hash salt (IDT-06) is now deployment-configurable: `buildConfigField("String", "PHONE_HASH_SALT", ...)` in `defaultConfig` (one value for both build types — deliberately not duplicated per-type, so debug/release can't silently drift). `SignupViewModel`/`ContactsViewModel` now pass `BuildConfig.PHONE_HASH_SALT` explicitly instead of relying on `PhoneHash`'s default parameter. `PhoneHash.DEFAULT_SALT` stays for the vector tests.
+- New `PhoneHashVectorTest.` `IDT-06 BuildConfig salt matches the vector-pinned default` — tripwire that fails loudly if the deployment salt changes without the vectors (and iOS/API) being updated together.
+- Item 1 from the suggestion (unused `viewModel` import in `MainActivity.kt`) was already moot — SUG-AND-003 landed first this session and the import is genuinely used.
+- Verified: `./gradlew test` green (incl. the release-compiled unit tests); `./gradlew :app:assembleRelease` still succeeds with the new required `ApiClient` parameter and `BuildConfig` field.
+
 ## 2026-08-09 — [SUG-AND-016, n/a G1 hardening] Release build now minified — R8/ProGuard was disabled
 
 - `app/build.gradle.kts` release block: `isMinifyEnabled = true`, `isShrinkResources = true`, `proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")` — previously every Kotlin symbol name (`VaultCrypto`, key alias constants, …) shipped in cleartext in the distributed APK.

@@ -2,6 +2,7 @@ package com.swab.android.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.swab.android.BuildConfig
 import com.swab.android.identity.PhoneHash
 import com.swab.android.identity.SecureTokenStore
 import com.swab.android.identity.SessionTokens
@@ -48,7 +49,10 @@ class SignupViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(busy = true, phoneError = false)
             try {
-                val phoneHash = PhoneHash.hashPhoneNumber(rawPhone)
+                // SUG-AND-018: deployment-configurable salt (IDT-06) — must
+                // stay the same value across iOS/Android/API or contact
+                // discovery breaks.
+                val phoneHash = PhoneHash.hashPhoneNumber(rawPhone, salt = BuildConfig.PHONE_HASH_SALT)
                 val response = apiClient.requestOtp(OtpRequestBody(phoneHash))
                 pendingSignup.setPendingPhoneHash(phoneHash)
                 pendingSignup.setDevCode(response.devCode)
