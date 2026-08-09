@@ -4,6 +4,15 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [ONB-04, MAP-01, FCH-01, OQ-ONB-1] Propagate frozen 4-ring resolution to French Notion mirrors
+
+- Checked all three live Notion pages (FS-01/02/03) and their comments/discussions before touching anything — none had unresolved feedback or co-founder edits, so this was the "code changed only" case on all three, not a conflict.
+- Translated the `docs/specs/` code-side diff (commit `ddeae69`) to French and pushed via targeted `update_content` search-and-replace: ONB-04's row now states the 4-ring enumeration normatively; OQ-ONB-1's paragraph carries the `RÉSOLU (2026-08-09, SUG-SPEC-009)` resolution text; MAP-01 (FS-02) and FCH-01 (FS-03) rows now cross-reference ONB-04 without the stale `(actuellement OQ-ONB-1)` parenthetical.
+- Re-fetched FS-01's page after writing to confirm the edit landed correctly.
+- `docs/specs/.notion-sync.json` snapshots (`lastSyncedEnglish`/`lastSyncedFrench`/`lastSyncedAt`) updated for FS-01/02/03 to the new content, closing the drift window.
+- FS-05's mirror was already caught up as of this morning's separate sync — untouched here.
+- No `docs/STATUS.md` change: the OQ was already resolved code-side in `ddeae69`; this sync only propagates it to Notion, it doesn't itself change implementation-readiness.
+
 ## 2026-08-09 — [OQ-ONB-1] Correct Onboarding blueprint's INTIMACY constant to the frozen 4-ring model
 
 - Blueprint side of OQ-ONB-1: `blueprints/swab - Onboarding (standalone) (1).html`'s embedded `INTIMACY` constant defined 5 rings (`intime`/`proche`/`ami`/`lien faible`/`connaissance`, r:34/55/78/102/130) that were never shipped. Replaced with the canonical 4 rings sourced identically from `apps/ios/Sources/SwabCore/L10n/Fr.swift:163-166` and `apps/android/.../l10n/Fr.kt:59-62`: `Très proche` (r:34) / `Proche` (r:66) / `Familier` (r:98) / `Plus loin` (r:130).
