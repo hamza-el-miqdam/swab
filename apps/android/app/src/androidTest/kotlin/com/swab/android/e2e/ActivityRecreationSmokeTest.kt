@@ -3,6 +3,9 @@ package com.swab.android.e2e
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.swab.android.MainActivity
 import com.swab.android.l10n.Fr
@@ -44,5 +47,37 @@ class ActivityRecreationSmokeTest {
         composeTestRule.waitUntilContentDescriptionExists("Sam — ${Fr.RING_1}")
         composeTestRule.onNodeWithContentDescription("Sam — ${Fr.RING_1}").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Lina — ${Fr.RING_2}").assertIsDisplayed()
+    }
+
+    /**
+     * SUG-AND-003 #2 regression guard: `SignupViewModel` used to be built via
+     * plain `remember { }` (not `viewModel()`), so it was never owned by a
+     * ViewModelStore and was rebuilt from scratch on every Activity
+     * recreation — dropping the memory-only `PendingSignup.pendingPhoneHash`
+     * and landing the OTP screen on its "missing phone" dead end
+     * (`Fr.OTP_MISSING_PHONE`) even though this is a config change, not
+     * process death. Now `signupViewModel` is Activity-ViewModelStore-scoped
+     * via `viewModel()`, so it must survive.
+     */
+    @Test
+    fun test_ONB02_recreateAtOtp_pendingPhoneHashSurvives() {
+        val phone = uniquePhoneNumber()
+
+        composeTestRule.waitUntilTextExists(Fr.WELCOME_CTA)
+        composeTestRule.onNodeWithText(Fr.WELCOME_CTA).performClick()
+
+        composeTestRule.waitUntilContentDescriptionExists(Fr.PHONE_PLACEHOLDER)
+        composeTestRule.onNodeWithContentDescription(Fr.PHONE_PLACEHOLDER).performTextInput(phone)
+        composeTestRule.onNodeWithText(Fr.PHONE_CTA).performClick()
+
+        composeTestRule.waitUntilTextExists("Code (dev)", substring = true)
+
+        composeTestRule.activityRule.scenario.recreate()
+        composeTestRule.waitForIdle()
+
+        // Still on the real OTP screen (dev code + code input survive the
+        // recreation) — not bounced to the "missing phone" fallback.
+        composeTestRule.waitUntilTextExists("Code (dev)", substring = true)
+        composeTestRule.onNodeWithText(Fr.OTP_MISSING_PHONE).assertDoesNotExist()
     }
 }

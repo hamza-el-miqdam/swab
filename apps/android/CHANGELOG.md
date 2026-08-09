@@ -2,6 +2,15 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-003, ONB-02, ONB-08, MAP-02] ViewModel lifecycle: `viewModel()` scoping + single onboarding-step source of truth
+
+- `MainActivity.kt`: `ContactsViewModel`/`CalibrateViewModel` were plain-constructed per recomposition (fresh vault read + `CalibrateViewModel`'s selection silently reset every recomposition) — now `viewModel { … }`, scoped to their `NavBackStackEntry`. `OnboardingViewModel`/`SignupViewModel`/`CarteViewModel` used `remember {}` (no config-change survival: rotation lost `PendingSignup.pendingPhoneHash` mid-OTP) — now `viewModel { … }`, Activity-ViewModelStore-scoped (`SwabNavHost` is called directly from `setContent`). `FicheViewModel` moved from `remember(contactId)` to `viewModel(key = contactId) { … }`.
+- Deleted the now-redundant `rememberSignupViewModel` helper and the resulting unused `remember` import.
+- Contacts/Calibrate/Done screens wrote `onboardingStateStore.setStep(...)` directly, bypassing `OnboardingViewModel._step` — left `step` stale at PHONE for any future reader. All three now route through `onboardingViewModel.advanceTo(...)`.
+- New tests: `OnboardingViewModelTest.test_ONB08_advanceTo_keepsStepFlowInSyncWithStore` (JVM), `ActivityRecreationSmokeTest.test_ONB02_recreateAtOtp_pendingPhoneHashSurvives` (instrumented — rotates on the OTP screen, asserts the dev code/pending hash survive instead of falling back to `Fr.OTP_MISSING_PHONE`).
+- Verified: `./gradlew test` (120 JVM tests debug + 120 release, 0 failures) + `scripts/e2e-android.sh` full connected suite (20/20 passing, report PASS, zero drift-guard failures) on a Pixel_6_Pro/API-34 emulator — the Pixel_8_Pro AVD in this environment images API 37 and its Espresso build can't run at all (`InputManager.getInstance` reflection removed), unrelated to this change; used Pixel_6_Pro instead.
+- Gotcha (flagged, not hand-verified live): Contacts/Calibrate VMs now survive while their `NavBackStackEntry` stays on the backstack. Re-entering Calibrate unselected after popping back and forward again relies on Navigation-Compose's documented guarantee (a popped entry's `ViewModelStore` is cleared, so pushing a *new* Calibrate entry gets a fresh `CalibrateViewModel`) — not independently exercised on-device, since onboarding wires no back affordance from Calibrate to Contacts (only the unhandled system back gesture reaches that path).
+
 ## 2026-08-09 — [SUG-DES-004] Typography + Shapes now consumed from DesignTokens; Inter/Space Grotesk bundled
 
 - Bundled Inter (400/500/600) + Space Grotesk (400/500/600) as `res/font/*.ttf` — real OFL 1.1-licensed static instances fetched from Google Fonts' CDN (`google/fonts` ofl/inter, ofl/spacegrotesk sources), never invented/stubbed. License text + attribution: `app/src/main/assets/font-licenses/` (`OFL-Inter.txt`, `OFL-SpaceGrotesk.txt`, `NOTICE.md`). No network font fetches at runtime.

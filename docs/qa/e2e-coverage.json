@@ -11,8 +11,8 @@
       "fs": "FS-01",
       "title": "Phone-OTP signup; vault key before any classification input",
       "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
-      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte", "OnboardingE2ETest.test_navigationStateLoss_phoneHashSurvivesPhoneToOtpTransition"] },
-      "notes": "Android also guards the Wave-1 phone→OTP state-loss regression."
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte", "OnboardingE2ETest.test_navigationStateLoss_phoneHashSurvivesPhoneToOtpTransition", "ActivityRecreationSmokeTest.test_ONB02_recreateAtOtp_pendingPhoneHashSurvives"] },
+      "notes": "Android also guards the Wave-1 phone→OTP state-loss regression, and (SUG-AND-003) that the pending phone hash survives an Activity recreation (config change), not just NavBackStackEntry navigation."
     },
     "ONB-03": {
       "fs": "FS-01",

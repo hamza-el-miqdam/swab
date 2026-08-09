@@ -36,4 +36,36 @@ class OnboardingViewModelTest {
         assertEquals(OnboardingStep.DONE, vm.step.value)
         assertEquals(OnboardingStep.DONE, OnboardingStateStore(kv).getStep())
     }
+
+    /**
+     * SUG-AND-003 #3 regression guard: before this fix, CONTACTS/CALIBRATE/
+     * DONE step writes bypassed `advanceTo` and wrote the store directly
+     * (MainActivity's `scope.launch { ... setStep(...) }`), leaving `step`
+     * stuck at PHONE for the rest of the session even though the persisted
+     * store kept moving. Every transition must now flow through `advanceTo`,
+     * so the exposed `step` and a freshly-read store value never diverge.
+     */
+    @Test
+    fun test_ONB08_advanceTo_keepsStepFlowInSyncWithStore() = runTest {
+        val kv = InMemoryKeyValueStore()
+        val vm = OnboardingViewModel(OnboardingStateStore(kv))
+        advanceUntilIdle()
+
+        val transitions = listOf(
+            OnboardingStep.PHONE,
+            OnboardingStep.CONTACTS,
+            OnboardingStep.CALIBRATE,
+            OnboardingStep.DONE,
+            OnboardingStep.COMPLETE,
+        )
+        for (target in transitions) {
+            vm.advanceTo(target)
+            advanceUntilIdle()
+
+            assertEquals(target, vm.step.value)
+            // Fresh store instance over the same kv: proves the write
+            // actually reached persistence, not just the StateFlow.
+            assertEquals(target, OnboardingStateStore(kv).getStep())
+        }
+    }
 }

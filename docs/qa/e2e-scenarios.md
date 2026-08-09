@@ -32,7 +32,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Given** the welcome screen acknowledged,
 - **When** the user enters a phone number and the received OTP,
 - **Then** signup succeeds (server sees only `phoneHash`, per IDT-01), and the device vault key is generated **before** any calibration screen can accept input.
-- Edge cases: wrong OTP shows a recoverable error; navigating phone → OTP must not lose the entered number (Wave-1 regression: per-`composable{}` state loss).
+- Edge cases: wrong OTP shows a recoverable error; navigating phone → OTP must not lose the entered number (Wave-1 regression: per-`composable{}` state loss); an Activity recreation (rotation/config change) while on the OTP screen must not lose it either (SUG-AND-003 regression: `SignupViewModel` must survive via `viewModel()`, not just `remember`).
 
 ### ONB-03 — Add contacts: import, manual, skip
 - **Given** the signed-up user on « Qui compte pour toi ? »,

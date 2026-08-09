@@ -12,8 +12,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -107,17 +105,32 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun SwabNavHost(container: AppContainer) {
     val navController: NavHostController = rememberNavController()
-    val onboardingViewModel = remember { OnboardingViewModel(container.onboardingStateStore) }
+    // `viewModel()` (not `remember`): scopes these to SwabNavHost's nearest
+    // ViewModelStoreOwner — the Activity, since SwabNavHost is called directly
+    // from setContent — so onCreate's ViewModelStore survives Activity
+    // recreation (rotation/dark-mode/config change) and rebuilds the same
+    // instances instead of losing in-memory state (SUG-AND-003 #2).
+    val onboardingViewModel: OnboardingViewModel = viewModel {
+        OnboardingViewModel(container.onboardingStateStore)
+    }
     val step by onboardingViewModel.step.collectAsState()
     val scope = rememberCoroutineScope()
 
-    // Hoisted above NavHost (not remembered per-`composable {}`): the phone
+    // Hoisted above NavHost (not scoped per-`composable {}`): the phone
     // and OTP screens are separate NavBackStackEntry compositions, so a
-    // ViewModel `remember`ed inside either one is torn down and recreated
+    // ViewModel scoped to either one individually is torn down and recreated
     // fresh on navigation, dropping the memory-only PendingSignup phone hash
-    // between screens. One shared instance for the whole signup sub-flow
-    // fixes it (found via manual on-device signup walkthrough).
-    val signupViewModel = rememberSignupViewModel(container)
+    // between screens. One shared, Activity-scoped instance for the whole
+    // signup sub-flow fixes that AND survives config changes
+    // (SUG-AND-003 #2) — found via manual on-device signup walkthrough.
+    val signupViewModel: SignupViewModel = viewModel {
+        SignupViewModel(
+            apiClient = container.apiClient,
+            tokenStore = container.tokenStore,
+            vaultKeyStore = container.vaultKeyStore,
+            onboardingStateStore = container.onboardingStateStore,
+        )
+    }
 
     // Same hoisting rule (MAP-02): Carte/Envie/Sous-groupes are sibling
     // NavHost destinations behind one bottom nav bar, so CarteViewModel must
@@ -125,7 +138,9 @@ private fun SwabNavHost(container: AppContainer) {
     // Carte -> Envie -> Carte would tear it down and re-fetch from a blank
     // state instead of just refreshing (CarteScreen still calls refresh()
     // on every composition, matching the RN reference's useFocusEffect).
-    val carteViewModel = remember { CarteViewModel(container.vault) }
+    // Activity-scoped (not per-entry) so the tab-switch teardown bug this
+    // comment describes doesn't return (SUG-AND-003 risk note).
+    val carteViewModel: CarteViewModel = viewModel { CarteViewModel(container.vault) }
 
     // ONB-08 gate: wait for the persisted step to resolve, then start there.
     if (step == null) return
@@ -148,22 +163,30 @@ private fun SwabNavHost(container: AppContainer) {
             )
         }
         composable(Routes.CONTACTS) {
-            val contactsViewModel = ContactsViewModel(container.vault)
+            // Scoped to this NavBackStackEntry (its ViewModelStoreOwner):
+            // fixes both the per-recomposition reconstruction (a plain
+            // constructor call re-ran `init { refresh() }` on every
+            // recomposition) and gives config-change survival for free
+            // (SUG-AND-003 #1/#2).
+            val contactsViewModel: ContactsViewModel = viewModel { ContactsViewModel(container.vault) }
             ContactsScreen(
                 contactsViewModel,
                 onImportContacts = { /* device contact picker: wired at Activity/permission layer */ },
                 onContinue = {
-                    scope.launch { container.onboardingStateStore.setStep(OnboardingStep.CALIBRATE) }
+                    onboardingViewModel.advanceTo(OnboardingStep.CALIBRATE)
                     navController.navigate(Routes.CALIBRATE)
                 },
             )
         }
         composable(Routes.CALIBRATE) {
-            val calibrateViewModel = CalibrateViewModel(container.vault)
+            // Same entry-scoping as Contacts above — also stops a stray
+            // recomposition from silently resetting `_selectedId` to null
+            // while the user has a contact selected (SUG-AND-003 #1).
+            val calibrateViewModel: CalibrateViewModel = viewModel { CalibrateViewModel(container.vault) }
             CalibrateScreen(
                 calibrateViewModel,
                 onContinue = {
-                    scope.launch { container.onboardingStateStore.setStep(OnboardingStep.DONE) }
+                    onboardingViewModel.advanceTo(OnboardingStep.DONE)
                     navController.navigate(Routes.DONE)
                 },
             )
@@ -172,7 +195,7 @@ private fun SwabNavHost(container: AppContainer) {
             DoneScreen(onFinish = {
                 scope.launch {
                     runCatching { container.vaultSync.syncVault() } // offline is fine (VLT-04)
-                    container.onboardingStateStore.setStep(OnboardingStep.COMPLETE)
+                    onboardingViewModel.advanceTo(OnboardingStep.COMPLETE)
                 }
                 navController.navigate(Routes.CARTE)
             })
@@ -195,11 +218,17 @@ private fun SwabNavHost(container: AppContainer) {
             val contactId = backStackEntry.arguments?.getString(Routes.FICHE_ARG)
             if (contactId != null) {
                 // Leaf destination, not shared with siblings, so a plain
-                // per-entry `remember` is correct here (unlike carteViewModel
-                // above) — Compose Navigation keeps Carte's own composition
-                // (and its remembered map pan/zoom) alive underneath while
-                // Fiche is pushed on top, satisfying FCH-07 for free.
-                val ficheViewModel = remember(contactId) { FicheViewModel(container.vault, contactId) }
+                // per-entry `viewModel()` is correct here (unlike
+                // carteViewModel above) — Compose Navigation keeps Carte's
+                // own composition (and its remembered map pan/zoom) alive
+                // underneath while Fiche is pushed on top, satisfying FCH-07
+                // for free. `key = contactId` preserves the per-contact
+                // identity a plain `remember(contactId)` gave us, so
+                // navigating Fiche -> back -> Fiche(other contact) doesn't
+                // reuse a stale instance.
+                val ficheViewModel: FicheViewModel = viewModel(key = contactId) {
+                    FicheViewModel(container.vault, contactId)
+                }
                 FicheScreen(ficheViewModel, onBack = { navController.popBackStack() })
             }
         }
@@ -240,14 +269,4 @@ private fun MainScaffold(navController: NavHostController, content: @Composable 
             content()
         }
     }
-}
-
-@Composable
-private fun rememberSignupViewModel(container: AppContainer): SignupViewModel = remember {
-    SignupViewModel(
-        apiClient = container.apiClient,
-        tokenStore = container.tokenStore,
-        vaultKeyStore = container.vaultKeyStore,
-        onboardingStateStore = container.onboardingStateStore,
-    )
 }
