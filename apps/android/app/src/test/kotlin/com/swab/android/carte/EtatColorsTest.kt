@@ -3,6 +3,7 @@ package com.swab.android.carte
 import com.swab.android.l10n.Fr
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -50,5 +51,47 @@ class EtatColorsTest {
     @Test
     fun `an etat outside the 3 known values also falls back to null - no silent 5-etat expansion`() {
         assertNull(EtatColors.etatColor("radieux").background)
+    }
+
+    @Test
+    fun `MAP-03 each known etat provides a dark onBackground color`() {
+        val expected = "#1c1505"
+        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_AVAILABLE).onBackground)
+        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_BUSY).onBackground)
+        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_AWAY).onBackground)
+        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_PAUSED).onBackground)
+    }
+
+    @Test
+    fun `MAP-03 unknown or null etat has null onBackground - falls back to theme`() {
+        assertNull(EtatColors.etatColor(null).onBackground)
+        assertNull(EtatColors.etatColor("radieux").onBackground)
+    }
+
+    @Test
+    fun `MAP-03 onBackground meets 4,5-1 contrast on its background`() {
+        for (etat in EtatColors.ETAT_COLORS.keys) {
+            val palette = EtatColors.etatColor(etat)
+            val ratio = contrastRatio(palette.background!!, palette.onBackground!!)
+            assertTrue("$etat: contrast $ratio must be >= 4.5", ratio >= 4.5)
+        }
+    }
+
+    /** WCAG 2.x relative-luminance contrast ratio, pure Kotlin — no Android/graphics deps. */
+    private fun contrastRatio(hexA: String, hexB: String): Double {
+        val lumA = relativeLuminance(hexA)
+        val lumB = relativeLuminance(hexB)
+        val lighter = maxOf(lumA, lumB)
+        val darker = minOf(lumA, lumB)
+        return (lighter + 0.05) / (darker + 0.05)
+    }
+
+    private fun relativeLuminance(hex: String): Double {
+        val clean = hex.removePrefix("#")
+        val r = clean.substring(0, 2).toInt(16) / 255.0
+        val g = clean.substring(2, 4).toInt(16) / 255.0
+        val b = clean.substring(4, 6).toInt(16) / 255.0
+        fun channel(c: Double) = if (c <= 0.03928) c / 12.92 else Math.pow((c + 0.055) / 1.055, 2.4)
+        return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
     }
 }

@@ -169,6 +169,8 @@ private fun ContactNode(
     val palette = EtatColors.etatColor(contact.etat)
     val background = palette.background?.let(::hexToColor) ?: MaterialTheme.colorScheme.surface
     val border = palette.border?.let(::hexToColor) ?: MaterialTheme.colorScheme.outlineVariant
+    // SUG-AND-009: dark ink on the état pastels (WCAG AA), theme color when unset.
+    val textColor = palette.onBackground?.let(::hexToColor) ?: MaterialTheme.colorScheme.onSurface
 
     // SUG-AND-008: `clickable` (not raw pointerInput+detectTapGestures)
     // registers a real OnClick semantics action, so TalkBack double-tap
@@ -207,7 +209,7 @@ private fun ContactNode(
                 .border(1.dp, border, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text(Labels.initials(contact.displayName), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(Labels.initials(contact.displayName), fontSize = 13.sp, color = textColor)
         }
     }
 }

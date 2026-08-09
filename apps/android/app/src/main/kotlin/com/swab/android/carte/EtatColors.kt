@@ -34,11 +34,22 @@ object EtatColors {
         Fr.ETAT_PAUSED to "#A69CB0",
     )
 
-    /** background/border are null when the caller should fall back to the neutral theme color. */
-    data class EtatColor(val background: String?, val border: String?)
+    // SUG-AND-009: ivory node-initials text (~2:1 contrast) on these mid-light
+    // pastels fails WCAG AA (needs >=4.5:1). Reuses the theme's existing
+    // "dark ink on light accent" precedent (ETOILE_ENCRE, DesignTokens.kt:22
+    // — used as onPrimary over the light étoile gold) rather than inventing a
+    // new value; hardcoded here (not imported) to keep this object
+    // Android/Compose-import-free, per its stated contract. Yields >=7:1 on
+    // all three known état pastels — design-agent territory to ratify
+    // (packages/ui tokens SSOT), flagged as such rather than treated final.
+    private const val DARK_INK = "#1c1505"
+
+    /** background/border/onBackground are null when the caller should fall back to the neutral theme color. */
+    data class EtatColor(val background: String?, val border: String?, val onBackground: String?)
 
     fun etatColor(etat: String?): EtatColor {
         val background = etat?.let { ETAT_COLORS[it] }
-        return EtatColor(background = background, border = background)
+        val onBackground = background?.let { DARK_INK }
+        return EtatColor(background = background, border = background, onBackground = onBackground)
     }
 }

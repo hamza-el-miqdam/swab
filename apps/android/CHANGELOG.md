@@ -2,6 +2,15 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-009, MAP-03, MAP-08] Fix node-initials contrast on état pastel backgrounds (~2:1 -> >=7:1)
+
+- `EtatColors.EtatColor` gains an `onBackground` field; `etatColor()` returns the theme's existing dark-ink precedent (`#1c1505`, same value as `onPrimary` over the light étoile gold) for all 4 known états — ivory text on the mid-light état pastels was ~1.9:1, failing WCAG AA's 4.5:1 for 13sp text.
+- `RadialMap.kt`'s `ContactNode`: initials text color now reads `palette.onBackground`, falling back to the theme's `onSurface` when unset (no état) — unchanged there.
+- `EtatColors` stays Android/Compose-import-free (hex string, hardcoded rather than pulling in `DesignTokens` — see the code comment).
+- New tests in `EtatColorsTest`: onBackground presence/null-fallback, plus a real WCAG relative-luminance contrast guard (`ratio >= 4.5`) locking the invariant against future palette edits.
+- Flagged for design-agent ratification (node colors are packages/ui tokens SSOT territory) — not treated as final.
+- Verified: `./gradlew test` green.
+
 ## 2026-08-09 — [SUG-AND-008, MAP-01, MAP-04, MAP-08] Map nodes now activatable by TalkBack; touch targets grow to 48dp
 
 - `RadialMap.kt`'s `ContactNode`: replaced raw `pointerInput`+`detectTapGestures` (advertised `role = Button` but registered no OnClick semantics action — TalkBack double-tap silently did nothing) with `Modifier.clickable(...)`, which registers a real click action.
