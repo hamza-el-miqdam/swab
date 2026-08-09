@@ -44,7 +44,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Given** at least one added contact,
 - **When** the user drags/taps the contact onto an intimacy ring around « moi »,
 - **Then** the contact is assigned to that ring and the radial layout visually prefigures the FS-02 map.
-- Edge cases: rings 3/4 currently blocked by the open CalibrateScreen text-wrap bug — suites intentionally hard-fail if driven there (guard, not coverage).
+- Edge cases: all 4 rings are reachable (Android: SUG-AND-002 fixed the ring-3/4 chip-row overflow bug); Android's radial canvas (SUG-AND-014) renders by default with the always-available text-roster + ring-button fallback underneath.
 
 ### ONB-05 — Classification never leaves the device
 - **Given** onboarding in progress with calibration/état/ressenti input,

@@ -2,6 +2,16 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-005, ONB-03, IDT-01, IDT-06] Wire « Importer mes contacts » — was a no-op button
+
+- `MainActivity.kt`: `onImportContacts` was an empty lambda; now registers `ActivityResultContracts.RequestPermission()` (READ_CONTACTS) + `ActivityResultContracts.PickContact()` launchers on the Contacts `composable {}` — permission requested only right before launching the picker (genuinely used now, not held ambiently), denial sets `deniedVisible = true`.
+- New `onboarding/DeviceContactReader.kt`: Android-only glue reading `DISPLAY_NAME` + first `Phone.NUMBER` off the picker's content URI. No hashing here — stays in `ContactsViewModel.addFromDevice` (IDT-01), so the raw number only exists transiently in the launcher callback + this function's return value, never in a StateFlow/log/vault field.
+- `ContactsScreen` gains `deniedVisible: Boolean = false`, rendering `Fr.CONTACTS_DENIED` (previously defined but never rendered anywhere).
+- New `ContactsScreenTest` (instrumented, standalone `createComposeRule` — no full Activity/permission dialog needed): denial copy shows/hides correctly.
+- Deviation from the suggestion's literal plan: did not add a `ContactsViewModel.importFromUri` wrapper — `DeviceContactReader.read()` + the existing `addFromDevice()` already compose cleanly at the Activity call site, keeping the ViewModel free of `ContentResolver`/`Uri` Android types (existing JVM-testable convention). `ContactsViewModelTest`'s existing `addFromDevice` coverage is what exercises the hashing.
+- `docs/qa/e2e-coverage.json`/`e2e-scenarios.md` ONB-03: honest reclassification — device import is wired now but the OS picker itself stays `manual` (system picker UI, no seeded device contacts in test env).
+- Verified: `./gradlew test` green.
+
 ## 2026-08-09 — [SUG-AND-009, MAP-03, MAP-08] Fix node-initials contrast on état pastel backgrounds (~2:1 -> >=7:1)
 
 - `EtatColors.EtatColor` gains an `onBackground` field; `etatColor()` returns the theme's existing dark-ink precedent (`#1c1505`, same value as `onPrimary` over the light étoile gold) for all 4 known états — ivory text on the mid-light état pastels was ~1.9:1, failing WCAG AA's 4.5:1 for 13sp text.

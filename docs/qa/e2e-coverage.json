@@ -18,15 +18,15 @@
       "fs": "FS-01",
       "title": "Add contacts: import / manual / « Passer » without penalty",
       "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts", "OnboardingE2ETests.test_ONB03_skippingContacts_stillReachesCarte"] },
-      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte", "RelationshipMapE2ETest.test_MAP06_skipContactsOnboarding_emptyMapIsCalm"] },
-      "notes": "Manual entry + skip paths automated. OS contact-import permission path is deliberately unwired in test envs (no seeded device contacts) — manual check when touched."
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte", "RelationshipMapE2ETest.test_MAP06_skipContactsOnboarding_emptyMapIsCalm", "ContactsScreenTest.test_ONB03_deniedVisible_rendersGracefulDenialCopy"] },
+      "notes": "Manual entry + skip paths automated; the READ_CONTACTS-denied graceful-copy path is automated via ContactsScreenTest. Device import is now wired (SUG-AND-005, was a no-op button) but the OS contact-picker itself is `manual` — the system picker UI can't be driven headlessly by Compose tests (no seeded device contacts in the test env either)."
     },
     "ONB-04": {
       "fs": "FS-01",
       "title": "Radial calibration around « moi » prefiguring the map",
       "ios": { "status": "automated", "tests": ["OnboardingE2ETests.test_ONB01to08_happyPath_reachesCarteWithCalibratedContacts"] },
-      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte"] },
-      "notes": "Rings 1/2 only — E2EFlows/OnboardingFlow hard-fail on rings 3/4 (open CalibrateScreen text-wrap bug, tracked since Wave 2)."
+      "android": { "status": "automated", "tests": ["OnboardingE2ETest.test_ONB01_08_happyPath_welcomeToCarte", "OnboardingE2ETest.test_ONB04_allFourRingsPlaceable", "OnboardingE2ETest.test_ONB04_radialCanvas_showsMoiAndRingsOnCalibrate"] },
+      "notes": "Android: rings 1-4 all reachable and driven (SUG-AND-002 fixed the ring-3/4 overflow bug); the radial canvas (SUG-AND-014) renders by default and is asserted via the « moi » content description."
     },
     "ONB-05": {
       "fs": "FS-01",

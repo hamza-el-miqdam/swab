@@ -14,12 +14,16 @@ import com.swab.android.onboarding.ContactsViewModel
  * Device-contact import (permission-gated) is wired at the Activity/Screen
  * host level and calls [ContactsViewModel.addFromDevice] — kept out of this
  * composable to keep it Activity-permission-free and previewable.
+ * [deniedVisible] renders the graceful-denial copy when the caller's
+ * `READ_CONTACTS` request was denied — the flow stays fully usable via
+ * manual add either way (FS-01 acceptance criterion 2).
  */
 @Composable
 fun ContactsScreen(
     viewModel: ContactsViewModel,
     onImportContacts: () -> Unit,
     onContinue: () -> Unit,
+    deniedVisible: Boolean = false,
 ) {
     val contacts by viewModel.contacts.collectAsState()
     var manualName by remember { mutableStateOf("") }
@@ -29,6 +33,9 @@ fun ContactsScreen(
         ScreenTitle(Fr.CONTACTS_TITLE)
         BodyText(Fr.CONTACTS_HINT)
         GhostButton(Fr.CONTACTS_IMPORT, onClick = onImportContacts)
+        if (deniedVisible) {
+            BodyText(Fr.CONTACTS_DENIED)
+        }
         InputField(value = manualName, placeholder = Fr.CONTACTS_MANUAL_PLACEHOLDER, onValueChange = { manualName = it })
         GhostButton(Fr.CONTACTS_ADD, onClick = { viewModel.addManual(manualName); manualName = "" })
         if (contacts.isNotEmpty()) {

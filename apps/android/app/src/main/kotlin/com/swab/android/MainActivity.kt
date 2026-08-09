@@ -1,9 +1,12 @@
 package com.swab.android
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -12,9 +15,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -27,6 +33,7 @@ import com.swab.android.carte.CarteViewModel
 import com.swab.android.fiche.FicheViewModel
 import com.swab.android.onboarding.CalibrateViewModel
 import com.swab.android.onboarding.ContactsViewModel
+import com.swab.android.onboarding.DeviceContactReader
 import com.swab.android.onboarding.OnboardingStep
 import com.swab.android.onboarding.OnboardingViewModel
 import com.swab.android.onboarding.SignupViewModel
@@ -169,9 +176,27 @@ private fun SwabNavHost(container: AppContainer) {
             // recomposition) and gives config-change survival for free
             // (SUG-AND-003 #1/#2).
             val contactsViewModel: ContactsViewModel = viewModel { ContactsViewModel(container.vault) }
+            val context = LocalContext.current
+            var contactsDenied by remember { mutableStateOf(false) }
+            // ActivityResultContracts.PickContact() reads via the returned
+            // content-URI grant — READ_CONTACTS is requested only to read
+            // the phone-number row (Phone.NUMBER) off that one contact
+            // (DeviceContactReader), not held ambiently.
+            val pickContact = rememberLauncherForActivityResult(ActivityResultContracts.PickContact()) { uri ->
+                uri?.let {
+                    val (name, rawPhone) = DeviceContactReader.read(context.contentResolver, it)
+                    contactsViewModel.addFromDevice(name, rawPhone)
+                }
+            }
+            val requestContactsPermission = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+            ) { granted ->
+                if (granted) pickContact.launch(null) else contactsDenied = true
+            }
             ContactsScreen(
                 contactsViewModel,
-                onImportContacts = { /* device contact picker: wired at Activity/permission layer */ },
+                deniedVisible = contactsDenied,
+                onImportContacts = { requestContactsPermission.launch(Manifest.permission.READ_CONTACTS) },
                 onContinue = {
                     onboardingViewModel.advanceTo(OnboardingStep.CALIBRATE)
                     navController.navigate(Routes.CALIBRATE)
