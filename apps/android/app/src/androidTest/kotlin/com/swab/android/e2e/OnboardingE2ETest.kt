@@ -37,6 +37,21 @@ class OnboardingE2ETest {
     }
 
     /**
+     * SUG-AND-002 regression: rings 3 and 4 were unreachable (long French
+     * labels overflowed an unscrollable Row) — this drives calibration onto
+     * both to lock the fix.
+     */
+    @Test
+    fun test_ONB04_allFourRingsPlaceable() {
+        composeTestRule.completeOnboarding(
+            displayName = "Nadia",
+            contactRings = listOf("Sam" to 1, "Lina" to 2, "Omar" to 3, "Zoe" to 4),
+        )
+
+        composeTestRule.assertOnCarte()
+    }
+
+    /**
      * ONB-09 — no gamification anywhere in onboarding: drives the full real
      * flow and, at every screen landing (welcome/phone/otp/contacts/
      * calibrate/done), scans the ENTIRE rendered semantics tree for percent

@@ -153,9 +153,8 @@ private fun ComposeTestRule.allRenderedTexts(): List<String> {
  * exercising the API's 422 "displayName required" branch) -> manual contact
  * add (device contact import is a no-op in this build — MainActivity wires
  * `onImportContacts` to nothing; manual add is the only path exercisable
- * headlessly) -> calibration on rings 1 & 2 ONLY (rings 3/4 have a known,
- * separately-tracked layout bug in CalibrateScreen.kt — out of scope here,
- * same workaround the lead used during manual verification) -> Done -> Carte.
+ * headlessly) -> calibration on any of the 4 rings (SUG-AND-002 fixed the
+ * ring 3/4 overflow bug — all rings are reachable now) -> Done -> Carte.
  *
  * Leaves the app on the Carte screen (Fr.CARTE_TITLE visible) when it returns.
  */
@@ -179,11 +178,8 @@ fun ComposeTestRule.completeOnboarding(
     // --- Calibrate (ONB-04/05/06) ---
     waitUntilTextExists(Fr.CALIBRATE_TITLE)
     onScreen("calibrate")
-    val ringLabel = mapOf(1 to Fr.RING_1, 2 to Fr.RING_2)
+    val ringLabel = mapOf(1 to Fr.RING_1, 2 to Fr.RING_2, 3 to Fr.RING_3, 4 to Fr.RING_4)
     for ((name, ring) in contactRings) {
-        require(ring == 1 || ring == 2) {
-            "Rings 3/4 have a known CalibrateScreen layout bug (out of scope) — use ring 1 or 2 in tests."
-        }
         onNodeWithText("$name — —").performClick()
         onNodeWithText("${Fr.CALIBRATE_RING_PREFIX} $ring — ${ringLabel.getValue(ring)}").performClick()
         waitUntilTextExists("$name — ${ringLabel.getValue(ring)}")

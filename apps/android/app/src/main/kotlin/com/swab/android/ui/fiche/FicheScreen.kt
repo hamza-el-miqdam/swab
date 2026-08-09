@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -121,7 +122,10 @@ fun FicheScreen(viewModel: FicheViewModel, onBack: () -> Unit) {
 private fun IntimiteAxis(ring: Int?, onSelect: (Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Fr.FICHE_AXIS_INTIMITE, style = MaterialTheme.typography.titleSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             for ((r, label) in Labels.RING_LABEL) {
                 // SUG-DES-011: visual geometry stays the charter's ~34dp cell;
                 // minimumInteractiveComponentSize() extends only the TAPPABLE
@@ -142,7 +146,10 @@ private fun IntimiteAxis(ring: Int?, onSelect: (Int) -> Unit) {
 private fun RolesAxis(selected: List<String>, onToggle: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Fr.FICHE_AXIS_ROLES, style = MaterialTheme.typography.titleSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             for (role in ROLES) {
                 // SUG-DES-011: hit area only, visual chip size unchanged.
                 FilterChip(
@@ -160,7 +167,10 @@ private fun RolesAxis(selected: List<String>, onToggle: (String) -> Unit) {
 private fun EtatAxis(etat: String?, onSelect: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Fr.FICHE_AXIS_ETAT, style = MaterialTheme.typography.titleSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             for (value in ETATS) {
                 // SUG-DES-011: hit area only, visual chip size unchanged.
                 FilterChip(
@@ -181,7 +191,10 @@ private fun EtatAxis(etat: String?, onSelect: (String) -> Unit) {
 private fun RessentiAxis(ressenti: String?, onSelect: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Fr.FICHE_AXIS_RESSENTI, style = MaterialTheme.typography.titleSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             for (value in RESSENTIS) {
                 // SUG-DES-011: hit area only, visual chip size unchanged.
                 FilterChip(

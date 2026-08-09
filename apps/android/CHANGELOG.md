@@ -2,6 +2,15 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [SUG-AND-002, ONB-04, ONB-05, FCH-01] Fix rings 3/4 unreachable: chip Rows overflow on long French labels
+
+- `CalibrateScreen.kt`: ring-selection `Row` (4 long labels, e.g. « Anneau 3 — Familier ») replaced with a full-width `Column` — closes the documented production bug where rings 3/4 were unreachable during onboarding. Same treatment applied to the État/Ressenti rows (État now has 4 values since OQ-FCH-2).
+- `FicheScreen.kt`: wrapped the 4 axis chip `Row`s (Intimité/Rôles/État/Ressenti) in `Modifier.horizontalScroll(rememberScrollState())` so they don't clip on narrow screens or large font scale.
+- `E2EFlows.kt`: removed the `require(ring == 1 || ring == 2)` test-only guard; `completeOnboarding` now drives all 4 rings.
+- New `OnboardingE2ETest.test_ONB04_allFourRingsPlaceable`: calibrates 4 contacts, one per ring.
+- No French copy changed (labels are byte-identical, only layout).
+- Verified: `./gradlew test` green (JVM). `scripts/e2e-android.sh` to be run after all 9 SUG-AND items land (see session summary).
+
 ## 2026-08-09 — [SUG-AND-003, ONB-02, ONB-08, MAP-02] ViewModel lifecycle: `viewModel()` scoping + single onboarding-step source of truth
 
 - `MainActivity.kt`: `ContactsViewModel`/`CalibrateViewModel` were plain-constructed per recomposition (fresh vault read + `CalibrateViewModel`'s selection silently reset every recomposition) — now `viewModel { … }`, scoped to their `NavBackStackEntry`. `OnboardingViewModel`/`SignupViewModel`/`CarteViewModel` used `remember {}` (no config-change survival: rotation lost `PendingSignup.pendingPhoneHash` mid-OTP) — now `viewModel { … }`, Activity-ViewModelStore-scoped (`SwabNavHost` is called directly from `setContent`). `FicheViewModel` moved from `remember(contactId)` to `viewModel(key = contactId) { … }`.

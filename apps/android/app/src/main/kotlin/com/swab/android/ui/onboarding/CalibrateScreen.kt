@@ -1,5 +1,6 @@
 package com.swab.android.ui.onboarding
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.Switch
@@ -48,7 +49,12 @@ fun CalibrateScreen(viewModel: CalibrateViewModel, onContinue: () -> Unit) {
                 GhostButton("${contact.displayName} — $ringLabel", onClick = { viewModel.select(contact.id) })
             }
             if (selectedId == contact.id) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // SUG-AND-002: four ring buttons with long French labels
+                // overflow a plain Row (rings 3/4 were unreachable on-device
+                // — the known "CalibrateScreen layout bug"). A full-width
+                // Column wraps every label without truncation and needs no
+                // new API/dependency.
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     for ((ring, label) in RING_LABELS) {
                         GhostButton("${Fr.CALIBRATE_RING_PREFIX} $ring — $label") {
                             viewModel.placeSelectedOnRing(ring)
@@ -65,13 +71,15 @@ fun CalibrateScreen(viewModel: CalibrateViewModel, onContinue: () -> Unit) {
                 BodyText(Fr.CALIBRATE_OPTIONAL_HINT)
             } else {
                 BodyText(Fr.CALIBRATE_ETAT_TITLE)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // SUG-AND-002: same overflow risk as the ring row (ETATS now
+                // has 4 values since OQ-FCH-2) — Column avoids it.
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     for (etat in ETATS) {
                         GhostButton(etat, onClick = { viewModel.setEtatForSelected(etat) })
                     }
                 }
                 BodyText(Fr.CALIBRATE_RESSENTI_TITLE)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     for (ressenti in RESSENTIS) {
                         GhostButton(ressenti, onClick = { viewModel.setRessentiForSelected(ressenti) })
                     }
