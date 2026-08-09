@@ -24,11 +24,15 @@ public struct CarteView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text(Fr.t(.brandName))
-                    .font(.headline)
+                    .swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
+                // No SSOT token covers this size (largeTitle ≈34pt sits above the
+                // wordmark's 26pt ceiling — docs/design-system.md §2 defines no
+                // "page hero" role) — left on the native style rather than guessing
+                // a new one (SUG-DES-004 flagged gap).
                 Text(Fr.t(.carteTitle))
                     .font(.largeTitle.weight(.semibold))
                 Text(Fr.t(.carteSubtitle))
-                    .font(.body)
+                    .swabType(DesignTokens.Typography.base, relativeTo: .body)
                     .foregroundStyle(Color(hex: CarteTheme.textDim))
 
                 Toggle(isOn: $viewModel.listMode) {
@@ -85,7 +89,7 @@ public struct CarteView: View {
         // MAP-06: a calm, non-alarming empty state — no progress framing.
         if viewModel.contacts.isEmpty {
             Text(Fr.t(.carteEmpty))
-                .font(.body)
+                .swabType(DesignTokens.Typography.base, relativeTo: .body)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))
         }
 
@@ -103,7 +107,7 @@ public struct CarteView: View {
                     viewModel.select(contact)
                 } label: {
                     Text(contact.displayName)
-                        .font(.footnote)
+                        .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(
@@ -143,7 +147,7 @@ public struct CarteView: View {
         HStack(spacing: 8) {
             Circle().fill(Color(hex: hex)).frame(width: 10, height: 10)
             Text(label)
-                .font(.footnote)
+                .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))
         }
     }

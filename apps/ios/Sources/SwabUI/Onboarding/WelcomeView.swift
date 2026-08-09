@@ -16,12 +16,12 @@ public struct WelcomeView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(Fr.t(.brandName))
-                .font(.headline)
+                .swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
             Spacer()
             Text(Fr.t(.welcomeTagline))
-                .font(.title2)
+                .swabType(DesignTokens.Typography.title, relativeTo: .title2)
             Text(Fr.t(.welcomePromise))
-                .font(.body)
+                .swabType(DesignTokens.Typography.base, relativeTo: .body)
             Spacer()
             Button(Fr.t(.welcomeCta)) {
                 Task {

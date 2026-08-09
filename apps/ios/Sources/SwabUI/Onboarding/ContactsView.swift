@@ -14,9 +14,9 @@ public struct ContactsView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(Fr.t(.brandName)).font(.headline)
-            Text(Fr.t(.contactsTitle)).font(.title2)
-            Text(Fr.t(.contactsHint)).font(.footnote)
+            Text(Fr.t(.brandName)).swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
+            Text(Fr.t(.contactsTitle)).swabType(DesignTokens.Typography.title, relativeTo: .title2)
+            Text(Fr.t(.contactsHint)).swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
 
             Button(Fr.t(.contactsImport)) {
                 Task { await viewModel.importContacts() }

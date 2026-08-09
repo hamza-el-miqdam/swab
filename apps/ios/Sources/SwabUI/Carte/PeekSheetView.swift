@@ -24,7 +24,7 @@ struct PeekSheetView: View {
                     .overlay(Circle().stroke(Color(hex: CarteTheme.line), lineWidth: 0.5))
                     .frame(width: 10, height: 10)
                 Text(contact.displayName)
-                    .font(.title3.weight(.medium))
+                    .swabType(DesignTokens.Typography.title, relativeTo: .title3)
                     .foregroundStyle(Color(hex: CarteTheme.text))
             }
 
@@ -56,11 +56,11 @@ struct PeekSheetView: View {
         HStack {
             Text(label)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))
-                .font(.subheadline)
+                .swabType(DesignTokens.Typography.tag, relativeTo: .subheadline)
             Spacer()
             Text(value)
                 .foregroundStyle(Color(hex: CarteTheme.text))
-                .font(.subheadline)
+                .swabType(DesignTokens.Typography.tag, relativeTo: .subheadline)
         }
     }
 }

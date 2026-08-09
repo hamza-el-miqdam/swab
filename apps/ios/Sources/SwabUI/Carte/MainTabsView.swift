@@ -33,6 +33,8 @@ public struct MainTabsView: View {
 struct EnvieView: View {
     var body: some View {
         VStack(spacing: 12) {
+            // No SSOT token covers largeTitle (~34pt, above the wordmark's 26pt
+            // ceiling) — see CarteView's same flagged gap (SUG-DES-004).
             Text(Fr.t(.envieTitle)).font(.largeTitle.weight(.semibold))
             Text(Fr.t(.enviePlaceholder))
                 .foregroundStyle(Color(hex: CarteTheme.textDim))

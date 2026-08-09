@@ -66,7 +66,19 @@ final class RegressionAndResilienceE2ETests: SwabUITestCase {
         XCUIDevice.shared.press(.home)
         app.activate()
 
-        XCTAssertEqual(app.state, .runningForeground, "App did not survive a background/foreground cycle on Carte")
+        // SUG-DES-004 regression, root-caused not guessed: registering the
+        // bundled charter fonts via UIAppFonts adds real (benign) CoreText
+        // re-validation work on scene reactivation, so `app.state` read
+        // immediately after `activate()` — before that work settles — can
+        // still report `.runningBackground` on this Simulator/OS combo. The
+        // app is NOT crashing (confirmed: no crash log, no dropped session;
+        // bisected by toggling UIAppFonts registration on/off with everything
+        // else held constant). Check the element first (it polls/waits),
+        // matching `test_backgroundForeground_midOnboarding_doesNotCrash`'s
+        // already-correct pattern above — an instantaneous `app.state` read
+        // right after `activate()` isn't guaranteed to reflect a settled
+        // transition.
         XCTAssertTrue(app.staticTexts[Fr.t(.carteTitle)].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.state, .runningForeground, "App did not survive a background/foreground cycle on Carte")
     }
 }

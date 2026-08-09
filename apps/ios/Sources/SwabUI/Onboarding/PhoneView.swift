@@ -15,9 +15,9 @@ public struct PhoneView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(Fr.t(.brandName)).font(.headline)
-            Text(Fr.t(.phoneTitle)).font(.title2)
-            Text(Fr.t(.phoneHint)).font(.footnote)
+            Text(Fr.t(.brandName)).swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
+            Text(Fr.t(.phoneTitle)).swabType(DesignTokens.Typography.title, relativeTo: .title2)
+            Text(Fr.t(.phoneHint)).swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
 
             TextField(Fr.t(.phonePlaceholder), text: $viewModel.rawPhone)
                 #if os(iOS)

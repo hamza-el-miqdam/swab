@@ -17,6 +17,12 @@
 		1B000000000000000000000E /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000006 /* OnboardingFlow.swift */; };
 		1B000000000000000000000F /* SwabUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000007 /* SwabUITestCase.swift */; };
 		1B0000000000000000000010 /* SwabCore in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000013 /* SwabCore */; };
+		1C0000000000000000000011 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C0000000000000000000001 /* Inter-Regular.ttf */; };
+		1C0000000000000000000012 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C0000000000000000000002 /* Inter-Medium.ttf */; };
+		1C0000000000000000000013 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C0000000000000000000003 /* Inter-SemiBold.ttf */; };
+		1C0000000000000000000014 /* SpaceGrotesk-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C0000000000000000000004 /* SpaceGrotesk-Regular.ttf */; };
+		1C0000000000000000000015 /* SpaceGrotesk-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C0000000000000000000005 /* SpaceGrotesk-Medium.ttf */; };
+		1C0000000000000000000016 /* SpaceGrotesk-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C0000000000000000000006 /* SpaceGrotesk-SemiBold.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,6 +45,13 @@
 		1B0000000000000000000005 /* DevBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevBackend.swift; sourceTree = "<group>"; };
 		1B0000000000000000000006 /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
 		1B0000000000000000000007 /* SwabUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwabUITestCase.swift; sourceTree = "<group>"; };
+		1C0000000000000000000001 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
+		1C0000000000000000000002 /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
+		1C0000000000000000000003 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
+		1C0000000000000000000004 /* SpaceGrotesk-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SpaceGrotesk-Regular.ttf"; sourceTree = "<group>"; };
+		1C0000000000000000000005 /* SpaceGrotesk-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SpaceGrotesk-Medium.ttf"; sourceTree = "<group>"; };
+		1C0000000000000000000006 /* SpaceGrotesk-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SpaceGrotesk-SemiBold.ttf"; sourceTree = "<group>"; };
+		1C0000000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,8 +97,31 @@
 			isa = PBXGroup;
 			children = (
 				1A0000000000000000000004 /* SwabApp.swift */,
+				1C0000000000000000000007 /* Info.plist */,
+				1C0000000000000000000010 /* Resources */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		1C0000000000000000000010 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1C0000000000000000000021 /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		1C0000000000000000000021 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				1C0000000000000000000001 /* Inter-Regular.ttf */,
+				1C0000000000000000000002 /* Inter-Medium.ttf */,
+				1C0000000000000000000003 /* Inter-SemiBold.ttf */,
+				1C0000000000000000000004 /* SpaceGrotesk-Regular.ttf */,
+				1C0000000000000000000005 /* SpaceGrotesk-Medium.ttf */,
+				1C0000000000000000000006 /* SpaceGrotesk-SemiBold.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		1B0000000000000000000008 /* SwabAppUITests */ = {
@@ -196,6 +232,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C0000000000000000000011 /* Inter-Regular.ttf in Resources */,
+				1C0000000000000000000012 /* Inter-Medium.ttf in Resources */,
+				1C0000000000000000000013 /* Inter-SemiBold.ttf in Resources */,
+				1C0000000000000000000014 /* SpaceGrotesk-Regular.ttf in Resources */,
+				1C0000000000000000000015 /* SpaceGrotesk-Medium.ttf in Resources */,
+				1C0000000000000000000016 /* SpaceGrotesk-SemiBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -306,6 +348,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Swab";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Swab utilise tes contacts pour proposer des portées sans jamais les envoyer au serveur.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -336,6 +379,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Swab";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Swab utilise tes contacts pour proposer des portées sans jamais les envoyer au serveur.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

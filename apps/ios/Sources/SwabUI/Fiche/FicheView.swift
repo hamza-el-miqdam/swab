@@ -35,15 +35,18 @@ public struct FicheView: View {
     @ViewBuilder
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
+            // No SSOT token covers this size (largeTitle ≈34pt sits above the
+            // wordmark's 26pt ceiling — same flagged gap as CarteView's page
+            // title, docs/design-system.md §2) — left on the native style.
             Text(viewModel.contact.displayName)
                 .font(.largeTitle.weight(.semibold))
                 .foregroundStyle(Color(hex: CarteTheme.text))
             Text(Fr.t(.ficheSubtitle))
-                .font(.subheadline)
+                .swabType(DesignTokens.Typography.subtitle, relativeTo: .subheadline)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))
             // FCH-02: asymmetric/private — explicit, not implied.
             Text(Fr.t(.ficheAsymmetryHint))
-                .font(.footnote)
+                .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))
         }
     }
@@ -55,7 +58,7 @@ public struct FicheView: View {
         if viewModel.shouldShowStalenessNudge {
             VStack(alignment: .leading, spacing: 8) {
                 Text(Fr.t(.ficheStaleTitle))
-                    .font(.subheadline)
+                    .swabType(DesignTokens.Typography.subtitle, relativeTo: .subheadline)
                     .foregroundStyle(Color(hex: CarteTheme.text))
                 HStack(spacing: 12) {
                     Button(Fr.t(.ficheStaleConfirm)) {
@@ -71,9 +74,9 @@ public struct FicheView: View {
             }
             .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: CGFloat(DesignTokens.Radius.input))
                     .fill(Color(hex: CarteTheme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: CarteTheme.line), lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: CGFloat(DesignTokens.Radius.input)).stroke(Color(hex: CarteTheme.line), lineWidth: 1))
             )
             .accessibilityElement(children: .contain)
         }
@@ -132,7 +135,7 @@ public struct FicheView: View {
     private func axisSection(title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.headline)
+                .swabType(DesignTokens.Typography.title, relativeTo: .headline)
                 .foregroundStyle(Color(hex: CarteTheme.text))
             content()
         }
@@ -142,7 +145,7 @@ public struct FicheView: View {
     private func axisChip(label: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.subheadline)
+                .swabType(DesignTokens.Typography.tag, relativeTo: .subheadline)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(
@@ -163,7 +166,7 @@ public struct FicheView: View {
     private var filterConsequence: some View {
         if let text = viewModel.filterConsequenceText {
             Text(text)
-                .font(.footnote)
+                .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))
         }
     }
@@ -177,7 +180,7 @@ public struct FicheView: View {
                 Text(Fr.t(.fichePendingHint))
                 Text(Fr.t(.ficheEnvieInactive))
             }
-            .font(.footnote)
+            .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
             .foregroundStyle(Color(hex: CarteTheme.textDim))
         }
     }
@@ -187,7 +190,7 @@ public struct FicheView: View {
     @ViewBuilder
     private var reciprocityFooter: some View {
         Text(Fr.t(.ficheNoMetrics))
-            .font(.caption)
+            .swabType(DesignTokens.Typography.caption, relativeTo: .caption)
             .foregroundStyle(Color(hex: CarteTheme.textDim))
     }
 
@@ -197,12 +200,12 @@ public struct FicheView: View {
     private var historyFeed: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(Fr.t(.ficheHistoryTitle))
-                .font(.headline)
+                .swabType(DesignTokens.Typography.title, relativeTo: .headline)
                 .foregroundStyle(Color(hex: CarteTheme.text))
 
             if viewModel.recentHistory.isEmpty {
                 Text(Fr.t(.ficheHistoryEmpty))
-                    .font(.footnote)
+                    .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
                     .foregroundStyle(Color(hex: CarteTheme.textDim))
             } else {
                 ForEach(viewModel.recentHistory) { event in
@@ -216,11 +219,11 @@ public struct FicheView: View {
     private func historyRow(_ event: FicheHistoryEvent) -> some View {
         HStack {
             Text(historyLabel(event))
-                .font(.footnote)
+                .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
                 .foregroundStyle(Color(hex: CarteTheme.text))
             Spacer()
             Text(event.date, style: .date)
-                .font(.caption2)
+                .swabType(DesignTokens.Typography.caption, relativeTo: .caption2)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))
         }
     }
@@ -263,7 +266,7 @@ private struct FlowRolesView: View {
                     onToggle(role)
                 } label: {
                     Text(role)
-                        .font(.subheadline)
+                        .swabType(DesignTokens.Typography.tag, relativeTo: .subheadline)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- SUG-DES-004: charter fonts (Inter, Space Grotesk) bundled as OFL-licensed
+	     TTFs in App/Resources/Fonts/ — registered here so CoreText/UIKit can
+	     resolve them by PostScript name (see SwabUI/Components/Typography.swift).
+	     Merged into the auto-generated Info.plist (GENERATE_INFOPLIST_FILE = YES
+	     + INFOPLIST_FILE together) since UIAppFonts is an array — no
+	     INFOPLIST_KEY_* build setting covers array values. -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>Inter-Regular.ttf</string>
+		<string>Inter-Medium.ttf</string>
+		<string>Inter-SemiBold.ttf</string>
+		<string>SpaceGrotesk-Regular.ttf</string>
+		<string>SpaceGrotesk-Medium.ttf</string>
+		<string>SpaceGrotesk-SemiBold.ttf</string>
+	</array>
+</dict>
+</plist>

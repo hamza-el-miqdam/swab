@@ -74,4 +74,26 @@ final class OnboardingE2ETests: SwabUITestCase {
             "ONB-09 sweep did not cover the full onboarding flow"
         )
     }
+
+    /// SUG-DES-004 acceptance criterion: "screenshot check that titles
+    /// render Space Grotesk (glyph difference from SF is visible on 'S')".
+    /// Attaches a screenshot of the wordmark (Fr.t(.brandName) = "Swab",
+    /// starts with "S") to the test report for visual audit. This is NOT
+    /// automated pixel-diffing against a golden image — no such baseline
+    /// infra exists in this suite — so it cannot fail on a silent
+    /// system-font fallback by itself; `TypographyFontBundlingTests`
+    /// (`xcrun swift test`) is the deterministic guard for that failure
+    /// mode, verifying the bundled .ttf's internal PostScript name against
+    /// what `Font.custom(...)` actually requests.
+    @MainActor
+    func test_SUGDES004_wordmarkScreenshot_forSpaceGroteskVisualAudit() async throws {
+        launchApp()
+        let brandName = app.staticTexts[Fr.t(.brandName)]
+        XCTAssertTrue(brandName.waitForExistence(timeout: 10))
+
+        let attachment = XCTAttachment(screenshot: brandName.screenshot())
+        attachment.name = "wordmark-space-grotesk-glyph-check"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
 }

@@ -15,9 +15,10 @@ public struct DoneView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(Fr.t(.brandName)).font(.headline)
+            Text(Fr.t(.brandName)).swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
             Spacer()
-            Text(Fr.t(.doneTitle)).font(.title2)
+            // DesignTokens.Typography.doneTitle is the SSOT's "success title" role, named for exactly this screen.
+            Text(Fr.t(.doneTitle)).swabType(DesignTokens.Typography.doneTitle, relativeTo: .title2)
             Text(Fr.t(.doneSubtitle))
             Text(Fr.t(.donePromise))
             Spacer()

@@ -49,9 +49,9 @@ public struct CalibrateView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(Fr.t(.brandName)).font(.headline)
-            Text(Fr.t(.calibrateTitle)).font(.title2)
-            Text(Fr.t(.calibrateHint)).font(.footnote)
+            Text(Fr.t(.brandName)).swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
+            Text(Fr.t(.calibrateTitle)).swabType(DesignTokens.Typography.title, relativeTo: .title2)
+            Text(Fr.t(.calibrateHint)).swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
 
             Toggle(Fr.t(.calibrateListMode), isOn: $viewModel.listMode)
                 .accessibilityLabel(Fr.t(.calibrateListMode))

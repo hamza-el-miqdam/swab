@@ -21,7 +21,7 @@ public struct OtpView: View {
         // the way back explicitly.
         if viewModel.phoneHash == nil {
             VStack(alignment: .leading, spacing: 16) {
-                Text(Fr.t(.brandName)).font(.headline)
+                Text(Fr.t(.brandName)).swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
                 Text(Fr.t(.otpMissingPhone))
                 Button(Fr.t(.otpBackToPhone), action: onBackToPhone)
                     .accessibilityLabel(Fr.t(.otpBackToPhone))
@@ -29,8 +29,8 @@ public struct OtpView: View {
             .padding()
         } else {
             VStack(alignment: .leading, spacing: 16) {
-                Text(Fr.t(.brandName)).font(.headline)
-                Text(Fr.t(.otpTitle)).font(.title2)
+                Text(Fr.t(.brandName)).swabType(DesignTokens.Typography.wordmark, relativeTo: .headline)
+                Text(Fr.t(.otpTitle)).swabType(DesignTokens.Typography.title, relativeTo: .title2)
 
                 if let devCode = viewModel.devCode {
                     Text("Code (dev) : \(devCode)")

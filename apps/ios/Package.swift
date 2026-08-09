@@ -33,5 +33,10 @@ let package = Package(
                 .copy("Fixtures/vault-test-vectors.json")
             ]
         ),
+        .testTarget(
+            name: "SwabUITests",
+            dependencies: ["SwabUI"],
+            path: "Tests/SwabUITests"
+        ),
     ]
 )
