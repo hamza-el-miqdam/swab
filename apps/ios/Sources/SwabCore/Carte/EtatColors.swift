@@ -6,9 +6,13 @@
 /// (disponible / occupé / ailleurs). Do not expand this to 5 without a
 /// product decision — the RN reference has the same divergence.
 public enum EtatColors {
-    public static let available = "#8FB59A"
-    public static let busy = "#C8917E"
-    public static let away = "#8AA0BE"
+    /// SUG-DES-006: sourced from the token SSOT (`DesignTokens.Color.etat*`,
+    /// generated from `packages/ui/tokens/tokens.json`), not hardcoded —
+    /// pure indirection, values unchanged (`.uppercased()` only normalizes
+    /// casing to match this file's existing hex convention).
+    public static let available = DesignTokens.Color.etatDisponible.uppercased()
+    public static let busy = DesignTokens.Color.etatOccupe.uppercased()
+    public static let away = DesignTokens.Color.etatAilleurs.uppercased()
     /// OQ-FCH-2 (resolved 2026-08-09, issue #16): "en pause" moved from
     /// Ressenti to État. No prior color existed for it on this axis (it had
     /// none as a Ressenti value either — Ressenti carries no colors), so

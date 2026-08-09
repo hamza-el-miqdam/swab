@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-09 — [MAP-03, SUG-DES-006] EtatColors repointed to the token SSOT
+
+- `EtatColors.available`/`.busy`/`.away` now derive from `DesignTokens.Color.etatDisponible`/`.etatOccupe`/`.etatAilleurs` (generated from `packages/ui/tokens/tokens.json` by the design-specialist's `9070165`) instead of hardcoded hex literals — the design persona flagged the duplication as a defect (SUG-DES-006).
+- Pure indirection: `.uppercased()` normalizes the token's lowercase hex to match this file's existing casing convention; values are byte-identical. `Fr.t(...)` keying, `byLabel`, and nil/unrecognized fallback (`EtatColors.swift:34-39`) untouched.
+- `paused` (`#9A8FB5`, OQ-FCH-2) stays hardcoded — not in the SSOT yet, out of scope for this suggestion.
+- `EtatColorsTests` untouched — zero edits, still asserts literal `"#8FB59A"` etc. and passes — proves the refactor is value-neutral. Full `xcrun swift test`: 111/111.
+
 ## 2026-08-09 — [FCH-01, OQ-FCH-1] Rôles·contexte and Ressenti replaced with real blueprint vocabulary (issue #15)
 
 - Architect decision (issue #15) resolves OQ-FCH-1: invented placeholders swapped for the blueprint's real `ROLES`/`VALENCES` consts (`blueprints/swab - Fiche contact (standalone) (1).html`). Rôles·contexte is now a 6-value multi-select — famille, partenaire, collègue, promo, communauté, voisin — newly routed through `Fr`/`I18nKey` (previously raw strings, unlike the other three axes). Ressenti is a full 3-value swap — positive, ambivalente, négative — replacing léger/précieux entirely, not an addition.
