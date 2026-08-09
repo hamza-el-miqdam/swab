@@ -133,6 +133,14 @@ Two families, self-hosted (no external font requests in production — `next/fon
   Shell/Dynamic-Island fill `#05070F` is presentation chrome only (the device bezel, not the app UI)
   and is intentionally outside the token set (SUG-DES-014).
 - **Hit targets**: buttons pad `14`; tags pad `8 14`; segmented cells pad `10 2`.
+- **Minimum touch target** (SUG-DES-011): every interactive element responds to touches in a
+  ≥ 44×44 pt (iOS) / 48×48 dp (Android) region, extended invisibly beyond the visual bounds when the
+  drawn control is smaller than that (tag ≈ 33 px tall, segmented cell ≈ 36 px tall, switch 21 px tall).
+  The visual geometry documented above is unchanged — only the hit area grows. SSOT token:
+  `component.touch.minTarget` (`packages/ui/tokens/tokens.json`) = `44` — a single pt/dp number; Android
+  consumers round up to 48 dp where Material requires it. Where rows stack tighter than 44 pt and hit
+  regions would overlap, WCAG 2.5.8's spacing exception applies — flag the screen in the adoption proposal
+  rather than silently overlapping hit areas.
 - **Touchable feedback**: primary button `:active` scales to `.985`; border-color transitions `.15s`.
 
 ## 4. Component grammar

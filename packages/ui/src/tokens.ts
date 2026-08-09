@@ -84,6 +84,9 @@ export const component = {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
+  touch: {
+    minTarget: 44,
+  },
 } as const;
 
 export const motion = {

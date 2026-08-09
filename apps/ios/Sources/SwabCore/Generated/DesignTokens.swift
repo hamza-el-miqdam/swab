@@ -112,6 +112,9 @@ public enum DesignTokens {
             public static let paddingHorizontal: Double = 20
             public static let paddingBottom: Double = 20
         }
+        public enum Touch {
+            public static let minTarget: Double = 44
+        }
     }
 
     public enum Motion {

@@ -117,6 +117,7 @@
   --component-screen-padding-top: 14px;
   --component-screen-padding-horizontal: 20px;
   --component-screen-padding-bottom: 20px;
+  --component-touch-min-target: 44px;
 
   /* Motion */
   --motion-screen-transition-duration: 280ms;

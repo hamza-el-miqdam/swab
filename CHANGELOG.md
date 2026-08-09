@@ -4,6 +4,21 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [SUG-DES-011] Minimum touch target token + normative contract
+
+- Added `component.touch.minTarget: 44` to `tokens.json` — regenerated as `DesignTokens.Component.Touch.minTarget` (Swift) / `Component.Touch.MIN_TARGET` (Kotlin) / `component.touch.minTarget` (TS) / `--component-touch-min-target: 44px` (CSS). No `generate.mjs` code changes needed — the component renderers are already generic over arbitrary groups/keys.
+- New normative "Minimum touch target" paragraph in `docs/design-system.md` §3, after the existing "Hit targets" bullet: every interactive element gets a ≥44×44pt(iOS)/48×48dp(Android) hit region extended invisibly beyond smaller visual bounds (tag ≈34px, segmented cell ≈40px, switch 21px tall, measured live in Penpot) — visual geometry unchanged, hit area only.
+- Penpot: annotated the 14 affected component instances (tag/sel, tag/default×2, tag/chip, tag/gris, seg/sel, seg/opt×5, seg/retrait, switch/on, switch/off) in the "Swab — Design System" page with a non-visual `setPluginData` note pointing at the new token and the iOS/Android hit-area technique — no shape geometry touched.
+- App code untouched — hit-area adoption on Tag/Segmented/Switch composables is a follow-up `area:ios`/`area:android` proposal.
+
+## 2026-08-09 — [ENV-07, OQ-ENV-2, OQ-ENV-4, OQ-ENV-5] Sync FS-05 French Notion mirror after 48h + accept/decline resolutions
+
+- Checked FS-05's live Notion page and comments (per liaison mandatory first step): page content matched `.notion-sync.json`'s `lastSyncedFrench` exactly and had zero open comments — Notion side untouched since the last sync (2026-08-08). No conflict.
+- Code side had drifted across three commits since that sync, not just the one requested (SUG-DES-010's ENV-07 48h freeze): OQ-ENV-4's accept-copy resolution (`« Accepter la proposition »`, issue #19) and OQ-ENV-5's decline-mechanism resolution (pass is the only decline, issue #20) had also never reached Notion. Propagated all three in one pass — pure "code changed only" case, translated and pushed via `update_content` (8 targeted search-and-replace ops: ENV-07, ENV-13, ENV-14, ENV-17, the API-contract line, OQ-ENV-2, OQ-ENV-4, OQ-ENV-5).
+- Frozen French copy (`« Elle expire dans 48 heures. »`, `« Accepter la proposition »`) carried through verbatim, not re-translated. "Source canonique" note at the top of the page left in place.
+- `docs/specs/.notion-sync.json` FS-05 entry: `lastSyncedAt`, `lastSyncedEnglish`, `lastSyncedFrench` refreshed to current state (other specs' entries untouched).
+- No `docs/STATUS.md` change: this sync doesn't resolve a new open question — the resolutions already happened in prior code commits, this only mirrors them to Notion.
+
 ## 2026-08-09 — [SUG-DES-006] État node palette added to the token SSOT (MAP-03)
 
 - Added `etat-disponible` (`#8FB59A`), `etat-occupe` (`#C8917E`), `etat-ailleurs` (`#8AA0BE`) to `tokens.json`'s `color` group — extracted **verbatim** from `apps/ios/Sources/SwabCore/Carte/EtatColors.swift` and `apps/android/.../carte/EtatColors.kt`, values unchanged (do NOT harmonize toward sauge/corail/ciel — they're a distinct off-charter palette by design).

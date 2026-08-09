@@ -104,6 +104,9 @@ object DesignTokens {
             const val PADDING_HORIZONTAL = 20.0
             const val PADDING_BOTTOM = 20.0
         }
+        object Touch {
+            const val MIN_TARGET = 44.0
+        }
     }
 
     object Motion {
