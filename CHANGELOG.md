@@ -4,6 +4,23 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [ENV-07] Resolve envie TTL: 48h wins over 24h assumption (SUG-DES-010)
+
+- Founder decision: **48h** is the canonical envie expiry, matching the prototype's confirmation copy « Elle expire dans 48 heures. » (`docs/design/swab-prototype-consolidated.html:524`). `docs/specs/FS-05-envie-match.md` ENV-07 amended: default 24h → 48h, ⚠️ ASSUMPTION marker removed, the exact French sentence frozen inline (matches ENV-13's inline-freeze convention — FS-05 has no separate copy-inventory section).
+- ENV-17's `expiresAt` validation bound was already `(now, now + 48h]`; noted it now equals the confirmed default. Its stale "24h-vs-midnight" reference to OQ-ENV-2, and OQ-ENV-2's own wording, updated to "48h" so the still-open rolling-vs-midnight-anchor question isn't attached to a now-wrong number.
+- `blueprints/swab-app-prototype.html` still exists but only as the SUG-DES-013 pointer stub (no prototype content of its own) — left untouched, nothing to resurrect.
+- `suggestions/README.md` DES-010 row, Wave-D sequencing note, and the "already-good" audit bullet marked resolved.
+- No code change: `docs/design/swab-prototype-consolidated.html` already said 48h; only the spec was wrong.
+- Follow-up not in scope here: ENV-17's separate `N=150` recipient-count assumption is still pending Hamza's sign-off.
+
+## 2026-08-09 — [SUG-DES-012] Dynamic-Type scaling contract + letterSpacing → letterSpacingEm rename
+
+- Added a normative scaling paragraph to `docs/design-system.md` §2: type scales with the platform text-size setting (Dynamic Type/`UIFontMetrics` on iOS, `sp` on Android, `rem` on web); SSOT `size` is the default-scale reference; fixed-height components (48pt button) declare a minimum height that grows with text, never clips.
+- `tokens.json` typography entries: `letterSpacing` (absolute px) renamed to `letterSpacingEm` (em-relative) — wordmark `5.7` → `0.22`, label `1.1` → `0.1`, all others `0`. `generate.mjs` renderers updated: CSS now emits `letter-spacing: <n>em` instead of `<n>px`; TS/Swift/Kotlin emit `letterSpacingEm`. `validate.mjs` range-checks `[0, 0.5]`.
+- Wordmark's charter range (`.22–.24em`, 26–30px) explicitly canonicalized to the smaller pair (26px/.22em) as the single SSOT value — documented in the new contract paragraph so implementers stop guessing which end of the range to use.
+- Confirmed zero app-side consumers of the old field name (`grep -rn "\.letterSpacing\b"` — nothing outside `Generated/`), so this was a free rename; landed before SUG-DES-004's typography wiring as required.
+- Regenerated all four outputs; `pnpm --filter @repo/ui test` green (validator self-tests + `--check` drift guard).
+
 ## 2026-08-09 — [FCH-01] Resolve OQ-FCH-1: real Rôles·contexte and Ressenti vocabularies (closes #15)
 
 - Extracted verbatim from the blueprint's embedded `ROLES`/`VALENCES` consts (`blueprints/swab - Fiche contact (standalone) (1).html`) instead of guessing — Architect approved adopting them as-is. Rôles·contexte (multi-select, 6): famille, partenaire, collègue, promo, communauté, voisin. Ressenti (3, full swap, not an addition): positive, ambivalente, négative — replaces the invented léger/précieux placeholder pair entirely.
