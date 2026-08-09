@@ -29,6 +29,9 @@ object DesignTokens {
         const val SAUGE = "#6fbfa3"
         const val CIEL = "#84a9e6"
         const val CORAIL = "#d98a73"
+        const val ETAT_DISPONIBLE = "#8fb59a"
+        const val ETAT_OCCUPE = "#c8917e"
+        const val ETAT_AILLEURS = "#8aa0be"
     }
 
     data class TypographyStyle(

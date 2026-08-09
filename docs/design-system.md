@@ -64,6 +64,28 @@ Accent tints (derived, base `#E4BE6A` at reduced opacity — tokenized 2026-08-0
 | `ciel` | `#84A9E6` | Informational / neutral node accent. |
 | `corail` | `#D98A73` | Caution / **en retrait** — the absolute-lock presence state. Never an "error red". |
 
+### État (MAP-03) — added to SSOT 2026-08-09, SUG-DES-006
+
+| Token | Hex | Meaning |
+|---|---|---|
+| `etat-disponible` | `#8FB59A` | MAP-03 état node — disponible. |
+| `etat-occupe` | `#C8917E` | MAP-03 état node — occupé. |
+| `etat-ailleurs` | `#8AA0BE` | MAP-03 état node — ailleurs. |
+
+Extracted **verbatim** from `apps/ios/Sources/SwabCore/Carte/EtatColors.swift` and
+`apps/android/app/src/main/kotlin/com/swab/android/carte/EtatColors.kt` — this is extraction of values
+already live in both apps, not invention. These three intentionally do **not** match `sauge`/`corail`/`ciel`
+(they are close-but-not-equal cousins by coincidence, not by design); do not "harmonize" them toward the
+status-hue palette.
+
+> **Divergence flag:** the blueprint defines a richer **5-état** taxonomy (établi / à apprivoiser / en
+> sommeil / en pause / tendu); the shipped apps use a **3-état** vocabulary for this color mapping
+> (disponible / occupé / ailleurs) plus a separately-added 4th value, `en pause` (OQ-FCH-2, issue #16) —
+> whose color is **not** in this SSOT because the two platforms currently disagree on its hex
+> (`EtatColors.swift` picks `#9A8FB5`, `EtatColors.kt` picks `#A69CB0` — a still-open drift, out of scope
+> for this addition). Do not silently expand this token set to 5 états or add a `paused` token without a
+> product decision reconciling that platform drift first (see `docs/migration/rn-native-handoff.md` §5).
+
 ## 2. Typography
 
 Two families, self-hosted (no external font requests in production — `next/font` on web, bundled on mobile).

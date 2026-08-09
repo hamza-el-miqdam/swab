@@ -4,6 +4,13 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-09 — [SUG-DES-006] État node palette added to the token SSOT (MAP-03)
+
+- Added `etat-disponible` (`#8FB59A`), `etat-occupe` (`#C8917E`), `etat-ailleurs` (`#8AA0BE`) to `tokens.json`'s `color` group — extracted **verbatim** from `apps/ios/Sources/SwabCore/Carte/EtatColors.swift` and `apps/android/.../carte/EtatColors.kt`, values unchanged (do NOT harmonize toward sauge/corail/ciel — they're a distinct off-charter palette by design).
+- New "État (MAP-03)" sub-table in `docs/design-system.md` §1, with the divergence note: blueprint's 5-état taxonomy vs. shipped 3-état vocabulary, plus a flag that the 4th value (`en pause`) is intentionally excluded here because iOS (`#9A8FB5`) and Android (`#A69CB0`) currently disagree on its hex — a separate, still-open drift.
+- Regenerated all four outputs; `DesignTokens.Color.etatDisponible/etatOccupe/etatAilleurs` (Swift), `Color.ETAT_DISPONIBLE/ETAT_OCCUPE/ETAT_AILLEURS` (Kotlin) now exist.
+- App code untouched (`EtatColors.swift`/`.kt` still hand-hold their own literals) — repointing them to the new SSOT tokens is a follow-up `area:ios`/`area:android` proposal, not done here.
+
 ## 2026-08-09 — [ENV-07] Resolve envie TTL: 48h wins over 24h assumption (SUG-DES-010)
 
 - Founder decision: **48h** is the canonical envie expiry, matching the prototype's confirmation copy « Elle expire dans 48 heures. » (`docs/design/swab-prototype-consolidated.html:524`). `docs/specs/FS-05-envie-match.md` ENV-07 amended: default 24h → 48h, ⚠️ ASSUMPTION marker removed, the exact French sentence frozen inline (matches ENV-13's inline-freeze convention — FS-05 has no separate copy-inventory section).

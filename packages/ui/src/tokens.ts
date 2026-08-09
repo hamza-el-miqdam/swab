@@ -18,6 +18,9 @@ export const colors = {
   "sauge": "#6fbfa3",
   "ciel": "#84a9e6",
   "corail": "#d98a73",
+  "etat-disponible": "#8fb59a",
+  "etat-occupe": "#c8917e",
+  "etat-ailleurs": "#8aa0be",
 } as const;
 
 export const typography = {

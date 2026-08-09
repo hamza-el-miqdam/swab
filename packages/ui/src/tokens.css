@@ -24,6 +24,9 @@
   --color-sauge: #6fbfa3;
   --color-ciel: #84a9e6;
   --color-corail: #d98a73;
+  --color-etat-disponible: #8fb59a;
+  --color-etat-occupe: #c8917e;
+  --color-etat-ailleurs: #8aa0be;
 
   /* Typography */
   --font-wordmark-family: "Space Grotesk";

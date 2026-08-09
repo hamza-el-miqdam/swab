@@ -28,6 +28,9 @@ public enum DesignTokens {
         public static let sauge = "#6fbfa3"
         public static let ciel = "#84a9e6"
         public static let corail = "#d98a73"
+        public static let etatDisponible = "#8fb59a"
+        public static let etatOccupe = "#c8917e"
+        public static let etatAilleurs = "#8aa0be"
     }
 
     public struct TypographyStyle {
