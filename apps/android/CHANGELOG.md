@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-10 — [ONB-04] Fix E2E: scroll ring-selection targets into view before clicking
+
+- Root-caused via on-device diagnostic logging, not guessed: SUG-AND-014's radial canvas + a selected contact's 4 ring buttons push later contacts' roster rows below the fold once `OnboardingScreen` scrolls (its own earlier fix). Plain `performClick()` does NOT auto-scroll a node into view — clicking an off-screen node silently no-ops. `CalibrateViewModel._selectedId` then stays on the PREVIOUS contact, so the next ring tap reassigns *that* contact's ring instead of the intended one.
+- Confirmed with temporary logging: placing "Sam" on ring 1 succeeded, but the click meant to select "Lina" fired no `select()` call at all — the next tap (meant for Lina's ring 2) landed on Sam's still-selected, still-rendered "Anneau 2" button instead, silently corrupting Sam's placement.
+- Fix: `E2EFlows.completeOnboarding()`'s contact-select, ring-select, and continue-button clicks all gain `.performScrollTo()` before `.performClick()`.
+- This is a test-code fix only — the real app works correctly for a human user, who obviously scrolls to see what they're tapping; only the automated test's rapid-fire, non-scrolling clicks exposed the race.
+- `./gradlew test`: BUILD SUCCESSFUL. Full `scripts/e2e-android.sh`: 25/25 PASS (up from 9/25 before this fix + the companion RelationshipMapE2ETest fix below).
+
 ## 2026-08-09 — [ONB-04] OnboardingScreen scrolls — SUG-AND-014's radial canvas made content taller than the viewport
 
 - Root-caused via on-device E2E verification, not guessed: SUG-AND-014 added a 320dp radial calibration canvas to `CalibrateScreen` (which reuses the shared `OnboardingScreen` wrapper). With contacts placed, the resulting content — canvas + per-ring buttons + `Fr.CALIBRATE_CONTINUE` — exceeded the viewport height, and the wrapper's `Column` had no scroll. The continue button and ring buttons below a selected contact ended up laid out off-screen with no way to reach them, not even a manual swipe.

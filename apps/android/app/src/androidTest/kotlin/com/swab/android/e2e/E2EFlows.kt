@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.swab.android.l10n.Fr
 
@@ -173,18 +174,27 @@ fun ComposeTestRule.completeOnboarding(
         onNodeWithText(Fr.CONTACTS_ADD).performClick()
         waitUntilTextExists(name, substring = true)
     }
-    onNodeWithText(Fr.CONTACTS_CONTINUE).performClick()
+    onNodeWithText(Fr.CONTACTS_CONTINUE).performScrollTo().performClick()
 
     // --- Calibrate (ONB-04/05/06) ---
     waitUntilTextExists(Fr.CALIBRATE_TITLE)
     onScreen("calibrate")
     val ringLabel = mapOf(1 to Fr.RING_1, 2 to Fr.RING_2, 3 to Fr.RING_3, 4 to Fr.RING_4)
     for ((name, ring) in contactRings) {
-        onNodeWithText("$name — —").performClick()
-        onNodeWithText("${Fr.CALIBRATE_RING_PREFIX} $ring — ${ringLabel.getValue(ring)}").performClick()
+        // SUG-AND-014's radial canvas (plus a selected contact's 4 ring
+        // buttons) pushes later roster rows below the fold now that
+        // OnboardingScreen scrolls (its own earlier fix). Plain
+        // performClick() does NOT auto-scroll a node into view — clicking
+        // an off-screen node silently no-ops (no exception), so a stale
+        // `selectedId` from the PREVIOUS contact stays selected and the
+        // next ring tap reassigns *that* contact's ring instead. Root-caused
+        // via on-device diagnostic logging (contacts placed on the wrong
+        // ring reproducibly), not guessed. performScrollTo() first fixes it.
+        onNodeWithText("$name — —").performScrollTo().performClick()
+        onNodeWithText("${Fr.CALIBRATE_RING_PREFIX} $ring — ${ringLabel.getValue(ring)}").performScrollTo().performClick()
         waitUntilTextExists("$name — ${ringLabel.getValue(ring)}")
     }
-    onNodeWithText(Fr.CALIBRATE_CONTINUE).performClick()
+    onNodeWithText(Fr.CALIBRATE_CONTINUE).performScrollTo().performClick()
 
     // --- Done (ONB-07) ---
     waitUntilTextExists(Fr.DONE_TITLE)
