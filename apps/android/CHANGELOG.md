@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-10 — [MAP-01] Fix E2E: density-regression test needs useUnmergedTree for the node's inner testTag
+
+- SUG-AND-008 wrapped `RadialMap`'s per-slot `testTag("carteNode-$ring-$index")` Box inside a new outer Box carrying `clickable(...)` + `.semantics { contentDescription = ... }` (to fix TalkBack activation) — that combination makes the outer Box a semantics-merging boundary, so the inner tag became invisible to `onNodeWithTag(...)` on the default MERGED tree.
+- `test_densityRegression_placedNodeSizeIsNotCollapsed` started failing (`assertExists` — node not found) purely from that side effect, not from any actual size/density regression.
+- Fix: `onNodeWithTag("carteNode-1-0", useUnmergedTree = true)`.
+- Full `scripts/e2e-android.sh`: 25/25 PASS.
+
 ## 2026-08-10 — [ONB-04] Fix E2E: scroll ring-selection targets into view before clicking
 
 - Root-caused via on-device diagnostic logging, not guessed: SUG-AND-014's radial canvas + a selected contact's 4 ring buttons push later contacts' roster rows below the fold once `OnboardingScreen` scrolls (its own earlier fix). Plain `performClick()` does NOT auto-scroll a node into view — clicking an off-screen node silently no-ops. `CalibrateViewModel._selectedId` then stays on the PREVIOUS contact, so the next ring tap reassigns *that* contact's ring instead of the intended one.

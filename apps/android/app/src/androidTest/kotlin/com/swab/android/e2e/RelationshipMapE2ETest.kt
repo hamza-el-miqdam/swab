@@ -197,8 +197,12 @@ class RelationshipMapE2ETest {
         // SUG-AND-008: the outer node Box grew to a 48dp touch target, which
         // would no longer match MapGeometry.nodeSize(1)=44dp — measure the
         // inner visual circle (stable per-slot testTag) instead, which is
-        // untouched by the touch-target change.
-        val node = composeTestRule.onNodeWithTag("carteNode-1-0").fetchSemanticsNode()
+        // untouched by the touch-target change. That same outer Box's
+        // `clickable` + `semantics{}` also makes it a semantics-merging
+        // boundary (root-caused via a deterministic on-device failure, not
+        // guessed), so the inner tag is invisible on the default MERGED
+        // tree — useUnmergedTree=true is required to still reach it.
+        val node = composeTestRule.onNodeWithTag("carteNode-1-0", useUnmergedTree = true).fetchSemanticsNode()
         val density = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
         val expectedPx = MapGeometry.nodeSize(1) * density
         val actualPx = node.size.width.toFloat()
