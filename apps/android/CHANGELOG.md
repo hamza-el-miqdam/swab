@@ -2,6 +2,13 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-15 — [SUG-AND-011] Enforce the G2 80% domain-coverage floor, don't just report it
+
+- `jacocoDomainCoverage` generated an XML/HTML report but nothing failed the build below the 80% floor — the numbers quoted in this changelog were self-reported from manual runs. Added `jacocoDomainCoverageVerification` (`JacocoCoverageVerification`), reusing the exact `classDirectories`/`sourceDirectories`/`executionData` wiring (hoisted `classDir` to file scope so both tasks share it) and the same `domainCoverageExcludes` scope, so report and gate can never disagree.
+- Wired into the standard lifecycle: `tasks.named("check") { dependsOn("jacocoDomainCoverageVerification") }` — cannot be skipped once `check` runs.
+- `./gradlew jacocoDomainCoverageVerification`: BUILD SUCCESSFUL (current domain coverage ~98%, far above the floor).
+- **Follow-up (not in this PR, area:sre scope):** `.github/workflows/ci.yml`'s `android-unit` job runs `./gradlew test`, which does not pull in `check`'s dependencies — the new gate isn't yet exercised in CI. Needs a devops-specialist PR changing that step to `./gradlew check` (or adding the verification task explicitly).
+
 ## 2026-08-10 — [MAP-01] Fix E2E: density-regression test needs useUnmergedTree for the node's inner testTag
 
 - SUG-AND-008 wrapped `RadialMap`'s per-slot `testTag("carteNode-$ring-$index")` Box inside a new outer Box carrying `clickable(...)` + `.semantics { contentDescription = ... }` (to fix TalkBack activation) — that combination makes the outer Box a semantics-merging boundary, so the inner tag became invisible to `onNodeWithTag(...)` on the default MERGED tree.
