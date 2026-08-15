@@ -4,6 +4,17 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-15 — [docs-hygiene] Compact docs/STATUS.md back to its own "1-2 lines" rule
+
+- `docs/STATUS.md:54` states "Keep notes to one or two lines — history belongs in the changelogs,
+  not here" (G5), but four rows had drifted into paragraph-length blow-by-blow history — worst was
+  the design-system row at 4,387 chars (485 words) in a single table cell.
+- Trimmed the intro blockquote, CI, DB migrations, and design-system rows to current-state +
+  pointers. Every fact removed was verified present in root `CHANGELOG.md` first (all cited
+  `SUG-DES-*`/`SUG-OPS-*`/`SUG-DB-002` ids already have entries there) — nothing lost, only
+  de-duplicated. Table structure, status emoji, and the Changelogs/How-to-update sections unchanged.
+- No line in the file now exceeds 450 chars (was up to 4,387).
+
 ## 2026-08-15 — Fix @repo/db CI race: typecheck/test/build now generate their own Prisma client
 
 - `turbo.json`: `lint`, `typecheck`, `test` and `build` depended only on `^db:generate` (`lint` had no `dependsOn` at all), which runs the task in *dependency* packages. `@repo/db` has no such dependency, so `@repo/db#typecheck` resolved to zero upstream tasks and raced `@repo/db#db:generate` — visible in CI logs as both starting in the same second.
