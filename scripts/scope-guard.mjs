@@ -60,6 +60,13 @@ export const AREA_PREFIXES = {
     "docker-compose.yml",
     "tools/orchestrator/",
     "scripts/",
+    // Root workspace manifest + its lockfile: the agent file's scope says "root
+    // configs" and already lists .npmrc / pnpm-workspace.yaml — these two are the
+    // same class (workspace-level tooling: devDependencies, pnpm.overrides,
+    // packageManager) and were simply missing. Per-package manifests are NOT
+    // covered here; they live under their own area's prefix (e.g. apps/api/).
+    "package.json",
+    "pnpm-lock.yaml",
   ],
   "area:devops": [
     ".github/",
@@ -70,6 +77,13 @@ export const AREA_PREFIXES = {
     "docker-compose.yml",
     "tools/orchestrator/",
     "scripts/",
+    // Root workspace manifest + its lockfile: the agent file's scope says "root
+    // configs" and already lists .npmrc / pnpm-workspace.yaml — these two are the
+    // same class (workspace-level tooling: devDependencies, pnpm.overrides,
+    // packageManager) and were simply missing. Per-package manifests are NOT
+    // covered here; they live under their own area's prefix (e.g. apps/api/).
+    "package.json",
+    "pnpm-lock.yaml",
   ],
 };
 
