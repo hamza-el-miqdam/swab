@@ -82,6 +82,10 @@ jobs:
         run: node --test scripts/portability-lint.test.mjs
       - name: Portability lint (no Vercel APIs, no Neon-specific code — G4)
         run: node scripts/portability-lint.mjs
+      - name: Docs hygiene unit tests (entry/line budget functions)
+        run: node --test scripts/docs-hygiene-lint.test.mjs
+      - name: Docs hygiene lint (G5 changelog + STATUS.md budgets)
+        run: node scripts/docs-hygiene-lint.mjs
       - run: pnpm install --frozen-lockfile
       - name: Prisma schema valid
         run: pnpm --filter @repo/db db:validate

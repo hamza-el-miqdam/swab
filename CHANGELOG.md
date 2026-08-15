@@ -4,6 +4,18 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-15 — [docs-hygiene] Mechanical CI gate for G5's changelog/STATUS budgets
+
+- G5's "changelog entries ≤ 15 lines" and "STATUS.md notes 1-2 lines" were the only rules with no
+  guard (unlike render-agents/generate.mjs/portability-lint/scope-guard), which is how they drifted
+  quietly to a 4,387-char row and multiple 20+ line entries before this PR's siblings fixed them.
+- Added `scripts/docs-hygiene-lint.mjs` (+ table-driven `node --test` unit tests, same shape as
+  `portability-lint.mjs`), wired into `ci.yml` right after the portability-lint steps.
+- Only checks changelog entries dated on/after `GRANDFATHER_DATE` (2026-08-15) — history is
+  append-only and is never retro-edited to fit; old oversized entries pass untouched.
+- Changelog scan globs `apps/*/CHANGELOG.md`, so a future `apps/web/CHANGELOG.md` is picked up with
+  no code change.
+
 ## 2026-08-15 — [docs-hygiene] Compact docs/STATUS.md back to its own "1-2 lines" rule
 
 - `docs/STATUS.md:54` states "Keep notes to one or two lines — history belongs in the changelogs,
