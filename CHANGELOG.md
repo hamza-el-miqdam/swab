@@ -4,21 +4,21 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
-## 2026-08-15 — Dependabot triage: 11 bumps merged, 4 declined
+## 2026-08-15 — Dependabot triage: 12 bumps merged, 8 declined
 
 - **Merged, all green:** eslint 9→10, pino 9→10, `@fastify/rate-limit` 10→11, the npm-minor-patch
-  group, gradle-wrapper 8.13→9.6.1, turbine 1.2.1, and five Actions pins (setup-java v5,
-  setup-node v7, cache v6, setup-gradle v6, gitleaks-action v3). gitleaks v3 was the one
-  time-critical bump: v2 runs on Node 20, removed from hosted runners 2026-09-16.
+  group, gradle-wrapper 8.13→**9.7.0**, turbine 1.2.1, and six Actions pins (setup-java v5,
+  setup-node v7, cache v6, setup-gradle v6, gitleaks-action v3, checkout v7). The Node 20 runner
+  removal (2026-09-16) forced the last two — `pnpm/action-setup` is *not* affected, so #53 was
+  declined (its v6 installs pnpm 11 alongside our pinned 10.12.1).
+- **Gotcha:** Dependabot **retargeted the wrapper PR from 9.6.1 to 9.7.0 during a rebase** — read
+  the head commit, not the PR title, before claiming a version.
 - **`@eslint/js` bumped by hand to ^10.0.1** — Dependabot versions it separately, so it silently
-  held `eslint:recommended` at the v9 rule set. Aligning it surfaced `preserve-caught-error` (new
-  in v10), fixed in `apps/api/tests/prisma-repo.test.ts` with `{ cause: err }`. The two packages
-  no longer share a version line (10.8.1 vs 10.0.1) — expected, not drift.
-- **Gradle 9.6.1 verified locally against AGP 8.5.2** (CI only runs `./gradlew test`): jacoco, both
-  assembles and R8 `assembleRelease` pass. Gotcha: it now warns "incompatible with Gradle 10" —
-  AGP must be uplifted before any Gradle 10 bump.
-- **Declined, rationale on each closed PR:** Prisma 6→7 #36, node:22→26-slim #25 (no corepack in
-  the image), androidx.lifecycle 2.11 #32 (needs AGP ≥8.6), postgres 17→18 #24 (data dir moved).
+  held `eslint:recommended` at the v9 rule set. That surfaced `preserve-caught-error` (new in v10),
+  fixed in `apps/api/tests/prisma-repo.test.ts` with `{ cause: err }`.
+- **Gradle 9.7.0 verified locally against AGP 8.5.2** (CI only runs `./gradlew test`): jacoco, both
+  assembles and R8 `assembleRelease` pass. Warns "incompatible with Gradle 10" — see #56.
+- **Declined:** Prisma 6→7 #36, postgres 17→18 #24, Node 26 #57 (26.x ignored), Android toolchain #56.
 
 ## 2026-08-15 — [SUG-OPS-003/004] Trivy gate back to green (zero HIGH/CRITICAL)
 
