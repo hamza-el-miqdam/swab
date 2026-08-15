@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/rate-limit": "^11.2.0",
     "@repo/db": "workspace:*",
     "fastify": "^5.11.3",
     "pino": "^10.3.1",
