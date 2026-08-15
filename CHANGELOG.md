@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-15 — [SUG-OPS-003/004] Trivy gate back to green (zero HIGH/CRITICAL)
+
+- `trivy-api-image` had been red since it landed — 23 findings (22 HIGH, 1 CRITICAL) from **two**
+  distinct sources needing two different fixes.
+- **Our lockfile** (`brace-expansion` 1/2/5, `fast-uri`, `find-my-way`, `js-yaml`, `nanoid`,
+  `picomatch`, `postcss`) → pinned to each advisory's minimum patched version via
+  `pnpm.overrides` (root `package.json`). All transitive-only, no new direct dependency (G4);
+  the Fastify-owned ones stay inside the range Fastify declares.
+- **npm bundled in the `node:22-slim` base image** (`tar` CRITICAL, `sigstore`, `ip-address`) →
+  unreachable by any override (verified: zero entries for all three in `pnpm-lock.yaml`). The
+  Dockerfile's **prod stage now deletes npm/corepack/npx** — it runs `node dist/server.js` with
+  a `node -e` HEALTHCHECK and never shells out to a package manager, so this is least-privilege
+  (G1), not scan suppression. `dev`/`build` stages keep pnpm; they need it to install.
+- Gotcha: if a future runtime dep needs npm at boot, move that `rm` after the offending step
+  rather than reinstating npm wholesale.
+
 ## 2026-08-15 — [docs-hygiene] Mechanical CI gate for G5's changelog/STATUS budgets
 
 - G5's "changelog entries ≤ 15 lines" and "STATUS.md notes 1-2 lines" were the only rules with no
