@@ -1,6 +1,6 @@
 # Swab (صواب)
 
-App that connects people with friends: you express an "envie" to a scope; it's revealed only if mutual. Turborepo + pnpm monorepo, strict TypeScript on the JS side: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Compose, native) — the Expo RN app was removed 2026-07-19 (knowledge preserved in `docs/migration/rn-native-handoff.md`) — plus `apps/web` (Next.js), `apps/api` (Fastify), `packages/db` (Prisma/Postgres), `tools/orchestrator`.
+App that connects people with friends: you express an "envie" to a scope; it's revealed only if mutual. Turborepo + pnpm monorepo, strict TypeScript on the JS side: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Compose, native) — the Expo RN app was removed 2026-07-19 (knowledge preserved in `docs/migration/rn-native-handoff.md`) — plus `apps/api` (Fastify), `packages/db` (Prisma/Postgres) and `packages/ui` (design tokens). Planned, not yet created: `apps/web` (Next.js), `packages/api-client`, `tools/orchestrator` (see `docs/STATUS.md`).
 
 ## Binding rules (single source of truth — imported, do not duplicate)
 
