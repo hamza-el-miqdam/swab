@@ -7,21 +7,18 @@
 ## 2026-08-15 — [SUG-OPS-003/004] Trivy gate back to green (zero HIGH/CRITICAL)
 
 - `trivy-api-image` had been red since it landed — 23 findings (22 HIGH, 1 CRITICAL) from **two**
-  distinct sources needing two different fixes.
+  sources needing two different fixes.
 - **Our lockfile** (`brace-expansion` 1/2/5, `fast-uri`, `find-my-way`, `js-yaml`, `nanoid`,
   `picomatch`, `postcss`) → pinned to each advisory's minimum patched version via
-  `pnpm.overrides` (root `package.json`). All transitive-only, no new direct dependency (G4);
-  the Fastify-owned ones stay inside the range Fastify declares.
-- **npm bundled in the `node:22-slim` base image** (`tar` CRITICAL, `sigstore`, `ip-address`) →
-  unreachable by any override (verified: zero entries for all three in `pnpm-lock.yaml`). The
-  Dockerfile's **prod stage now deletes npm/corepack/npx** — it runs `node dist/server.js` with
-  a `node -e` HEALTHCHECK and never shells out to a package manager, so this is least-privilege
-  (G1), not scan suppression. `dev`/`build` stages keep pnpm; they need it to install.
-- Gotcha: if a future runtime dep needs npm at boot, move that `rm` after the offending step
-  rather than reinstating npm wholesale.
+  `pnpm.overrides`. Transitive-only, so no new direct dependency (G4).
+- **npm bundled in `node:22-slim`** (`tar` CRITICAL, `sigstore`, `ip-address`) → unreachable by
+  any override (zero entries for all three in `pnpm-lock.yaml`), so the Dockerfile's **prod stage
+  now deletes npm/corepack/npx**: it runs `node dist/server.js` with a `node -e` HEALTHCHECK and
+  never shells out to a package manager — least-privilege (G1), not scan suppression. `dev`/
+  `build` keep pnpm. Gotcha: if a runtime dep ever needs npm at boot, move that `rm` later.
 - `scripts/scope-guard.mjs`: root `package.json` + `pnpm-lock.yaml` were in **no** area map, so
   this PR tripped the guard. Added both to `area:sre`/`area:devops` (exact-match, so a package's
-  own manifest is still out of scope) with regression tests.
+  own manifest stays out of scope) with regression tests.
 
 ## 2026-08-15 — [docs-hygiene] Mechanical CI gate for G5's changelog/STATUS budgets
 
