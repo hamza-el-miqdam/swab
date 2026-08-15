@@ -33,7 +33,7 @@
 # their backing .pnpm store entries) by name. Verified end-to-end against
 # local Postgres: /health, /ready (DB round-trip), and an actual
 # Prisma-backed route (/auth/otp/request) all pass after cleanup.
-FROM node:22-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 AS base
+FROM node:26-slim@sha256:4ebb5ace66f15a24c14c492e01a8beeed4fddf970a856109f5126e703e5fe503 AS base
 
 # pnpm via corepack — version pinned by "packageManager" in package.json
 RUN corepack enable
@@ -105,7 +105,7 @@ RUN cd node_modules/.pnpm && rm -rf \
       'typescript-eslint@*' '@typescript-eslint+*' prettier@* '@types+node@*' magicast@*
 
 # ── prod ─────────────────────────────────────────────────────────────────
-FROM node:22-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 AS prod
+FROM node:26-slim@sha256:4ebb5ace66f15a24c14c492e01a8beeed4fddf970a856109f5126e703e5fe503 AS prod
 
 # OpenSSL is required by Prisma's query engine on slim images
 RUN apt-get update -y \
