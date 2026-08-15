@@ -3,7 +3,7 @@
 
 ## Project
 
-Swab (صواب) — an app to express desires ("envies") to scopes of friends, revealed only on mutual match. Monorepo: Turborepo + pnpm, strict TypeScript on the JS/TS side. Mobile clients: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Jetpack Compose, native) — they replaced the retired Expo/React Native app (its knowledge is preserved in `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`). Also: `apps/web` (Next.js), `apps/api` (standalone Node service, container-ready), `packages/db` (Prisma + Postgres/Neon), `packages/ui`, `packages/api-client`, `tools/orchestrator`. Read `/docs/specs/*.md` and `swab-domain-spec.md` before any task.
+Swab (صواب) — an app to express desires ("envies") to scopes of friends, revealed only on mutual match. Monorepo: Turborepo + pnpm, strict TypeScript on the JS/TS side. Mobile clients: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Jetpack Compose, native) — they replaced the retired Expo/React Native app (its knowledge is preserved in `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`). Also: `apps/api` (standalone Node service, container-ready), `packages/db` (Prisma + Postgres/Neon), `packages/ui`. Planned, not yet created: `apps/web` (Next.js), `packages/api-client`, `tools/orchestrator` — see `docs/STATUS.md` before assuming a package exists. Read `/docs/specs/*.md` and `swab-domain-spec.md` before any task.
 
 ## G1 — Zero-Trust Security
 
