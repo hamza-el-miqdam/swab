@@ -19,6 +19,16 @@ const REQUEST_ID_RE = /^[A-Za-z0-9._-]{1,64}$/;
 // correlation benefit while making client-chosen ids self-evident in the logs.
 const CLIENT_REQUEST_ID_PREFIX = "client-";
 
+// RFC 7807 wants a short, stable title per error type — not a passthrough of
+// whatever message the throwing layer produced (SUG-API-016). Only Fastify's
+// content-type-parser codes are known-safe today; everything else defaults
+// to a generic title in the error handler below.
+const KNOWN_4XX_TITLES: Record<string, string> = {
+  FST_ERR_CTP_EMPTY_JSON_BODY: "Invalid request body",
+  FST_ERR_CTP_INVALID_MEDIA_TYPE: "Unsupported Media Type",
+  FST_ERR_CTP_BODY_TOO_LARGE: "Payload Too Large",
+};
+
 export interface AppDeps {
   env: Env;
   repo: Repository;
@@ -81,8 +91,19 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     const status = typeof e?.statusCode === "number" ? e.statusCode : 500;
     if (status >= 500) {
       req.log.error({ err: { message: e?.message, code: e?.code } }, "request failed");
+    } else {
+      // Debug-only: a malformed-request storm is otherwise invisible in logs.
+      req.log.debug({ err: { code: e?.code }, status }, "request rejected");
     }
-    sendProblem(reply, status, status >= 500 || e === null ? "Internal Server Error" : e.message);
+    // The title is an allowlist, not "whatever message the throwing layer
+    // produced" — an internal error string (or, for content-type-parser
+    // errors specifically, one that can embed client input) must never reach
+    // clients verbatim as an RFC 7807 title. Route-level sendProblem calls
+    // bypass this handler entirely and keep their own precise titles.
+    const code = typeof e?.code === "string" ? e.code : "";
+    const title =
+      status >= 500 || e === null ? "Internal Server Error" : (KNOWN_4XX_TITLES[code] ?? "Request Error");
+    sendProblem(reply, status, title);
   });
 
   const otpStore = deps.otpStore ?? new OtpStore();

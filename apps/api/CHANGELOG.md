@@ -4,6 +4,14 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
+## 2026-08-16 — SUG-API-016 global error handler no longer echoes internal messages as titles
+
+- `setErrorHandler` (`app.ts`) passed any thrown 4xx error's raw `.message` through verbatim as the RFC 7807 `title` — an allowlist-free passthrough, and the handler's contract per the file's own G1/G3 comments should be an allowlist, not "whatever message the throwing layer produced".
+- Added `KNOWN_4XX_TITLES`, mapping Fastify's content-type-parser codes (`FST_ERR_CTP_EMPTY_JSON_BODY`, `FST_ERR_CTP_INVALID_MEDIA_TYPE`, `FST_ERR_CTP_BODY_TOO_LARGE`) to fixed titles; any other thrown 4xx defaults to the generic `"Request Error"`. Route-level `sendProblem` calls (400/401/409/413/422 in `routes/*.ts`) are unaffected — they bypass this handler and keep their own precise titles.
+- 4xx errors reaching this handler are now logged at `debug` (code + status only, matching the `error` level already used for 5xx) — previously invisible, even for a malformed-request storm.
+- Gotcha: Fastify 5.11's `FST_ERR_CTP_INVALID_MEDIA_TYPE` message no longer embeds the client's `Content-Type` header value (fixed upstream since the suggestion was written) — the reflection test now guards the invariant rather than reproducing the original leak.
+- When SUG-API-007 (OpenAPI/Zod type-provider) lands, its validation-error branch must run before this generic mapping so field-path detail survives.
+
 ## 2026-08-15 — [VLT-02] SUG-API-013 bound vault `version` to the Postgres int4 range
 
 - `POST /vault`'s `version` field had no upper bound, but the column is `Int` (int4, max 2,147,483,647). An out-of-range value passed Zod, reached `upsertVault`, and a driver/Prisma range error surfaced as a generic 500 instead of a clean 4xx (G1: validate at the boundary, to the real storage contract).
