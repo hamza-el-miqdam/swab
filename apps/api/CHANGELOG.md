@@ -7,8 +7,10 @@
 ## 2026-08-15 — SUG-API-012 validate client-supplied x-request-id
 
 - `genReqId` now only honors `x-request-id` when it matches `/^[A-Za-z0-9._-]{1,64}$/`; anything else (over-long, malformed) falls back to `randomUUID()` as before. Headers are input too (G1) — an unbounded client-supplied value was stamped on every log line and echoed in every problem body.
-- Added an `onSend` hook that echoes `x-request-id` on ALL responses, not just RFC 7807 problem bodies, so clients can always correlate a success response with server logs (G3).
-- No client (iOS/Android/scripts) sends this header today, so the regex is a free hardening — nothing to migrate.
+- **Client-supplied ids are namespaced (`client-` prefix), never taken verbatim.** Shape validation alone was not enough: `randomUUID()` output itself satisfies the regex, so a caller could supply a *server-shaped* id — replaying one harvested from a response to interleave its log lines under another request's trace, or pinning one constant across all traffic to collapse `reqId` as a forensic key. The prefix keeps correlation working while making client-chosen ids self-evident in logs.
+- Added an `onSend` hook that echoes `x-request-id` on ALL responses, not just RFC 7807 problem bodies, so clients can always correlate a success response with server logs (G3). Note this also makes ids trivially harvestable, which is why the namespacing above is required rather than optional.
+- No client (iOS/Android/scripts) sends this header today, so both the regex and the prefix are free hardening — nothing to migrate.
+
 ## 2026-08-08 — [IDT-01, VLT-02] Real-Postgres integration tests for prisma-repo.ts (closes #22)
 
 - New `tests/prisma-repo.test.ts` exercises `findUserByPhoneHash`, `createUser`, `getVault`, `upsertVault` against a REAL Postgres — no Prisma mocking (G2). Covers the optimistic-concurrency conflict path and both the sequential and truly-concurrent `baseVersion === 0` race-to-create paths.
