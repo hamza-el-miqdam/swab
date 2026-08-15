@@ -4,6 +4,14 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-15 — Fix @repo/db CI race: typecheck/test/build now generate their own Prisma client
+
+- `turbo.json`: `lint`, `typecheck`, `test` and `build` depended only on `^db:generate` (`lint` had no `dependsOn` at all), which runs the task in *dependency* packages. `@repo/db` has no such dependency, so `@repo/db#typecheck` resolved to zero upstream tasks and raced `@repo/db#db:generate` — visible in CI logs as both starting in the same second.
+- Added the unprefixed `db:generate` alongside `^db:generate` so each package also waits for its own generator. Packages without the script skip it, so this is safe repo-wide.
+- `lint` is type-aware, so without the generated client every rule reports `Unsafe … of a type that could not be resolved` in `prisma/seed.ts` — same race, different task.
+- Effect: `main` has been red since 2026-08-10 with `@repo/db#typecheck` failing on `Module '"@prisma/client"' has no exported member 'PrismaClient'` (plus `EnvieStatus`, `MatchState`, `Platform`, `ProposalState` in `prisma/seed.ts`). Every PR inherited the same red `ci`, masking real breakage.
+- Gotcha: this never reproduced locally. A previously generated client persists in `node_modules/.pnpm/@prisma+client@…/node_modules/.prisma/client`, so `tsc` resolves the types regardless of task order; only CI's fresh `--frozen-lockfile` install exposes it.
+
 ## 2026-08-09 — Add tech-debt-audit skill to backend/web specialists
 
 - Extended the same `tech-debt-audit` (ksimback) skill documentation to `agents/backend-systems-specialist.md` and `agents/web-frontend-specialist.md` (new "Installed reference skills" section on each) — deliberate-invocation only via `/tech-debt-audit` or the Skill tool, scoped to `apps/api` / `apps/web` + `packages/ui` respectively.
