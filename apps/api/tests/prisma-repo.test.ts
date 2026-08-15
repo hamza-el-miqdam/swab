@@ -48,11 +48,14 @@ async function assertPostgresReachable(): Promise<void> {
     await prisma.$queryRaw`SELECT 1`;
   } catch (err) {
     const target = redactDatabaseUrl(process.env.DATABASE_URL ?? DEFAULT_LOCAL_DATABASE_URL);
-    const cause = err instanceof Error ? err.message : String(err);
+    const detail = err instanceof Error ? err.message : String(err);
     throw new Error(
       `Postgres unreachable at ${target} — run \`docker compose up -d db\` and ` +
         `\`pnpm --filter @repo/db db:deploy\` first, then re-run the tests. ` +
-        `(underlying error: ${cause})`,
+        `(underlying error: ${detail})`,
+      // Keep the driver error in the chain (eslint `preserve-caught-error`, new
+      // in eslint:recommended v10) — the message alone loses the stack.
+      { cause: err },
     );
   }
 }

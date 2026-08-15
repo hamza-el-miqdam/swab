@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-15 — Dependabot triage: 11 bumps merged, 4 declined
+
+- **Merged, all green:** eslint 9→10, pino 9→10, `@fastify/rate-limit` 10→11, the npm-minor-patch
+  group, gradle-wrapper 8.13→9.6.1, turbine 1.2.1, and five Actions pins (setup-java v5,
+  setup-node v7, cache v6, setup-gradle v6, gitleaks-action v3). gitleaks v3 was the one
+  time-critical bump: v2 runs on Node 20, removed from hosted runners 2026-09-16.
+- **`@eslint/js` bumped by hand to ^10.0.1** — Dependabot versions it separately, so it silently
+  held `eslint:recommended` at the v9 rule set. Aligning it surfaced `preserve-caught-error` (new
+  in v10), fixed in `apps/api/tests/prisma-repo.test.ts` with `{ cause: err }`. The two packages
+  no longer share a version line (10.8.1 vs 10.0.1) — expected, not drift.
+- **Gradle 9.6.1 verified locally against AGP 8.5.2** (CI only runs `./gradlew test`): jacoco, both
+  assembles and R8 `assembleRelease` pass. Gotcha: it now warns "incompatible with Gradle 10" —
+  AGP must be uplifted before any Gradle 10 bump.
+- **Declined, rationale on each closed PR:** Prisma 6→7 #36, node:22→26-slim #25 (no corepack in
+  the image), androidx.lifecycle 2.11 #32 (needs AGP ≥8.6), postgres 17→18 #24 (data dir moved).
+
 ## 2026-08-15 — [SUG-OPS-003/004] Trivy gate back to green (zero HIGH/CRITICAL)
 
 - `trivy-api-image` had been red since it landed — 23 findings (22 HIGH, 1 CRITICAL) from **two**
