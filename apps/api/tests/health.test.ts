@@ -45,4 +45,61 @@ describe("GET /health + GET /ready", () => {
     expect(res.headers["content-type"]).toContain("application/problem+json");
     expect(res.json<{ requestId: string }>().requestId).toBeTruthy();
   });
+
+  it("G1/G3: a well-formed x-request-id is honored (namespaced) and echoed", async () => {
+    const { app } = await makeApp();
+    const res = await app.inject({
+      method: "GET",
+      url: "/nope",
+      headers: { "x-request-id": "e2e-abc_1.2" },
+    });
+    // Honored for correlation, but never verbatim — see the forgery test below.
+    expect(res.json<{ requestId: string }>().requestId).toBe("client-e2e-abc_1.2");
+    expect(res.headers["x-request-id"]).toBe("client-e2e-abc_1.2");
+  });
+
+  it("G1/G3: a client cannot forge a server-shaped request id (log-forgery guard)", async () => {
+    const { app } = await makeApp();
+    // randomUUID() output itself satisfies the ID-shape regex, so without
+    // namespacing a caller could replay a victim's id (harvested from the
+    // echoed header) and interleave its log lines under that victim's trace.
+    const victimId = "550e8400-e29b-41d4-a716-446655440000";
+    const res = await app.inject({
+      method: "GET",
+      url: "/nope",
+      headers: { "x-request-id": victimId },
+    });
+    const forged = res.json<{ requestId: string }>().requestId;
+    expect(forged).not.toBe(victimId);
+    expect(forged).not.toMatch(/^[0-9a-f-]{36}$/); // never mistakable for a server UUID
+    expect(forged).toBe(`client-${victimId}`);
+  });
+
+  it("G1: an over-long or malformed x-request-id is replaced with a generated UUID", async () => {
+    const { app } = await makeApp();
+
+    const overLong = await app.inject({
+      method: "GET",
+      url: "/nope",
+      headers: { "x-request-id": "a".repeat(300) },
+    });
+    const overLongId = overLong.json<{ requestId: string }>().requestId;
+    expect(overLongId).toMatch(/^[0-9a-f-]{36}$/);
+
+    const malformed = await app.inject({
+      method: "GET",
+      url: "/nope",
+      headers: { "x-request-id": "bad id!\n" },
+    });
+    const malformedId = malformed.json<{ requestId: string }>().requestId;
+    expect(malformedId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(malformedId).not.toContain("bad id!");
+  });
+
+  it("G3: success responses carry x-request-id", async () => {
+    const { app } = await makeApp();
+    const res = await app.inject({ method: "GET", url: "/health" });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["x-request-id"]).toBeTruthy();
+  });
 });

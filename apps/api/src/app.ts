@@ -9,6 +9,16 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerVaultRoutes } from "./routes/vault.js";
 
+// Accept forwarded request IDs only when ID-shaped (G1: headers are input too).
+const REQUEST_ID_RE = /^[A-Za-z0-9._-]{1,64}$/;
+// ...and never verbatim. `randomUUID()` output itself satisfies REQUEST_ID_RE,
+// so an unauthenticated caller could otherwise supply a *server-shaped* id —
+// replaying one harvested from the echoed `x-request-id` header to interleave
+// its log lines under a victim's trace, or pinning one constant across all
+// traffic to collapse `reqId` as a forensic key (G3). Namespacing keeps the
+// correlation benefit while making client-chosen ids self-evident in the logs.
+const CLIENT_REQUEST_ID_PREFIX = "client-";
+
 export interface AppDeps {
   env: Env;
   repo: Repository;
@@ -33,7 +43,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
           },
     genReqId: (req) => {
       const incoming = req.headers["x-request-id"];
-      return typeof incoming === "string" && incoming.length > 0 ? incoming : randomUUID();
+      return typeof incoming === "string" && REQUEST_ID_RE.test(incoming)
+        ? `${CLIENT_REQUEST_ID_PREFIX}${incoming}`
+        : randomUUID();
     },
     // Vault blob is ≤1 MB raw; base64 adds ~33%, plus JSON envelope headroom.
     bodyLimit: 2 * 1024 * 1024,
@@ -50,6 +62,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       status: 429,
       detail: `Rate limit exceeded, retry in ${context.after}.`,
     }),
+  });
+
+  // G3: always echo the correlation id, not just on problem bodies, so clients
+  // can correlate success responses with logs too.
+  app.addHook("onSend", async (req, reply) => {
+    void reply.header("x-request-id", req.id);
   });
 
   app.setNotFoundHandler((req, reply) => {
