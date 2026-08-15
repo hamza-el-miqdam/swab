@@ -112,6 +112,43 @@ describe("GET /vault + POST /vault", () => {
     expect(expiredRes.statusCode).toBe(401);
   });
 
+  it("VLT-02/G1: a version beyond the int4 range is rejected 400, not 500", async () => {
+    const { app } = await makeApp();
+    const { accessToken } = await signup(app, PHONE_HASH_A, "Amina");
+    const auth = { authorization: `Bearer ${accessToken}` };
+    const blob = OPAQUE_BYTES.toString("base64");
+
+    const overInt4 = await app.inject({
+      method: "POST",
+      url: "/vault",
+      headers: auth,
+      payload: { blob, version: 2_147_483_647 },
+    });
+    expect(overInt4.statusCode).toBe(400);
+    expect(overInt4.headers["content-type"]).toContain("application/problem+json");
+
+    const wayOver = await app.inject({
+      method: "POST",
+      url: "/vault",
+      headers: auth,
+      payload: { blob, version: 2 ** 40 },
+    });
+    expect(wayOver.statusCode).toBe(400);
+    expect(wayOver.headers["content-type"]).toContain("application/problem+json");
+
+    // The top of the allowed range must still pass schema validation — the
+    // fake repo has no existing vault, so it 200s (a real one could 409, but
+    // never 400/500).
+    const atBound = await app.inject({
+      method: "POST",
+      url: "/vault",
+      headers: auth,
+      payload: { blob, version: 2_147_483_646 },
+    });
+    expect(atBound.statusCode).not.toBe(400);
+    expect(atBound.statusCode).not.toBe(500);
+  });
+
   it("VLT-02: GET before the first sync returns a 404 problem", async () => {
     const { app } = await makeApp();
     const { accessToken } = await signup(app, PHONE_HASH_A, "Amina");

@@ -14,9 +14,14 @@ const MAX_VAULT_BYTES = 1_048_576; // 1 MB per user (free-tier budget, VLT-03)
 
 const BASE64_RE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 
+// Vault.version maps to Postgres int4 (packages/db/prisma/schema.prisma) —
+// max 2,147,483,647. Bound one below it so a successful write's `+ 1` also fits.
+const MAX_VAULT_VERSION = 2_147_483_646;
+
 const vaultWriteSchema = z.object({
   blob: z.string().min(1).regex(BASE64_RE, "must be valid base64"),
-  version: z.number().int().min(0), // version the client's copy is based on; 0 = first write
+  // version the client's copy is based on; 0 = first write
+  version: z.number().int().min(0).max(MAX_VAULT_VERSION),
 });
 
 export interface VaultRouteDeps {
