@@ -4,6 +4,19 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-15 — [docs-hygiene] Stop listing unbuilt packages as if they exist
+
+- `CLAUDE.md` and `agents/_global-directives.md` named `apps/web`, `packages/api-client`,
+  `tools/orchestrator` alongside real packages with no "planned" marker — a G5 truthfulness
+  violation (`docs/STATUS.md` already correctly said "not created yet"). Every agent session reads
+  this sentence first, so it mis-primed every task.
+- Split each inventory sentence into what exists vs. "Planned, not yet created… see `docs/STATUS.md`".
+- Re-ran `node scripts/render-agents.mjs` to resync `.github/copilot-instructions.md` (the only
+  rendered copy that bakes in this sentence — `.claude/agents/*.md` and `.github/instructions/*.md`
+  use `@`-imports and needed no change).
+- Left forward-looking references alone on purpose (scope-guard's map, agent scope declarations,
+  `aidd-multi-agent-blueprint.md`, `docs/design-system.md`) — those already describe planned state.
+
 ## 2026-08-15 — Fix @repo/db CI race: typecheck/test/build now generate their own Prisma client
 
 - `turbo.json`: `lint`, `typecheck`, `test` and `build` depended only on `^db:generate` (`lint` had no `dependsOn` at all), which runs the task in *dependency* packages. `@repo/db` has no such dependency, so `@repo/db#typecheck` resolved to zero upstream tasks and raced `@repo/db#db:generate` — visible in CI logs as both starting in the same second.
