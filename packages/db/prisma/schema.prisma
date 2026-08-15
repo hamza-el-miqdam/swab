@@ -12,18 +12,19 @@ datasource db {
 }
 
 model User {
-  id          String        @id @default(cuid())
-  phoneHash   String        @unique @map("phone_hash") // E.164 hashed client-side — contact discovery without storing raw numbers (G1: no plaintext phone/email columns, ever)
-  displayName String        @map("display_name")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  vault       Vault?
-  devices     Device[]
-  linksOut    ContactLink[] @relation("owner")
-  linksIn     ContactLink[] @relation("target")
-  envies      Envie[]
-  matchesA    Match[]       @relation("userA")
-  matchesB    Match[]       @relation("userB")
-  proposals   Proposal[]
+  id               String           @id @default(cuid())
+  phoneHash        String           @unique @map("phone_hash") // E.164 hashed client-side — contact discovery without storing raw numbers (G1: no plaintext phone/email columns, ever)
+  displayName      String           @map("display_name")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  vault            Vault?
+  devices          Device[]
+  linksOut         ContactLink[]    @relation("owner")
+  linksIn          ContactLink[]    @relation("target")
+  envies           Envie[]
+  matchesA         Match[]          @relation("userA")
+  matchesB         Match[]          @relation("userB")
+  proposals        Proposal[]
+  envieRecipientOf EnvieRecipient[] @relation("envieRecipient")
 
   @@map("users")
 }
@@ -92,6 +93,7 @@ model EnvieRecipient {
   envieId     String   @map("envie_id")
   envie       Envie    @relation(fields: [envieId], references: [id], onDelete: Cascade)
   recipientId String   @map("recipient_id")
+  recipient   User     @relation("envieRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@id([envieId, recipientId])
