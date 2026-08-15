@@ -19,6 +19,9 @@
   (G1), not scan suppression. `dev`/`build` stages keep pnpm; they need it to install.
 - Gotcha: if a future runtime dep needs npm at boot, move that `rm` after the offending step
   rather than reinstating npm wholesale.
+- `scripts/scope-guard.mjs`: root `package.json` + `pnpm-lock.yaml` were in **no** area map, so
+  this PR tripped the guard. Added both to `area:sre`/`area:devops` (exact-match, so a package's
+  own manifest is still out of scope) with regression tests.
 
 ## 2026-08-15 — [docs-hygiene] Mechanical CI gate for G5's changelog/STATUS budgets
 
