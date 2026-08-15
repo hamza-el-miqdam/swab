@@ -112,6 +112,18 @@ RUN apt-get update -y \
  && apt-get install -y --no-install-recommends openssl \
  && rm -rf /var/lib/apt/lists/*
 
+# Least privilege (G1) + Trivy gate: this stage's entrypoint is `node
+# dist/server.js` and its HEALTHCHECK is `node -e` — neither shells out to npm,
+# npx or corepack/pnpm, so none of them belong in a deployable image. They are
+# also the ONLY source of the tar (CRITICAL), sigstore and ip-address findings
+# in the security.yml scan: all three come bundled inside the base image's npm
+# and have ZERO entries in pnpm-lock.yaml, so no pnpm override can reach them.
+# Deleting the bundle fixes the finding at its root instead of suppressing it.
+# Keep this OUT of the `dev` and `build` stages — both need pnpm to install.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
 ENV NODE_ENV=production
 WORKDIR /app
 

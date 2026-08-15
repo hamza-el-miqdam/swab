@@ -4,6 +4,22 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-15 — [SUG-OPS-003/004] Trivy gate back to green (zero HIGH/CRITICAL)
+
+- `trivy-api-image` had been red since it landed — 23 findings (22 HIGH, 1 CRITICAL) from **two**
+  sources needing two different fixes.
+- **Our lockfile** (`brace-expansion` 1/2/5, `fast-uri`, `find-my-way`, `js-yaml`, `nanoid`,
+  `picomatch`, `postcss`) → pinned to each advisory's minimum patched version via
+  `pnpm.overrides`. Transitive-only, so no new direct dependency (G4).
+- **npm bundled in `node:22-slim`** (`tar` CRITICAL, `sigstore`, `ip-address`) → unreachable by
+  any override (zero entries for all three in `pnpm-lock.yaml`), so the Dockerfile's **prod stage
+  now deletes npm/corepack/npx**: it runs `node dist/server.js` with a `node -e` HEALTHCHECK and
+  never shells out to a package manager — least-privilege (G1), not scan suppression. `dev`/
+  `build` keep pnpm. Gotcha: if a runtime dep ever needs npm at boot, move that `rm` later.
+- `scripts/scope-guard.mjs`: root `package.json` + `pnpm-lock.yaml` were in **no** area map, so
+  this PR tripped the guard. Added both to `area:sre`/`area:devops` (exact-match, so a package's
+  own manifest stays out of scope) with regression tests.
+
 ## 2026-08-15 — [docs-hygiene] Mechanical CI gate for G5's changelog/STATUS budgets
 
 - G5's "changelog entries ≤ 15 lines" and "STATUS.md notes 1-2 lines" were the only rules with no

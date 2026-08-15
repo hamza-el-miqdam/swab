@@ -22,5 +22,26 @@
     "turbo": "^2.5.0",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.62.1"
+  },
+  "pnpm": {
+    "comment-overrides": [
+      "Transitive-only CVE pins for the security.yml Trivy gate (zero HIGH/CRITICAL).",
+      "Every entry is a TRANSITIVE dependency we do not import directly — none is a new",
+      "dependency (G4), each is the minimum patched version named by the Trivy advisory.",
+      "Remove an entry once the direct parent ships a range that already excludes the CVE.",
+      "Packages bundled inside the base image's npm (tar, sigstore, ip-address) cannot be",
+      "fixed here — apps/api/Dockerfile's prod stage removes npm/corepack instead."
+    ],
+    "overrides": {
+      "brace-expansion@1": "^1.1.18",
+      "brace-expansion@2": "^2.1.4",
+      "brace-expansion@5": "^5.0.9",
+      "fast-uri": "^3.1.5",
+      "find-my-way": "^9.7.0",
+      "js-yaml": "^4.3.1",
+      "nanoid": "^3.3.18",
+      "picomatch": "^4.0.4",
+      "postcss": "^8.5.18"
+    }
   }
 }

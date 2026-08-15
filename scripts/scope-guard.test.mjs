@@ -99,6 +99,24 @@ const cases = [
     changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "CHANGELOG.md"],
     expect: { escaping: ["CHANGELOG.md"], schemaViolation: false, unlabeled: false },
   },
+  {
+    name: "area:devops owns the root workspace manifest + lockfile (pnpm.overrides, devDependencies)",
+    labels: ["area:devops"],
+    changedFiles: ["package.json", "pnpm-lock.yaml", "apps/api/Dockerfile"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "root package.json is an EXACT match — it must not cover a package's own manifest",
+    labels: ["area:devops"],
+    changedFiles: ["apps/api/package.json"],
+    expect: { escaping: ["apps/api/package.json"], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "root manifest is not silently granted to unrelated areas (area:ios)",
+    labels: ["area:ios"],
+    changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "package.json"],
+    expect: { escaping: ["package.json"], schemaViolation: false, unlabeled: false },
+  },
 ];
 
 for (const { name, labels, changedFiles, expect } of cases) {
