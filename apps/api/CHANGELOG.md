@@ -4,6 +4,12 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
+## 2026-08-15 — [VLT-02] SUG-API-013 bound vault `version` to the Postgres int4 range
+
+- `POST /vault`'s `version` field had no upper bound, but the column is `Int` (int4, max 2,147,483,647). An out-of-range value passed Zod, reached `upsertVault`, and a driver/Prisma range error surfaced as a generic 500 instead of a clean 4xx (G1: validate at the boundary, to the real storage contract).
+- Added `.max(2_147_483_646)` — one below the int4 cap so a successful write's `baseVersion + 1` also fits.
+- No compatibility risk: real clients increment by 1 per sync and are nowhere near the bound; this is hostile-input hardening only.
+
 ## 2026-08-15 — SUG-API-012 validate client-supplied x-request-id
 
 - `genReqId` now only honors `x-request-id` when it matches `/^[A-Za-z0-9._-]{1,64}$/`; anything else (over-long, malformed) falls back to `randomUUID()` as before. Headers are input too (G1) — an unbounded client-supplied value was stamped on every log line and echoed in every problem body.
