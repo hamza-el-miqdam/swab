@@ -188,6 +188,8 @@ val domainCoverageExcludes = listOf(
     "**/*\$WhenMappings*",
 )
 
+val classDir = layout.buildDirectory.dir("tmp/kotlin-classes/debug")
+
 tasks.register<JacocoReport>("jacocoDomainCoverage") {
     dependsOn("testDebugUnitTest")
     group = "verification"
@@ -198,7 +200,6 @@ tasks.register<JacocoReport>("jacocoDomainCoverage") {
         html.required.set(true)
     }
 
-    val classDir = layout.buildDirectory.dir("tmp/kotlin-classes/debug")
     classDirectories.setFrom(
         files(classDir).asFileTree.matching { exclude(domainCoverageExcludes) },
     )
@@ -206,6 +207,34 @@ tasks.register<JacocoReport>("jacocoDomainCoverage") {
     executionData.setFrom(
         files(layout.buildDirectory.file("jacoco/testDebugUnitTest.exec")),
     )
+}
+
+// SUG-AND-011: jacocoDomainCoverage only generates a report — nothing failed
+// the build when coverage dropped, so the 80% floor (G2) was self-reported,
+// not enforced. This mirrors the report task's exact class/source/exec-data
+// wiring and fails the build below the floor.
+tasks.register<JacocoCoverageVerification>("jacocoDomainCoverageVerification") {
+    dependsOn("testDebugUnitTest")
+    group = "verification"
+    description = "Fails if Wave-1 domain line coverage < 80% (G2)."
+
+    classDirectories.setFrom(files(classDir).asFileTree.matching { exclude(domainCoverageExcludes) })
+    sourceDirectories.setFrom(files("src/main/kotlin"))
+    executionData.setFrom(files(layout.buildDirectory.file("jacoco/testDebugUnitTest.exec")))
+
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("jacocoDomainCoverageVerification")
 }
 
 tasks.withType<Test>().configureEach {
