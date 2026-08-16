@@ -6,7 +6,7 @@
 
 _Last updated: 2026-08-16_
 
-> **Native migration complete.** Mobile is native `apps/ios` (Swift/SwiftUI) + `apps/android` (Kotlin/Compose); Expo RN knowledge preserved in `docs/migration/`. Both platforms' full E2E suites are green as a hard Definition-of-Done gate (`scripts/e2e-{ios,android}.sh`, zero drift, requirement manifest in `docs/qa/`). Known open items: FS-03 on-device walkthrough, E2E not yet wired into CI — see `docs/migration/rn-audit-map.md`.
+> **Native migration complete.** Mobile is native `apps/ios` + `apps/android`; RN knowledge in `docs/migration/` (see its README for what is still binding). Both E2E suites are a hard DoD gate (`scripts/e2e-{ios,android}.sh`). Open: FS-03 on-device walkthrough, E2E not in CI.
 
 ## Modules (functional specs)
 

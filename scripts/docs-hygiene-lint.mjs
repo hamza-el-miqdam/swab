@@ -23,6 +23,23 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 export const GRANDFATHER_DATE = "2026-08-15"; // entries before this predate the guard
 export const MAX_ENTRY_LINES = 15; // G5: "keep entries ≤ ~15 lines"
 export const MAX_STATUS_LINE_CHARS = 450; // G5: "keep notes to 1-2 lines"
+// Per-entry budgets alone don't stop a changelog growing without bound: the
+// root file reached 111 KB / 94 entries while every recent entry was compliant.
+// A file that large stops being read, and costs ~28k tokens if an agent does
+// read it. Cap the whole file and archive under docs/archive/ when it trips.
+export const MAX_CHANGELOG_CHARS = 40000;
+
+/**
+ * Pure function: is this changelog over its whole-file budget? Returns null
+ * when within budget, else `{ chars, max }`. Archiving is the remedy — move
+ * the oldest entries to `docs/archive/<name>-pre-<date>.md` with a pointer
+ * both ways; never delete, git history and the archive both keep them.
+ */
+export function findOversizedFile(markdown, options = {}) {
+  const { maxChars = MAX_CHANGELOG_CHARS } = options;
+  const chars = markdown.length;
+  return chars > maxChars ? { chars, max: maxChars } : null;
+}
 
 /**
  * Pure function: given a changelog's full markdown text, return the entries
@@ -93,6 +110,14 @@ function main() {
 
   for (const path of listChangelogPaths()) {
     const content = readFileSync(path, "utf8");
+    const oversizedFile = findOversizedFile(content);
+    if (oversizedFile) {
+      console.error(
+        `${path}: file is ${oversizedFile.chars} chars, over the ${oversizedFile.max} budget — ` +
+          `archive the oldest entries to docs/archive/ and link both ways (move, never delete).`,
+      );
+      hasViolations = true;
+    }
     for (const { heading, lines } of findOversizedEntries(content)) {
       console.error(`${path}: entry exceeds ${MAX_ENTRY_LINES} lines (${lines}) — ${heading}`);
       hasViolations = true;
@@ -111,8 +136,8 @@ function main() {
   if (hasViolations) {
     console.error(
       "\ndocs-hygiene-lint: FAIL — G5 (agents/_global-directives.md): changelog entries ≤ 15 " +
-        "lines, docs/STATUS.md notes 1-2 lines. Split the PR or trim the entry/row; move detail " +
-        "into the PR description or docs/ instead.",
+        `lines, changelog files ≤ ${MAX_CHANGELOG_CHARS} chars, docs/STATUS.md notes 1-2 lines. ` +
+        "Split the PR, trim the entry/row, or archive old entries to docs/archive/.",
     );
     process.exitCode = 1;
     return;

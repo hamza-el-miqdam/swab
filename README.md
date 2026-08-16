@@ -276,7 +276,7 @@ pnpm --filter @repo/db db:generate         # regenerate Prisma client
 Comprehensive documentation is in the `./docs/` folder:
 
 *   **[docs/STATUS.md](./docs/STATUS.md)** — **What is done** — implementation status per module and per infrastructure item (start here to see where the project stands)
-*   **Changelogs** — per-area history: [mobile](./apps/mobile/CHANGELOG.md) · [api](./apps/api/CHANGELOG.md) · [db](./packages/db/CHANGELOG.md) · [root](./CHANGELOG.md) (devops/docs/tooling). Every change lands with an entry (rule G5).
+*   **Changelogs** — per-area history: [ios](./apps/ios/CHANGELOG.md) · [android](./apps/android/CHANGELOG.md) · [api](./apps/api/CHANGELOG.md) · [db](./packages/db/CHANGELOG.md) · [root](./CHANGELOG.md) (devops/docs/tooling). Every change lands with an entry (rule G5). Entries before 2026-08-15 are in [docs/archive/](./docs/archive/) — moved, not deleted.
 *   **[docs/README.md](./docs/README.md)** — Doc index and MVP module map
 *   **[docs/product-overview.md](./docs/product-overview.md)** — Vision, personas, glossary, MVP scope (start here for understanding the product)
 *   **[docs/agent-playbook.md](./docs/agent-playbook.md)** — How specifications are turned into code, requirement traceability, Definition of Ready/Done

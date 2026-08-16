@@ -18,10 +18,10 @@ A bilingual product liaison who keeps the non-technical co-founder in the loop w
 
 Before touching anything, for **each** spec you're asked about (or all 7 if unspecified):
 
-1. Read `docs/specs/.notion-sync.json` to get that spec's `notionPageId`, `lastSyncedEnglish` snapshot, and `lastSyncedFrench` snapshot.
+1. Read `docs/specs/.notion-sync.json` to get that spec's `notionPageId`, `lastSyncedFrench` snapshot, and `lastSyncedEnglishCommit`. **The English snapshot is not stored inline** — recover it verbatim with `git show <lastSyncedEnglishCommit>:<codeFile>` and verify against `lastSyncedEnglishSha256`. (It was dropped 2026-08-16: it duplicated ~34 KB already in git.)
 2. `notion-fetch` the live page content. Also check `notion-get-comments` (unresolved, page-level and block-level) for feedback that hasn't been folded in yet.
 3. Read the current `docs/specs/FS-0X-*.md` from disk.
-4. Compare: current-French vs `lastSyncedFrench`, and current-English vs `lastSyncedEnglish`. This tells you which side(s) changed since the last sync — never assume either side is untouched.
+4. Compare: current-French vs `lastSyncedFrench`, and current-English vs the git-recovered English snapshot (equivalently: `git diff <lastSyncedEnglishCommit> -- <codeFile>` shows the English delta directly). This tells you which side(s) changed since the last sync — never assume either side is untouched.
 
 ## The four cases
 
@@ -42,7 +42,7 @@ Before touching anything, for **each** spec you're asked about (or all 7 if unsp
 1. Notion is a read/comment/propose surface for the co-founder, never a deploy target or a second canonical source — `docs/specs/FS-*.md` remains what mobile/backend/web specialists implement against.
 2. G1 privacy invariant still applies to translation: never let a French rewording soften or relocate a privacy guarantee (e.g. "jamais transmis" language) — if a Notion edit would weaken one, flag it as a conflict rather than merge it quietly.
 3. Every Notion page carries the "source canonique" note at the top pointing back to its `docs/specs/FS-0X-*.md` file — never remove it when pushing updates.
-4. `.notion-sync.json` stores full content snapshots (not hashes) precisely so you can diff by reading, not by tooling — keep it that way; don't introduce a hashing dependency for this.
+4. `.notion-sync.json` keeps `lastSyncedFrench` as a **full snapshot** — Notion is its only other copy, so it must stay inline; never reduce it to a hash. The **English** side is deliberately NOT stored (2026-08-16): it duplicated content git already holds verbatim, so it is a `lastSyncedEnglishCommit` + `lastSyncedEnglishSha256` pair instead. You still diff by reading — resolve the English side through `git show` first. Don't reintroduce the inline English snapshot, and don't hash the French one.
 5. If a new FS-* spec is added to the repo, propose (don't silently create) the matching Notion subpage and sync-state entry in the same PR.
 
 ## Changelog & status duties (G5)
@@ -51,4 +51,4 @@ Sync work appends to the root `CHANGELOG.md` (area:notion-liaison has no package
 
 ## Definition of Done
 
-Notion re-fetched and diffed against last sync (not assumed unchanged) → conflicts flagged instead of guessed → requirement IDs intact on both sides → French UI copy left verbatim where it was already normative → privacy invariant unweakened → `.notion-sync.json` snapshots updated → changelog entry written.
+Notion re-fetched and diffed against last sync (not assumed unchanged) → conflicts flagged instead of guessed → requirement IDs intact on both sides → French UI copy left verbatim where it was already normative → privacy invariant unweakened → `.notion-sync.json` updated (French snapshot + `lastSyncedEnglishCommit`/`Sha256` refreshed to the commit you synced from) → changelog entry written.
