@@ -1,14 +1,19 @@
-import { prisma } from "@repo/db";
+import { Prisma, prisma, type PrismaClient } from "@repo/db";
 import type { Repository, VaultWriteResult } from "./repo.js";
 
 /**
  * Prisma-backed Repository. Read-only consumer of @repo/db — schema changes
  * go through area:db issues to the Data Steward.
+ *
+ * `client` defaults to the shared singleton; SUG-API-003's unit tests inject
+ * a stub to exercise upsertVault's error-mapping branches without a real
+ * Postgres (tests/prisma-repo-error-mapping.test.ts) — the real CAS/create
+ * semantics stay real-Postgres-only in tests/prisma-repo.test.ts.
  */
-export function prismaRepository(): Repository {
+export function prismaRepository(client: PrismaClient = prisma): Repository {
   return {
     async findUserByPhoneHash(phoneHash) {
-      const user = await prisma.user.findUnique({
+      const user = await client.user.findUnique({
         where: { phoneHash },
         select: { id: true, phoneHash: true, displayName: true },
       });
@@ -16,14 +21,14 @@ export function prismaRepository(): Repository {
     },
 
     async createUser(phoneHash, displayName) {
-      return prisma.user.create({
+      return client.user.create({
         data: { phoneHash, displayName },
         select: { id: true, phoneHash: true, displayName: true },
       });
     },
 
     async getVault(userId) {
-      const vault = await prisma.vault.findUnique({ where: { userId } });
+      const vault = await client.vault.findUnique({ where: { userId } });
       if (vault === null) return null;
       return {
         userId: vault.userId,
@@ -36,30 +41,44 @@ export function prismaRepository(): Repository {
     async upsertVault(userId, blob, baseVersion): Promise<VaultWriteResult> {
       if (baseVersion === 0) {
         try {
-          const created = await prisma.vault.create({
+          const created = await client.vault.create({
             data: { userId, blob, version: 1 },
             select: { version: true },
           });
           return { ok: true, version: created.version };
-        } catch {
-          // Unique violation: a vault already exists — report its version (VLT-02).
-          const current = await prisma.vault.findUnique({
+        } catch (err) {
+          // Only a unique violation means "a vault already exists" (VLT-02) —
+          // anything else (dropped connection, pool timeout, ...) must not be
+          // swallowed into a false 409, or the client loops retrying forever
+          // against a transient infra failure. Rethrow → global error handler
+          // logs it and returns 500 (app.ts).
+          if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== "P2002") {
+            throw err;
+          }
+          const current = await client.vault.findUnique({
             where: { userId },
             select: { version: true },
           });
-          return { ok: false, currentVersion: current?.version ?? 0 };
+          // The row that caused the unique violation vanished before this
+          // read — self-contradictory state, surface it rather than report a
+          // fabricated "conflict with version 0".
+          if (current === null) throw err;
+          return { ok: false, currentVersion: current.version };
         }
       }
       // Compare-and-swap on version — the WHERE clause is the race arbiter.
-      const updated = await prisma.vault.updateMany({
+      const updated = await client.vault.updateMany({
         where: { userId, version: baseVersion },
         data: { blob, version: baseVersion + 1 },
       });
       if (updated.count === 1) return { ok: true, version: baseVersion + 1 };
-      const current = await prisma.vault.findUnique({
+      const current = await client.vault.findUnique({
         where: { userId },
         select: { version: true },
       });
+      // Unlike the first-write branch, baseVersion > 0 against no row is a
+      // legitimate client-protocol state (their local copy is stale/wrong) —
+      // 0 correctly means "you have no vault; retry with version 0".
       return { ok: false, currentVersion: current?.version ?? 0 };
     },
   };

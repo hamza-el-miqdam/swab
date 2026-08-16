@@ -4,6 +4,12 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
+## 2026-08-16 — [VLT-02] SUG-API-003 upsertVault no longer masks real DB failures as a 409 conflict
+
+- First-write branch of `upsertVault` (`prisma-repo.ts`) had a bare `catch`: a dropped connection or pool timeout was indistinguishable from a unique-violation, so it was reported as `{ ok: false }` → the route always answered 409 "Stale vault version" — an infinite retry loop on a transient infra error, with the real cause never logged. Now only `Prisma.PrismaClientKnownRequestError` with `code === "P2002"` maps to a conflict; everything else rethrows, hits the global error handler, and returns a logged 500.
+- Also rethrows if the row that caused the P2002 has vanished by the follow-up `findUnique` (self-contradictory state) instead of silently reporting `currentVersion: 0`. The `baseVersion > 0` CAS branch's `?? 0` fallback is unchanged — there, "no row" legitimately means "retry with version 0".
+- `prismaRepository()` now takes an optional `client: PrismaClient = prisma` param so the error-mapping branches can be unit-tested with a stub (`tests/prisma-repo-error-mapping.test.ts`) without touching real Postgres or `tests/prisma-repo.test.ts`'s integration suite (backend rule 7: no Prisma mocking in integration tests — this is a separate unit-test file).
+
 ## 2026-08-16 — SUG-API-016 global error handler no longer echoes internal messages as titles
 
 - `setErrorHandler` (`app.ts`) passed any thrown 4xx error's raw `.message` through verbatim as the RFC 7807 `title` — an allowlist-free passthrough, and the handler's contract per the file's own G1/G3 comments should be an allowlist, not "whatever message the throwing layer produced".
