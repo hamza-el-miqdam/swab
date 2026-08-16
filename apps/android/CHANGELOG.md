@@ -10,7 +10,7 @@
 - **Gotcha:** `getOrCreateVaultKey()` still *throws* on failure by design — `Vault.hydrate()`/`persist()` catch it to surface `Unreadable` (SUG-AND-004). Only the token reads fail closed to `null`. Do not "helpfully" make the vault path return null.
 - Migration: any value that does not decrypt — including a pre-2026-08-16 plaintext token — reads as `null`, i.e. logged out, and the user re-auths via OTP. Deliberately no JWT-shape sniffing: silently re-encrypting an attacker-planted value is worse than a re-login.
 - `SecureTokenStore.getRefreshToken()` added (needed by SUG-AND-007). Tests: 132 JVM green; 14 new/regression instrumented tests green on API 34.
-- **E2E gate NOT run** — no Docker/Postgres in this environment, so the API preflight fails; 20 onboarding-dependent tests time out for that reason on any emulator. Separately, the API-37 AVD breaks Espresso entirely (see issue #56). Gate must be run before release.
+- **E2E gate PASS — 37/37, zero drift** (`scripts/e2e-android.sh`, Pixel_6_Pro API 34). This covers the integrated signup → save-tokens → authenticated-request path, not just the unit round-trip. **Gotcha for the next person:** the gate needs no Docker — boot the API with `buildApp({ repo: fakeRepository(), dbHealth: stub })` and a dummy `DATABASE_URL` (only Prisma reads it) plus `OTP_DEV_CODE=enabled`. It DOES need an **API 34** emulator: on API 37 the pinned Espresso dies in `onIdle` with `NoSuchMethodException: InputManager.getInstance` before any app code runs (issue #56).
 
 ## 2026-08-16 — [VLT-01, VLT-05, MAP-05] SUG-AND-004 a corrupt blob or lost Keystore key no longer crashes the app
 
