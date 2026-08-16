@@ -92,4 +92,17 @@ class CarteViewModelTest {
         vm.clearSelection()
         assertNull(vm.selected.value)
     }
+
+    @Test
+    fun `VLT-05 vaultUnreadable reflects an undecryptable vault instead of crashing`() = runTest {
+        val kv = InMemoryKeyValueStore()
+        kv.set("vault.blob.v1", "AAAA") // truncated — see VaultCorruptionTest
+        val vault = Vault(kv, InMemoryVaultKeyStore())
+
+        val vm = CarteViewModel(vault)
+        advanceUntilIdle()
+
+        assertTrue(vm.vaultUnreadable.value)
+        assertTrue(vm.contacts.value.isEmpty())
+    }
 }

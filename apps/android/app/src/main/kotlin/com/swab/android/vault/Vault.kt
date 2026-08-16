@@ -69,6 +69,18 @@ data class VaultData(
 
 data class EncryptedVaultBlob(val blob: String, val version: Int)
 
+/**
+ * VLT-05 — whether the last hydration attempt could make sense of the
+ * on-disk blob. [Unreadable] covers a tampered/truncated blob, a wrong or
+ * lost Keystore key, and malformed plaintext alike (SUG-AND-004): the app
+ * must never crash on any of these, only report the honest "can't read
+ * this" state.
+ */
+sealed interface VaultLoadState {
+    data object Ok : VaultLoadState
+    data object Unreadable : VaultLoadState
+}
+
 class Vault(
     private val kv: KeyValueStore,
     private val keyStore: VaultKeyStore,
@@ -87,6 +99,7 @@ class Vault(
 
     private var cache: VaultData? = null
     private var version: Int = 1
+    private var loadState: VaultLoadState = VaultLoadState.Ok
 
     private suspend fun hydrate(): VaultData {
         val cached = cache
@@ -101,17 +114,49 @@ class Vault(
             cache = fresh
             return fresh
         }
-        val key = keyStore.getOrCreateVaultKey()
-        val decoded = json.decodeFromString<VaultData>(VaultCrypto.decrypt(blob, key))
-        cache = decoded
-        return decoded
+        // VLT-05 / SUG-AND-004: a tampered/truncated blob (AEADBadTagException,
+        // IllegalArgumentException/ArrayIndexOutOfBoundsException from a short
+        // payload), a lost/invalidated Keystore key, or malformed plaintext
+        // (SerializationException) must never crash the app — surface an
+        // honest Unreadable state instead. Keep the empty result in-memory
+        // only; the on-disk blob is left untouched so a future fix (or the
+        // server's copy) can still recover it.
+        return try {
+            val key = keyStore.getOrCreateVaultKey()
+            val decoded = json.decodeFromString<VaultData>(VaultCrypto.decrypt(blob, key))
+            loadState = VaultLoadState.Ok
+            cache = decoded
+            decoded
+        } catch (e: Exception) {
+            loadState = VaultLoadState.Unreadable
+            val fresh = VaultData()
+            cache = fresh
+            fresh
+        }
+    }
+
+    /** VLT-05 — hydrates first, then reports whether the on-disk blob could be read. */
+    suspend fun loadState(): VaultLoadState = mutex.withLock {
+        hydrate()
+        loadState
     }
 
     private suspend fun persist(data: VaultData) {
-        val key = keyStore.getOrCreateVaultKey()
-        version += 1
-        kv.set(BLOB_KEY, VaultCrypto.encrypt(json.encodeToString(VaultData.serializer(), data), key))
-        kv.set(VERSION_KEY, version.toString())
+        // SUG-AND-004: writes are rejected while the vault is Unreadable — a
+        // fresh empty vault must never silently clobber a corrupt-but-maybe-
+        // recoverable blob, nor push garbage over the server's good copy.
+        if (loadState == VaultLoadState.Unreadable) return
+        try {
+            val key = keyStore.getOrCreateVaultKey()
+            version += 1
+            kv.set(BLOB_KEY, VaultCrypto.encrypt(json.encodeToString(VaultData.serializer(), data), key))
+            kv.set(VERSION_KEY, version.toString())
+        } catch (e: Exception) {
+            // A previously-healthy vault whose Keystore key just became
+            // unusable (OS upgrade, keystore reset) — same honest state,
+            // never a crash.
+            loadState = VaultLoadState.Unreadable
+        }
     }
 
     /** Fresh copy — never a live reference into the cache. */

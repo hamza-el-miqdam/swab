@@ -2,6 +2,14 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-16 — [VLT-01, VLT-05, MAP-05] SUG-AND-004 a corrupt blob or lost Keystore key no longer crashes the app
+
+- `Vault.hydrate()` decrypted+decoded with zero error handling — a tampered/truncated blob, a lost/invalidated Keystore key, or malformed plaintext threw an uncaught exception inside `viewModelScope.launch` (no `CoroutineExceptionHandler`), crashing the process. Since Carte hydrates on launch, one corrupt byte on disk meant a permanent crash loop.
+- Added `VaultLoadState` (`Ok`/`Unreadable`) and `Vault.loadState()`. `hydrate()` now catches the decrypt/decode/Keystore failure, sets `Unreadable`, and keeps an empty in-memory `VaultData` — the on-disk blob is left untouched so it stays recoverable. `persist()` rejects writes while `Unreadable` (no-op, not a thrown exception, so unguarded ViewModel callers still can't crash) and also catches a Keystore failure that surfaces only on write.
+- `CarteViewModel.vaultUnreadable` surfaces the state; `CarteScreen` shows a calm line (`Fr.CARTE_VAULT_UNREADABLE`, placeholder copy — `⚠️ ASSUMPTION`, mirrors the `FICHE_STALE_TITLE` precedent) instead of hiding the failure behind a quietly-empty map.
+- New `VaultCorruptionTest` (truncated blob, wrong-key/tampered blob, no-overwrite-while-unreadable, healthy-blob regression) + one `CarteViewModelTest` case. `./gradlew test`: all suites green.
+- Not done: `FicheViewModel`/`ContactsViewModel` still read the vault unguarded — same failure mode on those screens is a follow-up, not required to fix Carte's launch crash.
+
 ## 2026-08-15 — [SUG-AND-011] Enforce the G2 80% domain-coverage floor, don't just report it
 
 - `jacocoDomainCoverage` generated an XML/HTML report but nothing failed the build below the 80% floor — the numbers quoted in this changelog were self-reported from manual runs. Added `jacocoDomainCoverageVerification` (`JacocoCoverageVerification`), reusing the exact `classDirectories`/`sourceDirectories`/`executionData` wiring (hoisted `classDir` to file scope so both tasks share it) and the same `domainCoverageExcludes` scope, so report and gate can never disagree.

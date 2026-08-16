@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.swab.android.vault.Vault
 import com.swab.android.vault.VaultContact
+import com.swab.android.vault.VaultLoadState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +34,10 @@ class CarteViewModel(private val vault: Vault) : ViewModel() {
     private val _selected = MutableStateFlow<VaultContact?>(null)
     val selected: StateFlow<VaultContact?> = _selected.asStateFlow()
 
+    /** VLT-05 / SUG-AND-004: true when the on-disk vault could not be decrypted. */
+    private val _vaultUnreadable = MutableStateFlow(false)
+    val vaultUnreadable: StateFlow<Boolean> = _vaultUnreadable.asStateFlow()
+
     init {
         refresh()
     }
@@ -45,7 +50,10 @@ class CarteViewModel(private val vault: Vault) : ViewModel() {
      * screen itself doesn't exist yet, but this refresh seam is ready.
      */
     fun refresh() {
-        viewModelScope.launch { _contacts.value = vault.getContacts() }
+        viewModelScope.launch {
+            _contacts.value = vault.getContacts()
+            _vaultUnreadable.value = vault.loadState() == VaultLoadState.Unreadable
+        }
     }
 
     fun setListMode(value: Boolean) {
