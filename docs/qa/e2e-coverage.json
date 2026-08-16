@@ -421,7 +421,7 @@
       "android": {
         "status": "not-e2e-verifiable"
       },
-      "notes": "Refresh rotation + reuse detection not yet implemented server-side (no /auth/refresh endpoint) — no test exists yet. Reclass to api-integration when the FS-07 backend session work lands. Only the refresh-token-rejected-as-access case is covered (apps/api vault.test.ts)."
+      "notes": "Refresh rotation + reuse detection not yet implemented server-side (no /auth/refresh endpoint) — no test exists yet. Reclass to api-integration when the FS-07 backend session work lands. Only the refresh-token-rejected-as-access case is covered (apps/api vault.test.ts). At-rest protection of both tokens IS covered on-device by KeystoreTokenStoreTest (SUG-AND-006, 2026-08-16): round-trip, not-plaintext-at-rest, distinct ciphertexts, fail-closed on an undecryptable value. The class stays not-e2e-verifiable because the OTHER half of IDT-02 — refresh rotation and reuse-detection family revocation — is not implemented yet (SUG-API-002); promote to automated only when that ships and is driven end-to-end."
     },
     "IDT-03": {
       "fs": "FS-07",
