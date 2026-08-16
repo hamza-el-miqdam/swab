@@ -4,6 +4,13 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-16 — [G2 E2E gate] Android E2E runnable without Docker; fail fast on unsupported emulator images
+
+- `scripts/e2e-android.sh` now points at `pnpm --filter @repo/api dev:local` (no database) alongside the `docker compose` route when its API preflight fails, so a missing Docker daemon no longer reads as "the gate cannot be run here". It could always be run — nobody had noticed the API's persistence is an injected seam.
+- **New preflight: emulator API level.** The pinned Espresso reflectively calls `android.hardware.input.InputManager.getInstance()`, removed in newer platforms, so on API ≥ 35 every Compose UI test dies inside `Espresso.onIdle` before any app code runs — 23/37 failures with nothing app-side to fix. The script now refuses to start and names the cause, instead of leaving someone to debug bogus failures. Override with `ALLOW_UNSUPPORTED_API=1`.
+- **Gotcha:** API 34 is the known-good image (the `Pixel_6_Pro` AVD); API 37 is not. Remove this guard once issue #56 bumps `androidx.test`/Espresso and the suite is green on a current image.
+- Verified on this machine: full gate PASS 37/37, zero drift, on API 34 with the no-database API.
+
 ## 2026-08-16 — [#64, SGR-01/05/07, FLT-06, FCH-01/04, ONB-02, ENV-19, MAP-01/05, VLT-01..10] Reconcile all seven specs with ADR-001
 
 - Full read of FS-01..07 against ADR-001 and line-level reconciliation (issue #64). FS-04 and FS-06 carried the most contradictions (`SGR-07` "the server never sees subgroup structure", `FLT-06` "exist only on-device") — both unbuilt, so cheap to correct. FS-02 needed wording only: offline-first rendering survives intact, vault → cache.
