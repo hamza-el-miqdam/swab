@@ -2,6 +2,16 @@
 
 > Newest first. Format: `## YYYY-MM-DD — [REQ-IDs] title` + what/why/gotchas, ≤ ~15 lines per entry (G5).
 
+## 2026-08-16 — [IDT-02, VLT-01] SUG-AND-006 session tokens are Keystore-encrypted at rest (were plaintext)
+
+- `KeystoreTokenStore` wrote both JWTs as **plaintext** into DataStore despite its name; `Session.kt` claimed "Production storage is Keystore-backed". Neither was true. The refresh token is a long-lived credential, so a rooted device or a bad extraction path yielded account takeover (`allowBackup="false"` helps but is not encryption). ADR-001 raised the stakes: with classification data now server-side, the session token is the only thing guarding a user's whole relationship map.
+- New `security/KeystoreEnvelope.kt` holds the envelope crypto, extracted from `AndroidKeystoreVaultKeyStore` so both callers share one proven implementation. Tokens use a **separate alias** `swab.session.wrap.v1` — clearing or invalidating one must not affect the other.
+- **Gotcha (do not change):** the vault alias `swab.vault.wrap.v1`, the kv key, and the `IV ‖ CT ‖ TAG` on-disk layout are byte-identical after the extraction — altering any of them bricks every installed vault. `LegacyVaultCompatE2ETest` passing on-device is the proof.
+- **Gotcha:** `getOrCreateVaultKey()` still *throws* on failure by design — `Vault.hydrate()`/`persist()` catch it to surface `Unreadable` (SUG-AND-004). Only the token reads fail closed to `null`. Do not "helpfully" make the vault path return null.
+- Migration: any value that does not decrypt — including a pre-2026-08-16 plaintext token — reads as `null`, i.e. logged out, and the user re-auths via OTP. Deliberately no JWT-shape sniffing: silently re-encrypting an attacker-planted value is worse than a re-login.
+- `SecureTokenStore.getRefreshToken()` added (needed by SUG-AND-007). Tests: 132 JVM green; 14 new/regression instrumented tests green on API 34.
+- **E2E gate NOT run** — no Docker/Postgres in this environment, so the API preflight fails; 20 onboarding-dependent tests time out for that reason on any emulator. Separately, the API-37 AVD breaks Espresso entirely (see issue #56). Gate must be run before release.
+
 ## 2026-08-16 — [VLT-01, VLT-05, MAP-05] SUG-AND-004 a corrupt blob or lost Keystore key no longer crashes the app
 
 - `Vault.hydrate()` decrypted+decoded with zero error handling — a tampered/truncated blob, a lost/invalidated Keystore key, or malformed plaintext threw an uncaught exception inside `viewModelScope.launch` (no `CoroutineExceptionHandler`), crashing the process. Since Carte hydrates on launch, one corrupt byte on disk meant a permanent crash loop.

@@ -182,6 +182,7 @@ val domainCoverageExcludes = listOf(
     "**/DataStoreKeyValueStore*",
     "**/AndroidKeystoreVaultKeyStore*",
     "**/KeystoreTokenStore*",
+    "**/KeystoreEnvelope*",
     "**/HttpUrlConnectionTransport*",
     "**/Routes*",
     "**/ComposableSingletons*",
