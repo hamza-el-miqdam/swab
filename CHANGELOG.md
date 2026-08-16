@@ -4,6 +4,15 @@
 > Per-area history: [apps/ios](apps/ios/CHANGELOG.md) · [apps/android](apps/android/CHANGELOG.md) · [apps/api](apps/api/CHANGELOG.md) · [packages/db](packages/db/CHANGELOG.md).
 > Format: `## YYYY-MM-DD — title` then bullets, ≤ ~15 lines per entry (G5). Updating the right changelog is part of every Definition of Done.
 
+## 2026-08-16 — [ADR-001, FS-07 VLT-01..06, IDT-05, OQ-IDT-2] Retire end-to-end encryption; database becomes the single source of truth
+
+- **Decision (founder):** relationship classification data (intimité, rôles, état, ressenti, filter rules, subgroups, history) moves from the on-device encrypted vault into server-side Postgres columns. Recorded in the repo's first ADR, `docs/decisions/ADR-001-server-side-classification-data.md`, including the alternatives rejected and the costs accepted.
+- **Why:** device loss/theft/replacement previously meant permanent, unrecoverable data loss (old VLT-05) with no recovery path built, plus the cost of maintaining encrypted dual state. Recovery is now ordinary re-authentication. Resolves the long-standing OQ-IDT-2.
+- **Rules updated so agents stop enforcing the retired invariant:** G1 in `agents/_global-directives.md`, `CLAUDE.md` hard boundaries, spec-kit constitution (**1.1.0 → 2.0.0**, MAJOR — a principle is redefined incompatibly), and the six specialist agent files that carried their own copies (ios, android, backend, data, design, specs). Renders regenerated via `node scripts/render-agents.mjs`.
+- **Honesty pass:** product law 4's « ni eux, ni nous » claim and the design-system reassurance copy (« elle ne voit jamais votre classement ») are now false and were rewritten. New VLT-06 forbids any copy implying E2EE. What still holds — no other user sees your classement, one-directional links (IDT-08), strictly mutual reveal, nothing in logs — is restated rather than dropped.
+- **Gotcha — priorities changed:** with no client-side encryption, the session token is now the only thing guarding a user's full dataset. `SUG-AND-006` (JWTs stored as plaintext in DataStore despite the `KeystoreTokenStore` name) and `SUG-API-002` (refresh rotation + reuse detection) are upgraded to high impact and should land **before** the migration, not after.
+- **Not built yet.** This PR is the decision and the doc layer only. Follow-up stages, in order: schema (`area:db`) → API (`area:backend`) → clients (`area:ios`/`area:android`) → `suggestions/` backlog re-triage. `docs/migration/vault-test-vectors.json` and the vault wire format are now historical; do not build new work against them.
+
 ## 2026-08-15 — Dependabot triage: 12 bumps merged, 8 declined
 
 - **Merged, all green:** eslint 9→10, pino 9→10, `@fastify/rate-limit` 10→11, the npm-minor-patch

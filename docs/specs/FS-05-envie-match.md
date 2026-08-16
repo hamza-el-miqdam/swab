@@ -20,7 +20,7 @@ The core loop. Emission: « verbe → portée → filtrage transparent → envoi
 | ENV-02 | Scope picker lists FS-04 subgroups only — « Une portée, pas une personne ». No individual selection, no ad-hoc multi-select. |
 | ENV-03 | Pre-send review shows the FULL resolution: **Inclus** list and **Filtrés par tes règles** list with the responsible rule level visible per person (FS-06). « Rien n'est masqué en silence. » (L1 veto-absolu members appear in neither list per FLT-02 — the review shows `scope members − L1`; the standing veto itself was user-authored, so law 2 holds.) |
 | ENV-04 | Every default exclusion is revocable in place (« Tu peux réintégrer qui tu veux ») — except veto absolu, which appears nowhere in the review (FLT-02). |
-| ENV-05 | Scope→recipients resolution happens entirely on-device. The send payload contains: verb, category, expiry, final recipient user IDs. No scope name, no filter reasons (product law 4). |
+| ENV-05 | Scope→recipients resolution MAY run server-side now that filter rules and subgroups are stored there (ADR-001, VLT-01). Wherever it runs, the resolved recipient list is authoritative, and neither scope names nor filter reasons are ever disclosed to recipients or to any other user (IDT-08). |
 | ENV-06 | Post-send state is calm: « C'est parti, doucement. » No delivery status, no seen-by, no pending counter. Active envies are listed with a withdraw option. |
 | ENV-07 | Envies expire (default 48h). Confirmation copy **« Elle expire dans 48 heures. »** frozen (SUG-DES-010, resolved 2026-08-09) — verbatim from the prototype's confirmation screen (`docs/design/swab-prototype-consolidated.html:524`). Expiry is invisible to recipients (they never knew). |
 

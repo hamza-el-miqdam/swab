@@ -35,6 +35,6 @@ Swab uses [github/spec-kit](https://github.com/github/spec-kit) to turn specs in
 ## Hard boundaries (will fail review/CI if crossed)
 
 - `packages/db/prisma/schema.prisma`: ONLY the data-steward agent edits it; others open an `area:db` proposal.
-- Classification data (rings/rôles/état/ressenti, filter rules, subgroup names) never appears in API payloads, server code, logs, or DB columns — only inside the encrypted vault blob.
+- Classification data (rings/rôles/état/ressenti, filter rules, subgroup names) lives server-side in Postgres as queryable columns — E2EE and the opaque vault blob were retired 2026-08-16 (`docs/decisions/ADR-001-server-side-classification-data.md`). Still hard rules: it never appears in logs, and one user's classification is never exposed to another user (links stay directional — IDT-08).
 - No Vercel-proprietary APIs, no Neon-specific SQL (AWS portability). No new deps without justification in the PR.
 - French UI copy comes from specs verbatim. No counters, celebrations, or urgency anywhere.

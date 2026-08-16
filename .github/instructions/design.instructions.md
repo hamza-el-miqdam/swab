@@ -83,12 +83,16 @@ contract, Penpot, and blueprints tell different stories silently.
    counters, no badges, no streaks, no "match!" celebration/confetti, no urgency, no "vu/lu" states.
    Refusal and inaction must be visually indistinguishable from silence. If a screen makes someone feel
    awaited, watched, or scored — or a requested component implies gamification — stop and flag it.
-2. **The privacy note is a first-class component.** Every screen touching classification shows the
-   recurring reassurance ("elle ne voit jamais votre classement", "aucune trace") consistently. Never design
-   a surface implying the server (or another person) can see classification data.
-3. **Classification vocabulary stays on the surface, never in payloads.** Rôles, intimité, présence, état
-   and subgroup names appear in components as UI only; never model them as anything that could leak
-   server-side (G1 privacy invariant).
+2. **The privacy note is a first-class component — and it must now be honest.** As of 2026-08-16
+   (`docs/decisions/ADR-001-server-side-classification-data.md`) the server CAN read classification data, so copy
+   claiming otherwise (« elle ne voit jamais votre classement », « aucune trace ») is false and must be
+   rewritten. Keep reassuring users about what is still true — no other person ever sees their classement,
+   links are one-directional, refusal is indistinguishable from silence — and never imply end-to-end
+   encryption we no longer provide. Flag any surviving instance of the old copy.
+3. **Classification vocabulary is now a real data contract.** Rôles, intimité, présence, état and subgroup
+   names are stored server-side, so their values are no longer free UI text — a label change is a data
+   migration. Coordinate value changes with `area:db`/`area:api`, and keep display copy decoupled from
+   stored values (see SUG-IOS-011).
 4. **French UI copy is normative**, sourced from `docs/product-overview.md` and `docs/specs/*` verbatim —
    blueprints introduce new copy, specs freeze it, code copies it verbatim, never paraphrased in a
    component's default text. Arabic (صواب) is on the roadmap: keep compositions RTL-safe (no meaning carried

@@ -11,7 +11,7 @@ Swab connects people with their friends and loved ones by removing the social co
 1. **Mutual reveal only.** A desire is invisible to its recipients until reciprocated. A non-match leaves zero observable trace on either side.
 2. **Nothing hidden silently.** Every filter applied at send time is shown to the sender and revocable in place. (« Rien n'est masqué en silence. »)
 3. **You declare, Swab never guesses.** Relationship classification is user-declared, asymmetric, and private. No inference, no suggestions based on behavior.
-4. **Privacy is structural, not a setting.** Classification never leaves the device unencrypted; the server cannot read it (« ni eux, ni nous »). ⚠️ ASSUMPTION: hybrid local-first model (swab-domain-spec §2).
+4. **Privacy is structural, not a setting — but it is privacy *from other users*, not from us.** Revised 2026-08-16 (`docs/decisions/ADR-001-server-side-classification-data.md`): classification data is stored server-side and the service can technically read it, so the « ni eux, ni nous » promise no longer holds and must not be used. What is structural and unchanged: no other user ever sees your classement, links are one-directional (IDT-08), reveal is strictly mutual, and refusal is indistinguishable from silence. Say this plainly — never imply end-to-end encryption.
 5. **Calm by design.** No counters, badges, streaks, celebrations, urgency, or gamification. Soft language everywhere; graceful exits (« Passer cette fois ») that the other side never sees.
 
 ## 3. Personas

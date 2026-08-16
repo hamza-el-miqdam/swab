@@ -1,9 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
-- Rationale: MINOR — principles materially expanded/reworded from the source
-  (agents/_global-directives.md), none removed or redefined incompatibly.
-  This is a drift resync, not a new ratification.
+- Version change: 1.1.0 → 2.0.0
+- Rationale: MAJOR — Principle I's privacy invariant is REDEFINED
+  incompatibly. Per ADR-001 (2026-08-16), relationship classification data
+  moves server-side into queryable Postgres columns; end-to-end encryption
+  and the opaque Vault blob are retired, and the database becomes the single
+  source of truth. Prior guidance forbidding server-side reads of this data
+  is void. The inter-user privacy rules (IDT-08 directionality, mutual-only
+  reveal, log exclusions, phone hashing) are retained and restated.
 - Modified principles:
   - II. Test-Driven Development (G2) — added the E2E gate paragraph (mobile
     Definition of Done: docs/qa/e2e-scenarios.md scenarios, e2e-coverage.json
@@ -50,16 +54,27 @@ messages, or test fixtures. Every token, DB role, and workflow permission MUST
 be scoped to least privilege; broader access needs are flagged in the PR
 description, not self-granted.
 
-**Privacy invariant (non-negotiable, product-defining)**: relationship
-classification data (intimité, rôles, état, ressenti), filter rules, and
-subgroup structures exist ONLY on-device or inside the encrypted Vault blob.
-Server code MUST NOT parse, log, index, or infer this data. Scope names and
-filter reasons never appear in API payloads — only final resolved recipient
-ID lists.
+**Privacy model (revised 2026-08-16 — ADR-001)**: relationship classification
+data (intimité, rôles, état, ressenti), filter rules, and subgroup structures
+are stored server-side in Postgres as ordinary queryable columns. The database
+is the single source of truth; the device holds a cache. End-to-end encryption
+and the opaque Vault blob are RETIRED. Data MUST be encrypted in transit (TLS)
+and at rest (managed disk/KMS), and operator access MUST be least-privilege —
+but it is technically possible, and in-app copy MUST NOT imply otherwise.
 
-Rationale: Swab's entire value proposition depends on relationship data never
-being reconstructable server-side, even under compromise. This is enforced
-architecturally, not just by policy.
+Still non-negotiable (these never depended on encryption — they are product
+rules): (a) one user's classification data MUST NEVER be exposed to another
+user; links stay directional and private (IDT-08), with no "X added you"
+notifications, ever; (b) classification data, envie verbs, recipient lists,
+phone hashes and push tokens MUST NOT appear in logs (III), wherever stored;
+(c) phone numbers are stored only as client-side salted hashes (IDT-01);
+(d) reveal stays strictly mutual — the server MAY compute a match but MUST NOT
+disclose a one-sided envie to anyone.
+
+Rationale: recoverability won over operator-blindness. Device loss previously
+meant permanent loss of the user's entire relationship map, with no recovery
+path built. The trade-off, alternatives, and accepted costs are recorded in
+`docs/decisions/ADR-001-server-side-classification-data.md`.
 
 Full detail: `agents/_global-directives.md` (G1), imported into `CLAUDE.md`.
 
@@ -210,4 +225,4 @@ move together. All specs and plans produced by spec-kit are expected to
 comply with the current version of this file; violations must be justified
 in the plan's Complexity Tracking section or rejected.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-07-20
+**Version**: 2.0.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-08-16
