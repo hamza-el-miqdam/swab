@@ -4,6 +4,13 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
+## 2026-08-16 — [IDT-01, VLT-02] `dev:local` — run the API with no database
+
+- `pnpm --filter @repo/api dev:local` boots the API against the in-memory `fakeRepository()` with a stub `dbHealth`, so the mobile E2E gates (`scripts/e2e-{ios,android}.sh`) run on a machine without Docker or Postgres. Added because the Android gate was believed unrunnable locally for months — it wasn't; `buildApp()` already takes persistence as an injected seam, and `DATABASE_URL` is only ever read by Prisma, so a placeholder satisfies the env schema.
+- Lives in `tests/dev-local-server.ts` on purpose: excluded from the production build (`tsconfig.build.json` includes only `src/**`), not matched by vitest (`tests/**/*.test.ts`), and outside the coverage scope (`src/**`). It must never be imported by `src/`.
+- **Gotcha:** state is per-process and vanishes on exit — no migrations, no constraints, no real concurrency. Use `docker compose up --build` when the test needs Postgres semantics; `tests/prisma-repo.test.ts` always does.
+- The committed `JWT_SECRET` in that file is local-only and public by construction. Never reuse it (G1).
+
 ## 2026-08-16 — [IDT-03] SUG-API-011 unit tests for OtpStore's TTL/attempt-cap/throttle guarantees
 
 - New `tests/otp-store.test.ts` exercises `OtpStore` directly via its injectable clock — previously only the route-level `auth.test.ts` touched it, asserting the *claimed* `expiresInSeconds: 300` but never advancing time to prove TTL expiry, the 5-attempt verify cap, or throttle-window recovery.
