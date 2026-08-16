@@ -21,7 +21,7 @@ Take a new user from install to a populated relationship map, establishing the p
 | ONB-02 | Phone-OTP signup per FS-07 (IDT-01…03). On success a device vault key is generated (FS-07) before any classification input is possible. |
 | ONB-03 | Contact addition offers « Importer mes contacts » (permission-gated, hashed client-side per IDT-06) and manual entry. « Passer » skips with no penalty and no nag. |
 | ONB-04 | Calibration is radial: « moi » center; dragging/tapping a contact assigns it to an intimacy ring (4 rings: Très proche / Proche / Familier / Plus loin — the fixed enumeration shared by FS-02/FS-03/FS-04; see OQ-ONB-1 for resolution history). The layout must visually prefigure the FS-02 map. |
-| ONB-05 | Rings, roles, état, ressenti are written to the local vault only. Zero classification data in any network request during onboarding (assertable in tests via network mock). |
+| ONB-05 | ⚠️ **Transitional (ADR-001).** *Current, and what the passing tests assert:* rings, roles, état, ressenti are written to the local vault only, with zero classification data in any network request during onboarding. *After the ADR-001 migration:* they are sent to the server as typed payloads and this requirement becomes "classification data is transmitted only over TLS to the user's own account, and never appears in logs or in any other user's responses." Update this row, `docs/qa/e2e-coverage.json`, and `ApiClientPrivacyInvariantTests.swift` together in the migration PR. |
 | ONB-06 | État/Ressenti layer is optional, collapsed by default; skipping never blocks completion. |
 | ONB-07 | Completion screen confirms privacy (« Personne — ni eux, ni nous… ») and CTA « Voir ma carte » lands on FS-02. |
 | ONB-08 | Onboarding is resumable: killing the app mid-flow resumes at the same step from local state. |
@@ -29,7 +29,7 @@ Take a new user from install to a populated relationship map, establishing the p
 
 ## Acceptance criteria (key)
 
-- **Given** airplane mode after OTP, **when** the user calibrates 5 contacts, **then** all placements persist locally and sync as an encrypted blob when connectivity returns — and no request other than `POST /vault` contains any calibration-derived field.
+- **Given** airplane mode after OTP, **when** the user calibrates 5 contacts, **then** all placements persist in the local cache and sync to the server when connectivity returns (VLT-04), with no data loss and no duplicate placements on replay.
 - **Given** contact import is denied at OS level, **when** the user continues manually, **then** the flow completes with identical capabilities.
 - **Given** a completed onboarding, **when** the map opens, **then** every calibrated contact appears on the ring chosen during onboarding.
 

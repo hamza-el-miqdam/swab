@@ -10,7 +10,7 @@ Derived from the six standalone screen blueprints in `/blueprints` (extracted 20
 
 | Screen | What it establishes |
 |---|---|
-| **Onboarding** | Radial calibration: « moi » at center, each contact placed on a chosen intimacy ring. State/feeling layer optional, collapsed by default. Promise: *« Tout reste chiffré sur ton téléphone… personne — ni eux, ni nous — ne voit comment tu l'as remplie. »* |
+| **Onboarding** | Radial calibration: « moi » at center, each contact placed on a chosen intimacy ring. State/feeling layer optional, collapsed by default. ⚠️ The quoted promise *« Tout reste chiffré sur ton téléphone… personne — ni eux, ni nous — ne voit comment tu l'as remplie. »* is **void** as of ADR-001 (2026-08-16) and awaits replacement copy — see FS-07 VLT-06. |
 | **Carte des relations** | Main view. Nav: Carte / Envie / Sous-groupes. Contact axes visible: Intimité, État, Rôles. Tap → fiche. |
 | **Fiche contact** | Four editable axes per relation: **Intimité, Rôles·contexte, État, Ressenti** — declared by the user, never inferred (*« tu déclares, swab ne devine pas »*). Classification is **asymmetric and private**; reciprocity signal deliberately soft. Relation history feed; gentle re-tag prompt after long inactivity. |
 | **Sous-groupes** | Auto-detected via **formal concept analysis** on the tags — never created manually. User can only pin / rename / hide. Hierarchical (a subgroup can contain another). ~30 tagged contacts → 15–25 ready-to-use scopes (*portées*). |
@@ -21,9 +21,9 @@ Derived from the six standalone screen blueprints in `/blueprints` (extracted 20
 
 *(Flagged assumption — the privacy question wasn't answered; full-E2E and server-side variants remain open.)*
 
-- **On-device only (backed up as an encrypted blob the server cannot read):** the four classification axes, filtering rules (3 levels), subgroup detection (FCA runs client-side), relation history feed, re-tag nudges.
+- **Server-stored, device-cached** *(revised 2026-08-16 — ADR-001; was "on-device only, encrypted blob the server cannot read")*: the four classification axes, filtering rules (3 levels), subgroup detection, relation history feed, re-tag nudges. The database is the single source of truth; the device caches for offline use.
 - **Server-visible (minimum needed to match):** account identity, contact graph edges (who is linked to whom — not how they're classified), emitted envies (verb + final resolved recipient list), matches, proposals, push tokens.
-- **Consequence:** the client resolves a *portée* to a concrete recipient list locally before sending; the server never learns scope names, rings, or filter reasons. The soft "Passer cette fois" is a client-side state the counterpart is never told about.
+- **Consequence** *(revised — ADR-001)*: *portée* resolution may run server-side, since filter rules and subgroups now live there. Scope names and filter reasons are still never disclosed **to other users** — the constraint is disclosure, not storage. The soft "Passer cette fois" remains a state the counterpart is never told about.
 - **Consequence for FCA:** runs on-device over local tags — fits the promise, and 30–50 contacts is trivially cheap to compute locally.
 
 ## 3. Matching semantics (v0 proposal — needs your confirmation)
