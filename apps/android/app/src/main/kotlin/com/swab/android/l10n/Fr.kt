@@ -81,6 +81,11 @@ object Fr {
 
     const val CARTE_TITLE: String = "Ma carte"
     const val CARTE_SUBTITLE: String = "ton cercle, à l’instant"
+    // ⚠️ ASSUMPTION: exact copy for an undecryptable vault isn't in the spec
+    // (VLT-05 only requires an honest message, no wording quoted) — this is
+    // a neutral placeholder mirroring FICHE_STALE_TITLE's precedent
+    // (SUG-AND-004).
+    const val CARTE_VAULT_UNREADABLE: String = "Ta carte n’a pas pu être déchiffrée sur cet appareil."
     const val CARTE_EMPTY: String = "Ta carte est calme. Ajoute qui compte pour toi, quand tu veux."
     const val CARTE_ME: String = "moi"
     const val CARTE_LIST_MODE: String = "Affichage en liste"
@@ -142,7 +147,7 @@ object Fr {
             ETAT_AVAILABLE, ETAT_BUSY, ETAT_AWAY, ETAT_PAUSED,
             RESSENTI_POSITIVE, RESSENTI_AMBIVALENT, RESSENTI_NEGATIVE,
             DONE_TITLE, DONE_SUBTITLE, DONE_PROMISE, DONE_CTA,
-            CARTE_TITLE, CARTE_SUBTITLE, CARTE_EMPTY, CARTE_ME, CARTE_LIST_MODE, CARTE_LEGEND,
+            CARTE_TITLE, CARTE_SUBTITLE, CARTE_VAULT_UNREADABLE, CARTE_EMPTY, CARTE_ME, CARTE_LIST_MODE, CARTE_LEGEND,
             CARTE_OPEN_FICHE, CARTE_SHEET_INTIMITE, CARTE_SHEET_ETAT, CARTE_SHEET_ROLES,
             FICHE_BACK, FICHE_AXIS_INTIMITE, FICHE_AXIS_ROLES, FICHE_AXIS_ETAT, FICHE_AXIS_RESSENTI,
             ROLE_FAMILLE, ROLE_PARTENAIRE, ROLE_COLLEGUE, ROLE_PROMO, ROLE_COMMUNAUTE, ROLE_VOISIN,

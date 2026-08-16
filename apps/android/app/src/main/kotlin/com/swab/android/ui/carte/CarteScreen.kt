@@ -45,6 +45,7 @@ fun CarteScreen(viewModel: CarteViewModel, onOpenFiche: (String) -> Unit) {
     val listMode by viewModel.listMode.collectAsState()
     val legendOpen by viewModel.legendOpen.collectAsState()
     val selected by viewModel.selected.collectAsState()
+    val vaultUnreadable by viewModel.vaultUnreadable.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.refresh() }
 
@@ -58,6 +59,11 @@ fun CarteScreen(viewModel: CarteViewModel, onOpenFiche: (String) -> Unit) {
     ) {
         Text(Fr.CARTE_TITLE, style = MaterialTheme.typography.headlineSmall)
         Text(Fr.CARTE_SUBTITLE, style = MaterialTheme.typography.bodyMedium)
+        // VLT-05 / SUG-AND-004: an undecryptable vault is stated plainly, not
+        // hidden behind a quietly-empty map (G4 product ethos — nothing hidden silently).
+        if (vaultUnreadable) {
+            Text(Fr.CARTE_VAULT_UNREADABLE, style = MaterialTheme.typography.bodyMedium)
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
