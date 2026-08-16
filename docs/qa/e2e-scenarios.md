@@ -28,10 +28,17 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Then** the welcome screen shows the brand (swab · صواب), the tagline, the privacy promise, and a single CTA « Commencer » — and no account exists server-side until it is tapped.
 - Edge cases: relaunching before tapping « Commencer » must not create state.
 
-### ONB-02 — Phone-OTP signup, vault key before classification
+> ⚠️ **ADR-001 transition (2026-08-16).** End-to-end encryption is retired: classification data is
+> server-side and devices hold a cache (`docs/decisions/ADR-001-server-side-classification-data.md`).
+> Scenarios below that still describe on-device-vault behaviour — notably ONB-05, FCH-01 and VLT-01 —
+> describe **what currently ships** and what the green tests assert. They are rewritten in the
+> migration's client-stage PR, together with the tests and `e2e-coverage.json`. The « ni eux, ni nous »
+> copy in ONB-07 is known-false and awaits replacement (ADR-001 stage 6, VLT-06).
+
+### ONB-02 — Phone-OTP signup, session established before classification
 - **Given** the welcome screen acknowledged,
 - **When** the user enters a phone number and the received OTP,
-- **Then** signup succeeds (server sees only `phoneHash`, per IDT-01), and the device vault key is generated **before** any calibration screen can accept input.
+- **Then** signup succeeds (server sees only `phoneHash`, per IDT-01), and a session is established **before** any calibration screen can accept input.
 - Edge cases: wrong OTP shows a recoverable error; navigating phone → OTP must not lose the entered number (Wave-1 regression: per-`composable{}` state loss); an Activity recreation (rotation/config change) while on the OTP screen must not lose it either (SUG-AND-003 regression: `SignupViewModel` must survive via `viewModel()`, not just `remember`).
 
 ### ONB-03 — Add contacts: import, manual, skip
@@ -74,7 +81,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 
 ## FS-02 — Relationship Map (Carte des relations)
 
-### MAP-01 — Radial layout from the vault
+### MAP-01 — Radial layout from the local cache
 - **Given** a completed onboarding with calibrated contacts,
 - **When** the map opens,
 - **Then** « moi » is centered and every contact renders on the ring chosen during calibration, with no server call needed to render.
@@ -97,7 +104,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - Edge cases: regression guard for the Wave-2→3 disabled « Ouvrir la fiche » button.
 
 ### MAP-05 — Offline-first, first paint < 500 ms
-- **Given** airplane mode and a calibrated vault,
+- **Given** airplane mode and a populated local cache,
 - **When** the app cold-starts,
 - **Then** the map is fully interactive with zero failed-request UI, first paint from local data under 500 ms on mid-range hardware.
 - Verification note: offline interactivity is automatable; the 500 ms budget is a manual/profiled check.
@@ -126,7 +133,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 
 ## FS-03 — Contact Card (Fiche contact)
 
-### FCH-01 — Four axes tap-editable, vault-write + history event
+### FCH-01 — Four axes tap-editable, immediate write + history event
 - **Given** an open fiche,
 - **When** the user edits any of the four axes (Intimité, Rôles·contexte, État, Ressenti),
 - **Then** the change persists immediately (optimistic, offline-capable), survives leaving and reopening the fiche, and appends a local history event.
@@ -142,10 +149,10 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **When** inspected,
 - **Then** any reciprocity signal is qualitative, never numeric; « Aucun compteur, aucune métrique » anywhere on the fiche. (Both platforms currently show no reciprocity signal at all — the converged Wave-3 interpretation.)
 
-### FCH-04 — History feed, newest first, vault-sourced
+### FCH-04 — History feed, newest first
 - **Given** a fiche with at least one past axis edit,
 - **When** the history feed is read,
-- **Then** it shows axis changes (and coarse-grain match events) over 12 months, newest first, sourced from the vault only.
+- **Then** it shows axis changes (and coarse-grain match events) over 12 months, newest first.
 
 ### FCH-05 — Staleness nudge, discreet, two actions
 - **Given** a relation with no axis change for the staleness period (default 6 months),
@@ -207,7 +214,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 ### IDT-09 — Opaque invite tokens
 - Web landing behavior — web scope, `not-e2e-verifiable` from mobile.
 
-### VLT-01 — Vault encrypted on-device (AES-256-GCM)
+### VLT-01 — Classification stored server-side (ADR-001)
 - **Given** any classification write,
 - **When** the stored artifact is inspected,
 - **Then** it is AES-256-GCM ciphertext with the key held in the platform secure store (Keychain / Keystore).

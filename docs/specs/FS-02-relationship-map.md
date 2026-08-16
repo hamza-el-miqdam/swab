@@ -1,6 +1,6 @@
 # FS-02 — Relationship Map (Carte des relations)
 
-**Status:** Implemented (iOS + Android native, 2026-07-10 — Wave 2, see `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`) · **Agents:** iOS + Android (sole) · **Depends on:** FS-01, FS-07 · **Blueprint:** `swab - Carte des relations (standalone)`
+**Status:** Implemented (iOS + Android native, 2026-07-10 — Wave 2, see `apps/ios/CHANGELOG.md` / `apps/android/CHANGELOG.md`). ADR-001 (2026-08-16) changes only where the data is read from — vault → local cache — not the rendering behaviour; no requirement's observable outcome changes. · **Agents:** iOS + Android (sole) · **Depends on:** FS-01, FS-07 · **Blueprint:** `swab - Carte des relations (standalone)`
 
 ## Purpose
 
@@ -16,11 +16,11 @@ The app's home: a radial, at-a-glance view of « ton cercle, à l'instant » —
 
 | ID | Requirement |
 |---|---|
-| MAP-01 | Radial layout: « moi » centered; each contact rendered on its declared intimacy ring (ring enumeration per ONB-04). Ring semantics come from the vault; no server call is needed to render. |
+| MAP-01 | Radial layout: « moi » centered; each contact rendered on its declared intimacy ring (ring enumeration per ONB-04). Ring semantics are read from the **local cache**; no server call is needed to render. |
 | MAP-02 | Primary navigation exposes exactly: Carte, Envie (FS-05 entry), Sous-groupes (FS-04). No badges or unread counters on nav items. |
 | MAP-03 | Contact visual encodes the axes non-textually where possible (ring = intimité; état variant per blueprint's A·chaud / B·froid treatments). Exact visual grammar per blueprint. |
 | MAP-04 | Tap contact → « Ouvrir la fiche » → FS-03. Transition keeps spatial continuity (contact grows from its map position). |
-| MAP-05 | Map renders fully offline from the vault. First paint from local data < 500ms on mid-range hardware. |
+| MAP-05 | Map renders fully offline from the **local cache** (VLT-04). First paint from local data < 500ms on mid-range hardware — never blocked on a sync round-trip, even when a delta pull is in flight. |
 | MAP-06 | Empty/sparse states are calm: a nearly-empty map invites adding people without alarm or progress framing. |
 | MAP-07 | Up to ~150 contacts render without jank (60fps pan/zoom); beyond the visible densities, rings cluster gracefully (design follows blueprint treatment). |
 | MAP-08 | Accessibility fallback: a screen-reader-navigable list view grouped by ring, feature-equivalent for opening fiches. |
@@ -28,8 +28,8 @@ The app's home: a radial, at-a-glance view of « ton cercle, à l'instant » —
 
 ## Acceptance criteria (key)
 
-- **Given** airplane mode and a calibrated vault, **when** the app cold-starts, **then** the map is fully interactive with zero failed-request UI.
-- **Given** a re-tag in FS-03 changing a ring, **when** returning to the map, **then** the contact is on the new ring with an animated (not teleported) transition.
+- **Given** airplane mode and a populated cache, **when** the app cold-starts, **then** the map is fully interactive with zero failed-request UI.
+- **Given** a re-tag in FS-03 changing a ring, **when** returning to the map, **then** the contact is on the new ring with an animated (not teleported) transition — including while the write is still queued in the outbox (VLT-10), since the UI is optimistic.
 - **Given** TalkBack active, **when** navigating the list fallback, **then** every contact is reachable and announces name + ring.
 
 ## Non-functional

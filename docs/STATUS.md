@@ -13,14 +13,14 @@ _Last updated: 2026-08-16_
 | Spec | Module | Status | Lead | Notes |
 |---|---|---|---|---|
 | FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth, JWT sessions, `/health` + `/ready`. **2026-08-16 (ADR-001): E2EE retired, classification moves server-side; specs restated, migration not built.** Missing: that migration, refresh rotation (IDT-02), deletion (IDT-04), discovery (IDT-06), invites (IDT-07/09). |
-| FS-01 | Onboarding | 🟢 Implemented | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). |
-| FS-02 | Relationship Map | 🟢 Implemented | Mobile | Radial map + list fallback from the vault, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). |
-| FS-03 | Contact Card | 🟢 Implemented | Mobile | Greenfield (no RN equivalent). Four tap-editable axes, 12-month history, staleness nudge, pending-contact support. FCH-01..08 green on both platforms; `en pause` état-vs-ressenti divergence resolved 2026-08-09 (issue #16, état canonical); Rôles·contexte/Ressenti vocabularies finalized from blueprint 2026-08-09 (issue #15); FCH-04 match events deferred pending FS-04/05. |
-| FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | Pure on-device domain module. |
+| FS-01 | Onboarding | 🟢⚠️ | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). **ADR-001:** built on the retired vault; ONB-02/05 change in the client-stage migration. |
+| FS-02 | Relationship Map | 🟢⚠️ | Mobile | Radial map + list fallback from the local cache, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). **ADR-001:** reads move vault→cache; behaviour unchanged, lowest-impact spec. |
+| FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04) — most client rework of the three. |
+| FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | FCA stays on-device over the cache (OQ-SGR-2); names/pins/hidden are server-stored. |
 | FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | The only two-agent spec; OpenAPI seam not yet drafted. |
-| FS-06 | Filtering rules | ⚪ Not started | Mobile | Rules live in the vault. |
+| FS-06 | Filtering rules | ⚪ Not started | Mobile + Backend | Rules stored server-side; evaluation site still open (OQ-FLT-2). |
 
-Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance tests green) · 🔵 Hardened (privacy audit passed)
+Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance tests green) · 🟢⚠️ Implemented against a superseded design (green, but needs rework — see the note) · 🔵 Hardened (privacy audit passed)
 
 ## Platform & infrastructure
 
@@ -35,7 +35,7 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 | Lint (repo-wide ESLint) | 🟢 | Flat config: root `eslint.config.mjs` (type-aware typescript-eslint). All packages run `eslint .`. |
 | Design system (« Nuit ») | 🟡 | Token SSOT `packages/ui/tokens/tokens.json` generates native tokens (`node packages/ui/scripts/generate.mjs`, `--check` in CI); both platforms consume Color/Typography/Radius. Contract: `docs/design-system.md`; normative prototype: `docs/design/swab-prototype-consolidated.html`. **Open:** 39 off-scale spacing values; new components not on the Design System page; postal fields need `area:db`. |
 | Agents (AIDD) | 🟢 | Source of truth in `agents/`; `node scripts/render-agents.mjs` renders Copilot (`.github/`) + Claude Code (`.claude/agents/`) copies (`--check` for CI). Areas: ios, android, backend, web, db, devops, design, specs, notion-liaison. 2026-07-19: spec-specialist (area:specs) added — owns `docs/specs/FS-*.md` authoring + spec-kit pipeline. |
-| Spec ↔ Notion sync (French mirror) | 🟢 | All 7 specs mirrored in French under Notion "Swab — Spécifications (FS-*)" for the non-dev co-founder. `docs/specs/.notion-sync.json` tracks snapshots; re-diffed on every liaison invocation. Code stays canonical; conflicts flagged, never auto-resolved. |
+| Spec ↔ Notion sync (French mirror) | 🟡 | All 7 specs mirrored in French under Notion "Swab — Spécifications (FS-*)" for the non-dev co-founder. `docs/specs/.notion-sync.json` tracks snapshots; re-diffed on every liaison invocation. Code stays canonical; conflicts flagged, never auto-resolved. **Stale since 2026-08-16 (ADR-001):** re-sync deferred until the spec review (#64) settles. |
 | SMS provider (OTP) | ⚪ | Dev mode returns the code in the response; provider selection is an open question. |
 | Privacy audit (playbook §6) | ⚪ | Must run before any external tester and after every schema/API change. |
 
