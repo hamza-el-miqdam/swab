@@ -13,12 +13,20 @@ Take a new user from install to a populated relationship map, establishing the p
 - As a new user, I place each added contact on an intimacy ring around « moi » in a radial preview of my future map.
 - As a new user, I may optionally tag état/ressenti — the layer is collapsed by default and skippable.
 
+> ⚠️ **Pending copy replacement (ADR-001 stage 6).** Three strings in this spec promise end-to-end
+> encryption and are now false: the user story's « Tout reste chiffré sur ton téléphone », and
+> « Personne — ni eux, ni nous — ne voit comment tu l'as remplie » in the Purpose and in `ONB-07`
+> (mirrored in `ONB-01`'s privacy promise and `docs/qa/e2e-scenarios.md`). They are deliberately left
+> in place: French UI copy is normative and replacing it is a product decision for the founder +
+> design, not an implementer's call. Replacements must satisfy `VLT-06` — they may promise that no
+> *other user* sees the classement, never that we cannot.
+
 ## Functional requirements
 
 | ID | Requirement |
 |---|---|
 | ONB-01 | Welcome screen shows brand (swab · صواب), tagline, privacy promise, single CTA « Commencer ». No account creation before this screen is acknowledged. |
-| ONB-02 | Phone-OTP signup per FS-07 (IDT-01…03). On success a device vault key is generated (FS-07) before any classification input is possible. |
+| ONB-02 | Phone-OTP signup per FS-07 (IDT-01…03). On success a session is established (IDT-02) before any classification input is possible. *(Pre-2026-08-16 this step generated a device vault key; ADR-001 retired it — there is no vault key, and nothing else gates classification input.)* |
 | ONB-03 | Contact addition offers « Importer mes contacts » (permission-gated, hashed client-side per IDT-06) and manual entry. « Passer » skips with no penalty and no nag. |
 | ONB-04 | Calibration is radial: « moi » center; dragging/tapping a contact assigns it to an intimacy ring (4 rings: Très proche / Proche / Familier / Plus loin — the fixed enumeration shared by FS-02/FS-03/FS-04; see OQ-ONB-1 for resolution history). The layout must visually prefigure the FS-02 map. |
 | ONB-05 | ⚠️ **Transitional (ADR-001).** *Current, and what the passing tests assert:* rings, roles, état, ressenti are written to the local vault only, with zero classification data in any network request during onboarding. *After the ADR-001 migration:* they are sent to the server as typed payloads and this requirement becomes "classification data is transmitted only over TLS to the user's own account, and never appears in logs or in any other user's responses." Update this row, `docs/qa/e2e-coverage.json`, and `ApiClientPrivacyInvariantTests.swift` together in the migration PR. |

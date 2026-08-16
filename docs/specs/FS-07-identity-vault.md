@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The trust foundation: who you are (phone-OTP identity), who you're connected to (edges only), and where your private data lives (the encrypted vault). This spec is where product law 4 becomes engineering.
+The trust foundation: who you are (phone-OTP identity), who you're connected to (edges only), and where your private data lives — **server-side in Postgres, with the device holding a cache** (ADR-001, 2026-08-16; previously an on-device encrypted vault). This spec is where product law 4 becomes engineering: privacy *from other users*, enforced by access control and the mutual-reveal rule, not by the operator being unable to read the data.
 
 ## Functional requirements — Identity (⚠️ ASSUMPTION: phone-OTP, product-overview §6)
 
@@ -36,7 +36,7 @@ The trust foundation: who you are (phone-OTP identity), who you're connected to 
 
 | ID | Requirement |
 |---|---|
-| VLT-01 | Classification content (four axes, filter rules, subgroup lattice+names+pins, relation history) is stored **server-side in Postgres as typed, queryable columns**, owned by the Data Steward. Encrypted in transit (TLS) and at rest (managed disk/KMS). No client-side encryption of this data. *(Supersedes the AES-256-GCM on-device vault.)* |
+| VLT-01 | Classification content — the four axes, filter rules, **user-authored** subgroup state (names, pins, hidden flags) and relation history — is stored **server-side in Postgres as typed, queryable columns**, owned by the Data Steward. Encrypted in transit (TLS) and at rest (managed disk/KMS). No client-side encryption of this data. The subgroup **lattice itself is derived, not stored**: it is recomputed on-device from cached tags (SGR-01, OQ-SGR-2). *(Supersedes the AES-256-GCM on-device vault.)* |
 | VLT-02 | Server API exposes **typed resource endpoints** for classification data, not opaque storage. Writes are authenticated and authorised per-user; a user may only ever read or write their own classification data. *(Supersedes the `GET/POST /vault` blob + version contract.)* |
 | VLT-03 | Server code MAY read, index and compute over classification data to serve the product (matching, filtering, subgroups). It MUST NOT log it, expose it to any other user, or include it in error payloads (G3). |
 | VLT-04 | The device keeps a **local cache** for offline reads and queues writes for replay; the app stays fully usable for map/fiche/sous-groupes with zero connectivity. The cache is not authoritative — on conflict, the server wins. |
