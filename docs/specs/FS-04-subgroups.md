@@ -57,6 +57,8 @@ subgroups, in emission order per SGR-09a** are:
 1. « collègue » — {Ana, Ben, Chloé} — extent 3
 2. « collègue · promo » — {Ana, Ben} — extent 2, nested inside (1) per SGR-03
 
+**Values in this example are French labels for readability; the algorithm consumes role *identifiers* (FS-03 FCH-09)** — `colleague`, `cohort`, `family` — and renders their labels only when naming the proposed subgroup. Both platforms must run FCA over identifiers, or two devices with the same relations would derive different lattices the moment a label is reworded. The forthcoming `docs/specs/vectors/fca-test-vectors.json` records the example in identifier form.
+
 Note (2) is contained in (1): that containment is the lattice, and it is what SGR-03 renders. Neither
 group was created by the user — that is the product law « tu ne définis jamais un groupe à la main ».
 

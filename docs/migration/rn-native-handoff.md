@@ -109,6 +109,15 @@ POC: last write wins. Local version starts at 1 and increments on every persist.
 Serialized as UTF-8 JSON before encryption. Native models must round-trip this JSON
 (unknown-field-tolerant parsing recommended — the shape will grow with FS-03/04/06).
 
+**Amended 2026-08-16 (FS-03 FCH-09, ADR-001 stage 0b) — this part of the RN shape is NO LONGER the
+contract.** The RN app stored French display copy in `roles` / `etat` / `ressenti`. Those three
+fields now carry **stable identifiers** (`busy`, not `occupé`) from FS-03's *Stored value
+vocabulary*; the label is resolved at render time. Legacy French tokens are still accepted on read
+and normalised on the next write, so vectors and blobs written before that date keep decoding —
+which is why the `"etat":"disponible"` / `"ressenti":"douceur"` values in
+`vault-test-vectors.json` are left untouched: they are AES-GCM byte vectors, and the plaintext is
+opaque to the crypto layer.
+
 ### 2.6 Onboarding state machine (ONB-08; reference `src/onboarding/state.ts`)
 
 Steps, in order: `welcome → phone → contacts → calibrate → done → complete`. The current
