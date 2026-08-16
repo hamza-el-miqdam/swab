@@ -6,6 +6,10 @@
 
 Swab connects people with their friends and loved ones by removing the social cost of asking. You say what you feel like doing ("j'ai envie de…"), choose *who could receive it* — a scope, never a person — and the other side learns about it **only if the desire is mutual**. No rejection is ever visible; no silence is ever explained. Tagline from the onboarding: **« صواب — jouer franc jeu. Dis ce dont tu as envie. À qui tu veux. Sans jamais avoir à demander. »**
 
+**Where your data lives** (decided 2026-08-16 — `docs/decisions/ADR-001-server-side-classification-data.md`). Your relationship map belongs to your *account*, not to your phone. Change phone, lose it, or use two — sign in and everything is there, consistent, because the server holds the record and your devices hold a cache. We chose recoverability over operator-blindness deliberately: the previous design encrypted everything to a key that never left the handset, which meant a lost phone was a permanently lost map, and two phones could silently overwrite each other's edits.
+
+The honest consequence: **Swab can technically read your classification data; other users never can.** Privacy here means privacy *from the people in your life* — which is the privacy this product actually exists to provide — and it is enforced by the product laws below, not by us being unable to look. We never claim end-to-end encryption.
+
 ## 2. The five product laws (non-negotiable, enforced in code review)
 
 1. **Mutual reveal only.** A desire is invisible to its recipients until reciprocated. A non-match leaves zero observable trace on either side.
@@ -43,7 +47,7 @@ Swab connects people with their friends and loved ones by removing the social co
 
 ## 6. Standing assumptions (Hamza to confirm/override)
 
-1. **Privacy:** hybrid local-first (axes/filters/subgroups on-device; envies/matching server-side with minimal data).
+1. ~~**Privacy:** hybrid local-first~~ — **RESOLVED 2026-08-16 (ADR-001).** Classification data (axes, filters, subgroups, history) is server-side in Postgres; the database is the single source of truth and devices cache. Sync is per-record with server-assigned timestamps and field-level last-write-wins, not whole-state push. `Envie.verb` is kept opaque to the schema and excluded from matching so it can be encrypted later without a rewrite.
 2. **Identity:** phone-number OTP; contact discovery via client-side-hashed numbers.
 3. **Match compatibility:** normalized client-suggested `category` equality (not semantic verb matching) for v0.
 

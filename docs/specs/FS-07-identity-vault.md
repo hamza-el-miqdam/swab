@@ -42,12 +42,19 @@ The trust foundation: who you are (phone-OTP identity), who you're connected to 
 | VLT-04 | The device keeps a **local cache** for offline reads and queues writes for replay; the app stays fully usable for map/fiche/sous-groupes with zero connectivity. The cache is not authoritative — on conflict, the server wins. |
 | VLT-05 | Device loss, theft or replacement no longer loses data. The user re-authenticates with their phone number (IDT-01) on any device and the server restores their full classification state. *(Supersedes the accepted "device loss = data loss" POC trade-off.)* |
 | VLT-06 | In-app copy MUST NOT claim or imply end-to-end encryption, or that the service cannot see a user's classement. Copy asserting what is still true — no other user ever sees it, links are one-directional, refusal is indistinguishable from silence — is retained. |
+| VLT-07 | Writes are **per-record and typed** (one mutation = one record), never a whole-state push. Every mutation carries a client-generated id and is **idempotent**: replaying it after a timeout or partial failure MUST NOT double-apply. |
+| VLT-08 | `updatedAt` is **assigned by the server** on every write; client clocks are never trusted for ordering or conflict resolution. Clients sync via a **cursor** (`since`) and receive only changed records, never the full dataset. |
+| VLT-09 | Conflict resolution is **field-level last-write-wins by server `updatedAt`**; on a tie the stored server value wins. Deletions are **tombstoned**, so a stale device replaying an old update cannot resurrect deleted data. Both platforms MUST implement this identically. |
+| VLT-10 | Offline writes queue in a **durable local outbox** and replay **in order** on reconnect. The app stays fully usable offline; the cache is never authoritative — on any disagreement the server's value wins. |
 
 ## Acceptance criteria (key)
 
 - **Given** a full user lifecycle (signup → calibrate → envie → match → delete account), **when** erasure completes, **then** zero rows reference the user (deletion-cascade test, DAT rule 2) and their phoneHash can re-register as a fresh account.
 - **Given** user A's classification data in the database, **when** user B calls any endpoint by any route, **then** no response ever reveals A's rings, tags, rules, subgroups or scope names, and B cannot learn they appear in A's circle (IDT-08). This is auditable and MUST be re-verified whenever the schema or API changes.
 - **Given** a user signs in on a brand-new device with only their phone number, **when** the initial sync completes, **then** their full classification state is restored (VLT-05).
+- **Given** the same user on two devices, **when** device A changes a contact's ring and device B changes the same contact's ressenti while both are online, **then** after both sync each device shows *both* changes — neither field is lost (VLT-09 field-level LWW, not record-level).
+- **Given** a device offline with queued mutations, **when** connectivity returns and a replay request times out and is retried, **then** the mutation is applied exactly once (VLT-07 idempotency).
+- **Given** a contact deleted on device A, **when** device B replays a stale pre-deletion update for that contact, **then** the contact stays deleted (VLT-09 tombstones).
 - **Given** any log output at any level across a full user lifecycle, **when** it is inspected, **then** it contains no classification values, envie verbs, recipient lists, phone hashes or push tokens — IDs and counts only (VLT-03/G3).
 
 ## Open questions
