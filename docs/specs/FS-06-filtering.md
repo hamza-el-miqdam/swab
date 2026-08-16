@@ -18,7 +18,7 @@
 
 | ID | Requirement |
 |---|---|
-| FLT-01 | Rules are defined per *case* — an (axis, value) condition, e.g. état = `en pause` — with one of the three levels. Defaults ship for sensitive états (blueprint example: Théo · en pause → L2 ⚠️ ASSUMPTION for other defaults). |
+| FLT-01 | Rules are defined per *case* — an (axis, value) condition, e.g. état = `paused` (« en pause ») — with one of the three levels. The stored `value` is the FS-03 FCH-09 **identifier**, never the French label, so a copy change can never orphan a user's rules. Defaults ship for sensitive états (blueprint example: Théo · en pause → L2 ⚠️ ASSUMPTION for other defaults). |
 | FLT-02 | L1 semantics are absolute: never in resolution output, never overridable at send, never surfaced in the FS-05 revocable list. |
 | FLT-03 | L2 exclusions appear at send with the causing rule visible per person; re-inclusion is per-envie and never mutates the standing rule (« Ces règles s'appliquent par défaut… te laisse forcer l'inclusion »). |
 | FLT-04 | L3 members are in the final recipient set; de-emphasis is purely presentational and local. |

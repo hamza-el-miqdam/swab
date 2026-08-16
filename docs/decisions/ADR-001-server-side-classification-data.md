@@ -188,7 +188,7 @@ Tracked in dependency order; each stage is its own PR series. Stages 0a/0b are p
 | # | Stage | Area | Why here |
 |---|---|---|---|
 | 0a | **Full spec review against this ADR** | `area:specs` | FS-02/03/04/06 were written assuming on-device classification and have not been re-read. Must complete before schema design freezes. Tracked as its own issue. |
-| 0b | **Decouple stored values from French display copy** (`SUG-IOS-011`) | `area:ios`, `area:android` | Once values are DB columns a label change becomes a data migration. Must land **before** stage 2, not after. Was previously blocked on `SUG-IOS-001`, which this ADR moots. |
+| 0b | **Decouple stored values from French display copy** (`SUG-IOS-011`) | `area:specs`, `area:ios`, `area:android` | Once values are DB columns a label change becomes a data migration. Must land **before** stage 2, not after. Was previously blocked on `SUG-IOS-001`, which this ADR moots. **Contract frozen 2026-08-16** in FS-03 `FCH-09` + *Stored value vocabulary* — stage 2 takes its enum values from that table, not from either client. |
 | 0c | **Session-token hardening** (`SUG-AND-006`, `SUG-API-002`) | `area:android`, `area:backend` | With no client-side encryption the session token is the only thing guarding the full dataset. Should land before the data moves. |
 | 1 | **Governance + specs** (this PR) | cross-cutting | G1, `CLAUDE.md`, constitution, FS-07, vision docs. |
 | 2 | **Schema** | `area:db` | Model classification server-side: relations, four axes, filter rules, subgroups, history. Include `updatedAt` per stateful row and tombstones (sync model rules 2 and 5). Retire or repurpose `Vault`. Honour the `Envie.verb` constraints above. |

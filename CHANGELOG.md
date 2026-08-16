@@ -6,6 +6,15 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-16 — [FCH-09, ADR-001 stage 0b] Freeze the classification value vocabulary as stable identifiers
+
+- **New FS-03 requirement `FCH-09` + a normative *Stored value vocabulary* table.** État, Ressenti and Rôles·contexte now have frozen ASCII identifiers (`busy`, `ambivalent`, `colleague`…); the French words stay normative *display copy*, resolved at render time. Intimité is exempt — already an integer ring.
+- **Why now:** ADR-001 makes these values database columns at stage 2. Today both apps persist the French display string, so rewording a label — or shipping the planned Arabic locale — would orphan every stored value. After stage 2 that stops being a client bug and becomes a data migration, which is why 0b is a hard prerequisite.
+- **Two judgment calls are flagged in the table, not buried:** `cohort` for « promo » (no one-word English cognate; `promo` reads as "promotion") and `neighbor` over `neighbour`. Both are cheap to overrule — no production data exists. État/Ressenti involved no choice: their identifiers are the i18n key suffixes both platforms already ship.
+- **Dual-read is permanent, not a cutover.** Legacy French tokens still decode; an unrecognised token is preserved verbatim and renders as unset, never dropped and never throwing. That is what keeps `vault-test-vectors.json` (`"ressenti":"douceur"`) valid — those are AES-GCM byte vectors whose plaintext is opaque to the crypto layer.
+- **Cross-refs updated so the contract has one home:** FS-04 (FCA consumes role *identifiers* — two devices would otherwise derive different lattices after a rewording), FS-06 FLT-01 (rule cases store the identifier), `rn-native-handoff.md` §2.5 (marked NO LONGER the contract for these three fields), ADR stage table, `docs/STATUS.md`.
+- **Not done here:** the platform halves (`SUG-IOS-011` + Android mirror) land next as `area:ios` / `area:android` PRs, each adding its own `FCH-09` entry to `docs/qa/e2e-coverage.json` when its unit tests exist. FS-03's Notion mirror needs a liaison re-sync.
+
 ## 2026-08-16 — [docs-hygiene] Cut ~230 KB of duplicated//historical content out of the agent-readable surface
 
 - **Nothing deleted.** Every byte is still in git, and moved content is linked both ways. Verified 0 broken internal markdown links repo-wide afterwards.
