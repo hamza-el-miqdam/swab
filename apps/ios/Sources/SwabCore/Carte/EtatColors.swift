@@ -20,14 +20,16 @@ public enum EtatColors {
     /// existing three (none of which it's derived from).
     public static let paused = "#9A8FB5"
 
-    /// Keyed by the French copy value stored on `VaultContact.etat`
-    /// (`Fr.t(.etatAvailable)` etc.) — matches the RN reference, which keys
-    /// off `t('etat.available')` rather than an internal enum.
-    public static let byLabel: [String: String] = [
-        Fr.t(.etatAvailable): available,
-        Fr.t(.etatBusy): busy,
-        Fr.t(.etatAway): away,
-        Fr.t(.etatPaused): paused,
+    /// FCH-09: keyed by the stored identifier, not by display copy. This
+    /// used to be `byLabel`, a dictionary literally keyed by `Fr.t(...)` —
+    /// so rewording « occupé » (or shipping a second locale) turned every
+    /// stored value into a lookup miss, and the contact rendered as unset
+    /// through `color(for:)`'s fallback while its data was still there.
+    public static let byEtat: [Etat: String] = [
+        .available: available,
+        .busy: busy,
+        .away: away,
+        .paused: paused,
     ]
 
     public struct EtatColor: Equatable, Sendable {
@@ -41,9 +43,10 @@ public enum EtatColors {
     }
 
     /// Unset or unrecognized état → neutral surface color, never a
-    /// crash/placeholder color.
-    public static func color(for etat: String?) -> EtatColor {
-        guard let etat, let background = byLabel[etat] else {
+    /// crash/placeholder color. Callers pass `contact.etatValue`, which is
+    /// `nil` for a token outside the FCH-09 vocabulary.
+    public static func color(for etat: Etat?) -> EtatColor {
+        guard let etat, let background = byEtat[etat] else {
             return EtatColor(background: CarteTheme.surface, border: CarteTheme.line)
         }
         return EtatColor(background: background, border: background)

@@ -112,27 +112,41 @@ public struct FicheView: View {
                 )
             }
 
+            // FCH-09: chips are labels (WrappingChipRow's documented
+            // contract), resolved back to the stored value here — the same
+            // map-back the Intimité ring above already does.
             axisSection(title: Fr.t(.ficheAxisRoles)) {
                 WrappingChipRow(
-                    items: FicheVocabulary.roles,
-                    isSelected: { viewModel.contact.roles.contains($0) },
-                    onTap: { role in Task { await viewModel.toggleRole(role) } }
+                    items: FicheVocabulary.roleLabels,
+                    isSelected: { label in
+                        RoleContexte.fromLabel(label).map(viewModel.contact.roleValues.contains) ?? false
+                    },
+                    onTap: { label in
+                        guard let role = RoleContexte.fromLabel(label) else { return }
+                        Task { await viewModel.toggleRole(role) }
+                    }
                 )
             }
 
             axisSection(title: Fr.t(.ficheAxisEtat)) {
                 WrappingChipRow(
-                    items: FicheVocabulary.etats,
-                    isSelected: { viewModel.contact.etat == $0 },
-                    onTap: { etat in Task { await viewModel.setEtat(etat) } }
+                    items: FicheVocabulary.etatLabels,
+                    isSelected: { viewModel.contact.etatValue?.label == $0 },
+                    onTap: { label in
+                        guard let etat = Etat.fromLabel(label) else { return }
+                        Task { await viewModel.setEtat(etat) }
+                    }
                 )
             }
 
             axisSection(title: Fr.t(.ficheAxisRessenti)) {
                 WrappingChipRow(
-                    items: FicheVocabulary.ressentis,
-                    isSelected: { viewModel.contact.ressenti == $0 },
-                    onTap: { ressenti in Task { await viewModel.setRessenti(ressenti) } }
+                    items: FicheVocabulary.ressentiLabels,
+                    isSelected: { viewModel.contact.ressentiValue?.label == $0 },
+                    onTap: { label in
+                        guard let ressenti = Ressenti.fromLabel(label) else { return }
+                        Task { await viewModel.setRessenti(ressenti) }
+                    }
                 )
             }
         }

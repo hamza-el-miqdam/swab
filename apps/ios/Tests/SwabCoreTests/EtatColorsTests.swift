@@ -8,23 +8,23 @@ import XCTest
 
 final class EtatColorsTests: XCTestCase {
     func test_MAP03_availableMapsToItsBlueprintColor() {
-        let color = EtatColors.color(for: Fr.t(.etatAvailable))
+        let color = EtatColors.color(for: .available)
         XCTAssertEqual(color.background, "#8FB59A")
         XCTAssertEqual(color.border, "#8FB59A")
     }
 
     func test_MAP03_busyMapsToItsBlueprintColor() {
-        let color = EtatColors.color(for: Fr.t(.etatBusy))
+        let color = EtatColors.color(for: .busy)
         XCTAssertEqual(color.background, "#C8917E")
     }
 
     func test_MAP03_awayMapsToItsBlueprintColor() {
-        let color = EtatColors.color(for: Fr.t(.etatAway))
+        let color = EtatColors.color(for: .away)
         XCTAssertEqual(color.background, "#8AA0BE")
     }
 
     func test_MAP03_pausedMapsToItsColor() {
-        let color = EtatColors.color(for: Fr.t(.etatPaused))
+        let color = EtatColors.color(for: .paused)
         XCTAssertEqual(color.background, "#9A8FB5")
         XCTAssertEqual(color.border, "#9A8FB5")
     }
@@ -35,13 +35,17 @@ final class EtatColorsTests: XCTestCase {
         XCTAssertEqual(color.border, CarteTheme.line)
     }
 
+    /// FCH-09 moved the "unrecognized" case one layer up: a token outside
+    /// the vocabulary no longer reaches this lookup at all — it parses to
+    /// `nil` and takes the same neutral path as an unset état.
     func test_MAP03_unrecognizedEtatFallsBackToNeutralSurfaceColorRatherThanCrashing() {
-        let color = EtatColors.color(for: "not-a-real-etat")
+        XCTAssertNil(Etat.parse(stored: "not-a-real-etat"))
+        let color = EtatColors.color(for: Etat.parse(stored: "not-a-real-etat"))
         XCTAssertEqual(color.background, CarteTheme.surface)
     }
 
     /// Divergence flag (do not silently expand): exactly 4 shipped états.
     func test_MAP03_shippedEtatVocabularyIsExactlyFour() {
-        XCTAssertEqual(EtatColors.byLabel.count, 4)
+        XCTAssertEqual(EtatColors.byEtat.count, 4)
     }
 }

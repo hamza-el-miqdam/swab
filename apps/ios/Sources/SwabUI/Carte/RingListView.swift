@@ -31,7 +31,7 @@ struct RingListView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(Color(hex: EtatColors.color(for: contact.etat).background))
+                                    .fill(Color(hex: EtatColors.color(for: contact.etatValue).background))
                                     .frame(width: 10, height: 10)
                                 Text(contact.displayName)
                                 Spacer()

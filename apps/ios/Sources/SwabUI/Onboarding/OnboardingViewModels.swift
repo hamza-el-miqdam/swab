@@ -241,13 +241,13 @@ public final class CalibrateViewModel {
         await refresh()
     }
 
-    public func setEtat(_ etat: String?) async {
+    public func setEtat(_ etat: Etat?) async {
         guard let selectedId else { return }
         try? await vault.setEtat(id: selectedId, etat: etat)
         await refresh()
     }
 
-    public func setRessenti(_ ressenti: String?) async {
+    public func setRessenti(_ ressenti: Ressenti?) async {
         guard let selectedId else { return }
         try? await vault.setRessenti(id: selectedId, ressenti: ressenti)
         await refresh()

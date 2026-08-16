@@ -176,6 +176,13 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **When** their fiche opens,
 - **Then** all four axes are fully editable and envie eligibility is clearly indicated as inactive until they join.
 
+### FCH-09 — Stored values are stable identifiers, not display copy
+- **Given** a contact whose état was stored by a build older than 2026-08-16 (the French `occupé`),
+- **When** the record is read,
+- **Then** it resolves to the identifier `busy`, still renders « occupé » unchanged, and the next write persists `busy`.
+- **And Given** a stored token in none of the FS-03 vocabularies (`douceur`), **when** it is read, **then** the axis renders as unset and the token survives a round-trip byte-for-byte — never dropped, never throwing.
+- Verification note: `unit-covered` on purpose. Nothing user-visible changes — the same French labels render before and after — so there is no on-device behaviour for XCUITest to observe; the whole requirement is about the persisted representation. Covered by `ClassificationValuesTests` (iOS).
+
 ## FS-07 — Identity, Contacts & Vault Sync
 
 ### IDT-01 — Phone-OTP identity, phoneHash only

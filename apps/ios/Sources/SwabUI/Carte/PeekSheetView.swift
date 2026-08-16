@@ -15,7 +15,7 @@ struct PeekSheetView: View {
     let onOpenFiche: (VaultContact) -> Void
 
     var body: some View {
-        let palette = EtatColors.color(for: contact.etat)
+        let palette = EtatColors.color(for: contact.etatValue)
 
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
@@ -29,10 +29,15 @@ struct PeekSheetView: View {
             }
 
             row(label: Fr.t(.carteSheetIntimite), value: contact.ring.flatMap { CarteLabels.ringLabel[$0] } ?? unset)
-            row(label: Fr.t(.carteSheetEtat), value: contact.etat ?? unset)
+            // FCH-09: render the label for the stored identifier. A token
+            // outside the vocabulary reads as unset rather than leaking a raw
+            // identifier into the UI.
+            row(label: Fr.t(.carteSheetEtat), value: contact.etatValue?.label ?? unset)
             row(
                 label: Fr.t(.carteSheetRoles),
-                value: contact.roles.isEmpty ? unset : contact.roles.joined(separator: " · ")
+                value: contact.roleValues.isEmpty
+                    ? unset
+                    : contact.roleValues.map(\.label).joined(separator: " · ")
             )
 
             Button {
