@@ -4,6 +4,13 @@
 > Format: `## YYYY-MM-DD — [REQ-IDs] title` then bullets: what changed, why, anything a future dev must know.
 > Agents: updating this file is part of your Definition of Done (G5). Keep entries ≤ ~15 lines.
 
+## 2026-08-16 — [IDT-03] SUG-API-011 unit tests for OtpStore's TTL/attempt-cap/throttle guarantees
+
+- New `tests/otp-store.test.ts` exercises `OtpStore` directly via its injectable clock — previously only the route-level `auth.test.ts` touched it, asserting the *claimed* `expiresInSeconds: 300` but never advancing time to prove TTL expiry, the 5-attempt verify cap, or throttle-window recovery.
+- Six table-driven tests: TTL survives just under 5 minutes, expires just after (with a working fresh code issued afterward), the 6th verify attempt destroys the code even when correct, `check()` doesn't consume but `consume()` does, the 4th request in a throttle window returns a decreasing `retryAfterMs` and recovers past the window, and codes are `\d{6}`.
+- Pure test addition, no production code changed. `otp-store.ts` now at 100% line coverage (verified in isolation — the full-suite coverage table doesn't print when an unrelated suite fails first, see gotcha below).
+- Gotcha: this environment has no local Postgres/Docker, so `tests/prisma-repo.test.ts` fails locally regardless of this change (known pre-existing gap, green in CI's `postgres:17` service). Confirmed the new suite and all 31 previously-passing tests are unaffected.
+
 ## 2026-08-16 — SUG-API-016 global error handler no longer echoes internal messages as titles
 
 - `setErrorHandler` (`app.ts`) passed any thrown 4xx error's raw `.message` through verbatim as the RFC 7807 `title` — an allowlist-free passthrough, and the handler's contract per the file's own G1/G3 comments should be an allowlist, not "whatever message the throwing layer produced".
