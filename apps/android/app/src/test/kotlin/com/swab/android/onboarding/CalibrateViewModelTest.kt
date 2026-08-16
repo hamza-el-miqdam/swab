@@ -1,6 +1,8 @@
 package com.swab.android.onboarding
 
 import com.swab.android.MainDispatcherRule
+import com.swab.android.fiche.Etat
+import com.swab.android.fiche.Ressenti
 import com.swab.android.storage.InMemoryKeyValueStore
 import com.swab.android.vault.InMemoryVaultKeyStore
 import com.swab.android.vault.Vault
@@ -52,12 +54,13 @@ class CalibrateViewModelTest {
         advanceUntilIdle()
 
         vm.select(contact.id)
-        vm.setEtatForSelected("disponible")
-        vm.setRessentiForSelected("douceur")
+        vm.setEtatForSelected(Etat.AVAILABLE)
+        vm.setRessentiForSelected(Ressenti.POSITIVE)
         advanceUntilIdle()
 
         val updated = vm.contacts.value.first()
-        assertEquals("disponible", updated.etat)
-        assertEquals("douceur", updated.ressenti)
+        // FCH-09: the identifier is what persists; the label is render-time only.
+        assertEquals("available", updated.etat)
+        assertEquals("positive", updated.ressenti)
     }
 }

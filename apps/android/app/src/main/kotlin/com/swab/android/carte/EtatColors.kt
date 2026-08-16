@@ -1,6 +1,6 @@
 package com.swab.android.carte
 
-import com.swab.android.l10n.Fr
+import com.swab.android.fiche.Etat
 import com.swab.android.ui.theme.DesignTokens
 
 /**
@@ -23,15 +23,20 @@ import com.swab.android.ui.theme.DesignTokens
  * unset état, or an état outside the 4 known values).
  */
 object EtatColors {
-    val ETAT_COLORS: Map<String, String> = mapOf(
+    // FCH-09: keyed by the stored identifier, not by display copy. This map
+    // used to be keyed by `Fr.ETAT_*` — so rewording « occupé » (or shipping a
+    // second locale) turned every stored value into a lookup miss, and the
+    // contact rendered with the neutral fallback while its data was still
+    // there. Callers that draw a legend use `Etat.label`.
+    val ETAT_COLORS: Map<Etat, String> = mapOf(
         // SUG-DES-006: values now sourced from the token SSOT (tokens.json →
         // DesignTokens.kt, generated). Tokens are stored lowercase; uppercased
         // here so the hex strings — and EtatColorsTest — stay byte-identical
         // to the pre-indirection literals. Pure indirection, no value change.
-        Fr.ETAT_AVAILABLE to DesignTokens.Color.ETAT_DISPONIBLE.uppercase(),
-        Fr.ETAT_BUSY to DesignTokens.Color.ETAT_OCCUPE.uppercase(),
-        Fr.ETAT_AWAY to DesignTokens.Color.ETAT_AILLEURS.uppercase(),
-        Fr.ETAT_PAUSED to "#A69CB0",
+        Etat.AVAILABLE to DesignTokens.Color.ETAT_DISPONIBLE.uppercase(),
+        Etat.BUSY to DesignTokens.Color.ETAT_OCCUPE.uppercase(),
+        Etat.AWAY to DesignTokens.Color.ETAT_AILLEURS.uppercase(),
+        Etat.PAUSED to "#A69CB0",
     )
 
     // SUG-AND-009: ivory node-initials text (~2:1 contrast) on these mid-light
@@ -47,7 +52,7 @@ object EtatColors {
     /** background/border/onBackground are null when the caller should fall back to the neutral theme color. */
     data class EtatColor(val background: String?, val border: String?, val onBackground: String?)
 
-    fun etatColor(etat: String?): EtatColor {
+    fun etatColor(etat: Etat?): EtatColor {
         val background = etat?.let { ETAT_COLORS[it] }
         val onBackground = background?.let { DARK_INK }
         return EtatColor(background = background, border = background, onBackground = onBackground)

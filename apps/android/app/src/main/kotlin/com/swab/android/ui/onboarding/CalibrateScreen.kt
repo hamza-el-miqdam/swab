@@ -105,13 +105,14 @@ fun CalibrateScreen(viewModel: CalibrateViewModel, onContinue: () -> Unit) {
                 // has 4 values since OQ-FCH-2) — Column avoids it.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     for (etat in Vocab.ETATS) {
-                        GhostButton(etat, onClick = { viewModel.setEtatForSelected(etat) })
+                        // FCH-09: label drawn, identifier stored.
+                        GhostButton(etat.label, onClick = { viewModel.setEtatForSelected(etat) })
                     }
                 }
                 BodyText(Fr.CALIBRATE_RESSENTI_TITLE)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     for (ressenti in Vocab.RESSENTIS) {
-                        GhostButton(ressenti, onClick = { viewModel.setRessentiForSelected(ressenti) })
+                        GhostButton(ressenti.label, onClick = { viewModel.setRessentiForSelected(ressenti) })
                     }
                 }
             }

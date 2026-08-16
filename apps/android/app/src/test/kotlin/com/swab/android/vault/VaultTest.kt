@@ -1,5 +1,8 @@
 package com.swab.android.vault
 
+import com.swab.android.fiche.Etat
+import com.swab.android.fiche.Ressenti
+import com.swab.android.fiche.RoleContexte
 import com.swab.android.storage.InMemoryKeyValueStore
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -60,11 +63,14 @@ class VaultTest {
     fun `ONB-06 setEtat and setRessenti persist and can be cleared`() = runTest {
         val vault = newVault()
         val contact = vault.addContact("Nadia")
-        vault.setEtat(contact.id, "disponible")
-        vault.setRessenti(contact.id, "douceur")
+        vault.setEtat(contact.id, Etat.AVAILABLE)
+        vault.setRessenti(contact.id, Ressenti.POSITIVE)
         var loaded = vault.getContacts().first()
-        assertEquals("disponible", loaded.etat)
-        assertEquals("douceur", loaded.ressenti)
+        // FCH-09: identifiers persist, and the typed reads resolve them.
+        assertEquals("available", loaded.etat)
+        assertEquals("positive", loaded.ressenti)
+        assertEquals(Etat.AVAILABLE, loaded.etatValue)
+        assertEquals(Ressenti.POSITIVE, loaded.ressentiValue)
 
         vault.setEtat(contact.id, null)
         loaded = vault.getContacts().first()
@@ -108,8 +114,12 @@ class VaultTest {
     fun `FCH-01 setRoles persists the chosen roles`() = runTest {
         val vault = newVault()
         val contact = vault.addContact("Sami")
-        vault.setRoles(contact.id, listOf("Famille", "Travail"))
-        assertEquals(listOf("Famille", "Travail"), vault.getContacts().first().roles)
+        vault.setRoles(contact.id, listOf(RoleContexte.FAMILY, RoleContexte.COLLEAGUE))
+        assertEquals(listOf("family", "colleague"), vault.getContacts().first().roles)
+        assertEquals(
+            listOf(RoleContexte.FAMILY, RoleContexte.COLLEAGUE),
+            vault.getContacts().first().roleValues,
+        )
     }
 
     @Test

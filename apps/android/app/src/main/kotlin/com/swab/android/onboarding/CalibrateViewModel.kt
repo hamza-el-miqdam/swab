@@ -2,6 +2,8 @@ package com.swab.android.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.swab.android.fiche.Etat
+import com.swab.android.fiche.Ressenti
 import com.swab.android.vault.Vault
 import com.swab.android.vault.VaultContact
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +46,7 @@ class CalibrateViewModel(private val vault: Vault) : ViewModel() {
         }
     }
 
-    fun setEtatForSelected(etat: String?) {
+    fun setEtatForSelected(etat: Etat?) {
         val id = _selectedId.value ?: return
         viewModelScope.launch {
             vault.setEtat(id, etat)
@@ -52,7 +54,7 @@ class CalibrateViewModel(private val vault: Vault) : ViewModel() {
         }
     }
 
-    fun setRessentiForSelected(ressenti: String?) {
+    fun setRessentiForSelected(ressenti: Ressenti?) {
         val id = _selectedId.value ?: return
         viewModelScope.launch {
             vault.setRessenti(id, ressenti)
