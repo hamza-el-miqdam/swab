@@ -28,6 +28,11 @@ export type VaultWriteResult =
 
 export interface Repository {
   findUserByPhoneHash(phoneHash: string): Promise<UserRecord | null>;
+  /**
+   * Race-safe (IDT-01): on concurrent creation of the same phoneHash (two
+   * near-simultaneous first sign-ins), the losing call returns the existing
+   * user instead of throwing a unique-violation.
+   */
   createUser(phoneHash: string, displayName: string): Promise<UserRecord>;
   getVault(userId: string): Promise<VaultRecord | null>;
   /**
