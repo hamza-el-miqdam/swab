@@ -188,15 +188,21 @@ public struct CalibrateView: View {
             } else {
                 Text(Fr.t(.calibrateEtatTitle))
                 WrappingChipRow(
-                    items: FicheVocabulary.etats,
-                    isSelected: { viewModel.selected?.etat == $0 },
-                    onTap: { etat in Task { await viewModel.setEtat(etat) } }
+                    items: FicheVocabulary.etatLabels,
+                    isSelected: { viewModel.selected?.etatValue?.label == $0 },
+                    onTap: { label in
+                        guard let etat = Etat.fromLabel(label) else { return }
+                        Task { await viewModel.setEtat(etat) }
+                    }
                 )
                 Text(Fr.t(.calibrateRessentiTitle))
                 WrappingChipRow(
-                    items: FicheVocabulary.ressentis,
-                    isSelected: { viewModel.selected?.ressenti == $0 },
-                    onTap: { ressenti in Task { await viewModel.setRessenti(ressenti) } }
+                    items: FicheVocabulary.ressentiLabels,
+                    isSelected: { viewModel.selected?.ressentiValue?.label == $0 },
+                    onTap: { label in
+                        guard let ressenti = Ressenti.fromLabel(label) else { return }
+                        Task { await viewModel.setRessenti(ressenti) }
+                    }
                 )
             }
         }

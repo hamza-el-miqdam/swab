@@ -45,7 +45,7 @@ public final class FicheViewModel {
     /// FCH-06: informational filter-consequence text for the current état
     /// (nil when there's nothing to say).
     public var filterConsequenceText: String? {
-        FicheFilterConsequence.text(etat: contact.etat, ressenti: contact.ressenti)
+        FicheFilterConsequence.text(etat: contact.etatValue, ressenti: contact.ressentiValue)
     }
 
     public func refresh() async {
@@ -59,24 +59,31 @@ public final class FicheViewModel {
         await refresh()
     }
 
-    public func setEtat(_ etat: String) async {
+    // FCH-09: these take the typed value. The view resolves a tapped chip
+    // label back to it, so display copy stops at the view boundary.
+
+    public func setEtat(_ etat: Etat) async {
         try? await vault.setFicheEtat(id: contact.id, etat: etat)
         await refresh()
     }
 
-    public func setRessenti(_ ressenti: String) async {
+    public func setRessenti(_ ressenti: Ressenti) async {
         try? await vault.setFicheRessenti(id: contact.id, ressenti: ressenti)
         await refresh()
     }
 
-    /// Multi-select toggle for Rôles·contexte.
-    public func toggleRole(_ role: String) async {
-        var roles = contact.roles
-        if let index = roles.firstIndex(of: role) {
-            roles.remove(at: index)
+    /// Multi-select toggle for Rôles·contexte. Rebuilt in vocabulary order
+    /// rather than append-order so two devices that toggle the same roles in
+    /// different sequences persist the same array — the ordering matters once
+    /// ADR-001 makes this a server-side column.
+    public func toggleRole(_ role: RoleContexte) async {
+        var selected = Set(contact.roleValues)
+        if selected.contains(role) {
+            selected.remove(role)
         } else {
-            roles.append(role)
+            selected.insert(role)
         }
+        let roles = RoleContexte.allCases.filter(selected.contains)
         try? await vault.setFicheRoles(id: contact.id, roles: roles)
         await refresh()
     }

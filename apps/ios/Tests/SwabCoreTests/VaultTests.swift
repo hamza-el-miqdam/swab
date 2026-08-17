@@ -90,11 +90,13 @@ final class VaultTests: XCTestCase {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "C")
 
-        try await vault.setEtat(id: contact.id, etat: "disponible")
-        try await vault.setRessenti(id: contact.id, ressenti: "positive")
+        try await vault.setEtat(id: contact.id, etat: .available)
+        try await vault.setRessenti(id: contact.id, ressenti: .positive)
         var contacts = try await vault.getContacts()
-        XCTAssertEqual(contacts.first?.etat, "disponible")
+        // FCH-09: what lands in storage is the identifier, not the French copy.
+        XCTAssertEqual(contacts.first?.etat, "available")
         XCTAssertEqual(contacts.first?.ressenti, "positive")
+        XCTAssertEqual(contacts.first?.etatValue, .available)
 
         try await vault.setEtat(id: contact.id, etat: nil)
         contacts = try await vault.getContacts()
@@ -142,11 +144,12 @@ final class VaultTests: XCTestCase {
         let vault = Vault(kv: kv, secureStore: InMemorySecureStore())
         let contact = try await vault.addContact(displayName: "SecretName")
         try await vault.setRing(id: contact.id, ring: 3)
-        try await vault.setEtat(id: contact.id, etat: "disponible")
+        try await vault.setEtat(id: contact.id, etat: .available)
 
         let blob = await kv.get("vault.blob.v1")
         XCTAssertNotNil(blob)
         XCTAssertFalse(blob!.contains("SecretName"))
-        XCTAssertFalse(blob!.contains("disponible"))
+        XCTAssertFalse(blob!.contains("disponible"), "the pre-FCH-09 display copy")
+        XCTAssertFalse(blob!.contains("available"), "nor the FCH-09 identifier now stored in its place")
     }
 }

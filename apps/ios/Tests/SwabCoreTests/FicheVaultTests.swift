@@ -54,21 +54,25 @@ final class FicheVaultTests: XCTestCase {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Sam")
 
-        try await vault.setFicheEtat(id: contact.id, etat: "occupé")
+        try await vault.setFicheEtat(id: contact.id, etat: .busy)
 
         let updated = try await vault.getContact(id: contact.id)
-        XCTAssertEqual(updated?.etat, "occupé")
+        XCTAssertEqual(updated?.etat, "busy", "FCH-09: the identifier is what persists")
+        XCTAssertEqual(updated?.etatValue, .busy)
         XCTAssertEqual(updated?.history.count, 1)
+        // The history feed stays a rendered fragment — display copy, on purpose.
+        XCTAssertEqual(updated?.history.first?.kind, .axisChanged(axis: "etat", value: "occupé"))
     }
 
     func test_FCH01_setFicheRessenti_persistsAndAppendsHistory() async throws {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Nour")
 
-        try await vault.setFicheRessenti(id: contact.id, ressenti: "en pause")
+        try await vault.setFicheRessenti(id: contact.id, ressenti: .ambivalent)
 
         let updated = try await vault.getContact(id: contact.id)
-        XCTAssertEqual(updated?.ressenti, "en pause")
+        XCTAssertEqual(updated?.ressenti, "ambivalent")
+        XCTAssertEqual(updated?.ressentiValue, .ambivalent)
         XCTAssertEqual(updated?.history.count, 1)
     }
 
@@ -76,14 +80,15 @@ final class FicheVaultTests: XCTestCase {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Ali")
 
-        try await vault.setFicheRoles(id: contact.id, roles: ["famille", "collègue"])
+        try await vault.setFicheRoles(id: contact.id, roles: [.family, .colleague])
 
         let updated = try await vault.getContact(id: contact.id)
-        XCTAssertEqual(updated?.roles, ["famille", "collègue"])
+        XCTAssertEqual(updated?.roles, ["family", "colleague"], "FCH-09: identifiers persist…")
+        XCTAssertEqual(updated?.roleValues, [.family, .colleague])
         XCTAssertEqual(updated?.history.count, 1)
         if case .axisChanged(let axis, let value) = updated?.history.first?.kind {
             XCTAssertEqual(axis, FicheAxis.roles.rawValue)
-            XCTAssertEqual(value, "famille · collègue")
+            XCTAssertEqual(value, "famille · collègue", "…while the history feed stays display copy")
         } else {
             XCTFail("expected an axisChanged history event")
         }
@@ -95,8 +100,8 @@ final class FicheVaultTests: XCTestCase {
         let contact = try await vault.addContact(displayName: "Yara")
 
         try await vault.setFicheRing(id: contact.id, ring: 1)
-        try await vault.setFicheEtat(id: contact.id, etat: "disponible")
-        try await vault.setFicheRessenti(id: contact.id, ressenti: "positive")
+        try await vault.setFicheEtat(id: contact.id, etat: .available)
+        try await vault.setFicheRessenti(id: contact.id, ressenti: .positive)
 
         let updated = try await vault.getContact(id: contact.id)
         let kinds = updated?.history.map(\.kind)
@@ -117,7 +122,7 @@ final class FicheVaultTests: XCTestCase {
         var updated = try await vault.getContact(id: contact.id)
         XCTAssertNotNil(updated?.stalenessSnoozedUntil)
 
-        try await vault.setFicheEtat(id: contact.id, etat: "disponible")
+        try await vault.setFicheEtat(id: contact.id, etat: .available)
         updated = try await vault.getContact(id: contact.id)
         XCTAssertNil(updated?.stalenessSnoozedUntil, "an axis edit must clear an active snooze")
     }
@@ -127,12 +132,12 @@ final class FicheVaultTests: XCTestCase {
     func test_FCH05_reconfirmStaleness_resetsTimerAndLogsHistoryWithoutChangingAxes() async throws {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Karim")
-        try await vault.setFicheEtat(id: contact.id, etat: "occupé")
+        try await vault.setFicheEtat(id: contact.id, etat: .busy)
 
         try await vault.reconfirmFicheStaleness(id: contact.id)
 
         let updated = try await vault.getContact(id: contact.id)
-        XCTAssertEqual(updated?.etat, "occupé", "reconfirm must not change the axis value")
+        XCTAssertEqual(updated?.etat, "busy", "reconfirm must not change the axis value")
         XCTAssertEqual(updated?.history.count, 2)
         if case .reconfirmed = updated?.history.first?.kind {
             // expected
@@ -148,7 +153,7 @@ final class FicheVaultTests: XCTestCase {
     func test_FCH05_snoozeStaleness_setsThirtyDayWindowAndDoesNotLogHistory() async throws {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Omar")
-        try await vault.setFicheEtat(id: contact.id, etat: "disponible")
+        try await vault.setFicheEtat(id: contact.id, etat: .available)
         let historyCountBeforeSnooze = try await vault.getContact(id: contact.id)?.history.count
 
         try await vault.snoozeFicheStaleness(id: contact.id)
@@ -170,15 +175,15 @@ final class FicheVaultTests: XCTestCase {
         XCTAssertNil(contact.targetId, "sanity check: freshly added contacts are pending by default")
 
         try await vault.setFicheRing(id: contact.id, ring: 3)
-        try await vault.setFicheEtat(id: contact.id, etat: "ailleurs")
-        try await vault.setFicheRessenti(id: contact.id, ressenti: "ambivalente")
-        try await vault.setFicheRoles(id: contact.id, roles: ["partenaire"])
+        try await vault.setFicheEtat(id: contact.id, etat: .away)
+        try await vault.setFicheRessenti(id: contact.id, ressenti: .ambivalent)
+        try await vault.setFicheRoles(id: contact.id, roles: [.partner])
 
         let updated = try await vault.getContact(id: contact.id)
         XCTAssertEqual(updated?.ring, 3)
-        XCTAssertEqual(updated?.etat, "ailleurs")
-        XCTAssertEqual(updated?.ressenti, "ambivalente")
-        XCTAssertEqual(updated?.roles, ["partenaire"])
+        XCTAssertEqual(updated?.etat, "away")
+        XCTAssertEqual(updated?.ressenti, "ambivalent")
+        XCTAssertEqual(updated?.roles, ["partner"])
         XCTAssertNil(updated?.targetId, "still pending — editing axes must not silently mark it joined")
         XCTAssertFalse(FicheEligibility.isEnvieActive(targetId: updated?.targetId))
     }
@@ -208,9 +213,9 @@ final class FicheVaultTests: XCTestCase {
         _ = try await vault.addContact(displayName: "A")
 
         try await vault.setFicheRing(id: "missing", ring: 1)
-        try await vault.setFicheEtat(id: "missing", etat: "disponible")
-        try await vault.setFicheRessenti(id: "missing", ressenti: "positive")
-        try await vault.setFicheRoles(id: "missing", roles: ["famille"])
+        try await vault.setFicheEtat(id: "missing", etat: .available)
+        try await vault.setFicheRessenti(id: "missing", ressenti: .positive)
+        try await vault.setFicheRoles(id: "missing", roles: [.family])
         try await vault.reconfirmFicheStaleness(id: "missing")
         try await vault.snoozeFicheStaleness(id: "missing")
 

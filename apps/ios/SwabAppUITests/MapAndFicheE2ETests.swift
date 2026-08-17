@@ -304,7 +304,8 @@ final class MapAndFicheE2ETests: SwabUITestCase {
         XCTAssertTrue(ring4.waitForExistence(timeout: 10))
         XCTAssertTrue(ring4.isHittable, "SUG-IOS-010: Intimité's last ring chip must stay hittable at AX text sizes")
 
-        let etat = app.buttons[FicheVocabulary.etats[2]]
+        // FCH-09: chips render labels; the stored value is the identifier.
+        let etat = app.buttons[FicheVocabulary.etatLabels[2]]
         if !etat.isHittable { app.swipeUp() }
         XCTAssertTrue(etat.waitForExistence(timeout: 5))
         XCTAssertTrue(etat.isHittable, "SUG-IOS-010: État's third chip must stay hittable at AX text sizes")

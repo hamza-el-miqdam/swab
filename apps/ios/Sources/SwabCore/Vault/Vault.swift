@@ -68,6 +68,20 @@ public struct VaultContact: Codable, Equatable, Hashable, Sendable {
         self.stalenessSnoozedUntil = stalenessSnoozedUntil
     }
 
+    // MARK: - FCH-09 typed reads
+    //
+    // `etat`/`ressenti`/`roles` hold the STORED tokens (identifiers, or an
+    // unrecognised token preserved verbatim). Everything that renders or
+    // branches on a value goes through these instead, so no call site ever
+    // compares against French copy again.
+
+    public var etatValue: Etat? { etat.flatMap(Etat.parse(stored:)) }
+
+    public var ressentiValue: Ressenti? { ressenti.flatMap(Ressenti.parse(stored:)) }
+
+    /// Unrecognised tokens are skipped for display but remain in `roles`.
+    public var roleValues: [RoleContexte] { roles.compactMap(RoleContexte.parse(stored:)) }
+
     private enum CodingKeys: String, CodingKey {
         case id, displayName, phoneHash, ring, roles, etat, ressenti
         case targetId, history, lastAxisChangeAt, stalenessSnoozedUntil
@@ -90,9 +104,17 @@ public struct VaultContact: Codable, Equatable, Hashable, Sendable {
         // rewrites storage here — only affects what a later legitimate
         // persist writes.
         ring = decodedRing.flatMap { VaultRing.range.contains($0) ? $0 : nil }
-        roles = try c.decodeIfPresent([String].self, forKey: .roles) ?? []
-        etat = try c.decodeIfPresent(String.self, forKey: .etat)
+        // FCH-09 dual-read: a blob written before 2026-08-16 carries French
+        // display copy ("occupé"), a newer one carries identifiers ("busy").
+        // Both decode; the next persist writes identifiers. A token in
+        // neither vocabulary — e.g. the retired `douceur` in
+        // `vault-test-vectors.json` — is kept verbatim, so nothing is ever
+        // dropped by a read.
+        roles = (try c.decodeIfPresent([String].self, forKey: .roles) ?? [])
+            .map(RoleContexte.normalize(stored:))
+        etat = try c.decodeIfPresent(String.self, forKey: .etat).map(Etat.normalize(stored:))
         ressenti = try c.decodeIfPresent(String.self, forKey: .ressenti)
+            .map(Ressenti.normalize(stored:))
         targetId = try c.decodeIfPresent(String.self, forKey: .targetId)
         history = try c.decodeIfPresent([FicheHistoryEvent].self, forKey: .history) ?? []
         lastAxisChangeAt = try c.decodeIfPresent(Date.self, forKey: .lastAxisChangeAt)
@@ -200,12 +222,15 @@ public actor Vault {
         try await mutateContact(id: id) { $0.ring = ring }
     }
 
-    public func setEtat(id: String, etat: String?) async throws {
-        try await mutateContact(id: id) { $0.etat = etat }
+    // FCH-09: the setters take the typed value, not a String, so writing
+    // French copy into the vault is a compile error rather than a review catch.
+
+    public func setEtat(id: String, etat: Etat?) async throws {
+        try await mutateContact(id: id) { $0.etat = etat?.rawValue }
     }
 
-    public func setRessenti(id: String, ressenti: String?) async throws {
-        try await mutateContact(id: id) { $0.ressenti = ressenti }
+    public func setRessenti(id: String, ressenti: Ressenti?) async throws {
+        try await mutateContact(id: id) { $0.ressenti = ressenti?.rawValue }
     }
 
     private func mutateContact(id: String, _ mutate: (inout VaultContact) -> Void) async throws {
@@ -232,17 +257,26 @@ public actor Vault {
         }
     }
 
-    public func setFicheEtat(id: String, etat: String?) async throws {
-        try await recordAxisEdit(id: id, axis: .etat, value: etat) { $0.etat = etat }
+    // The history event's `value` stays the DISPLAY label, unchanged by
+    // FCH-09: it is a rendered sentence fragment for the feed, and FCH-04
+    // hands event creation to the server at ADR-001 stage 2, which will
+    // model it properly. Re-encoding it here would be thrown away.
+
+    public func setFicheEtat(id: String, etat: Etat?) async throws {
+        try await recordAxisEdit(id: id, axis: .etat, value: etat?.label) { $0.etat = etat?.rawValue }
     }
 
-    public func setFicheRessenti(id: String, ressenti: String?) async throws {
-        try await recordAxisEdit(id: id, axis: .ressenti, value: ressenti) { $0.ressenti = ressenti }
+    public func setFicheRessenti(id: String, ressenti: Ressenti?) async throws {
+        try await recordAxisEdit(id: id, axis: .ressenti, value: ressenti?.label) {
+            $0.ressenti = ressenti?.rawValue
+        }
     }
 
-    public func setFicheRoles(id: String, roles: [String]) async throws {
-        let value = roles.isEmpty ? nil : roles.joined(separator: " · ")
-        try await recordAxisEdit(id: id, axis: .roles, value: value) { $0.roles = roles }
+    public func setFicheRoles(id: String, roles: [RoleContexte]) async throws {
+        let value = roles.isEmpty ? nil : roles.map(\.label).joined(separator: " · ")
+        try await recordAxisEdit(id: id, axis: .roles, value: value) {
+            $0.roles = roles.map(\.rawValue)
+        }
     }
 
     private func recordAxisEdit(

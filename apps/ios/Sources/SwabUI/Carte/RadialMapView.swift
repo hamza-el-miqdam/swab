@@ -141,7 +141,7 @@ private struct ContactNodeView: View {
 
     var body: some View {
         let size = CGFloat(MapGeometry.nodeSize(ring: contact.ring ?? 4))
-        let palette = EtatColors.color(for: contact.etat)
+        let palette = EtatColors.color(for: contact.etatValue)
 
         Button {
             onTap(contact)

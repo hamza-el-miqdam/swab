@@ -27,14 +27,20 @@ private actor CapturingHTTPTransport: HTTPTransport {
 
 final class FichePrivacyInvariantTests: XCTestCase {
     /// Every distinct plaintext string a fiche axis edit could produce —
-    /// ring label, état, ressenti, and every placeholder role — none of
-    /// these literal strings may ever appear in what goes over the wire.
+    /// ring label, état, ressenti, every role — none of these literal
+    /// strings may ever appear in what goes over the wire.
+    ///
+    /// FCH-09 doubled this list: an axis now has a stored **identifier** as
+    /// well as a display label, and the identifier is classification data
+    /// just as much as the French word was. Split into named parts because
+    /// one chained `+` expression is more than the type-checker will solve.
+    private static let ringLabels: [String] = [1, 2, 3, 4].compactMap { CarteLabels.ringLabel[$0] }
+    private static let axisLabels: [String] =
+        FicheVocabulary.etatLabels + FicheVocabulary.ressentiLabels + FicheVocabulary.roleLabels
+    private static let axisIdentifiers: [String] =
+        Etat.identifiers + Ressenti.identifiers + RoleContexte.identifiers
     private static let classificationStrings: [String] =
-        [1, 2, 3, 4].compactMap { CarteLabels.ringLabel[$0] }
-            + FicheVocabulary.etats
-            + FicheVocabulary.ressentis
-            + FicheVocabulary.roles
-            + ["SecretDisplayName"]
+        ringLabels + axisLabels + axisIdentifiers + ["SecretDisplayName"]
 
     func test_FCH01_axisEditsOverNetwork_onlyOpaqueBlobAndVersionEverSent() async throws {
         let kv = InMemoryKeyValueStore()
@@ -43,9 +49,9 @@ final class FichePrivacyInvariantTests: XCTestCase {
 
         let contact = try await vault.addContact(displayName: "SecretDisplayName")
         try await vault.setFicheRing(id: contact.id, ring: 3)
-        try await vault.setFicheEtat(id: contact.id, etat: FicheVocabulary.etats[3]) // "en pause"
-        try await vault.setFicheRessenti(id: contact.id, ressenti: FicheVocabulary.ressentis[1])
-        try await vault.setFicheRoles(id: contact.id, roles: FicheVocabulary.roles)
+        try await vault.setFicheEtat(id: contact.id, etat: .paused)
+        try await vault.setFicheRessenti(id: contact.id, ressenti: .ambivalent)
+        try await vault.setFicheRoles(id: contact.id, roles: RoleContexte.allCases)
         try await vault.reconfirmFicheStaleness(id: contact.id)
 
         let transport = CapturingHTTPTransport()
