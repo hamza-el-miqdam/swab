@@ -200,7 +200,7 @@ describe("ENV-09 match pair canonical order (SUG-DB-003)", () => {
         `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
            values ('match-reversed', 'env-e2', 'env-e1', 'u2', 'u1')`,
       ),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/matches_pair_canonical_order/);
   });
 
   it("still rejects the same canonical pair inserted twice — the race's losing side", async () => {
@@ -209,6 +209,6 @@ describe("ENV-09 match pair canonical order (SUG-DB-003)", () => {
         `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
            values ('match-duplicate', 'env-e1', 'env-e2', 'u1', 'u2')`,
       ),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/matches_envie_a_id_envie_b_id_key/);
   });
 });
