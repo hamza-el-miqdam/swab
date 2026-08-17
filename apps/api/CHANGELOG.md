@@ -6,6 +6,15 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-17 — [IDT-03] SUG-API-008 `OtpStore` sweeps expired codes/throttle windows and caps tracked hashes
+
+- `entries`/`requestLog` were cleaned up only lazily (on `check()`/`consume()`, or on the same key's next `request()`), so a code that is requested but never verified — the common attacker pattern, and a frequent real-user one — stayed in memory forever. Attacker-chosen 32–128 char hash keys made this a practical slow-burn memory-exhaustion vector against the single-process POC.
+- Added `OtpStore.sweep()`: O(n) pass dropping expired codes and stale (empty) throttle windows. `apps/api/src/app.ts` schedules it every 60s (`unref()`'d, cleared via `onClose`, so it never keeps the process or a test's event loop alive).
+- Added a hard cap (`maxTrackedHashes`, default 100k, constructor-injectable for tests): `request()` sweeps once at the cap and, if still full, denies the new hash (`retryAfterMs: 60_000`) rather than evicting a live code — fail-closed, legitimate users retry.
+- Tests: `apps/api/tests/otp-store.test.ts` — sweep drops expired/empty state, sweep keeps live codes, and cap behavior (new hash denied, existing codes still verify) via an injected small cap.
+- Never logs phoneHash keys (G3) — sweep and the cap path touch no logger.
+- **CI note:** `tests/prisma-repo.test.ts` fails locally (no Postgres in this dev environment) — pre-existing, unrelated to this change, green in CI's `postgres:17` service. All other tests (incl. 3 new ones) pass; lint/typecheck/build all green.
+
 ## 2026-08-17 — [IDT-01] SUG-API-004 concurrent first sign-ins no longer 500 on the duplicate-user race
 
 - `prisma-repo.ts`'s `createUser` was a bare `prisma.user.create`; two near-simultaneous `POST /auth/otp/verify` calls for the same phoneHash (double-tap, client retry, two devices — the OTP `check()` doesn't consume, so both legitimately hold a valid code) both pass `findUserByPhoneHash → null`, then the loser's `create` threw a `P2002` unique-violation that the global error handler turned into a 500. Now mirrors `upsertVault`'s pattern (SUG-API-003): catch `P2002`, re-read by `phoneHash`, return the existing user — the race loser signs in as the winner.

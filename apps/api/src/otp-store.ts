@@ -3,7 +3,11 @@
  * - codes are stored as sha256 hashes, never plaintext, never logged;
  * - 5-minute TTL, single-use, max 5 verify attempts (IDT-03);
  * - per-phoneHash request throttle: max 3 codes per 5-minute window (IDT-03);
- * - phoneHashes live only as Map keys in process memory — never logged (G3).
+ * - phoneHashes live only as Map keys in process memory — never logged (G3);
+ * - sweep() periodically drops expired codes and stale throttle windows, and
+ *   a hard cap on tracked hashes denies new ones (fail-closed, existing codes
+ *   stay live) once hit — defense-in-depth against unbounded memory growth
+ *   from codes that are requested but never verified (SUG-API-008).
  *
  * Before production: SMS provider (OQ-IDT-1) + a shared store (Postgres/Redis)
  * so throttling survives restarts and multiple instances.
@@ -14,6 +18,7 @@ const OTP_TTL_MS = 5 * 60_000;
 const THROTTLE_WINDOW_MS = 5 * 60_000;
 const MAX_REQUESTS_PER_WINDOW = 3;
 const MAX_VERIFY_ATTEMPTS = 5;
+const DEFAULT_MAX_TRACKED_HASHES = 100_000;
 
 export const OTP_TTL_SECONDS = OTP_TTL_MS / 1000;
 
@@ -35,7 +40,15 @@ export class OtpStore {
   private readonly entries = new Map<string, OtpEntry>();
   private readonly requestLog = new Map<string, number[]>();
 
-  constructor(private readonly now: () => number = Date.now) {}
+  constructor(
+    private readonly now: () => number = Date.now,
+    private readonly maxTrackedHashes: number = DEFAULT_MAX_TRACKED_HASHES,
+  ) {}
+
+  /** Test-only accessor — read-only, exposes Map sizes without leaking keys. */
+  get trackedCount(): { codes: number; throttles: number } {
+    return { codes: this.entries.size, throttles: this.requestLog.size };
+  }
 
   request(phoneHash: string): OtpRequestResult {
     const t = this.now();
@@ -46,6 +59,19 @@ export class OtpStore {
       const oldest = recent[0] ?? t;
       return { ok: false, retryAfterMs: Math.max(0, oldest + THROTTLE_WINDOW_MS - t) };
     }
+
+    // Defense-in-depth against unbounded growth (SUG-API-008): a hash that is
+    // requested but never verified would otherwise live in `entries` forever.
+    // Sweep once before denying — an attacker filling the cap with codes that
+    // have since expired should not block legitimate new requests. Deny
+    // rather than evict a live code at the cap (fail-closed).
+    if (this.entries.size >= this.maxTrackedHashes) {
+      this.sweep();
+      if (this.entries.size >= this.maxTrackedHashes) {
+        return { ok: false, retryAfterMs: 60_000 };
+      }
+    }
+
     recent.push(t);
     this.requestLog.set(phoneHash, recent);
 
@@ -83,5 +109,22 @@ export class OtpStore {
   /** Single-use guarantee (IDT-03): removes the code after a successful sign-in. */
   consume(phoneHash: string): void {
     this.entries.delete(phoneHash);
+  }
+
+  /**
+   * Drops expired codes and stale throttle windows (SUG-API-008). O(n) —
+   * called periodically by the owner (apps/api/src/app.ts) and opportunistically
+   * from request() when the tracked-hash cap is hit. Never logs phoneHash keys.
+   */
+  sweep(): void {
+    const t = this.now();
+    for (const [key, entry] of this.entries) {
+      if (t > entry.expiresAt) this.entries.delete(key);
+    }
+    for (const [key, times] of this.requestLog) {
+      const recent = times.filter((ts) => t - ts < THROTTLE_WINDOW_MS);
+      if (recent.length === 0) this.requestLog.delete(key);
+      else this.requestLog.set(key, recent);
+    }
   }
 }
