@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-17 — [SUG-DB-008, ENV-07, ENV-08] Every pre-existing DateTime column becomes timestamptz(3)
+
+- **Problem:** Prisma maps `DateTime` to `timestamp` without time zone by default, and no pre-ADR-001 column opted into `@db.Timestamptz(3)`. `Envie.expiresAt` drives matching (ENV-08) and the expiry sweep — comparing a naive column against `now()` is only correct while every writer/session agrees on UTC, and AWS portability (RDS/Aurora default `TimeZone` varies) is a hard requirement. ADR-001's new sync columns already shipped as timestamptz; this closed the gap that entry flagged.
+- **Fix:** added `@db.Timestamptz(3)` to the eleven remaining columns (`User.createdAt`, `Vault.updatedAt`, `Device.createdAt`, `ContactLink.createdAt`, `Envie.expiresAt`/`createdAt`, `EnvieRecipient.createdAt`, `Match.notifiedAt`/`createdAt`, `Proposal.timeslot`/`createdAt`). Migration `timestamptz_columns` is pure `ALTER COLUMN ... TYPE TIMESTAMPTZ(3)` — no data migration, safe on the seed-only dev DB (Postgres reinterprets the naive value using the session time zone, lossless since all existing data is UTC).
+- **Tests:** 12 new PGlite cases — one per converted column asserting `information_schema.columns.data_type = 'timestamp with time zone'`, plus a round-trip case that writes an envie, switches session `TIME ZONE` to `America/New_York`, and asserts the read-back instant is unchanged.
+- **Not a behavior change for app code:** Prisma always sends/reads UTC regardless of column type; the win is at the SQL/ops layer (cron sweeps, ad-hoc queries, RDS migration).
+
 ## 2026-08-17 — [SUG-DB-007, IDT-04, IDT-05] Index every unindexed FK column
 
 - **Problem:** Postgres does not auto-index FK-referencing columns, and Prisma only creates what's declared. Six FK columns had no index: `Device.userId`, `Envie.authorId`, `Match.userAId`/`userBId`/`envieBId`, `Proposal.matchId`/`proposerId`, `ContactLink.targetId`. Every one of them backs a real query pattern (push fanout, match-list `WHERE user_a_id = ? OR user_b_id = ?`, proposals-for-match) and a deletion cascade — account deletion touches 7 tables and must never sequential-scan (DAT rule 2).
