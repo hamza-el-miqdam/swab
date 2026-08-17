@@ -98,8 +98,17 @@ RUN rm -rf apps/api/node_modules/@types apps/api/node_modules/@vitest \
            node_modules/@eslint node_modules/eslint \
            node_modules/eslint-config-prettier node_modules/prettier \
            node_modules/turbo node_modules/typescript node_modules/typescript-eslint
+# The `prisma@*` CLI removed above is the ONLY consumer of @prisma/config,
+# which in turn is the only consumer of deepmerge-ts, c12, effect and empathic
+# (verify with `pnpm why <pkg>` — each has exactly one edge in pnpm-lock.yaml).
+# Deleting the CLI orphans that whole subtree but leaves it on disk, where
+# Trivy still reads it: CVE-2026-40345 (HIGH, deepmerge-ts stack exhaustion on
+# recursive merge) failed the gate on code that no runtime path can reach.
+# `@prisma/client` does NOT depend on @prisma/config — config parsing is a
+# CLI-time concern, so none of this belongs in a deployable image.
 RUN cd node_modules/.pnpm && rm -rf \
       typescript@* 'prisma@6.19.3_magicast*' tsx@* vitest@* '@vitest+coverage-v8@*' \
+      '@prisma+config@*' deepmerge-ts@* c12@* empathic@* \
       effect@* jsdom@* fast-check@* '@esbuild+*' 'lightningcss-*' rollup@* vite@* \
       '@babel+*' turbo@* '@turbo+*' eslint@* '@eslint+*' 'eslint-config-prettier@*' \
       'typescript-eslint@*' '@typescript-eslint+*' prettier@* '@types+node@*' magicast@*

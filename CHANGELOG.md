@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-18 — [security] Prune the orphaned @prisma/config subtree from the prod image (CVE-2026-40345)
+
+- The Trivy gate went red on `main` (not on any one PR — #86 just inherited it) when CVE-2026-40345 was published: **HIGH, `deepmerge-ts@7.1.5`, stack exhaustion on recursive merge, fixed in 8.0.0**.
+- It reaches the image as dead weight, not as a runtime dependency. `deepmerge-ts` has exactly one consumer in `pnpm-lock.yaml` (`@prisma/config`), which has exactly one (`prisma`, the CLI) — and the build stage already deletes `prisma@*`. That orphans the subtree but leaves it on disk, where Trivy still reads it. `@prisma/client` declares `@prisma/config` under **devDependencies** and has zero runtime `dependencies`, so no code path in the image can reach it.
+- Added `@prisma+config@*`, `deepmerge-ts@*`, `c12@*` and `empathic@*` to the existing `.pnpm` store cleanup, next to `effect@*` — already deleted from that same orphan chain, which is why only these four were left behind.
+- Chose deletion over a `pnpm.overrides` bump to 8.0.0: the override would push a major on the prisma CLI's own dependency to fix code the deployable image shouldn't carry at all. Same reasoning already documented for the bundled `npm`/`corepack` removal — fix at the root, don't suppress.
+- **Not verified locally** — no Docker in the dev environment; the lockfile edge analysis above is what the change rests on, with CI's build + scan as the check.
+
 ## 2026-08-17 — [scope-guard] `suggestions/**` is allowed from any area
 
 - `suggestions/README.md` requires an implemented suggestion to move to `done/<area>/` and the open/done counts to be updated — bookkeeping every area owes on its own PR, on a tree no area prefix owns. The guard rejected exactly that diff, so the duty was unsatisfiable and the moves silently never happened: PRs #76/#77/#78 all left their suggestion sitting in the open folder.
