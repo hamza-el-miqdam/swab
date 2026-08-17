@@ -46,7 +46,7 @@ fun PeekSheet(contact: VaultContact?, onDismiss: () -> Unit, onOpenFiche: (Vault
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                val swatch = EtatColors.etatColor(contact.etat)
+                val swatch = EtatColors.etatColor(contact.etatValue)
                 val dotColor = swatch.background?.let(::hexToColor) ?: MaterialTheme.colorScheme.outlineVariant
                 Box(
                     modifier = Modifier
@@ -59,8 +59,14 @@ fun PeekSheet(contact: VaultContact?, onDismiss: () -> Unit, onOpenFiche: (Vault
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             PeekRow(Fr.CARTE_SHEET_INTIMITE, contact.ring?.let { Labels.RING_LABEL[it] } ?: UNSET)
-            PeekRow(Fr.CARTE_SHEET_ETAT, contact.etat ?: UNSET)
-            PeekRow(Fr.CARTE_SHEET_ROLES, contact.roles.takeIf { it.isNotEmpty() }?.joinToString(" · ") ?: UNSET)
+            // FCH-09: render the label for the stored identifier. A token
+            // outside the vocabulary reads as unset rather than leaking a raw
+            // identifier into the UI.
+            PeekRow(Fr.CARTE_SHEET_ETAT, contact.etatValue?.label ?: UNSET)
+            PeekRow(
+                Fr.CARTE_SHEET_ROLES,
+                contact.roleValues.takeIf { it.isNotEmpty() }?.joinToString(" · ") { it.label } ?: UNSET,
+            )
             OutlinedButton(
                 onClick = { onOpenFiche(contact) },
                 shape = RoundedCornerShape(999.dp),

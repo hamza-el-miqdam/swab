@@ -27,25 +27,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.swab.android.carte.Labels
 import com.swab.android.carte.Vocab
+import com.swab.android.fiche.Etat
 import com.swab.android.fiche.FicheFilterConsequence
 import com.swab.android.fiche.FicheViewModel
+import com.swab.android.fiche.Ressenti
+import com.swab.android.fiche.RoleContexte
 import com.swab.android.l10n.Fr
 import com.swab.android.vault.VaultHistoryEvent
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// OQ-FCH-1 (RESOLVED 2026-08-09, issue #15): real Rôles·contexte taxonomy,
-// verbatim from the blueprint's embedded ROLES const (blueprints/swab -
-// Fiche contact (standalone) (1).html).
-private val ROLES = listOf(
-    Fr.ROLE_FAMILLE,
-    Fr.ROLE_PARTENAIRE,
-    Fr.ROLE_COLLEGUE,
-    Fr.ROLE_PROMO,
-    Fr.ROLE_COMMUNAUTE,
-    Fr.ROLE_VOISIN,
-)
+// The private ROLES copy that used to live here is gone: SUG-AND-017
+// consolidated ÉTAT/RESSENTI into `Vocab` but left this one duplicated, and
+// FCH-09 gives it a typed home (`Vocab.ROLES` → `RoleContexte`).
 
 /**
  * FS-03 « Fiche contact » — the four tap-editable axes, the local history
@@ -83,14 +78,19 @@ fun FicheScreen(viewModel: FicheViewModel, onBack: () -> Unit) {
 
         IntimiteAxis(ring = c.ring, onSelect = viewModel::setIntimite)
         RolesAxis(
-            selected = c.roles,
+            selected = c.roleValues,
             onToggle = { role ->
-                val next = if (role in c.roles) c.roles - role else c.roles + role
-                viewModel.setRoles(next)
+                // Rebuilt in vocabulary order rather than append order, so two
+                // devices toggling the same roles in different sequences
+                // persist the same array — it matters once ADR-001 makes this
+                // a server-side column.
+                val selected = c.roleValues.toSet()
+                val next = if (role in selected) selected - role else selected + role
+                viewModel.setRoles(RoleContexte.entries.filter { it in next })
             },
         )
-        EtatAxis(etat = c.etat, onSelect = viewModel::setEtat)
-        RessentiAxis(ressenti = c.ressenti, onSelect = viewModel::setRessenti)
+        EtatAxis(etat = c.etatValue, onSelect = viewModel::setEtat)
+        RessentiAxis(ressenti = c.ressentiValue, onSelect = viewModel::setRessenti)
 
         HorizontalDivider()
         Text(Fr.FICHE_HISTORY_TITLE, style = MaterialTheme.typography.titleMedium)
@@ -133,19 +133,20 @@ private fun IntimiteAxis(ring: Int?, onSelect: (Int) -> Unit) {
 }
 
 @Composable
-private fun RolesAxis(selected: List<String>, onToggle: (String) -> Unit) {
+private fun RolesAxis(selected: List<RoleContexte>, onToggle: (RoleContexte) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Fr.FICHE_AXIS_ROLES, style = MaterialTheme.typography.titleSmall)
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            for (role in ROLES) {
+            for (role in Vocab.ROLES) {
                 // SUG-DES-011: hit area only, visual chip size unchanged.
                 FilterChip(
                     selected = role in selected,
                     onClick = { onToggle(role) },
-                    label = { Text(role) },
+                    // FCH-09: the chip renders the label, the tap carries the value.
+                    label = { Text(role.label) },
                     modifier = Modifier.minimumInteractiveComponentSize(),
                 )
             }
@@ -154,7 +155,7 @@ private fun RolesAxis(selected: List<String>, onToggle: (String) -> Unit) {
 }
 
 @Composable
-private fun EtatAxis(etat: String?, onSelect: (String) -> Unit) {
+private fun EtatAxis(etat: Etat?, onSelect: (Etat) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Fr.FICHE_AXIS_ETAT, style = MaterialTheme.typography.titleSmall)
         Row(
@@ -166,7 +167,7 @@ private fun EtatAxis(etat: String?, onSelect: (String) -> Unit) {
                 FilterChip(
                     selected = etat == value,
                     onClick = { onSelect(value) },
-                    label = { Text(value) },
+                    label = { Text(value.label) },
                     modifier = Modifier.minimumInteractiveComponentSize(),
                 )
             }
@@ -178,7 +179,7 @@ private fun EtatAxis(etat: String?, onSelect: (String) -> Unit) {
 }
 
 @Composable
-private fun RessentiAxis(ressenti: String?, onSelect: (String) -> Unit) {
+private fun RessentiAxis(ressenti: Ressenti?, onSelect: (Ressenti) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Fr.FICHE_AXIS_RESSENTI, style = MaterialTheme.typography.titleSmall)
         Row(
@@ -190,7 +191,7 @@ private fun RessentiAxis(ressenti: String?, onSelect: (String) -> Unit) {
                 FilterChip(
                     selected = ressenti == value,
                     onClick = { onSelect(value) },
-                    label = { Text(value) },
+                    label = { Text(value.label) },
                     modifier = Modifier.minimumInteractiveComponentSize(),
                 )
             }

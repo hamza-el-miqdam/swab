@@ -148,6 +148,7 @@ private fun LegendRow() {
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // FCH-09: the map is keyed by identifier now; the legend draws labels.
         for ((etat, hex) in EtatColors.ETAT_COLORS) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(
@@ -156,7 +157,7 @@ private fun LegendRow() {
                         .clip(CircleShape)
                         .background(hexToColor(hex)),
                 )
-                Text(etat, style = MaterialTheme.typography.bodySmall)
+                Text(etat.label, style = MaterialTheme.typography.bodySmall)
             }
         }
     }

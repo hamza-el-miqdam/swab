@@ -401,7 +401,10 @@
       "ios": {
         "status": "unit-covered"
       },
-      "notes": "ADR-001 stage 0b. Storage representation, not user-visible behaviour — the UI renders the same French labels before and after, which is why the XCUITest suite is unchanged and this is unit-covered rather than automated. iOS covered by ClassificationValuesTests (identifier contract, dual-read, unknown-token preservation). No `android` key yet: the Android half is a separate PR and would be a false claim here."
+      "android": {
+        "status": "unit-covered"
+      },
+      "notes": "ADR-001 stage 0b. Storage representation, not user-visible behaviour — the UI renders the same French labels before and after, which is why both E2E suites are unchanged and this is unit-covered rather than automated. iOS: ClassificationValuesTests. Android: ClassificationValuesTest, which adds the NFC-normalisation case Swift gets for free (Kotlin compares UTF-16 code units, so an NFD-encoded legacy token would not migrate)."
     },
     "IDT-01": {
       "fs": "FS-07",

@@ -73,7 +73,7 @@ fun RingList(contacts: List<VaultContact>, onPressContact: (VaultContact) -> Uni
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val swatch = EtatColors.etatColor(contact.etat)
+                    val swatch = EtatColors.etatColor(contact.etatValue)
                     val color = swatch.background?.let(::hexToColor) ?: MaterialTheme.colorScheme.outlineVariant
                     Box(
                         modifier = Modifier

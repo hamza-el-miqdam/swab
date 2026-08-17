@@ -70,25 +70,31 @@ class FicheViewModel(
         }
     }
 
-    fun setRoles(roles: List<String>) {
+    // FCH-09: these take the typed value; the screen resolves a tapped chip
+    // to it, so display copy stops at the view boundary. The history summary
+    // stays the DISPLAY label — it is a rendered sentence fragment for the
+    // feed, and FCH-04 hands event creation to the server at ADR-001 stage 2,
+    // which will model it. Re-encoding it here would be thrown away.
+
+    fun setRoles(roles: List<RoleContexte>) {
         viewModelScope.launch {
             vault.setRoles(contactId, roles)
-            val label = roles.takeIf { it.isNotEmpty() }?.joinToString(" · ") ?: "—"
+            val label = roles.takeIf { it.isNotEmpty() }?.joinToString(" · ") { it.label } ?: "—"
             recordEdit(AXIS_ROLES, "${Fr.FICHE_AXIS_ROLES} → $label")
         }
     }
 
-    fun setEtat(etat: String?) {
+    fun setEtat(etat: Etat?) {
         viewModelScope.launch {
             vault.setEtat(contactId, etat)
-            recordEdit(AXIS_ETAT, "${Fr.FICHE_AXIS_ETAT} → ${etat ?: "—"}")
+            recordEdit(AXIS_ETAT, "${Fr.FICHE_AXIS_ETAT} → ${etat?.label ?: "—"}")
         }
     }
 
-    fun setRessenti(ressenti: String?) {
+    fun setRessenti(ressenti: Ressenti?) {
         viewModelScope.launch {
             vault.setRessenti(contactId, ressenti)
-            recordEdit(AXIS_RESSENTI, "${Fr.FICHE_AXIS_RESSENTI} → ${ressenti ?: "—"}")
+            recordEdit(AXIS_RESSENTI, "${Fr.FICHE_AXIS_RESSENTI} → ${ressenti?.label ?: "—"}")
         }
     }
 

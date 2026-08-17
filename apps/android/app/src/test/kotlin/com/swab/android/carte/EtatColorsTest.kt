@@ -1,6 +1,6 @@
 package com.swab.android.carte
 
-import com.swab.android.l10n.Fr
+import com.swab.android.fiche.Etat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -19,26 +19,26 @@ class EtatColorsTest {
     @Test
     fun `exactly the 4 shipped etats are mapped`() {
         assertEquals(
-            setOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED),
+            setOf(Etat.AVAILABLE, Etat.BUSY, Etat.AWAY, Etat.PAUSED),
             EtatColors.ETAT_COLORS.keys,
         )
     }
 
     @Test
     fun `known etats resolve to their blueprint hex colors`() {
-        assertEquals("#8FB59A", EtatColors.etatColor(Fr.ETAT_AVAILABLE).background)
-        assertEquals("#C8917E", EtatColors.etatColor(Fr.ETAT_BUSY).background)
-        assertEquals("#8AA0BE", EtatColors.etatColor(Fr.ETAT_AWAY).background)
+        assertEquals("#8FB59A", EtatColors.etatColor(Etat.AVAILABLE).background)
+        assertEquals("#C8917E", EtatColors.etatColor(Etat.BUSY).background)
+        assertEquals("#8AA0BE", EtatColors.etatColor(Etat.AWAY).background)
     }
 
     @Test
     fun `en pause resolves to its new dedicated color`() {
-        assertEquals("#A69CB0", EtatColors.etatColor(Fr.ETAT_PAUSED).background)
+        assertEquals("#A69CB0", EtatColors.etatColor(Etat.PAUSED).background)
     }
 
     @Test
     fun `background and border are the same color for a known etat`() {
-        val color = EtatColors.etatColor(Fr.ETAT_AVAILABLE)
+        val color = EtatColors.etatColor(Etat.AVAILABLE)
         assertEquals(color.background, color.border)
     }
 
@@ -48,24 +48,30 @@ class EtatColorsTest {
         assertNull(EtatColors.etatColor(null).border)
     }
 
+    /**
+     * FCH-09 moved the "unknown état" case one layer up: a token outside the
+     * vocabulary no longer reaches this lookup — it parses to null and takes
+     * the same neutral path as an unset état.
+     */
     @Test
-    fun `an etat outside the 3 known values also falls back to null - no silent 5-etat expansion`() {
-        assertNull(EtatColors.etatColor("radieux").background)
+    fun `an etat outside the 4 known values also falls back to null - no silent 5-etat expansion`() {
+        assertNull(Etat.parse("radieux"))
+        assertNull(EtatColors.etatColor(Etat.parse("radieux")).background)
     }
 
     @Test
     fun `MAP-03 each known etat provides a dark onBackground color`() {
         val expected = "#1c1505"
-        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_AVAILABLE).onBackground)
-        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_BUSY).onBackground)
-        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_AWAY).onBackground)
-        assertEquals(expected, EtatColors.etatColor(Fr.ETAT_PAUSED).onBackground)
+        assertEquals(expected, EtatColors.etatColor(Etat.AVAILABLE).onBackground)
+        assertEquals(expected, EtatColors.etatColor(Etat.BUSY).onBackground)
+        assertEquals(expected, EtatColors.etatColor(Etat.AWAY).onBackground)
+        assertEquals(expected, EtatColors.etatColor(Etat.PAUSED).onBackground)
     }
 
     @Test
     fun `MAP-03 unknown or null etat has null onBackground - falls back to theme`() {
         assertNull(EtatColors.etatColor(null).onBackground)
-        assertNull(EtatColors.etatColor("radieux").onBackground)
+        assertNull(EtatColors.etatColor(Etat.parse("radieux")).onBackground)
     }
 
     @Test
