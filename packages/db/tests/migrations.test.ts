@@ -215,6 +215,47 @@ describe("SUG-DB-007 FK indexes", () => {
   });
 });
 
+describe("SUG-DB-008 timestamptz columns", () => {
+  /** ADR-001's new sync columns already shipped as timestamptz; this closes the gap on every pre-existing column. */
+  async function dataType(table: string, column: string): Promise<string> {
+    const res = await db.query<{ data_type: string }>(
+      `select data_type from information_schema.columns where table_name = $1 and column_name = $2`,
+      [table, column],
+    );
+    return res.rows[0]?.data_type ?? "";
+  }
+
+  it.each([
+    ["users", "created_at"],
+    ["vaults", "updated_at"],
+    ["devices", "created_at"],
+    ["contact_links", "created_at"],
+    ["envies", "expires_at"],
+    ["envies", "created_at"],
+    ["envie_recipients", "created_at"],
+    ["matches", "notified_at"],
+    ["matches", "created_at"],
+    ["proposals", "timeslot"],
+    ["proposals", "created_at"],
+  ])("%s.%s is timestamp with time zone", async (table, column) => {
+    expect(await dataType(table, column)).toBe("timestamp with time zone");
+  });
+
+  it("round-trips the same instant regardless of session time zone (ENV-08 expiry comparisons)", async () => {
+    const instant = "2026-09-01T12:00:00.000Z";
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values
+         ('env-tz', 'u1', 'v', 'c', '${instant}')`,
+    );
+    await db.exec(`set time zone 'America/New_York'`);
+    const read = await db.query<{ expires_at: string }>(
+      `select expires_at from envies where id = 'env-tz'`,
+    );
+    await db.exec(`set time zone 'UTC'`);
+    expect(new Date(read.rows[0]?.expires_at ?? "").toISOString()).toBe(instant);
+  });
+});
+
 describe("ENV-09 match pair canonical order (SUG-DB-003)", () => {
   beforeAll(async () => {
     await db.exec(

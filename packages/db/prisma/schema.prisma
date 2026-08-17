@@ -15,7 +15,7 @@ model User {
   id               String           @id @default(cuid())
   phoneHash        String           @unique @map("phone_hash") // E.164 hashed client-side — contact discovery without storing raw numbers (G1: no plaintext phone/email columns, ever)
   displayName      String           @map("display_name")
-  createdAt        DateTime         @default(now()) @map("created_at")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   vault            Vault?
   devices          Device[]
   linksOut         ContactLink[]    @relation("owner")
@@ -42,7 +42,7 @@ model Vault {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   blob      Bytes
   version   Int      @default(1)
-  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("vaults")
 }
@@ -53,7 +53,7 @@ model Device {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   pushToken String?  @map("push_token")
   platform  Platform
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   // Query pattern: push-notification fanout (IDT-05) + deletion cascade scan.
   @@index([userId])
@@ -90,7 +90,7 @@ model ContactLink {
   targetId         String?  @map("target_id") // null until the invited person joins
   target           User?    @relation("target", fields: [targetId], references: [id], onDelete: SetNull)
   invitedPhoneHash String?  @map("invited_phone_hash") // discovery handle while target is null
-  createdAt        DateTime @default(now()) @map("created_at")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   // --- Classification (ADR-001). Never logged, never exposed to another user (VLT-03, IDT-08).
   /// The owner's own label for this person — their address-book name, not the
@@ -182,8 +182,8 @@ model Envie {
   verb       String // « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed
   category   String // client-suggested normalized category — matching key
   status     EnvieStatus      @default(ACTIVE)
-  expiresAt  DateTime         @map("expires_at")
-  createdAt  DateTime         @default(now()) @map("created_at")
+  expiresAt  DateTime         @map("expires_at") @db.Timestamptz(3)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   recipients EnvieRecipient[]
   matchesA   Match[]          @relation("envieA")
   matchesB   Match[]          @relation("envieB")
@@ -201,7 +201,7 @@ model EnvieRecipient {
   envie       Envie    @relation(fields: [envieId], references: [id], onDelete: Cascade)
   recipientId String   @map("recipient_id")
   recipient   User     @relation("envieRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now()) @map("created_at")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@id([envieId, recipientId])
   // Query pattern: "which active envies am I a recipient of?" during match computation.
@@ -220,8 +220,8 @@ model Match {
   userBId    String     @map("user_b_id")
   userB      User       @relation("userB", fields: [userBId], references: [id], onDelete: Cascade)
   state      MatchState @default(OPEN)
-  notifiedAt DateTime?  @map("notified_at")
-  createdAt  DateTime   @default(now()) @map("created_at")
+  notifiedAt DateTime?  @map("notified_at") @db.Timestamptz(3)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   proposals  Proposal[]
 
   // Reciprocity-race arbiter (DAT rule 5): concurrent envie creation may both detect
@@ -248,9 +248,9 @@ model Proposal {
   proposerId String        @map("proposer_id")
   proposer   User          @relation(fields: [proposerId], references: [id], onDelete: Cascade)
   place      String?
-  timeslot   DateTime?
+  timeslot   DateTime?     @db.Timestamptz(3)
   state      ProposalState @default(PENDING)
-  createdAt  DateTime      @default(now()) @map("created_at")
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
   // Query pattern: proposals-for-match reads (ENV-14) + both deletion cascades.
   @@index([matchId])
