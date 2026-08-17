@@ -100,7 +100,18 @@ export const AREA_PREFIXES = {
 //   CHANGELOG.md below: a file every area must touch, owned by none.
 //   Note this permits the file, not its contents; a dependency still has to be
 //   argued for in review, which is where that judgment belongs.
-export const SHARED_ALLOWED_PREFIXES = ["docs/STATUS.md", "docs/qa/", "pnpm-lock.yaml"];
+// - suggestions/**: the audit backlog. suggestions/README.md states that an
+//   implemented suggestion moves to done/<area>/ and the open/done counts
+//   update — bookkeeping every area owes on its own PR, on a tree no area
+//   owns. Without this the duty was literally unsatisfiable: a PR closing out
+//   its own suggestion failed this guard, so the moves silently never happened
+//   and the counts drifted. Same category as CHANGELOG.md and pnpm-lock.yaml.
+export const SHARED_ALLOWED_PREFIXES = [
+  "docs/STATUS.md",
+  "docs/qa/",
+  "pnpm-lock.yaml",
+  "suggestions/",
+];
 
 // Cross-cutting areas with no dedicated package share the root CHANGELOG.md
 // (G5: "root CHANGELOG.md (devops/docs/agents/design/specs/tooling)").
