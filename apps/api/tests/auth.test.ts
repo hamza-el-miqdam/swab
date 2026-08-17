@@ -183,3 +183,70 @@ describe("POST /auth/otp/request + POST /auth/otp/verify", () => {
     expect(body.devCode).toBeUndefined();
   });
 });
+
+// Distinct, valid-shaped phoneHashes so each request stays well under OtpStore's
+// per-hash throttle (3 per 5 min) — these tests are exercising the per-IP tier.
+function phoneHash(n: number): string {
+  return `h${n}`.padEnd(64, "0");
+}
+
+describe("POST /auth/otp/* — per-IP rate limit tier (SUG-API-005, IDT-03)", () => {
+  it("stricter per-IP limit trips at the 11th request in a minute, well under the global 100/min ceiling", async () => {
+    const { app } = await makeApp();
+
+    for (let i = 0; i < 10; i += 1) {
+      const res = await app.inject({
+        method: "POST",
+        url: "/auth/otp/request",
+        payload: { phoneHash: phoneHash(i) },
+      });
+      expect(res.statusCode).toBe(200);
+    }
+
+    const eleventh = await app.inject({
+      method: "POST",
+      url: "/auth/otp/request",
+      payload: { phoneHash: phoneHash(10) },
+    });
+    expect(eleventh.statusCode).toBe(429);
+    expect(eleventh.headers["content-type"]).toContain("application/problem+json");
+  });
+
+  it("TRUST_PROXY_HOPS=0 (default): X-Forwarded-For is ignored — rotating it does not evade the shared bucket", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, TRUST_PROXY_HOPS: 0 } });
+
+    for (let i = 0; i < 10; i += 1) {
+      const res = await app.inject({
+        method: "POST",
+        url: "/auth/otp/request",
+        payload: { phoneHash: phoneHash(i) },
+        headers: { "x-forwarded-for": `10.0.0.${i}` },
+      });
+      expect(res.statusCode).toBe(200);
+    }
+
+    const eleventh = await app.inject({
+      method: "POST",
+      url: "/auth/otp/request",
+      payload: { phoneHash: phoneHash(10) },
+      headers: { "x-forwarded-for": "10.0.0.99" },
+    });
+    expect(eleventh.statusCode).toBe(429);
+  });
+
+  it("TRUST_PROXY_HOPS=1: X-Forwarded-For is honored — two distinct client IPs get independent buckets", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, TRUST_PROXY_HOPS: 1 } });
+
+    for (const clientIp of ["203.0.113.10", "203.0.113.20"]) {
+      for (let i = 0; i < 10; i += 1) {
+        const res = await app.inject({
+          method: "POST",
+          url: "/auth/otp/request",
+          payload: { phoneHash: phoneHash(i + (clientIp === "203.0.113.10" ? 0 : 10)) },
+          headers: { "x-forwarded-for": clientIp },
+        });
+        expect(res.statusCode).toBe(200);
+      }
+    }
+  });
+});

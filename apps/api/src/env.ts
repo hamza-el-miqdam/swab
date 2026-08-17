@@ -8,6 +8,11 @@ const envSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     // POC (OQ-IDT-1): echo the OTP code in the response. Fail-closed: off unless explicitly enabled.
     OTP_DEV_CODE: z.enum(["enabled", "disabled"]).default("disabled"),
+    // Number of trusted reverse-proxy hops in front of the API (0 = directly
+    // exposed). Fail-closed default: `X-Forwarded-For` is ignored (and thus
+    // unspoofable) until an operator explicitly names how many hops to trust
+    // (IDT-03 — per-IP throttling is meaningless without this behind an ALB).
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
   })
   .refine((e) => !(e.NODE_ENV === "production" && e.OTP_DEV_CODE === "enabled"), {
     path: ["OTP_DEV_CODE"],
