@@ -94,6 +94,22 @@ const cases = [
     expect: { escaping: [], schemaViolation: false, unlabeled: false },
   },
   {
+    // Adding a devDependency to packages/db (e.g. a test runner) rewrites the
+    // workspace lockfile. Before this was shared, G4's "no new dependencies
+    // without justification" was unsatisfiable: the justification was allowed,
+    // the diff it produces was not.
+    name: "pnpm-lock.yaml is allowed from any area — a dependency change always rewrites it",
+    labels: ["area:db"],
+    changedFiles: ["packages/db/package.json", "packages/db/prisma/schema.prisma", "pnpm-lock.yaml"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "sharing the lockfile does not share the root package.json — that stays area:sre",
+    labels: ["area:ios"],
+    changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "package.json", "pnpm-lock.yaml"],
+    expect: { escaping: ["package.json"], schemaViolation: false, unlabeled: false },
+  },
+  {
     name: "root CHANGELOG.md NOT in an area with its own package (area:ios) unless also shared/matched",
     labels: ["area:ios"],
     changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "CHANGELOG.md"],
