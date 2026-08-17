@@ -124,6 +124,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   const otpStore = deps.otpStore ?? new OtpStore();
+  // SUG-API-008: periodic sweep of expired codes / stale throttle windows —
+  // defense-in-depth against unbounded memory growth. `unref()` so it never
+  // keeps the process (or a test's event loop) alive; `onClose` for cleanliness.
+  const otpSweepTimer = setInterval(() => otpStore.sweep(), 60_000);
+  otpSweepTimer.unref();
+  app.addHook("onClose", () => clearInterval(otpSweepTimer));
+
   registerHealthRoutes(app, { dbHealth: deps.dbHealth });
   registerAuthRoutes(app, { env: deps.env, repo: deps.repo, otpStore });
   registerVaultRoutes(app, { env: deps.env, repo: deps.repo });

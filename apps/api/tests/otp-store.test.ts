@@ -83,3 +83,54 @@ describe("OtpStore (IDT-03)", () => {
     expect(codeB).toMatch(/^\d{6}$/);
   });
 });
+
+describe("OtpStore.sweep (SUG-API-008)", () => {
+  it("IDT-03: sweep drops expired codes and empty throttle windows", () => {
+    const { store, advance } = makeStore();
+    requestCode(store, "a".repeat(64));
+    requestCode(store, "b".repeat(64));
+    advance(THROTTLE_WINDOW_MS + 1); // past both OTP_TTL and the throttle window
+    store.sweep();
+    expect(store.trackedCount).toEqual({ codes: 0, throttles: 0 });
+  });
+
+  it("IDT-03: sweep keeps live codes", () => {
+    const { store, advance } = makeStore();
+    const code = requestCode(store);
+    advance(60_000); // well under the 5-minute TTL
+    store.sweep();
+    expect(store.check(HASH, code)).toBe(true);
+    expect(store.trackedCount).toEqual({ codes: 1, throttles: 1 });
+  });
+
+  it("IDT-03: at the tracked-hash cap, new hashes are throttled, existing codes still verify", () => {
+    const cappedStore = new OtpStore(() => 0, 2);
+    const first = cappedStore.request("a".repeat(64));
+    const second = cappedStore.request("b".repeat(64));
+    if (!first.ok || !second.ok) throw new Error("expected both requests to succeed");
+    // At cap: a brand-new hash is denied rather than evicting a live code.
+    const third = cappedStore.request("c".repeat(64));
+    expect(third.ok).toBe(false);
+    // Existing codes are unaffected by hitting the cap.
+    expect(cappedStore.check("a".repeat(64), first.code)).toBe(true);
+    expect(cappedStore.check("b".repeat(64), second.code)).toBe(true);
+  });
+
+  it("IDT-03: at the cap, an ALREADY-tracked hash can still request — it overwrites its own row", () => {
+    const cappedStore = new OtpStore(() => 0, 2);
+    const first = cappedStore.request("a".repeat(64));
+    cappedStore.request("b".repeat(64));
+    if (!first.ok) throw new Error("expected the first request to succeed");
+
+    // At cap, so a brand-new hash is denied...
+    expect(cappedStore.request("c".repeat(64)).ok).toBe(false);
+
+    // ...but "a" is already tracked: re-issuing overwrites its own entry and
+    // cannot push the map past the cap. Denying it would be pure collateral
+    // damage from someone else's flood — a user mid-sign-in who lost their
+    // SMS can never get a second code while an attacker holds the cap.
+    const reissued = cappedStore.request("a".repeat(64));
+    expect(reissued.ok).toBe(true);
+    expect(cappedStore.trackedCount.codes).toBe(2);
+  });
+});
