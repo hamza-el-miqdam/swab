@@ -31,11 +31,15 @@ export interface AuthRouteDeps {
   otpStore: OtpStore;
 }
 
-// IDT-03: a stricter per-IP tier on top of the global 100/min bucket (app.ts) —
-// one IP spraying OTP requests across many phoneHashes stays well under the
-// per-hash throttle (OtpStore) but must not be free; this caps it long before
-// the global limit would (and before OQ-IDT-1's SMS spend / SUG-API-008's
-// per-hash state growth get a chance to matter).
+// IDT-03: a stricter per-IP tier for the OTP routes — one IP spraying OTP
+// requests across many phoneHashes stays well under the per-hash throttle
+// (OtpStore) but must not be free; 10/min caps it long before OQ-IDT-1's SMS
+// spend or SUG-API-008's per-hash state growth get a chance to matter.
+//
+// Note this REPLACES the global 100/min bucket (app.ts) for these two routes
+// rather than stacking with it: @fastify/rate-limit's onRoute hook gives a
+// route with its own `config.rateLimit` a private child store and skips the
+// global hook entirely. Each route also counts separately from the other.
 const otpRateLimit = { rateLimit: { max: 10, timeWindow: "1 minute" } };
 
 export function registerAuthRoutes(app: FastifyInstance, deps: AuthRouteDeps): void {

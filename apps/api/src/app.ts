@@ -34,6 +34,10 @@ const KNOWN_4XX_TITLES: Record<string, string> = {
 // Error, or the generic handler below can't recognize it (`instanceof Error`
 // fails on a plain object) and mislabels a 429 as a 500 (found while adding
 // SUG-API-005's tests: the global limiter's 429 path had never been exercised).
+// Always 429: `ban` is not configured on the limiter below, so the plugin's
+// only other status (403, once a caller exceeds `ban` times the limit) is
+// unreachable. Enabling `ban` means carrying `context.statusCode` through here
+// and mapping its title too — otherwise a ban would report as a plain 429.
 class RateLimitProblem extends Error {
   readonly statusCode = 429;
 }

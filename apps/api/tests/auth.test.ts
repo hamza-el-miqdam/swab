@@ -173,7 +173,7 @@ function phoneHash(n: number): string {
 }
 
 describe("POST /auth/otp/* — per-IP rate limit tier (SUG-API-005, IDT-03)", () => {
-  it("stricter per-IP limit trips at the 11th request in a minute, before the global 100/min bucket", async () => {
+  it("stricter per-IP limit trips at the 11th request in a minute, well under the global 100/min ceiling", async () => {
     const { app } = await makeApp();
 
     for (let i = 0; i < 10; i += 1) {
