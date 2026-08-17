@@ -55,6 +55,8 @@ model Device {
   platform  Platform
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Query pattern: push-notification fanout (IDT-05) + deletion cascade scan.
+  @@index([userId])
   @@map("devices")
 }
 
@@ -126,6 +128,8 @@ model ContactLink {
   @@index([invitedPhoneHash])
   // Query pattern: cursor delta pull — "everything of mine that changed since X" (VLT-08).
   @@index([ownerId, updatedAt])
+  // Query pattern: SetNull scan on user deletion; "who links to me" resolution (IDT-07).
+  @@index([targetId])
   @@map("contact_links")
 }
 
@@ -186,6 +190,8 @@ model Envie {
 
   // Query pattern: reciprocal-candidate lookup on envie creation (hot path) + expiry sweep.
   @@index([category, status, expiresAt])
+  // Query pattern: "my active envies" listing with withdraw (ENV-06) + deletion cascade.
+  @@index([authorId, status])
   @@map("envies")
 }
 
@@ -220,7 +226,18 @@ model Match {
 
   // Reciprocity-race arbiter (DAT rule 5): concurrent envie creation may both detect
   // the pair — this constraint guarantees a single match row.
+  //
+  // INVARIANT (SUG-DB-003, ENV-09): envieAId is always the lexicographically
+  // smaller of the pair, userAId/userBId are correspondingly the authors of
+  // envieA/envieB. Backend sorts the pair before insert. Enforced by a CHECK
+  // Prisma cannot express here — see migration `match_pair_canonical_order`.
   @@unique([envieAId, envieBId])
+  // Query pattern: GET /matches is WHERE user_a_id = ? OR user_b_id = ? — both sides need
+  // their own index; the pair-unique above only leads with envieAId.
+  @@index([userAId])
+  @@index([userBId])
+  // Query pattern: envie deletion cascades via the envieB relation too.
+  @@index([envieBId])
   @@map("matches")
 }
 
@@ -235,6 +252,9 @@ model Proposal {
   state      ProposalState @default(PENDING)
   createdAt  DateTime      @default(now()) @map("created_at")
 
+  // Query pattern: proposals-for-match reads (ENV-14) + both deletion cascades.
+  @@index([matchId])
+  @@index([proposerId])
   @@map("proposals")
 }
 

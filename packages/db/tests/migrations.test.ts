@@ -175,3 +175,79 @@ describe("VLT-08 delta-pull index", () => {
     expect(idx.rows.map((r) => r.indexname)).toContain("contact_links_owner_id_updated_at_idx");
   });
 });
+
+describe("SUG-DB-007 FK indexes", () => {
+  /** Postgres never auto-indexes FK columns; Prisma only creates what's declared. */
+  async function indexNames(table: string): Promise<string[]> {
+    const idx = await db.query<{ indexname: string }>(
+      `select indexname from pg_indexes where tablename = $1`,
+      [table],
+    );
+    return idx.rows.map((r) => r.indexname);
+  }
+
+  it("indexes Device.userId — push fanout (IDT-05) + deletion cascade", async () => {
+    expect(await indexNames("devices")).toContain("devices_user_id_idx");
+  });
+
+  it("indexes Envie.authorId — 'my active envies' (ENV-06) + deletion cascade", async () => {
+    expect(await indexNames("envies")).toContain("envies_author_id_status_idx");
+  });
+
+  it("indexes both sides of Match — GET /matches is WHERE user_a_id = ? OR user_b_id = ?", async () => {
+    const names = await indexNames("matches");
+    expect(names).toContain("matches_user_a_id_idx");
+    expect(names).toContain("matches_user_b_id_idx");
+  });
+
+  it("indexes Match.envieBId — the envie_a_id-leading unique doesn't cover envieB lookups", async () => {
+    expect(await indexNames("matches")).toContain("matches_envie_b_id_idx");
+  });
+
+  it("indexes Proposal.matchId and proposerId — proposals-for-match (ENV-14) + both cascades", async () => {
+    const names = await indexNames("proposals");
+    expect(names).toContain("proposals_match_id_idx");
+    expect(names).toContain("proposals_proposer_id_idx");
+  });
+
+  it("indexes ContactLink.targetId — the SetNull scan + pending-link resolution (IDT-07)", async () => {
+    expect(await indexNames("contact_links")).toContain("contact_links_target_id_idx");
+  });
+});
+
+describe("ENV-09 match pair canonical order (SUG-DB-003)", () => {
+  beforeAll(async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values
+         ('env-e1', 'u1', 'v', 'c', now() + interval '1 day'),
+         ('env-e2', 'u2', 'v', 'c', now() + interval '1 day')`,
+    );
+  });
+
+  it("accepts the canonical order — envieAId lexicographically smaller than envieBId", async () => {
+    await expect(
+      db.exec(
+        `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+           values ('match-canonical', 'env-e1', 'env-e2', 'u1', 'u2')`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects the reversed pair with a CHECK violation, so a concurrent reversed insert cannot create a second match row", async () => {
+    await expect(
+      db.exec(
+        `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+           values ('match-reversed', 'env-e2', 'env-e1', 'u2', 'u1')`,
+      ),
+    ).rejects.toThrow(/matches_pair_canonical_order/);
+  });
+
+  it("still rejects the same canonical pair inserted twice — the race's losing side", async () => {
+    await expect(
+      db.exec(
+        `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+           values ('match-duplicate', 'env-e1', 'env-e2', 'u1', 'u2')`,
+      ),
+    ).rejects.toThrow(/matches_envie_a_id_envie_b_id_key/);
+  });
+});

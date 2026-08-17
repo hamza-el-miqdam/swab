@@ -191,12 +191,20 @@ async function main(): Promise<void> {
     },
     select: { id: true },
   });
+  // SUG-DB-003 (ENV-09): envieAId must be the lexicographically smaller id —
+  // cuid() creation order does not guarantee that, so sort before insert
+  // (the same rule Backend follows at match-creation time), swapping the
+  // author mapping to match.
+  const [canonicalEnvieAId, canonicalEnvieBId] =
+    envieA.id < envieB.id ? [envieA.id, envieB.id] : [envieB.id, envieA.id];
+  const [canonicalUserAId, canonicalUserBId] =
+    canonicalEnvieAId === envieA.id ? [amina.id, bilal.id] : [bilal.id, amina.id];
   const match = await prisma.match.create({
     data: {
-      envieAId: envieA.id,
-      envieBId: envieB.id,
-      userAId: amina.id,
-      userBId: bilal.id,
+      envieAId: canonicalEnvieAId,
+      envieBId: canonicalEnvieBId,
+      userAId: canonicalUserAId,
+      userBId: canonicalUserBId,
       state: MatchState.OPEN,
       notifiedAt: hoursFromT0(2), // both sides notified atomically
       createdAt: hoursFromT0(2),

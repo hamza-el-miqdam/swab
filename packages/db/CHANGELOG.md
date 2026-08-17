@@ -6,6 +6,21 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-17 — [SUG-DB-007, IDT-04, IDT-05] Index every unindexed FK column
+
+- **Problem:** Postgres does not auto-index FK-referencing columns, and Prisma only creates what's declared. Six FK columns had no index: `Device.userId`, `Envie.authorId`, `Match.userAId`/`userBId`/`envieBId`, `Proposal.matchId`/`proposerId`, `ContactLink.targetId`. Every one of them backs a real query pattern (push fanout, match-list `WHERE user_a_id = ? OR user_b_id = ?`, proposals-for-match) and a deletion cascade — account deletion touches 7 tables and must never sequential-scan (DAT rule 2).
+- **Fix:** migration `fk_indexes` — eight pure `CREATE INDEX` statements, no data migration, non-destructive: `devices(user_id)`, `envies(author_id, status)` (leftmost prefix also serves bare authorId), `matches(user_a_id)`, `matches(user_b_id)`, `matches(envie_b_id)`, `proposals(match_id)`, `proposals(proposer_id)`, `contact_links(target_id)`.
+- **Not touched:** `EnvieRecipient.envieId` (leading column of its composite PK, already covered) and `EnvieRecipient.recipientId` (already indexed since SUG-DB-001).
+- **Tests:** 6 new PGlite cases asserting each index exists via `pg_indexes`, following the existing VLT-08 pattern.
+- **Privacy audit:** indexes only cover id columns already present in the schema; nothing new is exposed or logged.
+
+## 2026-08-17 — [SUG-DB-003, ENV-09] Canonical pair order arbitrates the reciprocal-match race
+
+- **Problem:** `@@unique([envieAId, envieBId])` only blocks re-inserting the exact same ordered pair. Two concurrent transactions detecting the same reciprocal envies could each insert their own directional row — `(E1,E2)` and `(E2,E1)` — and both satisfy the constraint, producing two match rows for one pair (ENV-09 requires exactly one, ever). The matching engine doesn't exist in `apps/api` yet, so this was untested by any consumer — the cheapest moment to fix it.
+- **Fix:** migration `match_pair_canonical_order` adds a hand-written `CHECK (envie_a_id < envie_b_id)` (Prisma can't express it). `schema.prisma` documents the invariant on `Match`: `envieAId` is always the lexicographically smaller id, `userAId`/`userBId` the corresponding authors. `seed.ts`'s reciprocal-pair fixture now sorts before insert, since `cuid()` creation order does not guarantee lexicographic order.
+- **Tests:** 3 new PGlite cases — canonical order accepted, reversed order rejected by the CHECK, and the same canonical pair inserted twice still rejected by the pre-existing unique index (the race's losing side).
+- **Backend note (PR description):** match insertion must canonicalize `[envieId1, envieId2].sort()` and map `userA`/`userB` accordingly before insert — a reversed insert now fails loudly (CHECK violation) instead of silently duplicating.
+
 ## 2026-08-17 — [VLT-01..10, FCH-09, ONB-04] ADR-001 stage 2: classification moves into typed columns
 
 - **Model diff:** `ContactLink` absorbs the four axes (`displayName`, `ring`, `etat`, `ressenti`) plus FCH-05 staleness state; new `ContactRole` (multi-select rôles, one row per tag); new `ClientMutation` (VLT-07 idempotency ledger); new enums `etat` / `ressenti` / `role_contexte`. Merged into the edge rather than a 1:1 side table because every axis read is an edge read — the map, the fiche and scope resolution all want them together.

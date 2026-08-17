@@ -54,6 +54,27 @@ const cases = [
     expect: { escaping: [], schemaViolation: false, unlabeled: false },
   },
   {
+    name: "any area may close out its own suggestion by moving it to suggestions/done/ and updating the README counts",
+    labels: ["area:db"],
+    changedFiles: [
+      "packages/db/prisma/schema.prisma",
+      "packages/db/CHANGELOG.md",
+      "suggestions/db/SUG-DB-003-match-reversed-pair-race.md",
+      "suggestions/done/db/SUG-DB-003-match-reversed-pair-race.md",
+      "suggestions/README.md",
+    ],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "the suggestions/ allowance is shared, not area:db-specific",
+    labels: ["area:backend"],
+    changedFiles: [
+      "apps/api/src/routes/auth.ts",
+      "suggestions/done/backend/SUG-API-004-concurrent-signup-race.md",
+    ],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
     name: "cross-cutting PR unions prefixes across multiple area labels",
     labels: ["area:ios", "area:specs"],
     changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "docs/specs/FS-01-onboarding.md"],

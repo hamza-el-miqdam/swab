@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-17 — [IDT-01] SUG-API-004 concurrent first sign-ins no longer 500 on the duplicate-user race
+
+- `prisma-repo.ts`'s `createUser` was a bare `prisma.user.create`; two near-simultaneous `POST /auth/otp/verify` calls for the same phoneHash (double-tap, client retry, two devices — the OTP `check()` doesn't consume, so both legitimately hold a valid code) both pass `findUserByPhoneHash → null`, then the loser's `create` threw a `P2002` unique-violation that the global error handler turned into a 500. Now mirrors `upsertVault`'s pattern (SUG-API-003): catch `P2002`, re-read by `phoneHash`, return the existing user — the race loser signs in as the winner.
+- `repo.ts`'s `Repository.createUser` doc comment now states the race-safe contract. `tests/fake-repo.ts`'s double previously overwrote silently on a duplicate key (diverging from real Prisma semantics); it now returns the existing entry too.
+- Tests: stubbed-client unit tests for the P2002/rethrow/row-vanished branches in `tests/prisma-repo-error-mapping.test.ts` (mirrors the existing `upsertVault` error-mapping tests); a deterministic repo-level race test in `tests/auth.test.ts` against the fake double.
+- **Gotcha:** a true concurrent HTTP race can't be reproduced through `fastify.inject()` — it serializes a request's full completion (including OTP consumption) ahead of the next one starting, so a route-level `Promise.all` test always sees the second call as an already-consumed 401, not a real race. The repo-level test above exercises the same code path deterministically instead.
+- **Skipped:** a real-Postgres integration test (mirroring `upsertVault`'s "two concurrent baseVersion 0 upserts" test) is left for a future change — `tests/prisma-repo.test.ts` already fails in this environment with no local Postgres (pre-existing gap predating this change, confirmed via `git stash`; green in CI's `postgres:17` service, per SUG-API-011's precedent).
+
 ## 2026-08-17 — [IDT-03] SUG-API-005 `trustProxy` + a stricter per-IP tier on the OTP routes
 
 - The Fastify factory never set `trustProxy`, so behind any reverse proxy `req.ip` (the rate-limit key) was the proxy's address — every user shared one 100/min bucket. Added `TRUST_PROXY_HOPS` (fail-closed default `0`, i.e. `X-Forwarded-For` ignored) — an operator sets it to the real hop count, spoof-resistant unlike `trustProxy: true`.

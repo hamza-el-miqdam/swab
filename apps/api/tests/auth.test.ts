@@ -52,6 +52,24 @@ describe("POST /auth/otp/request + POST /auth/otp/verify", () => {
     expect(repo.users.size).toBe(1); // no duplicate account
   });
 
+  it("IDT-01: concurrent createUser calls for the same phoneHash settle to one user, not a crash", async () => {
+    // Exercises the race directly against the repo double: a double-tap,
+    // client retry, or two devices can both pass findUserByPhoneHash → null
+    // then race into createUser (fastify.inject() serializes full request
+    // completion, including OTP consumption, so this race can't be
+    // reproduced end-to-end through the route — see prisma-repo's P2002
+    // handling in prisma-repo-error-mapping.test.ts for the production path).
+    const { repo } = await makeApp();
+
+    const [a, b] = await Promise.all([
+      repo.createUser(PHONE_HASH_A, "Amina"),
+      repo.createUser(PHONE_HASH_A, "Amina"),
+    ]);
+
+    expect(a.id).toBe(b.id);
+    expect(repo.users.size).toBe(1);
+  });
+
   it("IDT-03: wrong codes are rejected and correct codes are single-use", async () => {
     const { app } = await makeApp();
     const requested = await app.inject({
