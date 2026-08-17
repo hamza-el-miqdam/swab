@@ -12,7 +12,7 @@ _Last updated: 2026-08-16_
 
 | Spec | Module | Status | Lead | Notes |
 |---|---|---|---|---|
-| FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth, JWT sessions, `/health` + `/ready`. **2026-08-16 (ADR-001): E2EE retired, classification moves server-side; specs restated, migration not built.** Missing: that migration, refresh rotation (IDT-02), deletion (IDT-04), discovery (IDT-06), invites (IDT-07/09). |
+| FS-07 | Identity & Vault | 🟡 In progress | Backend | API done: phone-OTP auth, JWT sessions, `/health` + `/ready`. **ADR-001 migration: stage 0a/0b done; stage 2 (schema) landed 2026-08-17 — classification is typed columns, `Vault` deprecated not dropped.** Next: stage 3 typed endpoints, then clients. Missing: refresh rotation (IDT-02), deletion (IDT-04), discovery (IDT-06), invites (IDT-07/09). |
 | FS-01 | Onboarding | 🟢⚠️ | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). **ADR-001:** built on the retired vault; ONB-02/05 change in the client-stage migration. |
 | FS-02 | Relationship Map | 🟢⚠️ | Mobile | Radial map + list fallback from the local cache, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). **ADR-001:** reads move vault→cache; behaviour unchanged, lowest-impact spec. |
 | FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04); FCH-09 stored identifiers done both platforms — stage-2 unblocked. |

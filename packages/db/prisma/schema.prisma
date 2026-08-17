@@ -25,13 +25,18 @@ model User {
   matchesB         Match[]          @relation("userB")
   proposals        Proposal[]
   envieRecipientOf EnvieRecipient[] @relation("envieRecipient")
+  clientMutations  ClientMutation[]
 
   @@map("users")
 }
 
-/// Encrypted client-side; server stores an opaque blob (classification axes,
-/// filter rules, subgroups, relation history). Key never leaves the device.
-/// Privacy invariant (G1 / DAT rule 1): stays Bytes forever — no jsonb mirror, no indexing, no parsing.
+/// DEPRECATED (ADR-001, 2026-08-16) — superseded by the typed classification
+/// columns on ContactLink/ContactRole below. Kept, NOT dropped: `apps/api`
+/// still serves GET/POST /vault and both clients still call it. Dropping the
+/// model here would break the API build and both apps in the same commit.
+/// It is removed at ADR-001 stage 3/4, once the typed endpoints ship and the
+/// clients cut over — that PR also carries the one-off data migration.
+/// Until then: no new writers, no new columns, no reads from new code.
 model Vault {
   userId    String   @id @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -53,7 +58,29 @@ model Device {
   @@map("devices")
 }
 
-/// Edge only — HOW the owner classifies the target lives in the owner's Vault.
+/// The directional edge AND the owner's classification of the target
+/// (ADR-001: "Edge only — classification lives in the owner's Vault" is
+/// retired). Merged into one row rather than a 1:1 side table because every
+/// read of an axis is a read of the edge — the map, the fiche and scope
+/// resolution all want them together, and a join buys nothing.
+///
+/// **Directionality is the privacy model (IDT-08), not a modelling detail.**
+/// A row says how `owner` sees `target`. There is no reverse read: `target`
+/// must never be able to reach this row through any endpoint, and no query in
+/// this codebase may select classification columns filtered by `target_id`
+/// alone. B never learns they are in A's circle.
+///
+/// Sync (VLT-07..10): `updatedAt` drives cursor pulls, `deletedAt` tombstones
+/// deletes, and the four `*UpdatedAt` columns carry field-level LWW.
+///
+/// Why per-field timestamps, when a plain PATCH already only touches one
+/// column: the offline outbox (VLT-10) replays *stale* mutations. Device B
+/// comes back online and replays "set ressenti" from two hours ago; device A
+/// set it five minutes ago. Arrival order would let the stale write win, and
+/// client clocks are untrustworthy by VLT-08 — so a write carries the field
+/// timestamp it last saw and the server rejects it if the column moved on.
+/// Record-level `updatedAt` alone cannot express that (FS-03: ring on A and
+/// ressenti on B must BOTH survive).
 model ContactLink {
   id               String   @id @default(cuid())
   ownerId          String   @map("owner_id")
@@ -63,11 +90,85 @@ model ContactLink {
   invitedPhoneHash String?  @map("invited_phone_hash") // discovery handle while target is null
   createdAt        DateTime @default(now()) @map("created_at")
 
-  // One edge per (owner, target); arbiter for duplicate link attempts.
-  @@unique([ownerId, targetId])
+  // --- Classification (ADR-001). Never logged, never exposed to another user (VLT-03, IDT-08).
+  /// The owner's own label for this person — their address-book name, not the
+  /// target's chosen `User.displayName`. Nullable because a link can be created
+  /// by discovery before the owner names it; the API requires it on owner-created
+  /// contacts and clients fall back to `target.displayName` when it is null.
+  displayName      String?  @map("display_name") @db.VarChar(50)
+  /// Intimité, 1 = innermost (ONB-04). Range enforced by a CHECK constraint in
+  /// the migration — Prisma cannot express it, and an out-of-range value breaks
+  /// the clients' ring layout maths rather than failing loudly.
+  ring             Int?
+  etat             Etat?
+  ressenti         Ressenti?
+  roles            ContactRole[]
+
+  // --- FCH-05 staleness nudge. Server-side now, so the 30-day timer survives a device change.
+  lastAxisChangeAt      DateTime? @map("last_axis_change_at") @db.Timestamptz(3)
+  stalenessSnoozedUntil DateTime? @map("staleness_snoozed_until") @db.Timestamptz(3)
+
+  // --- Sync (VLT-07..10)
+  displayNameUpdatedAt DateTime? @map("display_name_updated_at") @db.Timestamptz(3)
+  ringUpdatedAt        DateTime? @map("ring_updated_at") @db.Timestamptz(3)
+  etatUpdatedAt        DateTime? @map("etat_updated_at") @db.Timestamptz(3)
+  ressentiUpdatedAt    DateTime? @map("ressenti_updated_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// Tombstone, not a hard delete (VLT-09): a stale device replaying a
+  /// pre-deletion update must not resurrect the contact.
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  // One LIVE edge per (owner, target). Enforced as a PARTIAL unique index
+  // (`WHERE deleted_at IS NULL`) in the migration, not here: Prisma cannot
+  // express partial uniques, and a plain unique would make "delete a contact,
+  // then re-add the same person" fail forever against the tombstone.
   // Query pattern: resolve pending invites when a new user registers (IDT-07).
   @@index([invitedPhoneHash])
+  // Query pattern: cursor delta pull — "everything of mine that changed since X" (VLT-08).
+  @@index([ownerId, updatedAt])
   @@map("contact_links")
+}
+
+/// Rôles·contexte is multi-select, so each tag is its own row — which also
+/// makes it field-level-LWW-able for free (VLT-09): two devices adding
+/// different roles both win, with no merge logic.
+model ContactRole {
+  contactLinkId String       @map("contact_link_id")
+  contactLink   ContactLink  @relation(fields: [contactLinkId], references: [id], onDelete: Cascade)
+  role          RoleContexte
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// Tombstoned like its parent — removing a role is a sync event, not a gap.
+  deletedAt     DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  @@id([contactLinkId, role])
+  // Query pattern: cursor delta pull of a contact's tags (VLT-08).
+  @@index([contactLinkId, updatedAt])
+  @@map("contact_roles")
+}
+
+/// VLT-07 idempotency ledger. Every client mutation carries a client-generated
+/// id; replaying it after a timeout or a half-failed request must not
+/// double-apply. The server records the id inside the same transaction as the
+/// write, so "applied" and "recorded" cannot disagree.
+///
+/// Scoped by user on purpose: a globally-unique id would let one account's
+/// chosen id collide with — or probe for — another's.
+///
+/// Deliberately does NOT cache the response body. A replay is answered "already
+/// applied" and the client re-pulls by cursor, which it does anyway. Storing
+/// responses would mean storing classification data twice, in a table nobody
+/// audits (VLT-03).
+model ClientMutation {
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @db.VarChar(64)
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz(3)
+
+  @@id([userId, id])
+  // Query pattern: retention sweep — this table grows forever otherwise.
+  @@index([appliedAt])
+  @@map("client_mutations")
 }
 
 model Envie {
@@ -135,6 +236,44 @@ model Proposal {
   createdAt  DateTime      @default(now()) @map("created_at")
 
   @@map("proposals")
+}
+
+/// FCH-09 / FS-03 § "Stored value vocabulary" — the NORMATIVE source for these
+/// three vocabularies is the spec table, not this file and not either client.
+/// Prisma names are SCREAMING_CASE by convention; every value @maps to the
+/// exact identifier the clients persist, so a stored byte is the same string on
+/// device and in Postgres.
+///
+/// Adding or renaming a value is a spec amendment first, then a migration here.
+/// A closed enum is deliberate: the clients tolerate unknown tokens (they must,
+/// for legacy blobs), but the server validates — an unmappable value is a 400,
+/// never a silently stored mystery string.
+enum Etat {
+  AVAILABLE @map("available")
+  BUSY      @map("busy")
+  AWAY      @map("away")
+  PAUSED    @map("paused")
+
+  @@map("etat")
+}
+
+enum Ressenti {
+  POSITIVE   @map("positive")
+  AMBIVALENT @map("ambivalent")
+  NEGATIVE   @map("negative")
+
+  @@map("ressenti")
+}
+
+enum RoleContexte {
+  FAMILY    @map("family")
+  PARTNER   @map("partner")
+  COLLEAGUE @map("colleague")
+  COHORT    @map("cohort")
+  COMMUNITY @map("community")
+  NEIGHBOR  @map("neighbor")
+
+  @@map("role_contexte")
 }
 
 enum Platform {
