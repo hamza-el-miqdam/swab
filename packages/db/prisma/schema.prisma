@@ -88,7 +88,7 @@ model ContactLink {
   ownerId          String   @map("owner_id")
   owner            User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
   targetId         String?  @map("target_id") // null until the invited person joins
-  target           User?    @relation("target", fields: [targetId], references: [id], onDelete: SetNull)
+  target           User?    @relation("target", fields: [targetId], references: [id], onDelete: Cascade)
   invitedPhoneHash String?  @map("invited_phone_hash") // discovery handle while target is null
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -124,11 +124,21 @@ model ContactLink {
   // (`WHERE deleted_at IS NULL`) in the migration, not here: Prisma cannot
   // express partial uniques, and a plain unique would make "delete a contact,
   // then re-add the same person" fail forever against the tombstone.
+  // One LIVE pending invite per (owner, invitedPhoneHash) — same partial-unique
+  // treatment, hand-written in the migration (SUG-DB-009). Resolution (IDT-07)
+  // MUST clear invitedPhoneHash to null in the same update that sets targetId:
+  // NULLs are distinct in the index, so a resolved link never blocks a later
+  // invite to the same person.
+  // Self-links (ownerId = targetId) and fully-orphaned rows (both targetId and
+  // invitedPhoneHash null) are rejected by CHECK constraints in the migration —
+  // Prisma cannot express CHECK either (SUG-DB-009). The orphan CHECK is only
+  // satisfiable because `target`'s FK is ON DELETE CASCADE: a SetNull would
+  // produce exactly the both-null row shape the CHECK forbids.
   // Query pattern: resolve pending invites when a new user registers (IDT-07).
   @@index([invitedPhoneHash])
   // Query pattern: cursor delta pull — "everything of mine that changed since X" (VLT-08).
   @@index([ownerId, updatedAt])
-  // Query pattern: SetNull scan on user deletion; "who links to me" resolution (IDT-07).
+  // Query pattern: deletion cascade on the target FK; "who links to me" resolution (IDT-07).
   @@index([targetId])
   @@map("contact_links")
 }
