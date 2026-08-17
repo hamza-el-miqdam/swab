@@ -63,15 +63,15 @@ class FicheViewModelTest {
         val vm = FicheViewModel(vault, lea.id, nowProvider = { 1_000_000L })
         advanceUntilIdle()
 
-        vm.setRoles(listOf("Famille", "Travail"))
+        vm.setRoles(listOf(RoleContexte.FAMILY, RoleContexte.COLLEAGUE))
         advanceUntilIdle()
-        vm.setEtat("disponible")
+        vm.setEtat(Etat.AVAILABLE)
         advanceUntilIdle()
-        vm.setRessenti("positive")
+        vm.setRessenti(Ressenti.POSITIVE)
         advanceUntilIdle()
 
-        assertEquals(listOf("Famille", "Travail"), vm.contact.value?.roles)
-        assertEquals("disponible", vm.contact.value?.etat)
+        assertEquals(listOf("family", "colleague"), vm.contact.value?.roles)
+        assertEquals("available", vm.contact.value?.etat)
         assertEquals("positive", vm.contact.value?.ressenti)
         assertEquals(3, vm.history.value.size)
         assertEquals(setOf("roles", "etat", "ressenti"), vm.history.value.map { it.axis }.toSet())
@@ -85,10 +85,10 @@ class FicheViewModelTest {
         val vm = FicheViewModel(vault, lea.id, nowProvider = { now })
         advanceUntilIdle()
 
-        vm.setEtat("disponible")
+        vm.setEtat(Etat.AVAILABLE)
         advanceUntilIdle()
         now += 1000
-        vm.setRessenti("positive")
+        vm.setRessenti(Ressenti.POSITIVE)
         advanceUntilIdle()
 
         val axes = vm.history.value.map { it.axis }
@@ -104,7 +104,7 @@ class FicheViewModelTest {
         val vm = FicheViewModel(vault, lea.id, nowProvider = { now })
         advanceUntilIdle()
 
-        vm.setEtat("disponible") // recorded at t=0
+        vm.setEtat(Etat.AVAILABLE) // recorded at t=0
         advanceUntilIdle()
 
         now = twelveMonths + day // now well past the 12-month window for that edit
@@ -122,7 +122,7 @@ class FicheViewModelTest {
         val vm = FicheViewModel(vault, lea.id, nowProvider = { now })
         advanceUntilIdle()
 
-        vm.setEtat("disponible")
+        vm.setEtat(Etat.AVAILABLE)
         advanceUntilIdle()
 
         now = FicheStaleness.DEFAULT_STALE_PERIOD_MILLIS - day
@@ -140,7 +140,7 @@ class FicheViewModelTest {
         val vm = FicheViewModel(vault, lea.id, nowProvider = { now })
         advanceUntilIdle()
 
-        vm.setEtat("disponible")
+        vm.setEtat(Etat.AVAILABLE)
         advanceUntilIdle()
 
         now = FicheStaleness.DEFAULT_STALE_PERIOD_MILLIS + day
@@ -157,7 +157,7 @@ class FicheViewModelTest {
         var now = 0L
         val vm = FicheViewModel(vault, lea.id, nowProvider = { now })
         advanceUntilIdle()
-        vm.setEtat("disponible")
+        vm.setEtat(Etat.AVAILABLE)
         advanceUntilIdle()
 
         now = FicheStaleness.DEFAULT_STALE_PERIOD_MILLIS + day
@@ -179,7 +179,7 @@ class FicheViewModelTest {
         var now = 0L
         val vm = FicheViewModel(vault, lea.id, nowProvider = { now })
         advanceUntilIdle()
-        vm.setEtat("disponible")
+        vm.setEtat(Etat.AVAILABLE)
         advanceUntilIdle()
 
         now = FicheStaleness.DEFAULT_STALE_PERIOD_MILLIS + day
@@ -211,10 +211,10 @@ class FicheViewModelTest {
 
         assertNull(vm.contact.value?.targetId)
 
-        vm.setEtat("disponible")
+        vm.setEtat(Etat.AVAILABLE)
         advanceUntilIdle()
 
-        assertEquals("disponible", vm.contact.value?.etat)
+        assertEquals("available", vm.contact.value?.etat)
         assertNull("editing axes never changes join status", vm.contact.value?.targetId)
     }
 }

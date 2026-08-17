@@ -395,6 +395,17 @@
         ]
       }
     },
+    "FCH-09": {
+      "fs": "FS-03",
+      "title": "Stored classification values are stable identifiers, not display copy",
+      "ios": {
+        "status": "unit-covered"
+      },
+      "android": {
+        "status": "unit-covered"
+      },
+      "notes": "ADR-001 stage 0b. Storage representation, not user-visible behaviour — the UI renders the same French labels before and after, which is why both E2E suites are unchanged and this is unit-covered rather than automated. iOS: ClassificationValuesTests. Android: ClassificationValuesTest, which adds the NFC-normalisation case Swift gets for free (Kotlin compares UTF-16 code units, so an NFD-encoded legacy token would not migrate)."
+    },
     "IDT-01": {
       "fs": "FS-07",
       "title": "Phone-OTP identity; server stores phoneHash only",

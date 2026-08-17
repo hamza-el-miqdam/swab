@@ -4,6 +4,15 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/android-CHANGELOG-pre-2026-08-15.md](../../docs/archive/android-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-16 — [FCH-09] Stored classification values are identifiers, not French copy
+
+- **What changed:** new `fiche/ClassificationValues.kt` with `Etat` / `Ressenti` / `RoleContexte` (identifiers per FS-03 § *Stored value vocabulary*). The vault persists `busy`, not `occupé`; `EtatColors.ETAT_COLORS` is keyed by `Etat` instead of by `Fr.ETAT_*`; `FicheFilterConsequence.forValue` takes an `Etat?`; `Vault`'s setters take the typed value, so writing display copy into the vault is a compile error.
+- **Why:** ADR-001 stage 0b, mirroring iOS `SUG-IOS-011`. Rewording a label — or shipping the planned Arabic locale — silently orphaned every stored value. After stage 2 these are database columns and the same rewording becomes a data migration.
+- **The Kotlin-specific trap this fixes:** Swift's `String ==` compares by canonical equivalence, so « occupé » matches whether stored NFC or NFD. **Kotlin compares UTF-16 code units and does not** — an NFD-encoded legacy token would silently fail to migrate and read as unknown. Both the frozen legacy table and every lookup normalise to NFC. Pinned by a test built from `\u` escapes (a literal would be whatever the editor saved) and verified non-vacuous: removing the NFC pass fails it.
+- **Nothing user-visible changes.** Chips render labels, taps carry values. `Vocab` now exposes typed lists plus `*_LABELS`, derived from the enums so the two can no longer drift; `FicheScreen`'s private duplicate `ROLES` list is gone (SUG-AND-017 consolidated ÉTAT/RESSENTI but missed roles).
+- **Dual-read is permanent**, applied at the vault's single hydration point. Unknown tokens (`douceur`, `confidente`, still in `vault-test-vectors.json`) round-trip verbatim and render unset. History summaries deliberately keep the display label — FCH-04 hands event creation to the server at stage 2.
+- Verified: `./gradlew test` **292/292** · `scripts/e2e-android.sh` **PASS**, 37/37, zero drift (Pixel_6_Pro API 34 — API 35+ still breaks Espresso, issue #56).
+
 ## 2026-08-16 — [IDT-02, VLT-01] SUG-AND-006 session tokens are Keystore-encrypted at rest (were plaintext)
 
 - `KeystoreTokenStore` wrote both JWTs as **plaintext** into DataStore despite its name; `Session.kt` claimed "Production storage is Keystore-backed". Neither was true. The refresh token is a long-lived credential, so a rooted device or a bad extraction path yielded account takeover (`allowBackup="false"` helps but is not encryption). ADR-001 raised the stakes: with classification data now server-side, the session token is the only thing guarding a user's whole relationship map.

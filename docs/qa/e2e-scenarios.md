@@ -176,6 +176,14 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **When** their fiche opens,
 - **Then** all four axes are fully editable and envie eligibility is clearly indicated as inactive until they join.
 
+### FCH-09 — Stored values are stable identifiers, not display copy
+- **Given** a contact whose état was stored by a build older than 2026-08-16 (the French `occupé`),
+- **When** the record is read,
+- **Then** it resolves to the identifier `busy`, still renders « occupé » unchanged, and the next write persists `busy`.
+- **And Given** a stored token in none of the FS-03 vocabularies (`douceur`), **when** it is read, **then** the axis renders as unset and the token survives a round-trip byte-for-byte — never dropped, never throwing.
+- **And Given** a legacy token stored in NFD form, **when** it is read on Android, **then** it still resolves — Kotlin compares UTF-16 code units, unlike Swift's canonically-equivalent `==`, so the lookup normalises to NFC first.
+- Verification note: `unit-covered` on purpose. Nothing user-visible changes — the same French labels render before and after — so there is no on-device behaviour for either E2E suite to observe; the whole requirement is about the persisted representation. Covered by `ClassificationValuesTests` (iOS) and `ClassificationValuesTest` (Android).
+
 ## FS-07 — Identity, Contacts & Vault Sync
 
 ### IDT-01 — Phone-OTP identity, phoneHash only

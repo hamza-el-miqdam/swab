@@ -1,5 +1,8 @@
 package com.swab.android.vault
 
+import com.swab.android.fiche.Etat
+import com.swab.android.fiche.Ressenti
+import com.swab.android.fiche.RoleContexte
 import com.swab.android.storage.KeyValueStore
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -42,7 +45,20 @@ data class VaultContact(
     val lastAxisChangeAt: Long? = null,
     /** FCH-05 — epoch millis until which the staleness nudge stays suppressed after « À revoir plus tard ». */
     val staleSnoozedUntil: Long? = null,
-)
+) {
+    // FCH-09 typed reads. [etat]/[ressenti]/[roles] hold the STORED tokens
+    // (identifiers, or an unrecognised token preserved verbatim). Everything
+    // that renders or branches on a value goes through these instead, so no
+    // call site ever compares against French copy again. Not constructor
+    // properties, so kotlinx.serialization ignores them.
+
+    val etatValue: Etat? get() = Etat.parse(etat)
+
+    val ressentiValue: Ressenti? get() = Ressenti.parse(ressenti)
+
+    /** Unrecognised tokens are skipped for display but remain in [roles]. */
+    val roleValues: List<RoleContexte> get() = roles.mapNotNull { RoleContexte.parse(it) }
+}
 
 /**
  * FS-03 FCH-04 — one entry in a contact's local history feed (axis edits;
@@ -124,6 +140,7 @@ class Vault(
         return try {
             val key = keyStore.getOrCreateVaultKey()
             val decoded = json.decodeFromString<VaultData>(VaultCrypto.decrypt(blob, key))
+                .normalizedForFch09()
             loadState = VaultLoadState.Ok
             cache = decoded
             decoded
@@ -159,6 +176,24 @@ class Vault(
         }
     }
 
+    /**
+     * FCH-09 dual-read, applied once at the single hydration point. A blob
+     * written before 2026-08-16 carries French display copy ("occupé"), a
+     * newer one carries identifiers ("busy"); both decode, and the next
+     * persist writes identifiers. A token in neither vocabulary — e.g. the
+     * retired `douceur` in `vault-test-vectors.json` — is kept verbatim, so
+     * nothing is ever dropped by a read.
+     */
+    private fun VaultData.normalizedForFch09(): VaultData = copy(
+        contacts = contacts.map { contact ->
+            contact.copy(
+                roles = contact.roles.map { RoleContexte.normalize(it) },
+                etat = contact.etat?.let { Etat.normalize(it) },
+                ressenti = contact.ressenti?.let { Ressenti.normalize(it) },
+            )
+        },
+    )
+
     /** Fresh copy — never a live reference into the cache. */
     suspend fun getContacts(): List<VaultContact> = mutex.withLock {
         hydrate().contacts.map { it.copy() }
@@ -192,12 +227,16 @@ class Vault(
         mutateContact(id) { it.copy(ring = ring) }
     }
 
-    suspend fun setEtat(id: String, etat: String?) = mutateContact(id) { it.copy(etat = etat) }
+    // FCH-09: the setters take the typed value, not a String, so writing
+    // French copy into the vault is a compile error rather than a review catch.
 
-    suspend fun setRessenti(id: String, ressenti: String?) =
-        mutateContact(id) { it.copy(ressenti = ressenti) }
+    suspend fun setEtat(id: String, etat: Etat?) = mutateContact(id) { it.copy(etat = etat?.id) }
 
-    suspend fun setRoles(id: String, roles: List<String>) = mutateContact(id) { it.copy(roles = roles) }
+    suspend fun setRessenti(id: String, ressenti: Ressenti?) =
+        mutateContact(id) { it.copy(ressenti = ressenti?.id) }
+
+    suspend fun setRoles(id: String, roles: List<RoleContexte>) =
+        mutateContact(id) { it.copy(roles = roles.map { role -> role.id }) }
 
     /**
      * FCH-01 — records one axis edit as a local history event and stamps

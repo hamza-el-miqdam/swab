@@ -53,13 +53,13 @@ class FichePrivacyLeakTest {
 
         vm.setIntimite(1)
         advanceUntilIdle()
-        vm.setRoles(listOf("Famille", "Travail"))
+        vm.setRoles(listOf(RoleContexte.FAMILY, RoleContexte.COLLEAGUE))
         advanceUntilIdle()
         // OQ-FCH-2 (resolved 2026-08-09, issue #16): "en pause" is a canonical
         // état value, not ressenti — exercised here on its actual axis.
-        vm.setEtat("en pause")
+        vm.setEtat(Etat.PAUSED)
         advanceUntilIdle()
-        vm.setRessenti("négative")
+        vm.setRessenti(Ressenti.NEGATIVE)
         advanceUntilIdle()
 
         // Sanity: the edits actually landed (otherwise this test would prove nothing).

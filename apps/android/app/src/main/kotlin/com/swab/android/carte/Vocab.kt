@@ -1,6 +1,8 @@
 package com.swab.android.carte
 
-import com.swab.android.l10n.Fr
+import com.swab.android.fiche.Etat
+import com.swab.android.fiche.Ressenti
+import com.swab.android.fiche.RoleContexte
 
 /**
  * SUG-AND-017 — the shipped classification vocabularies (ONB-04/06,
@@ -22,6 +24,16 @@ object Vocab {
     // pause` moved here from Ressenti). OQ-FCH-1 (resolved 2026-08-09, issue
     // #15): Ressenti carries the 3 real values from the blueprint's VALENCES
     // const, replacing the léger/précieux placeholder pair entirely.
-    val ETATS: List<String> = listOf(Fr.ETAT_AVAILABLE, Fr.ETAT_BUSY, Fr.ETAT_AWAY, Fr.ETAT_PAUSED)
-    val RESSENTIS: List<String> = listOf(Fr.RESSENTI_POSITIVE, Fr.RESSENTI_AMBIVALENT, Fr.RESSENTI_NEGATIVE)
+    //
+    // FCH-09 (2026-08-16): the vocabularies now live as enums in
+    // `fiche/ClassificationValues.kt`. These lists are the display-side view
+    // of them, DERIVED rather than duplicated so the two can no longer drift.
+    // `*_LABELS` is UI copy for chip rows; the stored values are the ids.
+    val ETATS: List<Etat> = Etat.entries
+    val RESSENTIS: List<Ressenti> = Ressenti.entries
+    val ROLES: List<RoleContexte> = RoleContexte.entries
+
+    val ETAT_LABELS: List<String> get() = Etat.labels
+    val RESSENTI_LABELS: List<String> get() = Ressenti.labels
+    val ROLE_LABELS: List<String> get() = RoleContexte.labels
 }

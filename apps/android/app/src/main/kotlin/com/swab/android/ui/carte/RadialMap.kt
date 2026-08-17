@@ -166,7 +166,7 @@ private fun ContactNode(
         }
     }
 
-    val palette = EtatColors.etatColor(contact.etat)
+    val palette = EtatColors.etatColor(contact.etatValue)
     val background = palette.background?.let(::hexToColor) ?: MaterialTheme.colorScheme.surface
     val border = palette.border?.let(::hexToColor) ?: MaterialTheme.colorScheme.outlineVariant
     // SUG-AND-009: dark ink on the état pastels (WCAG AA), theme color when unset.
