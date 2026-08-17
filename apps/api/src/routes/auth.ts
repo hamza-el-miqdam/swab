@@ -78,6 +78,11 @@ export function registerAuthRoutes(app: FastifyInstance, deps: AuthRouteDeps): v
         return sendProblem(reply, 422, "displayName required", "First sign-in must include displayName.");
       }
       user = await repo.createUser(phoneHash, displayName);
+      // IDT-01: on a concurrent-signup race (SUG-API-004), createUser is
+      // race-safe and can return the winner's existing row here — this
+      // request still reports isNewUser: true even though the account was
+      // created milliseconds earlier by the other request. Acceptable: both
+      // requests belong to the same person signing in for the first time.
       isNewUser = true;
     }
     otpStore.consume(phoneHash); // single-use (IDT-03)

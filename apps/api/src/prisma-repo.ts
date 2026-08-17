@@ -21,10 +21,29 @@ export function prismaRepository(client: PrismaClient = prisma): Repository {
     },
 
     async createUser(phoneHash, displayName) {
-      return client.user.create({
-        data: { phoneHash, displayName },
-        select: { id: true, phoneHash: true, displayName: true },
-      });
+      try {
+        return await client.user.create({
+          data: { phoneHash, displayName },
+          select: { id: true, phoneHash: true, displayName: true },
+        });
+      } catch (err) {
+        // Only a unique violation on phoneHash means "this user already
+        // exists" (IDT-01) — two near-simultaneous first sign-ins (double-tap,
+        // client retry, two devices) both pass findUserByPhoneHash → null,
+        // then race here; anything else must not be swallowed into a false
+        // "existing user", so it rethrows to the global error handler (500).
+        if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== "P2002") {
+          throw err;
+        }
+        const existing = await client.user.findUnique({
+          where: { phoneHash },
+          select: { id: true, phoneHash: true, displayName: true },
+        });
+        // The row that caused the unique violation vanished before this
+        // read — self-contradictory state, surface it rather than fabricate.
+        if (existing === null) throw err;
+        return existing; // loser of the race signs in as the existing user
+      }
     },
 
     async getVault(userId) {

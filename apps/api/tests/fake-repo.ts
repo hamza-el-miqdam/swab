@@ -28,6 +28,11 @@ export function fakeRepository(): FakeRepository {
     },
 
     async createUser(phoneHash, displayName): Promise<UserRecord> {
+      // Race-safe like prisma-repo.ts's P2002 handling (SUG-API-004): a
+      // concurrent second create for the same phoneHash returns the winner
+      // instead of silently overwriting it.
+      const existing = users.get(phoneHash);
+      if (existing !== undefined) return existing;
       seq += 1;
       const user: UserRecord = { id: `user_${seq}`, phoneHash, displayName };
       users.set(phoneHash, user);
