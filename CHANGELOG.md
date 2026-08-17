@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-17 — [scope-guard] `pnpm-lock.yaml` is allowed from any area
+
+- Adding a dependency to **any** package rewrites the workspace lockfile, and no area prefix owns it — so every dependency-adding PR failed the scope check unless it also carried `area:sre`. G4 allows new dependencies with justification; the guard was rejecting the diff that justification necessarily produces.
+- Moved `pnpm-lock.yaml` into `SHARED_ALLOWED_PREFIXES`, next to `docs/STATUS.md` and `docs/qa/` — the same category: files every area must touch, owned by none.
+- **The root `package.json` deliberately stays `area:sre`.** Workspace-level `pnpm.overrides` and shared devDependencies are still an infra decision; only the lockfile is shared. Pinned by a test.
+- Found by #74 (`area:db`), which adds a dev-only test runner. 2 new cases, 20/20 pass.
+
 ## 2026-08-16 — [FCH-09, ADR-001 stage 0b] Freeze the classification value vocabulary as stable identifiers
 
 - **New FS-03 requirement `FCH-09` + a normative *Stored value vocabulary* table.** État, Ressenti and Rôles·contexte now have frozen ASCII identifiers (`busy`, `ambivalent`, `colleague`…); the French words stay normative *display copy*, resolved at render time. Intimité is exempt — already an integer ring.

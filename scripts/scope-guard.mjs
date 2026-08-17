@@ -93,7 +93,14 @@ export const AREA_PREFIXES = {
 //   package-owning areas; root CHANGELOG.md for cross-cutting areas below)
 // - docs/STATUS.md (G5: "Update it in the same PR whenever a module...")
 // - docs/qa/** (G2 E2E manifest, touched by ios/android on user-facing work)
-export const SHARED_ALLOWED_PREFIXES = ["docs/STATUS.md", "docs/qa/"];
+// - pnpm-lock.yaml: adding a dependency to ANY package rewrites the workspace
+//   lockfile, and no area owns it. Without this, G4's "no new dependencies
+//   without justification in the PR description" is unsatisfiable — the
+//   justification is allowed, the resulting diff is not. Same category as
+//   CHANGELOG.md below: a file every area must touch, owned by none.
+//   Note this permits the file, not its contents; a dependency still has to be
+//   argued for in review, which is where that judgment belongs.
+export const SHARED_ALLOWED_PREFIXES = ["docs/STATUS.md", "docs/qa/", "pnpm-lock.yaml"];
 
 // Cross-cutting areas with no dedicated package share the root CHANGELOG.md
 // (G5: "root CHANGELOG.md (devops/docs/agents/design/specs/tooling)").
