@@ -70,6 +70,9 @@ importers:
         specifier: ^6.10.0
         version: 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.8.3))(typescript@5.8.3)
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.5
+        version: 0.5.5
       '@types/node':
         specifier: ^22.15.0
         version: 22.20.0
@@ -82,6 +85,9 @@ importers:
       typescript:
         specifier: ^5.8.0
         version: 5.8.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.6(@types/node@22.20.0)(jiti@2.7.0)(jsdom@20.0.3)(lightningcss@1.27.0)(terser@5.48.0)(tsx@4.23.12)
 
   packages/ui:
     devDependencies:
@@ -118,6 +124,9 @@ packages:
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
+
+  '@electric-sql/pglite@0.5.5':
+    resolution: {integrity: sha512-QeZ+oB7QaU4EJj2awrB8hwFZ5TXxLRBQ9Gfq0dQauYDdWsRtuWRCERgtri35vRfL07KQHlVlc/4Qxvn7a5AXeA==}
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -1911,6 +1920,8 @@ snapshots:
       '@babel/helper-validator-identifier': 7.29.7
 
   '@bcoe/v8-coverage@1.0.2': {}
+
+  '@electric-sql/pglite@0.5.5': {}
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
