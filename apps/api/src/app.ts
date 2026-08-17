@@ -29,6 +29,15 @@ const KNOWN_4XX_TITLES: Record<string, string> = {
   FST_ERR_CTP_BODY_TOO_LARGE: "Payload Too Large",
 };
 
+// @fastify/rate-limit does `throw errorResponseBuilder(req, context)` — it does
+// not serialize the return value itself — so the builder must hand back a real
+// Error, or the generic handler below can't recognize it (`instanceof Error`
+// fails on a plain object) and mislabels a 429 as a 500 (found while adding
+// SUG-API-005's tests: the global limiter's 429 path had never been exercised).
+class RateLimitProblem extends Error {
+  readonly statusCode = 429;
+}
+
 export interface AppDeps {
   env: Env;
   repo: Repository;
@@ -59,6 +68,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     },
     // Vault blob is ≤1 MB raw; base64 adds ~33%, plus JSON envelope headroom.
     bodyLimit: 2 * 1024 * 1024,
+    // IDT-03: trust exactly N `X-Forwarded-For` hops so `req.ip` (the rate-limit
+    // key) is the real client, not the proxy — `false` when directly exposed
+    // (default) so a spoofed header can't buy a client a fresh bucket.
+    trustProxy: deps.env.TRUST_PROXY_HOPS > 0 ? deps.env.TRUST_PROXY_HOPS : false,
   });
 
   // Per-IP limit on all public endpoints (IDT-03). The stricter per-phoneHash
@@ -66,12 +79,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(rateLimit, {
     max: 100,
     timeWindow: "1 minute",
-    errorResponseBuilder: (_req, context) => ({
-      type: "about:blank",
-      title: "Too Many Requests",
-      status: 429,
-      detail: `Rate limit exceeded, retry in ${context.after}.`,
-    }),
+    errorResponseBuilder: (_req, context) =>
+      new RateLimitProblem(`Rate limit exceeded, retry in ${context.after}.`),
   });
 
   // G3: always echo the correlation id, not just on problem bodies, so clients
@@ -86,6 +95,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.setErrorHandler((err: unknown, req, reply) => {
     // RFC 7807 everywhere; request bodies are never echoed into errors (G1/G3).
+    if (err instanceof RateLimitProblem) {
+      req.log.debug("request rate-limited");
+      return sendProblem(reply, 429, "Too Many Requests", err.message);
+    }
     // Fastify 5.9 types err as unknown — narrow before touching FastifyError fields.
     const e = err instanceof Error ? (err as Error & { statusCode?: unknown; code?: unknown }) : null;
     const status = typeof e?.statusCode === "number" ? e.statusCode : 500;

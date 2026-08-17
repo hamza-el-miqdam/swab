@@ -53,4 +53,22 @@ describe("loadEnv", () => {
     });
     expect(env.OTP_DEV_CODE).toBe("disabled");
   });
+
+  it("IDT-03: TRUST_PROXY_HOPS defaults to 0 (directly exposed, no forwarded headers trusted)", () => {
+    const env = loadEnv({
+      DATABASE_URL: "postgresql://u:p@h:5432/db",
+      JWT_SECRET: "a".repeat(32),
+    });
+    expect(env.TRUST_PROXY_HOPS).toBe(0);
+  });
+
+  it("IDT-03: rejects a negative or non-integer TRUST_PROXY_HOPS", () => {
+    expect(() =>
+      loadEnv({
+        DATABASE_URL: "postgresql://u:p@h:5432/db",
+        JWT_SECRET: "a".repeat(32),
+        TRUST_PROXY_HOPS: "-1",
+      }),
+    ).toThrowError(/TRUST_PROXY_HOPS/);
+  });
 });

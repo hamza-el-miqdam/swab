@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-17 — [IDT-03] SUG-API-005 `trustProxy` + a stricter per-IP tier on the OTP routes
+
+- The Fastify factory never set `trustProxy`, so behind any reverse proxy `req.ip` (the rate-limit key) was the proxy's address — every user shared one 100/min bucket. Added `TRUST_PROXY_HOPS` (fail-closed default `0`, i.e. `X-Forwarded-For` ignored) — an operator sets it to the real hop count, spoof-resistant unlike `trustProxy: true`.
+- `/auth/otp/request` and `/auth/otp/verify` now also carry a route-level 10/min-per-IP tier on top of the global 100/min bucket — one IP spraying requests across many phoneHashes previously stayed under the per-hash throttle (`OtpStore`) but was otherwise unbounded.
+- New `apps/api/.env.example` entry: `TRUST_PROXY_HOPS=0`.
+- **Bug found and fixed en route:** the global rate-limiter's `errorResponseBuilder` returned a plain object, but `@fastify/rate-limit` `throw`s whatever the builder returns — a non-`Error` value isn't recognized by the generic `setErrorHandler` (`instanceof Error` check), so every 429 was silently mislabeled as a 500. Never caught before because the 100/min global limit had no test driving 101 requests. Fixed with a small `RateLimitProblem extends Error` class the handler now special-cases into a proper RFC 7807 429.
+- Gotcha: `tests/prisma-repo.test.ts` fails locally (no Postgres in this environment) — pre-existing, unrelated to this change, green in CI's `postgres:17` service; all 45 other tests pass.
+
 ## 2026-08-16 — [IDT-01, VLT-02] `dev:local` — run the API with no database
 
 - `pnpm --filter @repo/api dev:local` boots the API against the in-memory `fakeRepository()` with a stub `dbHealth`, so the mobile E2E gates (`scripts/e2e-{ios,android}.sh`) run on a machine without Docker or Postgres. Added because the Android gate was believed unrunnable locally for months — it wasn't; `buildApp()` already takes persistence as an injected seam, and `DATABASE_URL` is only ever read by Prisma, so a placeholder satisfies the env schema.

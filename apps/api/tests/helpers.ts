@@ -9,6 +9,7 @@ export const testEnv: Env = {
   PORT: 3001,
   NODE_ENV: "test",
   OTP_DEV_CODE: "enabled",
+  TRUST_PROXY_HOPS: 0,
 };
 
 // Synthetic phoneHashes shaped like real client-side hashes — never E.164.

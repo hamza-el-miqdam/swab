@@ -31,10 +31,17 @@ export interface AuthRouteDeps {
   otpStore: OtpStore;
 }
 
+// IDT-03: a stricter per-IP tier on top of the global 100/min bucket (app.ts) —
+// one IP spraying OTP requests across many phoneHashes stays well under the
+// per-hash throttle (OtpStore) but must not be free; this caps it long before
+// the global limit would (and before OQ-IDT-1's SMS spend / SUG-API-008's
+// per-hash state growth get a chance to matter).
+const otpRateLimit = { rateLimit: { max: 10, timeWindow: "1 minute" } };
+
 export function registerAuthRoutes(app: FastifyInstance, deps: AuthRouteDeps): void {
   const { env, repo, otpStore } = deps;
 
-  app.post("/auth/otp/request", async (req, reply) => {
+  app.post("/auth/otp/request", { config: otpRateLimit }, async (req, reply) => {
     const parsed = otpRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return sendProblem(reply, 400, "Invalid request body", zodDetail(parsed.error));
@@ -59,7 +66,7 @@ export function registerAuthRoutes(app: FastifyInstance, deps: AuthRouteDeps): v
     });
   });
 
-  app.post("/auth/otp/verify", async (req, reply) => {
+  app.post("/auth/otp/verify", { config: otpRateLimit }, async (req, reply) => {
     const parsed = otpVerifySchema.safeParse(req.body);
     if (!parsed.success) {
       return sendProblem(reply, 400, "Invalid request body", zodDetail(parsed.error));
