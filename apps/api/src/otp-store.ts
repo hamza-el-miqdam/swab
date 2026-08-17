@@ -65,7 +65,12 @@ export class OtpStore {
     // Sweep once before denying — an attacker filling the cap with codes that
     // have since expired should not block legitimate new requests. Deny
     // rather than evict a live code at the cap (fail-closed).
-    if (this.entries.size >= this.maxTrackedHashes) {
+    //
+    // Only a hash we are not already tracking can grow the map; an existing
+    // one overwrites its own row below, leaving `entries.size` unchanged. It
+    // must therefore stay servable at the cap, or a user mid-sign-in who lost
+    // their SMS could never get a second code while an attacker holds the cap.
+    if (!this.entries.has(phoneHash) && this.entries.size >= this.maxTrackedHashes) {
       this.sweep();
       if (this.entries.size >= this.maxTrackedHashes) {
         return { ok: false, retryAfterMs: 60_000 };

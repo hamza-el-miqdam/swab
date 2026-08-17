@@ -115,4 +115,22 @@ describe("OtpStore.sweep (SUG-API-008)", () => {
     expect(cappedStore.check("a".repeat(64), first.code)).toBe(true);
     expect(cappedStore.check("b".repeat(64), second.code)).toBe(true);
   });
+
+  it("IDT-03: at the cap, an ALREADY-tracked hash can still request — it overwrites its own row", () => {
+    const cappedStore = new OtpStore(() => 0, 2);
+    const first = cappedStore.request("a".repeat(64));
+    cappedStore.request("b".repeat(64));
+    if (!first.ok) throw new Error("expected the first request to succeed");
+
+    // At cap, so a brand-new hash is denied...
+    expect(cappedStore.request("c".repeat(64)).ok).toBe(false);
+
+    // ...but "a" is already tracked: re-issuing overwrites its own entry and
+    // cannot push the map past the cap. Denying it would be pure collateral
+    // damage from someone else's flood — a user mid-sign-in who lost their
+    // SMS can never get a second code while an attacker holds the cap.
+    const reissued = cappedStore.request("a".repeat(64));
+    expect(reissued.ok).toBe(true);
+    expect(cappedStore.trackedCount.codes).toBe(2);
+  });
 });
