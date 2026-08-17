@@ -220,6 +220,11 @@ model Match {
 
   // Reciprocity-race arbiter (DAT rule 5): concurrent envie creation may both detect
   // the pair — this constraint guarantees a single match row.
+  //
+  // INVARIANT (SUG-DB-003, ENV-09): envieAId is always the lexicographically
+  // smaller of the pair, userAId/userBId are correspondingly the authors of
+  // envieA/envieB. Backend sorts the pair before insert. Enforced by a CHECK
+  // Prisma cannot express here — see migration `match_pair_canonical_order`.
   @@unique([envieAId, envieBId])
   @@map("matches")
 }
