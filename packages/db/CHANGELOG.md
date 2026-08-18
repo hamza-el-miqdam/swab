@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-18 — [SUG-DB-010] seed.ts refuses to wipe anything but a local/compose DB
+
+- **Problem:** `prisma/seed.ts` unconditionally `deleteMany()`s all eight tables before seeding, with only a comment as a safety net. A mistyped `DATABASE_URL`, or `prisma migrate dev`/`reset` auto-invoking the registered `prisma.seed` hook against the wrong connection, means total unrecoverable data loss — including every user's `Vault` blob (device-key-only, no server-side recovery path).
+- **Fix:** extracted a pure, DB-less `canWipe(url, env)` helper: refuses when `NODE_ENV=production`; otherwise allows only `localhost`/`127.0.0.1`/the docker-compose `db` service host, or an explicit `SEED_ALLOW_WIPE=1` opt-in for disposable preview/CI (Neon) branches. `main()` calls it before any `deleteMany()` and exits 2 (not 0) on refusal. Also guarded the file's top-level `main()` invocation to run only when executed directly (`tsx prisma/seed.ts`), not on import — needed so the new unit test can import `canWipe` without triggering a live wipe attempt.
+- **Docs:** `SEED_ALLOW_WIPE` documented as a commented placeholder in `.env.example` and in the seed file's header comment.
+- **Tests:** 7 new Vitest cases on `canWipe` covering the acceptance table (production always false, localhost/127.0.0.1/compose host true, Neon-shaped host false without the flag and true with it, unparseable URL false).
+- **Privacy audit:** no new data stored, logged, or exposed — purely a destructive-action guard.
+
 ## 2026-08-17 — [SUG-DB-008, ENV-07, ENV-08] Every pre-existing DateTime column becomes timestamptz(3)
 
 - **Problem:** Prisma maps `DateTime` to `timestamp` without time zone by default, and no pre-ADR-001 column opted into `@db.Timestamptz(3)`. `Envie.expiresAt` drives matching (ENV-08) and the expiry sweep — comparing a naive column against `now()` is only correct while every writer/session agrees on UTC, and AWS portability (RDS/Aurora default `TimeZone` varies) is a hard requirement. ADR-001's new sync columns already shipped as timestamptz; this closed the gap that entry flagged.
