@@ -399,3 +399,43 @@ describe("SUG-DB-005 Envie.verb nullable (30-day retention null-out)", () => {
     expect(row.rows[0]?.category).toBe("sport");
   });
 });
+
+describe("SUG-DB-012 Vault quota CHECK + createdAt", () => {
+  // Byte-length inspection is the one explicitly permitted operation on the
+  // opaque blob (VLT-03) — a DB CHECK is invariant-compliant defense in depth
+  // behind the route's 413 (apps/api MAX_VAULT_BYTES). updated_at is
+  // Prisma-managed (`@updatedAt`, no DB default), so raw SQL inserts must set
+  // it explicitly — same pattern as the other `@updatedAt` models above.
+  it("accepts a blob at exactly the 1 MB quota boundary", async () => {
+    const blob = Buffer.alloc(1_048_576);
+    await expect(
+      db.query(
+        `insert into vaults (user_id, blob, version, updated_at) values ('u1', $1, 1, now())`,
+        [blob],
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a blob one byte over the 1 MB quota", async () => {
+    const blob = Buffer.alloc(1_048_577);
+    await expect(
+      db.query(
+        `insert into vaults (user_id, blob, version, updated_at) values ('u2', $1, 1, now())`,
+        [blob],
+      ),
+    ).rejects.toThrow(/vaults_blob_quota/);
+  });
+
+  it("defaults createdAt to now() on insert", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-vault-created','h-vault-created','V')`,
+    );
+    await db.exec(
+      `insert into vaults (user_id, blob, version, updated_at) values ('u-vault-created', '\\x00', 1, now())`,
+    );
+    const row = await db.query<{ created_at: string | null }>(
+      `select created_at from vaults where user_id = 'u-vault-created'`,
+    );
+    expect(row.rows[0]?.created_at).not.toBeNull();
+  });
+});
