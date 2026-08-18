@@ -382,3 +382,20 @@ describe("ENV-09 match pair canonical order (SUG-DB-003)", () => {
     ).rejects.toThrow(/matches_envie_a_id_envie_b_id_key/);
   });
 });
+
+describe("SUG-DB-005 Envie.verb nullable (30-day retention null-out)", () => {
+  it("nulls verb on an expired envie without a NOT NULL violation, leaving category (the matching key) intact", async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, status, expires_at) values
+         ('env-retention', 'u1', 'envie de courir au parc', 'sport', 'EXPIRED', now() - interval '31 days')`,
+    );
+    await expect(
+      db.exec(`update envies set verb = NULL where id = 'env-retention'`),
+    ).resolves.toBeDefined();
+    const row = await db.query<{ verb: string | null; category: string }>(
+      `select verb, category from envies where id = 'env-retention'`,
+    );
+    expect(row.rows[0]?.verb).toBeNull();
+    expect(row.rows[0]?.category).toBe("sport");
+  });
+});

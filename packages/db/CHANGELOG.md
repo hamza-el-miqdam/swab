@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-18 — [SUG-DB-005, ENV-07, ENV-12] Envie.verb is nullable, unblocking the 30-day retention null-out
+
+- **Problem:** `Envie.verb` was `String` (required), so the retention sweep had no way to comply with data-steward rule 3 ("expired envies are status-flipped, auditable, but verb content is nulled after 30 days") — expired desires stayed in plaintext forever.
+- **Fix:** `verb String?`, migration `envie_verb_nullable` (pure `DROP NOT NULL`, no data migration, expand-phase safe). Added a doc comment on `EnvieStatus` naming `EXPIRED` + `verb IS NULL` as the post-retention terminal state. `category` (the matching key, ENV-08) is untouched and stays required.
+- **Tests:** 1 new PGlite case — insert an expired envie, null its verb, assert the update succeeds and `category` survives.
+- **Not implemented here:** the sweep itself is separate `area:sre`/`area:api` work (`UPDATE envies SET verb = NULL WHERE status = 'EXPIRED' AND expires_at < now() - interval '30 days'`) — flagged for that agent in the PR.
+- **Privacy audit:** no new columns exposed; `verb` is still never logged or full-text-indexed. Backend must treat `verb: string | null` and never render a null verb to clients — no consumer exists yet (`apps/api` has no envie routes), so no type breakage.
+
 ## 2026-08-18 — [SUG-DB-009, IDT-07, IDT-08] ContactLink: no self-links, no orphaned rows, one live pending invite per phone hash
 
 - **Problem:** three integrity gaps on `ContactLink`. (1) Every pending invite has `target_id = NULL`, and Postgres unique indexes treat NULLs as distinct, so one owner could hold unlimited duplicate pending invites to the same phone hash. (2) Nothing stopped `owner_id = target_id`. (3) `target`'s FK was `ON DELETE SetNull`, which — once resolution starts clearing `invited_phone_hash` per the contract below — can produce a row with both `target_id` and `invited_phone_hash` null: unreachable by any future query, dead weight forever.
