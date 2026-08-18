@@ -43,13 +43,16 @@ beforeAll(async () => {
 /**
  * Fresh link per test. `target_id` stays null: these cases are about column
  * constraints, and a real target would need a matching users row for the FK.
+ * Carries a unique `invited_phone_hash` (a distinct one per call) so the row
+ * satisfies `contact_links_resolved_or_pending` (SUG-DB-009) without needing
+ * a target — these tests aren't exercising the pending-invite invariants.
  */
 let seq = 0;
 async function newLink(): Promise<string> {
   const id = `link-${++seq}`;
   await db.query(
-    `insert into contact_links (id, owner_id, updated_at) values ($1, 'u1', now())`,
-    [id],
+    `insert into contact_links (id, owner_id, invited_phone_hash, updated_at) values ($1, 'u1', $2, now())`,
+    [id, `hash-newlink-${seq}`],
   );
   return id;
 }
@@ -94,8 +97,8 @@ describe("ADR-001 classification columns", () => {
     [-1, "rejected"],
   ])("ONB-04: ring %s is %s", async (ring, outcome) => {
     const insert = db.query(
-      `insert into contact_links (id, owner_id, ring, updated_at) values ($1,'u1',$2, now())`,
-      [`ring-${ring}`, ring],
+      `insert into contact_links (id, owner_id, ring, invited_phone_hash, updated_at) values ($1,'u1',$2,$3, now())`,
+      [`ring-${ring}`, ring, `hash-ring-${ring}`],
     );
     if (outcome === "accepted") await expect(insert).resolves.toBeDefined();
     else await expect(insert).rejects.toThrow();
@@ -144,7 +147,7 @@ describe("VLT-07 idempotency ledger", () => {
 describe("cascades", () => {
   it("deleting a link removes its roles — no orphaned classification data", async () => {
     await db.exec(
-      `insert into contact_links (id, owner_id, updated_at) values ('casc','u1', now())`,
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at) values ('casc','u1','hash-casc', now())`,
     );
     await db.exec(
       `insert into contact_roles (contact_link_id, role, updated_at) values ('casc','colleague', now())`,
@@ -210,7 +213,7 @@ describe("SUG-DB-007 FK indexes", () => {
     expect(names).toContain("proposals_proposer_id_idx");
   });
 
-  it("indexes ContactLink.targetId — the SetNull scan + pending-link resolution (IDT-07)", async () => {
+  it("indexes ContactLink.targetId — deletion cascade + pending-link resolution (IDT-07)", async () => {
     expect(await indexNames("contact_links")).toContain("contact_links_target_id_idx");
   });
 });
@@ -253,6 +256,93 @@ describe("SUG-DB-008 timestamptz columns", () => {
     );
     await db.exec(`set time zone 'UTC'`);
     expect(new Date(read.rows[0]?.expires_at ?? "").toISOString()).toBe(instant);
+  });
+});
+
+describe("SUG-DB-009 ContactLink integrity", () => {
+  it("rejects a self-link", async () => {
+    await expect(
+      db.exec(
+        `insert into contact_links (id, owner_id, target_id, updated_at) values ('self-1','u1','u1', now())`,
+      ),
+    ).rejects.toThrow(/contact_links_no_self_link/);
+  });
+
+  it("rejects a fully-orphaned row — no target and no discovery handle", async () => {
+    await expect(
+      db.exec(
+        `insert into contact_links (id, owner_id, target_id, invited_phone_hash, updated_at)
+           values ('orphan-1','u1',null,null, now())`,
+      ),
+    ).rejects.toThrow(/contact_links_resolved_or_pending/);
+  });
+
+  it("accepts two pending invites from the same owner to different phone hashes", async () => {
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('pending-a','u1','hash-a', now())`,
+    );
+    await expect(
+      db.exec(
+        `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+           values ('pending-b','u1','hash-b', now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a second LIVE pending invite to the same phone hash", async () => {
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('dup-invite-a','u1','hash-dup', now())`,
+    );
+    await expect(
+      db.exec(
+        `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+           values ('dup-invite-b','u1','hash-dup', now())`,
+      ),
+    ).rejects.toThrow(/contact_links_owner_id_invited_phone_hash_live_key/);
+  });
+
+  it("allows re-inviting the same phone hash once the earlier invite is tombstoned", async () => {
+    await db.exec(`update contact_links set deleted_at = now() where id = 'dup-invite-a'`);
+    await expect(
+      db.exec(
+        `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+           values ('dup-invite-c','u1','hash-dup', now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("resolution stays collision-free: nulling invited_phone_hash when target is set never blocks a fresh invite to that phone", async () => {
+    // IDT-07 resolution contract: setting target_id clears invited_phone_hash
+    // in the same update. NULLs are distinct in the unique index, so the
+    // now-resolved row cannot collide with a later pending invite.
+    await db.exec(`insert into users (id, phone_hash, display_name) values ('u-resolve','h-resolve','R')`);
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('resolve-a','u1','hash-resolve', now())`,
+    );
+    await db.exec(
+      `update contact_links set target_id = 'u-resolve', invited_phone_hash = null where id = 'resolve-a'`,
+    );
+    await expect(
+      db.exec(
+        `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+           values ('resolve-b','u1','hash-resolve', now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("deleting the target user removes the inbound link (Cascade), not a SetNull orphan", async () => {
+    await db.exec(`insert into users (id, phone_hash, display_name) values ('u-casc','h-casc','C')`);
+    await db.exec(
+      `insert into contact_links (id, owner_id, target_id, updated_at) values ('casc-link','u1','u-casc', now())`,
+    );
+    await db.exec(`delete from users where id = 'u-casc'`);
+    const left = await db.query<{ n: number }>(
+      `select count(*)::int as n from contact_links where id = 'casc-link'`,
+    );
+    expect(left.rows[0]?.n).toBe(0);
   });
 });
 
