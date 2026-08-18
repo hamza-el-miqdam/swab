@@ -179,7 +179,7 @@ model Envie {
   id         String           @id @default(cuid())
   authorId   String           @map("author_id")
   author     User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  verb       String // « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed
+  verb       String? // « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed; nulled by the 30-day retention sweep after expiry (data-steward rule 3)
   category   String // client-suggested normalized category — matching key
   status     EnvieStatus      @default(ACTIVE)
   expiresAt  DateTime         @map("expires_at") @db.Timestamptz(3)
@@ -304,6 +304,7 @@ enum Platform {
   @@map("platform")
 }
 
+// EXPIRED with verb IS NULL is the post-retention terminal state (30-day sweep, data-steward rule 3).
 enum EnvieStatus {
   ACTIVE
   EXPIRED
