@@ -3,6 +3,12 @@
  * DB-less function (`canWipe`) so it's testable without PGlite/Postgres.
  * No network, no fixtures: just the host/env decision table from the
  * suggestion's acceptance criteria.
+ *
+ * Remote-host fixtures deliberately use a vendor-neutral `*.example.com`
+ * hostname: `canWipe` allowlists local/compose hosts and has no
+ * provider-specific branch, so the vendor is incidental to what these cases
+ * assert — and a real managed-Postgres hostname here would trip the G4
+ * portability lint (`scripts/portability-lint.mjs`).
  */
 import { describe, expect, it } from "vitest";
 
@@ -33,15 +39,15 @@ describe("SUG-DB-010 canWipe", () => {
     expect(canWipe("postgresql://swab:swab_local_dev@db:5432/swab", {})).toBe(true);
   });
 
-  it("refuses a Neon-shaped host without SEED_ALLOW_WIPE", () => {
+  it("refuses a remote managed host without SEED_ALLOW_WIPE", () => {
     expect(
-      canWipe("postgresql://u:p@ep-cool-name-123.us-east-2.aws.neon.tech/swab", {}),
+      canWipe("postgresql://u:p@ep-cool-name-123.eu-west-3.managed-pg.example.com/swab", {}),
     ).toBe(false);
   });
 
-  it("allows a Neon-shaped host when SEED_ALLOW_WIPE=1", () => {
+  it("allows a remote managed host when SEED_ALLOW_WIPE=1", () => {
     expect(
-      canWipe("postgresql://u:p@ep-cool-name-123.us-east-2.aws.neon.tech/swab", {
+      canWipe("postgresql://u:p@ep-cool-name-123.eu-west-3.managed-pg.example.com/swab", {
         SEED_ALLOW_WIPE: "1",
       }),
     ).toBe(true);
