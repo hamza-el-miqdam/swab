@@ -13,8 +13,13 @@
  * without hand-writing SQL, not to resemble anyone.
  *
  * Run: pnpm --filter @repo/db db:seed   (dev/preview branches only — wipes data)
+ *
+ * SUG-DB-010: the wipe refuses to run against NODE_ENV=production or any
+ * non-local/compose host, unless SEED_ALLOW_WIPE=1 is set (see canWipe()
+ * below and packages/db/.env.example) — preview/CI branches opt in explicitly.
  */
 import { createHash } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import {
   Etat,
   EnvieStatus,
@@ -33,6 +38,23 @@ export function syntheticPhoneHash(label: string): string {
   return createHash("sha256").update(`swab-seed:${label}`).digest("hex");
 }
 
+/**
+ * SUG-DB-010 — guards the destructive `deleteMany()` sweep below. Pure and
+ * DB-less so it's unit-testable: never NODE_ENV=production, and otherwise
+ * only local/compose hosts (or an explicit SEED_ALLOW_WIPE=1 opt-in, for
+ * disposable preview/CI branches).
+ */
+export function canWipe(url: string, env: { NODE_ENV?: string; SEED_ALLOW_WIPE?: string }): boolean {
+  if (env.NODE_ENV === "production") return false;
+  if (env.SEED_ALLOW_WIPE === "1") return true;
+  try {
+    // local + docker-compose service host (docker-compose.yml's `db` service)
+    return /localhost|127\.0\.0\.1|(^|@)db:/.test(new URL(url).host);
+  } catch {
+    return false;
+  }
+}
+
 const T0 = new Date("2026-07-01T09:00:00.000Z"); // fixed clock — reproducible timestamps
 
 export function hoursFromT0(n: number): Date {
@@ -47,6 +69,15 @@ async function createUser(key: string, displayName: string): Promise<{ id: strin
 }
 
 async function main(): Promise<void> {
+  // SUG-DB-010: refuse to run against anything but a local/compose DB or an
+  // explicit opt-in — the wipe below is unrecoverable (Vault blobs especially).
+  if (!canWipe(process.env.DATABASE_URL ?? "", process.env)) {
+    process.stderr.write(
+      "seed refused: destructive seed only runs against local/compose DBs or with SEED_ALLOW_WIPE=1\n",
+    );
+    process.exit(2);
+  }
+
   // Wipe in FK-safe order — idempotent re-seed on disposable branches only.
   await prisma.proposal.deleteMany();
   await prisma.match.deleteMany();
@@ -250,12 +281,17 @@ async function main(): Promise<void> {
   process.stdout.write(`${JSON.stringify({ seed: "ok", counts: summary })}\n`);
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (err: unknown) => {
-    process.stderr.write(`seed failed: ${err instanceof Error ? err.message : String(err)}\n`);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+// SUG-DB-010: only run when this file is executed directly (`tsx prisma/seed.ts`),
+// not when a test imports it to exercise canWipe() — importing must never wipe a DB.
+const isDirectRun = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isDirectRun) {
+  main()
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (err: unknown) => {
+      process.stderr.write(`seed failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}
