@@ -6,6 +6,10 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     coverage: {
       provider: "v8",
+      // lcov feeds scripts/diff-coverage.mjs (coverage of the lines a PR
+      // changed, not just the package-wide floor below). text keeps the
+      // terminal summary developers already rely on.
+      reporter: ["text", "lcov"],
       include: ["src/**"],
       // server.ts (boot wiring) is still uncovered — separate follow-up.
       // prisma-repo.ts is now covered by tests/prisma-repo.test.ts (real

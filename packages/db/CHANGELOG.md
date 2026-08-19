@@ -15,6 +15,22 @@
 - **Tests:** 7 new PGlite cases — a declarative `information_schema.columns.character_maximum_length` check across all six columns, plus boundary/over-cap behavioral inserts for phoneHash, displayName, verb, category, pushToken, and place.
 - **Privacy audit:** no new columns exposed or logged; caps are structural, not content changes.
 
+## 2026-08-19 — [SUG-DB-015, ENV-12, ENV-14] updatedAt on Envie, Match, Proposal, Device
+
+- **Problem:** only `Vault` and `ContactLink`/`ContactRole` had `updatedAt`. Four mutable-state models had no transition timestamp: `Envie.status` (ACTIVE→EXPIRED/WITHDRAWN, ENV-12), `Match.state` (OPEN→…→EXPIRED), `Proposal.state` (PENDING→ACCEPTED/DECLINED/LAPSED, ENV-14), `Device.pushToken` (rotated by push providers, no way to spot stale devices).
+- **Fix:** added `updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)` to all four models. Migration `updated_at_stateful_models` backfills existing rows to `now()` (honest "unknown before this date", same pattern as SUG-DB-012's `Vault.createdAt`). `User`, `ContactLink`'s own `targetId`-independent rows, and `EnvieRecipient` deliberately left alone (rule 5's insert-only-shape discipline) per the suggestion's scope note.
+- **PR note to area:api:** `@updatedAt` is Prisma-client-managed, not a DB trigger — any raw-SQL sweep (expiry cron, retention job) must set `updated_at = now()` explicitly. **Hazard:** `Match.updatedAt` ticks when a pass marker is written (`passedBy*At`, SUG-DB-006) — any counterpart-facing serializer must never select `updatedAt`, or it becomes a covert pass-signal and breaks the ENV-15 bit-identity guarantee those columns exist to protect.
+- **Tests:** 7 new PGlite cases — timestamptz type on all four new columns, insert-time default (`updatedAt == createdAt`), an explicit status-flip write advancing `updatedAt` past `createdAt` (ENV-12), and default-on-insert for `Match`/`Proposal`/`Device`.
+- **Privacy audit:** transition timestamps are server-visible row metadata, not classification data; no new logging or cross-user exposure.
+
+## 2026-08-18 — [SUG-DB-012, VLT-03] Vault: DB-level 1 MB quota CHECK + createdAt
+
+- **Problem:** the 1 MB VLT-03 quota was enforced app-layer only (`apps/api/src/routes/vault.ts` `MAX_VAULT_BYTES`); any other write path (admin script, second service, route bug) could exceed the free-tier storage budget with nothing at the DB layer to stop it. `Vault` also had no `createdAt`, unlike every other model.
+- **Fix:** migration `vault_quota_and_created_at` adds `createdAt DateTime @default(now())` and a hand-written CHECK `vaults_blob_quota` on `octet_length(blob) <= 1048576` (Prisma can't express CHECK). The CHECK inspects only byte length — VLT-03-compliant, no content read. Backstop only: the route's 413 must keep firing first so clients get a friendly error, not a 500-wrapped constraint violation. Seed's two vault rows now pass `createdAt: T0` for determinism.
+- **Tests:** 3 new PGlite cases — a 1,048,576-byte blob accepted (boundary), a 1,048,577-byte blob rejected (`vaults_blob_quota`), and a fresh insert defaults `createdAt`.
+- **Data impact:** no existing environment holds an oversized blob (seed data only, well under the cap) — the `ADD CONSTRAINT` is safe to apply as-is.
+- **Privacy audit:** no new data logged or exposed; the CHECK and `createdAt` are metadata, not vault content.
+
 ## 2026-08-18 — [SUG-DB-006, ENV-15] Match.state can no longer represent a shared PASSED — per-side pass columns instead
 
 - **Problem:** `MatchState` had a shared `PASSED` value with a comment promising "PASSED is private to the passer — the counterpart's reads are bit-identical either way", but one column cannot record *who* passed without either leaking it to the counterpart or destroying the pre-pass state (was the counterpart mid-proposal?). Unimplementable as modeled.

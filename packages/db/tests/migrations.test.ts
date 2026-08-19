@@ -400,6 +400,46 @@ describe("SUG-DB-005 Envie.verb nullable (30-day retention null-out)", () => {
   });
 });
 
+describe("SUG-DB-012 Vault quota CHECK + createdAt", () => {
+  // Byte-length inspection is the one explicitly permitted operation on the
+  // opaque blob (VLT-03) — a DB CHECK is invariant-compliant defense in depth
+  // behind the route's 413 (apps/api MAX_VAULT_BYTES). updated_at is
+  // Prisma-managed (`@updatedAt`, no DB default), so raw SQL inserts must set
+  // it explicitly — same pattern as the other `@updatedAt` models above.
+  it("accepts a blob at exactly the 1 MB quota boundary", async () => {
+    const blob = Buffer.alloc(1_048_576);
+    await expect(
+      db.query(
+        `insert into vaults (user_id, blob, version, updated_at) values ('u1', $1, 1, now())`,
+        [blob],
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a blob one byte over the 1 MB quota", async () => {
+    const blob = Buffer.alloc(1_048_577);
+    await expect(
+      db.query(
+        `insert into vaults (user_id, blob, version, updated_at) values ('u2', $1, 1, now())`,
+        [blob],
+      ),
+    ).rejects.toThrow(/vaults_blob_quota/);
+  });
+
+  it("defaults createdAt to now() on insert", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-vault-created','h-vault-created','V')`,
+    );
+    await db.exec(
+      `insert into vaults (user_id, blob, version, updated_at) values ('u-vault-created', '\\x00', 1, now())`,
+    );
+    const row = await db.query<{ created_at: string | null }>(
+      `select created_at from vaults where user_id = 'u-vault-created'`,
+    );
+    expect(row.rows[0]?.created_at).not.toBeNull();
+  });
+});
+
 describe("ENV-15 per-side pass (SUG-DB-006)", () => {
   beforeAll(async () => {
     await db.exec(
@@ -563,5 +603,85 @@ describe("SUG-DB-013 string caps (defense in depth vs. the API contract)", () =>
            ('cap-place-ok','cap-place-match','u1','${"p".repeat(200)}')`,
       ),
     ).resolves.toBeDefined();
+  });
+});
+
+describe("SUG-DB-015 updatedAt on stateful models", () => {
+  /** @updatedAt is Prisma-client-managed, not a DB trigger — raw SQL sweeps
+   * (expiry cron, etc.) must set updated_at = now() explicitly, same as the
+   * migration comment documents. These tests exercise the DB-level contract
+   * (column exists, defaults, type), not the client-side auto-touch, which
+   * has no representation at the raw-SQL layer PGlite tests operate at. */
+  async function dataType(table: string, column: string): Promise<string> {
+    const res = await db.query<{ data_type: string }>(
+      `select data_type from information_schema.columns where table_name = $1 and column_name = $2`,
+      [table, column],
+    );
+    return res.rows[0]?.data_type ?? "";
+  }
+
+  it.each([
+    ["envies", "updated_at"],
+    ["matches", "updated_at"],
+    ["proposals", "updated_at"],
+    ["devices", "updated_at"],
+  ])("%s.%s is timestamp with time zone", async (table, column) => {
+    expect(await dataType(table, column)).toBe("timestamp with time zone");
+  });
+
+  it("defaults Envie.updatedAt to now() on insert", async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values
+         ('env-updated-default', 'u1', 'v', 'c', now() + interval '1 day')`,
+    );
+    const row = await db.query<{ created_at: string; updated_at: string }>(
+      `select created_at, updated_at from envies where id = 'env-updated-default'`,
+    );
+    expect(row.rows[0]?.updated_at).not.toBeNull();
+    expect(new Date(row.rows[0]?.updated_at ?? "").getTime()).toBe(
+      new Date(row.rows[0]?.created_at ?? "").getTime(),
+    );
+  });
+
+  it("Envie.updatedAt advances on an explicit status-flip write while createdAt stays put (ENV-12)", async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, status, expires_at, created_at, updated_at) values
+         ('env-updated-flip', 'u1', 'v', 'c', 'ACTIVE', now() + interval '1 day', now() - interval '1 hour', now() - interval '1 hour')`,
+    );
+    await db.exec(
+      `update envies set status = 'WITHDRAWN', updated_at = now() where id = 'env-updated-flip'`,
+    );
+    const row = await db.query<{ created_at: string; updated_at: string }>(
+      `select created_at, updated_at from envies where id = 'env-updated-flip'`,
+    );
+    expect(new Date(row.rows[0]?.updated_at ?? "").getTime()).toBeGreaterThan(
+      new Date(row.rows[0]?.created_at ?? "").getTime(),
+    );
+  });
+
+  it("defaults Match/Proposal/Device.updatedAt to now() on insert, backfilling pre-existing-shaped rows honestly", async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values
+         ('env-updated-m1', 'u1', 'v', 'c', now() + interval '1 day'),
+         ('env-updated-m2', 'u2', 'v', 'c', now() + interval '1 day')`,
+    );
+    await db.exec(
+      `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+         values ('match-updated', 'env-updated-m1', 'env-updated-m2', 'u1', 'u2')`,
+    );
+    await db.exec(
+      `insert into proposals (id, match_id, proposer_id) values ('proposal-updated', 'match-updated', 'u1')`,
+    );
+    await db.exec(
+      `insert into devices (id, user_id, platform) values ('device-updated', 'u1', 'IOS')`,
+    );
+    const [match, proposal, device] = await Promise.all([
+      db.query<{ updated_at: string | null }>(`select updated_at from matches where id = 'match-updated'`),
+      db.query<{ updated_at: string | null }>(`select updated_at from proposals where id = 'proposal-updated'`),
+      db.query<{ updated_at: string | null }>(`select updated_at from devices where id = 'device-updated'`),
+    ]);
+    expect(match.rows[0]?.updated_at).not.toBeNull();
+    expect(proposal.rows[0]?.updated_at).not.toBeNull();
+    expect(device.rows[0]?.updated_at).not.toBeNull();
   });
 });
