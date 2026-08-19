@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [SUG-API-014] Shutdown now has a deadline, handles a rejected close, and disconnects Prisma
+
+- `SIGINT`/`SIGTERM` used to call `app.close().then(() => process.exit(0))` with no timeout: a stuck in-flight request (slow client, wedged DB call) meant the process never exited, and a rejected `close()` hung silently with no exit at all. A second signal also re-entered the handler and called `close()` again.
+- Extracted the handler into `src/lib/shutdown.ts`'s `createShutdown(app, exit, timeoutMs)`: an 8s deadline (stays under Docker's default 10s SIGKILL grace, `unref()`'d so it never blocks the happy path) force-exits 1 with a warn log; a rejected `close()` logs and exits 1; a re-entrant signal while already closing is a no-op.
+- `server.ts` also now registers `app.addHook("onClose", () => prisma.$disconnect())` — the client was never explicitly closed before.
+- `src/server.ts` stays excluded from coverage (boot wiring) — the extraction makes the actual logic unit-testable. Tests: `tests/shutdown.test.ts` (resolve → exit 0, reject → exit 1 + log, deadline exceeded → force exit 1, second signal → close called once).
+- **CI note:** `tests/prisma-repo.test.ts` fails locally (no Postgres in this dev environment) — pre-existing, unrelated to this change, green in CI's `postgres:17` service. All other tests (incl. 4 new ones) pass; lint/typecheck/build all green.
+
 ## 2026-08-19 — [SUG-DB-013, IDT-01] Test fixture now respects the 50-char displayName contract
 
 - `packages/db` narrowed `users.display_name` to `varchar(50)` (SUG-DB-013), mirroring the cap `routes/auth.ts` has always enforced (`z.string().trim().min(1).max(50)`).
