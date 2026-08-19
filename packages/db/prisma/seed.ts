@@ -7,11 +7,14 @@
  * every member of EnvieStatus/MatchState/ProposalState (SUG-DB-014, rule 4):
  * a reciprocal ACTIVE/OPEN pair with a PENDING + DECLINED + LAPSED proposal,
  * a second reciprocal pair SCHEDULED via an ACCEPTED proposal, a third
- * reciprocal pair still PROPOSED, a fourth pair whose match is EXPIRED but
- * survives its own envie's expiry (ENV-12), a WITHDRAWN envie, an EXPIRED
- * envie, and a same-category-mismatch near-miss pair that must NOT match
- * (ENV-08 negative fixture). Also two deprecated Vault rows, kept only while
- * the blob endpoints still exist (removed at ADR-001 stage 3/4 with the model).
+ * reciprocal pair still PROPOSED with userA's private passedByAAt set
+ * (SUG-DB-006), a fourth pair whose match itself aged out (MatchState.EXPIRED),
+ * a fifth pair whose match stays OPEN even though one envie has EXPIRED
+ * (ENV-12: existing matches survive their envie's expiry), a WITHDRAWN envie,
+ * an EXPIRED envie with no counterpart, and a same-category-mismatch
+ * near-miss pair that must NOT match (ENV-08 negative fixture). Also two
+ * deprecated Vault rows, kept only while the blob endpoints still exist
+ * (removed at ADR-001 stage 3/4 with the model).
  *
  * The classification values are as synthetic as the rest — invented people,
  * invented opinions. They exist so a developer can see the four axes render
@@ -353,7 +356,9 @@ async function main(): Promise<void> {
 
   // SUG-DB-014: third reciprocal pair, proposal stage not reached yet —
   // covers MatchState.PROPOSED (the shared enum; SUG-DB-006 made PASSED
-  // per-side, not a value here).
+  // per-side, not a value here). Also the only fixture that sets a per-side
+  // pass column (passedByAAt): userA silently passed before any proposal was
+  // made, while userB's view stays computed from `state` alone (ENV-15).
   const envieE = await prisma.envie.create({
     data: {
       authorId: amina.id,
@@ -391,20 +396,23 @@ async function main(): Promise<void> {
       state: MatchState.PROPOSED,
       notifiedAt: hoursFromT0(11),
       createdAt: hoursFromT0(11),
+      passedByAAt: hoursFromT0(11.5), // SUG-DB-006: userA's private pass marker
     },
   });
 
-  // SUG-DB-014: fourth pair — one envie is now EXPIRED, but its match
-  // persists (ENV-12: "existing matches survive"). The match itself has also
-  // aged out, covering MatchState.EXPIRED.
+  // SUG-DB-014: fourth pair — both envies aged out inside ENV-17's 48h bound
+  // and the match itself also expired, covering MatchState.EXPIRED. Kept
+  // separate from the ENV-12 "survives" fixture below (a match staying OPEN
+  // while its envie expires is a different case from a match that itself
+  // aged out — conflating them into one fixture proved nothing about either).
   const envieG = await prisma.envie.create({
     data: {
       authorId: bilal.id,
       verb: "envie de voir une expo",
       category: "culture",
       status: EnvieStatus.EXPIRED,
-      expiresAt: hoursFromT0(-1),
       createdAt: hoursFromT0(-52),
+      expiresAt: hoursFromT0(-4), // ENV-17: <= createdAt + 48h
       recipients: { create: [{ recipientId: chirine.id, createdAt: hoursFromT0(-52) }] },
     },
     select: { id: true },
@@ -414,26 +422,70 @@ async function main(): Promise<void> {
       authorId: chirine.id,
       verb: "envie d'aller à une expo",
       category: "culture",
-      status: EnvieStatus.ACTIVE,
-      expiresAt: hoursFromT0(48),
+      status: EnvieStatus.EXPIRED,
       createdAt: hoursFromT0(-51),
+      expiresAt: hoursFromT0(-3), // ENV-17: <= createdAt + 48h
       recipients: { create: [{ recipientId: bilal.id, createdAt: hoursFromT0(-51) }] },
     },
     select: { id: true },
   });
-  const [survivedAId, survivedBId] =
+  const [expiredAId, expiredBId] =
     envieG.id < envieH.id ? [envieG.id, envieH.id] : [envieH.id, envieG.id];
+  const [expiredUserAId, expiredUserBId] =
+    expiredAId === envieG.id ? [bilal.id, chirine.id] : [chirine.id, bilal.id];
+  await prisma.match.create({
+    data: {
+      envieAId: expiredAId,
+      envieBId: expiredBId,
+      userAId: expiredUserAId,
+      userBId: expiredUserBId,
+      state: MatchState.EXPIRED,
+      notifiedAt: hoursFromT0(-50),
+      createdAt: hoursFromT0(-50),
+    },
+  });
+
+  // SUG-DB-014: fifth pair — envieI has EXPIRED but the match stays OPEN,
+  // demonstrating ENV-12 ("an expired envie can no longer produce matches;
+  // existing matches survive"). Unlike the fourth pair above, the match row
+  // itself never transitions — that's the whole point of the fixture.
+  const envieI = await prisma.envie.create({
+    data: {
+      authorId: daoud.id,
+      verb: "envie de lire au parc",
+      category: "lecture",
+      status: EnvieStatus.EXPIRED,
+      createdAt: hoursFromT0(14),
+      expiresAt: hoursFromT0(16), // ENV-17: <= createdAt + 48h
+      recipients: { create: [{ recipientId: emna.id, createdAt: hoursFromT0(14) }] },
+    },
+    select: { id: true },
+  });
+  const envieJ = await prisma.envie.create({
+    data: {
+      authorId: emna.id,
+      verb: "envie de bouquiner",
+      category: "lecture",
+      status: EnvieStatus.ACTIVE,
+      createdAt: hoursFromT0(15),
+      expiresAt: hoursFromT0(59), // ENV-17: <= createdAt + 48h
+      recipients: { create: [{ recipientId: daoud.id, createdAt: hoursFromT0(15) }] },
+    },
+    select: { id: true },
+  });
+  const [survivedAId, survivedBId] =
+    envieI.id < envieJ.id ? [envieI.id, envieJ.id] : [envieJ.id, envieI.id];
   const [survivedUserAId, survivedUserBId] =
-    survivedAId === envieG.id ? [bilal.id, chirine.id] : [chirine.id, bilal.id];
+    survivedAId === envieI.id ? [daoud.id, emna.id] : [emna.id, daoud.id];
   await prisma.match.create({
     data: {
       envieAId: survivedAId,
       envieBId: survivedBId,
       userAId: survivedUserAId,
       userBId: survivedUserBId,
-      state: MatchState.EXPIRED,
-      notifiedAt: hoursFromT0(-50),
-      createdAt: hoursFromT0(-50),
+      state: MatchState.OPEN,
+      notifiedAt: hoursFromT0(15),
+      createdAt: hoursFromT0(15),
     },
   });
 

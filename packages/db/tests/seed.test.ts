@@ -71,11 +71,18 @@ describe("SUG-DB-010 canWipe", () => {
  * a source scan for that literal is a cheap, DB-less proxy for "the seeded
  * DB contains a row with this value" — it fails the instant a member stops
  * being referenced, the exact drift rule 4 exists to catch.
+ *
+ * Comments are stripped before scanning: a doc-comment that merely *mentions*
+ * a member (e.g. "// covers MatchState.PROPOSED") must not satisfy this test
+ * in place of an actual fixture referencing it.
  */
 describe("SUG-DB-014 seed enum-state coverage", () => {
-  const seedSource = readFileSync(
-    fileURLToPath(new URL("../prisma/seed.ts", import.meta.url)),
-    "utf8",
+  function stripComments(source: string): string {
+    return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  }
+
+  const seedSource = stripComments(
+    readFileSync(fileURLToPath(new URL("../prisma/seed.ts", import.meta.url)), "utf8"),
   );
 
   function expectEveryMemberReferenced(enumName: string, members: Record<string, string>): void {
