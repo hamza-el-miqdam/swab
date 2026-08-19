@@ -399,3 +399,45 @@ describe("SUG-DB-005 Envie.verb nullable (30-day retention null-out)", () => {
     expect(row.rows[0]?.category).toBe("sport");
   });
 });
+
+describe("ENV-15 per-side pass (SUG-DB-006)", () => {
+  beforeAll(async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values
+         ('env-pass-1', 'u1', 'v', 'c', now() + interval '1 day'),
+         ('env-pass-2', 'u2', 'v', 'c', now() + interval '1 day')`,
+    );
+    await db.exec(
+      `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+         values ('match-pass', 'env-pass-1', 'env-pass-2', 'u1', 'u2')`,
+    );
+  });
+
+  it("no longer accepts PASSED as a shared state value — it was removed from the enum", async () => {
+    await expect(
+      db.exec(`update matches set state = 'PASSED' where id = 'match-pass'`),
+    ).rejects.toThrow();
+  });
+
+  it("records a pass on the private per-side column without touching the shared state", async () => {
+    await db.exec(`update matches set passed_by_a_at = now() where id = 'match-pass'`);
+    const row = await db.query<{ state: string; passed_by_a_at: string | null }>(
+      `select state, passed_by_a_at from matches where id = 'match-pass'`,
+    );
+    expect(row.rows[0]?.state).toBe("OPEN");
+    expect(row.rows[0]?.passed_by_a_at).not.toBeNull();
+  });
+
+  it("test_ENV15_pass_invisible_to_counterpart: a counterpart-shaped select stays bit-identical across a pass", async () => {
+    const counterpartShape = async () =>
+      (
+        await db.query<{ state: string; notified_at: string | null; created_at: string }>(
+          `select state, notified_at, created_at from matches where id = 'match-pass'`,
+        )
+      ).rows[0];
+    const before = await counterpartShape();
+    await db.exec(`update matches set passed_by_b_at = now() where id = 'match-pass'`);
+    const after = await counterpartShape();
+    expect(after).toEqual(before);
+  });
+});

@@ -220,19 +220,25 @@ model EnvieRecipient {
 }
 
 model Match {
-  id         String     @id @default(cuid())
-  envieAId   String     @map("envie_a_id")
-  envieA     Envie      @relation("envieA", fields: [envieAId], references: [id], onDelete: Cascade)
-  envieBId   String     @map("envie_b_id")
-  envieB     Envie      @relation("envieB", fields: [envieBId], references: [id], onDelete: Cascade)
-  userAId    String     @map("user_a_id")
-  userA      User       @relation("userA", fields: [userAId], references: [id], onDelete: Cascade)
-  userBId    String     @map("user_b_id")
-  userB      User       @relation("userB", fields: [userBId], references: [id], onDelete: Cascade)
-  state      MatchState @default(OPEN)
-  notifiedAt DateTime?  @map("notified_at") @db.Timestamptz(3)
-  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  proposals  Proposal[]
+  id          String     @id @default(cuid())
+  envieAId    String     @map("envie_a_id")
+  envieA      Envie      @relation("envieA", fields: [envieAId], references: [id], onDelete: Cascade)
+  envieBId    String     @map("envie_b_id")
+  envieB      Envie      @relation("envieB", fields: [envieBId], references: [id], onDelete: Cascade)
+  userAId     String     @map("user_a_id")
+  userA       User       @relation("userA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId     String     @map("user_b_id")
+  userB       User       @relation("userB", fields: [userBId], references: [id], onDelete: Cascade)
+  state       MatchState @default(OPEN)
+  // ENV-15 (SUG-DB-006): per-side private soft-exit. A side's *view state* is
+  // `passedBy<side>At != null ? PASSED : state`; the counterpart's responses
+  // must be computed from `state` alone — bit-identical whether or not the
+  // other side passed. Never select these columns into a counterpart's payload.
+  passedByAAt DateTime?  @map("passed_by_a_at") @db.Timestamptz(3)
+  passedByBAt DateTime?  @map("passed_by_b_at") @db.Timestamptz(3)
+  notifiedAt  DateTime?  @map("notified_at") @db.Timestamptz(3)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  proposals   Proposal[]
 
   // Reciprocity-race arbiter (DAT rule 5): concurrent envie creation may both detect
   // the pair — this constraint guarantees a single match row.
@@ -323,12 +329,14 @@ enum EnvieStatus {
   @@map("envie_status")
 }
 
-// PASSED is private to the passer — the counterpart's reads are bit-identical either way.
+// Shared lifecycle both sides observe identically. PASSED is deliberately NOT
+// a value here (SUG-DB-006, ENV-15) — it is per-side and lives on
+// Match.passedByAAt/passedByBAt instead, so it can never leak into a shared
+// column the counterpart also reads.
 enum MatchState {
   OPEN
   PROPOSED
   SCHEDULED
-  PASSED
   EXPIRED
 
   @@map("match_state")
