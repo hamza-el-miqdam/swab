@@ -103,6 +103,21 @@ const AGENTS = [
     description:
       "DevOps & Infrastructure Specialist for Swab (area:sre). Use for GitHub Actions workflows, turbo.json, Dockerfiles, docker-compose, CODEOWNERS, CI gates, Neon branch lifecycle, and deployment plumbing. MUST be used for changes touching .github/workflows or Docker files.",
   },
+  {
+    name: "review-specialist",
+    source: "agents/review-specialist.md",
+    area: "review",
+    // `copilot: false` — this agent reviews rather than authors, so its rules must
+    // NOT be injected as path-scoped authoring instructions. The only honest
+    // applyTo would be "**", which would load review procedure into every Copilot
+    // editing context. Claude Code subagent only.
+    copilot: false,
+    trailer:
+      "Read the governing spec(s) in `docs/specs/` and the `suggestions/**/SUG-*.md` the PR implements BEFORE reading its diff, so the change is judged against intent. You do not ship code: no commits to the PR branch, no merges, no changelog entry for reviewing. Your Definition of Done is a verdict backed by evidence you actually gathered.",
+    title: "Code Review Specialist (area:review)",
+    description:
+      "Code Review Specialist for Swab (area:review). Use to review a PR before it merges — verifies checks are green on the *current* head, the branch is not behind main, requirement IDs and SUG-*.md implementation plans are honoured step by step, and G1–G5 hold. Runs the on-device E2E gate itself (scripts/e2e-ios.sh / e2e-android.sh) for apps/ios and apps/android changes rather than trusting a pasted report. Inspects what CI cannot see: cross-PR constraint/seed interaction, sibling migrations, changelog collisions, behavior changes hiding behind green types, and privacy leaks. Comments findings with file:line and a failure scenario; approves only on verified evidence. Never pushes, never merges.",
+  },
 ];
 
 const read = (p) => readFileSync(join(root, p), "utf8");
@@ -119,6 +134,7 @@ outputs.set(
 
 // ---- GitHub Copilot: path-scoped per-area instructions = the specialist file, verbatim
 for (const a of AGENTS) {
+  if (a.copilot === false) continue; // review-style agents: no authoring instructions
   const body = read(a.source).replace(/^# .*$/m, `# ${a.title}`);
   outputs.set(
     `.github/instructions/${a.area}.instructions.md`,
@@ -127,10 +143,15 @@ for (const a of AGENTS) {
 }
 
 // ---- Claude Code: thin wrappers — @imports pull the same source files at runtime
+// Implementing agents get the build trailer; agents that review rather than ship
+// override it (`trailer`), so the wrapper never contradicts the rules it imports.
+const BUILD_TRAILER =
+  "Before implementing, read the governing spec(s) in `docs/specs/` and quote requirement IDs in test names, branch, and PR title. Your Definition of Done (in the rules above) includes the area changelog entry and, when a module changes state, `docs/STATUS.md`.";
+
 for (const a of AGENTS) {
   outputs.set(
     `.claude/agents/${a.name}.md`,
-    `---\nname: ${a.name}\ndescription: ${a.description}\n---\n${BANNER}\n\nYou are Swab's ${a.title}. Your complete, binding rules — follow them exactly:\n\n@agents/_global-directives.md\n@${a.source}\n\nBefore implementing, read the governing spec(s) in \`docs/specs/\` and quote requirement IDs in test names, branch, and PR title. Your Definition of Done (in the rules above) includes the area changelog entry and, when a module changes state, \`docs/STATUS.md\`.\n`
+    `---\nname: ${a.name}\ndescription: ${a.description}\n---\n${BANNER}\n\nYou are Swab's ${a.title}. Your complete, binding rules — follow them exactly:\n\n@agents/_global-directives.md\n@${a.source}\n\n${a.trailer ?? BUILD_TRAILER}\n`
   );
 }
 

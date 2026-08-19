@@ -14,7 +14,7 @@ App that connects people with friends: you express an "envie" to a scope; it's r
 - Process (issue protocol, build order, privacy audit): `docs/agent-playbook.md`
 - Product laws + glossary (French UI copy is normative): `docs/product-overview.md`
 - Data model rationale: `swab-domain-spec.md` · Architecture: `aidd-multi-agent-blueprint.md`
-- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: ios, android, web, backend, data, devops, design, specs, notion-liaison). Never edit rendered files by hand. The mobile-specialist (Expo RN) was decommissioned 2026-07-09; its knowledge lives in `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`.
+- Specialist role rules: `agents/*.md` — the ONLY place to edit agent behavior. `node scripts/render-agents.mjs` generates the Copilot copies (`.github/`) and the Claude Code subagents (`.claude/agents/` — use them for area work: ios, android, web, backend, data, devops, design, specs, notion-liaison, plus `review-specialist` to review a PR before it merges). Never edit rendered files by hand. The mobile-specialist (Expo RN) was decommissioned 2026-07-09; its knowledge lives in `docs/migration/rn-native-handoff.md` + `docs/migration/vault-test-vectors.json`.
 
 ## Spec-driven development (spec-kit)
 
