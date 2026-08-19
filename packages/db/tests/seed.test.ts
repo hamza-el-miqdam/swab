@@ -10,6 +10,9 @@
  * assert — and a real managed-Postgres hostname here would trip the G4
  * portability lint (`scripts/portability-lint.mjs`).
  */
+import { EnvieStatus, MatchState, Platform, ProposalState } from "@prisma/client";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { canWipe } from "../prisma/seed.js";
@@ -56,5 +59,44 @@ describe("SUG-DB-010 canWipe", () => {
   it("refuses an unparseable DATABASE_URL", () => {
     expect(canWipe("", {})).toBe(false);
     expect(canWipe("not-a-url", {})).toBe(false);
+  });
+});
+
+/**
+ * SUG-DB-014 — data-steward rule 4 requires the seed to cover every enum
+ * state. `prisma/seed.ts`'s `main()` needs a real DATABASE_URL (it talks to
+ * Postgres via PrismaClient, not PGlite), so it can't run inside this
+ * package's DB-less vitest suite. Every fixture below spells its enum member
+ * as the qualified literal (`EnvieStatus.WITHDRAWN`, `Platform.WEB`, ...), so
+ * a source scan for that literal is a cheap, DB-less proxy for "the seeded
+ * DB contains a row with this value" — it fails the instant a member stops
+ * being referenced, the exact drift rule 4 exists to catch.
+ */
+describe("SUG-DB-014 seed enum-state coverage", () => {
+  const seedSource = readFileSync(
+    fileURLToPath(new URL("../prisma/seed.ts", import.meta.url)),
+    "utf8",
+  );
+
+  function expectEveryMemberReferenced(enumName: string, members: Record<string, string>): void {
+    for (const member of Object.keys(members)) {
+      expect(seedSource).toContain(`${enumName}.${member}`);
+    }
+  }
+
+  it("references every EnvieStatus member", () => {
+    expectEveryMemberReferenced("EnvieStatus", EnvieStatus);
+  });
+
+  it("references every MatchState member", () => {
+    expectEveryMemberReferenced("MatchState", MatchState);
+  });
+
+  it("references every ProposalState member", () => {
+    expectEveryMemberReferenced("ProposalState", ProposalState);
+  });
+
+  it("references every Platform member", () => {
+    expectEveryMemberReferenced("Platform", Platform);
   });
 });
