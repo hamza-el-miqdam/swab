@@ -6,6 +6,15 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [SUG-DB-013, IDT-01] Unbounded `text` columns now carry the API's length caps
+
+- **Problem:** every `String` column mapped to unbounded Postgres `text`, while the API boundary already enforces tight caps (`phoneHash` 32-128, `displayName` 50) — the DB didn't encode the same contract, so any non-route writer (a script, a future admin tool) could insert unbounded data.
+- **Fix:** migration `string_caps` narrows six columns to `varchar(n)`: `User.phoneHash` (128), `User.displayName` (50, matching the existing cap on `ContactLink.displayName`), `Envie.verb` (280 — no envie route exists yet, this sets the contract Backend codes against), `Envie.category` (64 — also an index key, caps btree bloat), `Proposal.place` (200), `Device.pushToken` (4096 — APNs/FCM tokens are far under this).
+- **Not destructive:** narrowing is contract-phase (data-specialist.md:21) but safe pre-launch — only synthetic seed data exists today, all well under every cap; Postgres validates existing rows against the new length on `ALTER COLUMN ... TYPE`, which is the migration's own safety check.
+- **PR note to area:api:** future envie/proposal Zod schemas must mirror these caps (280/64/200) — this changelog entry is the single source.
+- **Tests:** 7 new PGlite cases — a declarative `information_schema.columns.character_maximum_length` check across all six columns, plus boundary/over-cap behavioral inserts for phoneHash, displayName, verb, category, pushToken, and place.
+- **Privacy audit:** no new columns exposed or logged; caps are structural, not content changes.
+
 ## 2026-08-18 — [SUG-DB-006, ENV-15] Match.state can no longer represent a shared PASSED — per-side pass columns instead
 
 - **Problem:** `MatchState` had a shared `PASSED` value with a comment promising "PASSED is private to the passer — the counterpart's reads are bit-identical either way", but one column cannot record *who* passed without either leaking it to the counterpart or destroying the pre-pass state (was the counterpart mid-proposal?). Unimplementable as modeled.

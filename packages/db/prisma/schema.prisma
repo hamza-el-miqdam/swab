@@ -13,8 +13,8 @@ datasource db {
 
 model User {
   id               String           @id @default(cuid())
-  phoneHash        String           @unique @map("phone_hash") // E.164 hashed client-side — contact discovery without storing raw numbers (G1: no plaintext phone/email columns, ever)
-  displayName      String           @map("display_name")
+  phoneHash        String           @unique @map("phone_hash") @db.VarChar(128) // E.164 hashed client-side — contact discovery without storing raw numbers (G1: no plaintext phone/email columns, ever)
+  displayName      String           @map("display_name") @db.VarChar(50)
   createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   vault            Vault?
   devices          Device[]
@@ -51,7 +51,7 @@ model Device {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pushToken String?  @map("push_token")
+  pushToken String?  @map("push_token") @db.VarChar(4096)
   platform  Platform
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
@@ -97,14 +97,14 @@ model ContactLink {
   /// target's chosen `User.displayName`. Nullable because a link can be created
   /// by discovery before the owner names it; the API requires it on owner-created
   /// contacts and clients fall back to `target.displayName` when it is null.
-  displayName      String?  @map("display_name") @db.VarChar(50)
+  displayName String?       @map("display_name") @db.VarChar(50)
   /// Intimité, 1 = innermost (ONB-04). Range enforced by a CHECK constraint in
   /// the migration — Prisma cannot express it, and an out-of-range value breaks
   /// the clients' ring layout maths rather than failing loudly.
-  ring             Int?
-  etat             Etat?
-  ressenti         Ressenti?
-  roles            ContactRole[]
+  ring        Int?
+  etat        Etat?
+  ressenti    Ressenti?
+  roles       ContactRole[]
 
   // --- FCH-05 staleness nudge. Server-side now, so the 30-day timer survives a device change.
   lastAxisChangeAt      DateTime? @map("last_axis_change_at") @db.Timestamptz(3)
@@ -189,8 +189,8 @@ model Envie {
   id         String           @id @default(cuid())
   authorId   String           @map("author_id")
   author     User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  verb       String? // « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed; nulled by the 30-day retention sweep after expiry (data-steward rule 3)
-  category   String // client-suggested normalized category — matching key
+  verb       String?          @db.VarChar(280) // « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed; nulled by the 30-day retention sweep after expiry (data-steward rule 3)
+  category   String           @db.VarChar(64) // client-suggested normalized category — matching key
   status     EnvieStatus      @default(ACTIVE)
   expiresAt  DateTime         @map("expires_at") @db.Timestamptz(3)
   createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -263,7 +263,7 @@ model Proposal {
   match      Match         @relation(fields: [matchId], references: [id], onDelete: Cascade)
   proposerId String        @map("proposer_id")
   proposer   User          @relation(fields: [proposerId], references: [id], onDelete: Cascade)
-  place      String?
+  place      String?       @db.VarChar(200)
   timeslot   DateTime?     @db.Timestamptz(3)
   state      ProposalState @default(PENDING)
   createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
