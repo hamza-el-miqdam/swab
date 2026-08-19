@@ -14,6 +14,14 @@
 - **Data impact:** no existing environment holds an oversized blob (seed data only, well under the cap) — the `ADD CONSTRAINT` is safe to apply as-is.
 - **Privacy audit:** no new data logged or exposed; the CHECK and `createdAt` are metadata, not vault content.
 
+## 2026-08-18 — [SUG-DB-006, ENV-15] Match.state can no longer represent a shared PASSED — per-side pass columns instead
+
+- **Problem:** `MatchState` had a shared `PASSED` value with a comment promising "PASSED is private to the passer — the counterpart's reads are bit-identical either way", but one column cannot record *who* passed without either leaking it to the counterpart or destroying the pre-pass state (was the counterpart mid-proposal?). Unimplementable as modeled.
+- **Fix:** removed `PASSED` from the shared `MatchState` enum (now `OPEN PROPOSED SCHEDULED EXPIRED`); added `Match.passedByAAt`/`passedByBAt` (`DateTime?`, timestamptz). A side's view state is `passedBy<side>At != null ? PASSED : state`; the counterpart's responses are computed from `state` alone and must never select the `passed_by_*` columns — a query-shape rule, not a DB constraint. Migration `match_per_side_pass` recreates the `match_state` Postgres enum (no `DROP VALUE` support) — safe as a same-PR change, not expand/migrate/contract, because no writer code for `Match` exists yet (matching isn't implemented in `apps/api`), so no row can hold `state = 'PASSED'` today.
+- **PR note to area:api:** `POST /matches/:id/pass` (swab-domain-spec.md:160) must write only the caller's own `passedBy*At`; any `GET` response shaped for the counterpart must not select `passed_by_a_at`/`passed_by_b_at`.
+- **Tests:** 3 new PGlite cases — `state = 'PASSED'` now rejected by the enum, setting `passedByAAt` leaves `state` untouched, and a counterpart-shaped select (`state, notifiedAt, createdAt`) stays bit-identical before/after a pass (`test_ENV15_pass_invisible_to_counterpart`).
+- **Privacy audit:** the new columns are per-user private timestamps (ENV-15), not classification data; they must never be selected into a counterpart-facing payload — same directional-privacy contract as IDT-08.
+
 ## 2026-08-18 — [SUG-DB-010] seed.ts refuses to wipe anything but a local/compose DB
 
 - **Problem:** `prisma/seed.ts` unconditionally `deleteMany()`s all eight tables before seeding, with only a comment as a safety net. A mistyped `DATABASE_URL`, or `prisma migrate dev`/`reset` auto-invoking the registered `prisma.seed` hook against the wrong connection, means total unrecoverable data loss — including every user's `Vault` blob (device-key-only, no server-side recovery path).
