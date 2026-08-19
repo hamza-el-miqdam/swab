@@ -9,9 +9,9 @@
 ## 2026-08-19 — [SUG-DB-013, IDT-01] Unbounded `text` columns now carry the API's length caps
 
 - **Problem:** every `String` column mapped to unbounded Postgres `text`, while the API boundary already enforces tight caps (`phoneHash` 32-128, `displayName` 50) — the DB didn't encode the same contract, so any non-route writer (a script, a future admin tool) could insert unbounded data.
-- **Fix:** migration `string_caps` narrows six columns to `varchar(n)`: `User.phoneHash` (128), `User.displayName` (50, matching the existing cap on `ContactLink.displayName`), `Envie.verb` (280 — no envie route exists yet, this sets the contract Backend codes against), `Envie.category` (64 — also an index key, caps btree bloat), `Proposal.place` (200), `Device.pushToken` (4096 — APNs/FCM tokens are far under this).
+- **Fix:** migration `string_caps` narrows six columns to `varchar(n)`: `User.phoneHash` (128), `User.displayName` (50, matching the existing cap on `ContactLink.displayName`), `Envie.verb` (200 — mirrors ENV-17, which states `verb` <= 200 chars), `Envie.category` (64 — also an index key, caps btree bloat), `Proposal.place` (200), `Device.pushToken` (4096 — APNs/FCM tokens are far under this).
 - **Not destructive:** narrowing is contract-phase (data-specialist.md:21) but safe pre-launch — only synthetic seed data exists today, all well under every cap; Postgres validates existing rows against the new length on `ALTER COLUMN ... TYPE`, which is the migration's own safety check.
-- **PR note to area:api:** future envie/proposal Zod schemas must mirror these caps (280/64/200) — this changelog entry is the single source.
+- **PR note to area:api:** future envie/proposal Zod schemas must mirror these caps (200/64/200). The **spec is the source** for `verb` (ENV-17, `docs/specs/FS-05-envie-match.md`); this entry only records where the DB now enforces it. Changing the cap is a spec amendment first, migration second.
 - **Tests:** 7 new PGlite cases — a declarative `information_schema.columns.character_maximum_length` check across all six columns, plus boundary/over-cap behavioral inserts for phoneHash, displayName, verb, category, pushToken, and place.
 - **Privacy audit:** no new columns exposed or logged; caps are structural, not content changes.
 

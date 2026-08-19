@@ -463,7 +463,7 @@ describe("SUG-DB-013 string caps (defense in depth vs. the API contract)", () =>
     expect(caps).toEqual({
       "users.phone_hash": 128,
       "users.display_name": 50,
-      "envies.verb": 280,
+      "envies.verb": 200,
       "envies.category": 64,
       "proposals.place": 200,
       "devices.push_token": 4096,
@@ -496,17 +496,17 @@ describe("SUG-DB-013 string caps (defense in depth vs. the API contract)", () =>
     ).resolves.toBeDefined();
   });
 
-  it("rejects a 281-char verb, accepts the 280-char boundary", async () => {
+  it("rejects a 201-char verb, accepts the 200-char boundary (ENV-17)", async () => {
     await expect(
       db.exec(
         `insert into envies (id, author_id, verb, category, expires_at) values
-           ('cap-verb-over','u1','${"v".repeat(281)}','sport', now() + interval '1 day')`,
+           ('cap-verb-over','u1','${"v".repeat(201)}','sport', now() + interval '1 day')`,
       ),
     ).rejects.toThrow();
     await expect(
       db.exec(
         `insert into envies (id, author_id, verb, category, expires_at) values
-           ('cap-verb-ok','u1','${"v".repeat(280)}','sport', now() + interval '1 day')`,
+           ('cap-verb-ok','u1','${"v".repeat(200)}','sport', now() + interval '1 day')`,
       ),
     ).resolves.toBeDefined();
   });

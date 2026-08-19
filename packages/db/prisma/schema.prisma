@@ -189,7 +189,7 @@ model Envie {
   id         String           @id @default(cuid())
   authorId   String           @map("author_id")
   author     User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  verb       String?          @db.VarChar(280) // « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed; nulled by the 30-day retention sweep after expiry (data-steward rule 3)
+  verb       String?          @db.VarChar(200) // ENV-17 caps verb at 200 chars — « envie de… », present tense, as spoken — user content: never logged, never full-text-indexed; nulled by the 30-day retention sweep after expiry (data-steward rule 3)
   category   String           @db.VarChar(64) // client-suggested normalized category — matching key
   status     EnvieStatus      @default(ACTIVE)
   expiresAt  DateTime         @map("expires_at") @db.Timestamptz(3)
