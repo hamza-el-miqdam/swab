@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 // One PrismaClient per process; cached on globalThis so dev-mode reloads
 // (tsx watch) don't leak connection pools.
@@ -28,3 +28,20 @@ export async function dbHealth(): Promise<DbHealth> {
 
 // Re-export generated types and enums so consumers never import @prisma/client directly.
 export * from "@prisma/client";
+
+/**
+ * True iff `err` is a unique-constraint violation (Postgres 23505 / Prisma
+ * P2002). SUG-DB-011: a bare `catch {}` around a `create()` cannot tell a
+ * true "row already exists" apart from a dropped connection or an unrelated
+ * FK failure — that conflation is what let VLT-02's first-write path report
+ * a false 409 for what was actually a 5xx. Total over `unknown` so it drops
+ * straight into a `catch (err)` block.
+ */
+export function isUniqueViolation(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
+}
+
+/** True iff `err` is a foreign-key violation (Postgres 23503 / Prisma P2003). */
+export function isForeignKeyViolation(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003";
+}
