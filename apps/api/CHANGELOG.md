@@ -6,6 +6,12 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [SUG-DB-013, IDT-01] Test fixture now respects the 50-char displayName contract
+
+- `packages/db` narrowed `users.display_name` to `varchar(50)` (SUG-DB-013), mirroring the cap `routes/auth.ts` has always enforced (`z.string().trim().min(1).max(50)`).
+- `tests/prisma-repo.test.ts`'s `syntheticIdentity()` built a ~63-char displayName. It never went through the route, so nothing rejected it while the column was unbounded `text` — the fixture was silently out of contract and the narrowing surfaced it. Shortened to `tpr-<label>-<uuid>` capped at 50.
+- **Gotcha:** these integration tests bypass the route and write via `prismaRepository` directly, so they do **not** inherit Zod validation. A fixture that violates the API contract will now fail at the DB instead of passing quietly — which is the point, but it means fixtures must be contract-shaped by hand.
+
 ## 2026-08-17 — [IDT-03] SUG-API-008 `OtpStore` sweeps expired codes/throttle windows and caps tracked hashes
 
 - `entries`/`requestLog` were cleaned up only lazily (on `check()`/`consume()`, or on the same key's next `request()`), so a code that is requested but never verified — the common attacker pattern, and a frequent real-user one — stayed in memory forever. Attacker-chosen 32–128 char hash keys made this a practical slow-burn memory-exhaustion vector against the single-process POC.
