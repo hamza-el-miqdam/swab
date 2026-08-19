@@ -24,8 +24,9 @@
  * Test data hygiene: this suite runs against the SAME `swab` database as
  * local dev data (docker-compose provisions exactly one DB — no schema/compose
  * changes are in scope here). Every row created below uses a
- * `test-prisma-repo-` prefixed, `crypto.randomUUID()`-suffixed phoneHash and
- * displayName, and `afterEach` deletes only the User ids this file itself
+ * `crypto.randomUUID()`-suffixed phoneHash (`test-prisma-repo-` prefixed) and
+ * displayName (`tpr-` prefixed, capped at the column's 50 chars — see
+ * syntheticIdentity), and `afterEach` deletes only the User ids this file itself
  * created (Vault cascades via the schema's `onDelete: Cascade`) — reruns are
  * idempotent and a developer's local data is never touched.
  */
@@ -70,7 +71,12 @@ function syntheticIdentity(label: string): { phoneHash: string; displayName: str
   const id = randomUUID();
   return {
     phoneHash: `test-prisma-repo-${label}-${id}`,
-    displayName: `test-prisma-repo-${label}-${id}`,
+    // displayName is varchar(50) since SUG-DB-013, mirroring the API contract
+    // (`auth.ts` caps it at 50). The old `test-prisma-repo-`-prefixed value was
+    // ~63 chars — always out of contract, but invisible while the column was
+    // unbounded text. Shorter prefix + a slice so a longer `label` truncates
+    // instead of failing. phoneHash is varchar(128), so it keeps the full form.
+    displayName: `tpr-${label}-${id}`.slice(0, 50),
   };
 }
 

@@ -482,6 +482,130 @@ describe("ENV-15 per-side pass (SUG-DB-006)", () => {
   });
 });
 
+describe("SUG-DB-013 string caps (defense in depth vs. the API contract)", () => {
+  it("caps every column at the value the API contract already enforces", async () => {
+    const res = await db.query<{
+      table_name: string;
+      column_name: string;
+      character_maximum_length: number | null;
+    }>(
+      `select table_name, column_name, character_maximum_length
+         from information_schema.columns
+        where (table_name, column_name) in (
+          ('users','phone_hash'), ('users','display_name'),
+          ('envies','verb'), ('envies','category'),
+          ('proposals','place'), ('devices','push_token')
+        )`,
+    );
+    const caps = Object.fromEntries(
+      res.rows.map((r) => [`${r.table_name}.${r.column_name}`, r.character_maximum_length]),
+    );
+    expect(caps).toEqual({
+      "users.phone_hash": 128,
+      "users.display_name": 50,
+      "envies.verb": 200,
+      "envies.category": 64,
+      "proposals.place": 200,
+      "devices.push_token": 4096,
+    });
+  });
+
+  it("rejects a 129-char phoneHash, accepts the 128-char boundary", async () => {
+    await expect(
+      db.exec(
+        `insert into users (id, phone_hash, display_name) values ('cap-phone-over','${"h".repeat(129)}','X')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.exec(
+        `insert into users (id, phone_hash, display_name) values ('cap-phone-ok','${"h".repeat(128)}','X')`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a 51-char displayName, accepts the 50-char boundary", async () => {
+    await expect(
+      db.exec(
+        `insert into users (id, phone_hash, display_name) values ('cap-name-over','hash-cap-name-over','${"n".repeat(51)}')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.exec(
+        `insert into users (id, phone_hash, display_name) values ('cap-name-ok','hash-cap-name-ok','${"n".repeat(50)}')`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a 201-char verb, accepts the 200-char boundary (ENV-17)", async () => {
+    await expect(
+      db.exec(
+        `insert into envies (id, author_id, verb, category, expires_at) values
+           ('cap-verb-over','u1','${"v".repeat(201)}','sport', now() + interval '1 day')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.exec(
+        `insert into envies (id, author_id, verb, category, expires_at) values
+           ('cap-verb-ok','u1','${"v".repeat(200)}','sport', now() + interval '1 day')`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a 65-char category, accepts the 64-char boundary", async () => {
+    await expect(
+      db.exec(
+        `insert into envies (id, author_id, verb, category, expires_at) values
+           ('cap-cat-over','u1','v','${"c".repeat(65)}', now() + interval '1 day')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.exec(
+        `insert into envies (id, author_id, verb, category, expires_at) values
+           ('cap-cat-ok','u1','v','${"c".repeat(64)}', now() + interval '1 day')`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a 4097-char pushToken, accepts the 4096-char boundary", async () => {
+    await expect(
+      db.exec(
+        `insert into devices (id, user_id, platform, push_token) values
+           ('cap-push-over','u1','IOS','${"p".repeat(4097)}')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.exec(
+        `insert into devices (id, user_id, platform, push_token) values
+           ('cap-push-ok','u1','IOS','${"p".repeat(4096)}')`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects a 201-char place, accepts the 200-char boundary", async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values
+         ('cap-place-e1','u1','v','c', now() + interval '1 day'),
+         ('cap-place-e2','u2','v','c', now() + interval '1 day')`,
+    );
+    await db.exec(
+      `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+         values ('cap-place-match','cap-place-e1','cap-place-e2','u1','u2')`,
+    );
+    await expect(
+      db.exec(
+        `insert into proposals (id, match_id, proposer_id, place) values
+           ('cap-place-over','cap-place-match','u1','${"p".repeat(201)}')`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.exec(
+        `insert into proposals (id, match_id, proposer_id, place) values
+           ('cap-place-ok','cap-place-match','u1','${"p".repeat(200)}')`,
+      ),
+    ).resolves.toBeDefined();
+  });
+});
+
 describe("SUG-DB-015 updatedAt on stateful models", () => {
   /** @updatedAt is Prisma-client-managed, not a DB trigger — raw SQL sweeps
    * (expiry cron, etc.) must set updated_at = now() explicitly, same as the

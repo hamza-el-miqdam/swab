@@ -6,6 +6,16 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [SUG-DB-013, IDT-01] Unbounded `text` columns now carry the API's length caps
+
+- **Problem:** every `String` column mapped to unbounded Postgres `text`, while the API boundary already enforces tight caps (`phoneHash` 32-128, `displayName` 50) — the DB didn't encode the same contract, so any non-route writer (a script, a future admin tool) could insert unbounded data.
+- **Fix:** migration `string_caps` narrows six columns to `varchar(n)`: `User.phoneHash` (128), `User.displayName` (50, matching the existing cap on `ContactLink.displayName`), `Envie.verb` (200 — mirrors ENV-17, which states `verb` <= 200 chars), `Envie.category` (64 — also an index key, caps btree bloat), `Proposal.place` (200), `Device.pushToken` (4096 — APNs/FCM tokens are far under this).
+- **Not destructive:** narrowing is contract-phase (data-specialist.md:21) but safe pre-launch — only synthetic seed data exists today, all well under every cap; Postgres validates existing rows against the new length on `ALTER COLUMN ... TYPE`, which is the migration's own safety check.
+- **Surfaced an out-of-contract test fixture:** `apps/api/tests/prisma-repo.test.ts` built a ~63-char `displayName`, which only worked because the column was unbounded. Fixed in this PR (hence the `area:backend` label) — the integration tests write via the repository, bypassing the route's Zod validation, so nothing had ever rejected it.
+- **PR note to area:api:** future envie/proposal Zod schemas must mirror these caps (200/64/200). The **spec is the source** for `verb` (ENV-17, `docs/specs/FS-05-envie-match.md`); this entry only records where the DB now enforces it. Changing the cap is a spec amendment first, migration second.
+- **Tests:** 7 new PGlite cases — a declarative `information_schema.columns.character_maximum_length` check across all six columns, plus boundary/over-cap behavioral inserts for phoneHash, displayName, verb, category, pushToken, and place.
+- **Privacy audit:** no new columns exposed or logged; caps are structural, not content changes.
+
 ## 2026-08-19 — [SUG-DB-015, ENV-12, ENV-14] updatedAt on Envie, Match, Proposal, Device
 
 - **Problem:** only `Vault` and `ContactLink`/`ContactRole` had `updatedAt`. Four mutable-state models had no transition timestamp: `Envie.status` (ACTIVE→EXPIRED/WITHDRAWN, ENV-12), `Match.state` (OPEN→…→EXPIRED), `Proposal.state` (PENDING→ACCEPTED/DECLINED/LAPSED, ENV-14), `Device.pushToken` (rotated by push providers, no way to spot stale devices).
