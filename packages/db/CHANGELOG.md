@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [SUG-DB-015, ENV-12, ENV-14] updatedAt on Envie, Match, Proposal, Device
+
+- **Problem:** only `Vault` and `ContactLink`/`ContactRole` had `updatedAt`. Four mutable-state models had no transition timestamp: `Envie.status` (ACTIVE→EXPIRED/WITHDRAWN, ENV-12), `Match.state` (OPEN→…→EXPIRED), `Proposal.state` (PENDING→ACCEPTED/DECLINED/LAPSED, ENV-14), `Device.pushToken` (rotated by push providers, no way to spot stale devices).
+- **Fix:** added `updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)` to all four models. Migration `updated_at_stateful_models` backfills existing rows to `now()` (honest "unknown before this date", same pattern as SUG-DB-012's `Vault.createdAt`). `User`, `ContactLink`'s own `targetId`-independent rows, and `EnvieRecipient` deliberately left alone (rule 5's insert-only-shape discipline) per the suggestion's scope note.
+- **PR note to area:api:** `@updatedAt` is Prisma-client-managed, not a DB trigger — any raw-SQL sweep (expiry cron, retention job) must set `updated_at = now()` explicitly. **Hazard:** `Match.updatedAt` ticks when a pass marker is written (`passedBy*At`, SUG-DB-006) — any counterpart-facing serializer must never select `updatedAt`, or it becomes a covert pass-signal and breaks the ENV-15 bit-identity guarantee those columns exist to protect.
+- **Tests:** 7 new PGlite cases — timestamptz type on all four new columns, insert-time default (`updatedAt == createdAt`), an explicit status-flip write advancing `updatedAt` past `createdAt` (ENV-12), and default-on-insert for `Match`/`Proposal`/`Device`.
+- **Privacy audit:** transition timestamps are server-visible row metadata, not classification data; no new logging or cross-user exposure.
+
 ## 2026-08-18 — [SUG-DB-012, VLT-03] Vault: DB-level 1 MB quota CHECK + createdAt
 
 - **Problem:** the 1 MB VLT-03 quota was enforced app-layer only (`apps/api/src/routes/vault.ts` `MAX_VAULT_BYTES`); any other write path (admin script, second service, route bug) could exceed the free-tier storage budget with nothing at the DB layer to stop it. `Vault` also had no `createdAt`, unlike every other model.

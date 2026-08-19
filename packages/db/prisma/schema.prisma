@@ -61,6 +61,9 @@ model Device {
   pushToken String?  @map("push_token")
   platform  Platform
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  // SUG-DB-015: pushToken is rotated by push providers — lets stale devices be
+  // spotted for pruning without reading content-level data.
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   // Query pattern: push-notification fanout (IDT-05) + deletion cascade scan.
   @@index([userId])
@@ -201,6 +204,9 @@ model Envie {
   status     EnvieStatus      @default(ACTIVE)
   expiresAt  DateTime         @map("expires_at") @db.Timestamptz(3)
   createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  // SUG-DB-015: records when status last flipped (ACTIVE→EXPIRED/WITHDRAWN,
+  // ENV-12), separate from expiresAt which only carries scheduled expiry.
+  updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   recipients EnvieRecipient[]
   matchesA   Match[]          @relation("envieA")
   matchesB   Match[]          @relation("envieB")
@@ -245,6 +251,13 @@ model Match {
   passedByBAt DateTime?  @map("passed_by_b_at") @db.Timestamptz(3)
   notifiedAt  DateTime?  @map("notified_at") @db.Timestamptz(3)
   createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  // SUG-DB-015: state-transition timestamp for support/debugging + the
+  // EXPIRED sweep (ENV-15). HAZARD: this column also ticks when a pass
+  // marker is written (passedBy*At above) — the counterpart-facing
+  // serializer must NEVER include updatedAt, or it becomes a covert
+  // pass-signal and breaks the bit-identity guarantee those columns exist to
+  // protect. Flagged to area:api in this PR's description.
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   proposals   Proposal[]
 
   // Reciprocity-race arbiter (DAT rule 5): concurrent envie creation may both detect
@@ -274,6 +287,8 @@ model Proposal {
   timeslot   DateTime?     @db.Timestamptz(3)
   state      ProposalState @default(PENDING)
   createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  // SUG-DB-015: accept/decline transition time (ENV-14), otherwise unrecorded.
+  updatedAt  DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   // Query pattern: proposals-for-match reads (ENV-14) + both deletion cascades.
   @@index([matchId])
