@@ -1,8 +1,8 @@
 # Swab — Codebase Audit Suggestions (2026-07-20)
 
-114 improvement suggestions produced by a read-only audit of the whole monorepo (2026-07-20), run by the seven area specialist agents.
+114 improvement suggestions produced by a read-only audit of the whole monorepo (2026-07-20), run by the seven area specialist agents. 2 later additions (`review/`) bring the total to 116 — the audit set is closed, but the folder stays the home for improvement work that is planned rather than done.
 
-**Layout (reorganised 2026-08-16):** implemented suggestions move to `done/<area>/`; `<area>/` holds only what is still open. Nothing is ever deleted — a completed suggestion stays as the audit record of why the change was made. **76 done, 38 open.** Links throughout this file point at wherever the file now lives.
+**Layout (reorganised 2026-08-16):** implemented suggestions move to `done/<area>/`; `<area>/` holds only what is still open. Nothing is ever deleted — a completed suggestion stays as the audit record of why the change was made. **76 done, 40 open.** Links throughout this file point at wherever the file now lives.
 
 ## How to use these files
 
@@ -21,7 +21,8 @@ Each suggestion is one self-contained markdown file with a fixed template: probl
 | DevOps / CI | — | [19](done/devops/) | devops-specialist |
 | Design system | — | [15](done/design/) | design-specialist (+ platform agents where noted) |
 | Specs / QA docs | — | [13](done/specs/) | spec-specialist |
-| **Total** | **38** | **76** | |
+| Review agent | [2](review/) | — | review-specialist |
+| **Total** | **40** | **76** | |
 
 ## Execution order — dependency graph & model assignments
 
