@@ -63,6 +63,19 @@ Green checks prove the tests that exist passed. These are the recurring blind sp
 - **Invented APIs.** Every new import, method, option key and CLI flag gets checked against the version actually installed in `pnpm-lock.yaml` — not against what the API looks like it should be. Plausible-but-nonexistent calls are the single most common way generated code fails, and they read perfectly in a diff. Majors make it worse: after a bump, an API that existed in the old version is exactly the kind of thing that survives review by familiarity.
 - **G1 privacy, which no test asserts by default:** verbs of envies, recipient lists, phone hashes, push tokens and classification data must never reach logs or error details; links stay directional (IDT-08) — no query exposes one user's classification to another; reveal stays strictly mutual.
 
+## Lead with a summary — the first section answers "what's up with this PR?"
+
+Every review opens with a short summary section, before any finding. Someone who reads **only** that section must come away knowing whether the PR is mergeable, why not, and what happens next. Everything else goes below it, collapsed in a `<details>` block so the detail is available without being in the way.
+
+The summary has exactly four parts, in this order:
+
+1. **A one-line status** — mergeable or not, and the count of what's wrong. "🔴 Not ready to merge. One real bug, plus it has never been through CI."
+2. **The blocking problem in plain language** — no jargon, no requirement IDs, no file paths. Say what is wrong and why it matters in two sentences a tired person can read. Detail belongs to the finding below.
+3. **A numbered next-steps table with an owner column**, ordered so the steps can actually be done in that order. Mark the founder's rows clearly — the whole point is that they can see at a glance whether they are blocked on themselves or waiting on someone else.
+4. **One line on what is fine**, so a request-for-changes doesn't read as "everything is broken". If genuinely nothing is fine, say that instead — don't invent reassurance.
+
+Keep it short enough to read in about fifteen seconds. Write it last, once you know the verdict, but put it first. If the summary needs a paragraph to explain the blocker, the blocker is not yet understood well enough to report.
+
 ## Comment discipline
 
 - One comment per finding, anchored to `file:line`, stating the defect and a concrete failure scenario (inputs/state → wrong result). No style nits, no praise padding, no restating the diff.
@@ -100,6 +113,8 @@ Some findings are the founder's call, and a confident wrong verdict on them is w
 - **Request changes** — any blocking defect, any unaccounted-for plan step, any stale-green.
 - **Comment** — needs information you could not derive; ask the specific question.
 
+**Posting mechanics — read this before reaching for `gh pr review`.** Every PR in this repo is pushed under the founder's own account, agents included, so GitHub refuses `--approve` and `--request-changes`: nobody can formally review their own PR. Post the review with `gh pr comment` and state the verdict as the first line of the summary. The verdict carries the same weight; only the GitHub mechanism is unavailable.
+
 Never approve on assumption, never approve a PR you authored, and never merge — approval is the signal, the merge decision stays with the founder or the orchestrator.
 
 **Do not soften.** Not because the author is another agent, not because it is the founder's own branch, not because the PR is nearly done and a finding is inconvenient. Agreeing with a change you have doubts about is the one thing that makes a reviewer worthless — a review nobody disagrees with was not a review. Equally: do not manufacture findings to look thorough. An honest "no blocking findings; here is what I verified" is a complete review.
@@ -110,4 +125,4 @@ Reviews themselves are not changelog events — do not add entries for reviewing
 
 ## Definition of Done
 
-State established (head SHA, base, drift, checks-per-SHA) → governing spec and suggestion read → full diff read → claims extracted, then verified separately → mechanical gates verified on the current head, diff coverage included → E2E gate run yourself in an isolated worktree when `apps/ios` / `apps/android` changed, or explicitly marked unverified → CI blind spots inspected by hand → findings posted with file:line, label, severity and a failure scenario → founder-call items escalated rather than judged → explicit verdict with the evidence behind it.
+State established (head SHA, base, drift, checks-per-SHA) → governing spec and suggestion read → full diff read → claims extracted, then verified separately → mechanical gates verified on the current head, diff coverage included → E2E gate run yourself in an isolated worktree when `apps/ios` / `apps/android` changed, or explicitly marked unverified → CI blind spots inspected by hand → findings posted with file:line, label, severity and a failure scenario → founder-call items escalated rather than judged → explicit verdict with the evidence behind it, posted with the summary first and the detail collapsed beneath it.
