@@ -19,10 +19,23 @@ const phoneHashSchema = z
 
 const otpRequestSchema = z.object({ phoneHash: phoneHashSchema });
 
+// Printable content only: no control (Cc) or format (Cf — includes bidi
+// overrides like U+202E) characters. Letters, marks, numbers, punctuation,
+// symbols, and plain spaces are all fine (emoji included). The ZWJ (U+200D)
+// and variation-selector-16 (U+FE0F) allowance is required for composite
+// emoji sequences (e.g. family/skin-tone emoji), which \p{Cf} would
+// otherwise reject (SUG-API-015, IDT-01/IDT-09).
+const displayNameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(50)
+  .regex(/^(?:[^\p{Cc}\p{Cf}]|‍|️)+$/u, "contains unsupported characters");
+
 const otpVerifySchema = z.object({
   phoneHash: phoneHashSchema,
   code: z.string().regex(/^\d{6}$/, "must be a 6-digit code"),
-  displayName: z.string().trim().min(1).max(50).optional(),
+  displayName: displayNameSchema.optional(),
 });
 
 export interface AuthRouteDeps {

@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [IDT-01, IDT-09] SUG-API-015 displayName rejects control and bidi-override characters
+
+- `otpVerifySchema.displayName` (`routes/auth.ts`) only trimmed edge whitespace, so C0/C1 control characters, embedded newlines, and Unicode bidi-override characters (U+202E RIGHT-TO-LEFT OVERRIDE, a classic spoofing primitive) passed straight through. Per IDT-09 this is the one user string rendered to non-members (invite landing page) as well as match/proposal counterparts — the API is the single choke point every client's displayName passes, so rejecting non-printable content here protects every future rendering surface at once (G1).
+- New regex excludes Unicode `\p{Cc}` (control) and `\p{Cf}` (format, includes bidi overrides), with an explicit allowance for ZWJ (U+200D) and variation-selector-16 (U+FE0F) so composite emoji sequences (e.g. family/skin-tone emoji) keep working — `\p{Cf}` alone would reject them.
+- Tests: `tests/auth.test.ts` — control/bidi/newline displayNames rejected 400 with no user created and the value never echoed in the response body; accented, Arabic, and emoji displayNames still accepted.
+- **Gotcha:** `tests/prisma-repo.test.ts` fails locally (no Postgres in this dev environment) — pre-existing, unrelated to this change (same failure on `main`), green in CI's `postgres:17` service. All other tests (59/59 in `auth.test.ts`, incl. 6 new) pass; lint/typecheck/build all green.
+
 ## 2026-08-19 — [SUG-DB-013, IDT-01] Test fixture now respects the 50-char displayName contract
 
 - `packages/db` narrowed `users.display_name` to `varchar(50)` (SUG-DB-013), mirroring the cap `routes/auth.ts` has always enforced (`z.string().trim().min(1).max(50)`).
