@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [agents] New Agent 11: Code Review Specialist (area:review)
+
+- **Why:** every specialist ships code and writes its own changelog entry, but nothing in the roster reviews the result. Adds `agents/review-specialist.md` as the source of truth, rendered to `.claude/agents/review-specialist.md`. It comments findings with `file:line` + a failure scenario and approves only on verified evidence; it never pushes to a PR branch, never merges, and writes no changelog entry for reviewing.
+- **Grounded in the failure modes this repo actually hits**, not generic review advice: green checks that ran against a stale head (branch behind `main` ⇒ the green proves nothing about the merge result), `no checks reported` misread as a pass after a dropped `synchronize` event, a `scope` failure whose payload carried an empty label list (a GitHub re-run replays the *original* payload, so only a fresh event fixes it), newest-first changelog collisions between sibling PRs, sibling migrations from a shared parent, and constraints that pass CI because the migration harness runs migrations but **never `seed.ts`**.
+- **`SUG-*.md` fidelity is a named duty:** walk the Implementation plan step by step and account for every step (done, or deferred with a reason); treat *Risks & gotchas* as a checklist; require each acceptance criterion to map to a real assertion under its named test.
+- **Two small `scripts/render-agents.mjs` changes** to support a non-authoring agent: `copilot: false` skips the path-scoped Copilot render (the only honest `applyTo` would be `**`, which would load review procedure into every editing context), and an optional `trailer` replaces the implementer boilerplate — otherwise the wrapper would have told a reviewer to write an area changelog entry, contradicting its own rules. Existing renders are byte-identical; `--check` is green.
+- **Not wired to CI.** Nothing invokes it automatically — it runs when asked. Deliberate: auto-review on every PR is a cost/noise decision, not a default.
+
 ## 2026-08-18 — [security] Prune the orphaned @prisma/config subtree from the prod image (CVE-2026-40345)
 
 - The Trivy gate went red on `main` (not on any one PR — #86 just inherited it) when CVE-2026-40345 was published: **HIGH, `deepmerge-ts@7.1.5`, stack exhaustion on recursive merge, fixed in 8.0.0**.
