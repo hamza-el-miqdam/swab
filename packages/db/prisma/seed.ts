@@ -100,10 +100,10 @@ async function main(): Promise<void> {
   // DEPRECATED (ADR-001): kept only until the blob endpoints go at stage 3/4.
   // Opaque synthetic bytes — content is meaningless by design (VLT-03).
   await prisma.vault.create({
-    data: { userId: amina.id, blob: Buffer.from("synthetic-opaque-vault-amina"), version: 3 },
+    data: { userId: amina.id, blob: Buffer.from("synthetic-opaque-vault-amina"), version: 3, createdAt: T0 },
   });
   await prisma.vault.create({
-    data: { userId: bilal.id, blob: Buffer.from("synthetic-opaque-vault-bilal"), version: 1 },
+    data: { userId: bilal.id, blob: Buffer.from("synthetic-opaque-vault-bilal"), version: 1, createdAt: T0 },
   });
 
   await prisma.device.create({

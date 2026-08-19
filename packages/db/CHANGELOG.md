@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-18 — [SUG-DB-012, VLT-03] Vault: DB-level 1 MB quota CHECK + createdAt
+
+- **Problem:** the 1 MB VLT-03 quota was enforced app-layer only (`apps/api/src/routes/vault.ts` `MAX_VAULT_BYTES`); any other write path (admin script, second service, route bug) could exceed the free-tier storage budget with nothing at the DB layer to stop it. `Vault` also had no `createdAt`, unlike every other model.
+- **Fix:** migration `vault_quota_and_created_at` adds `createdAt DateTime @default(now())` and a hand-written CHECK `vaults_blob_quota` on `octet_length(blob) <= 1048576` (Prisma can't express CHECK). The CHECK inspects only byte length — VLT-03-compliant, no content read. Backstop only: the route's 413 must keep firing first so clients get a friendly error, not a 500-wrapped constraint violation. Seed's two vault rows now pass `createdAt: T0` for determinism.
+- **Tests:** 3 new PGlite cases — a 1,048,576-byte blob accepted (boundary), a 1,048,577-byte blob rejected (`vaults_blob_quota`), and a fresh insert defaults `createdAt`.
+- **Data impact:** no existing environment holds an oversized blob (seed data only, well under the cap) — the `ADD CONSTRAINT` is safe to apply as-is.
+- **Privacy audit:** no new data logged or exposed; the CHECK and `createdAt` are metadata, not vault content.
+
 ## 2026-08-18 — [SUG-DB-006, ENV-15] Match.state can no longer represent a shared PASSED — per-side pass columns instead
 
 - **Problem:** `MatchState` had a shared `PASSED` value with a comment promising "PASSED is private to the passer — the counterpart's reads are bit-identical either way", but one column cannot record *who* passed without either leaking it to the counterpart or destroying the pre-pass state (was the counterpart mid-proposal?). Unimplementable as modeled.

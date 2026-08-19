@@ -42,8 +42,15 @@ model Vault {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   blob      Bytes
   version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  // SUG-DB-012: octet_length(blob) <= 1_048_576 CHECK lives in the migration
+  // (Prisma cannot express CHECK) — mirrors MAX_VAULT_BYTES in
+  // apps/api/src/routes/vault.ts; if the quota ever changes, both change
+  // together. Backstop only: the route's 413 must keep firing first so
+  // clients get a friendly error instead of a 500-wrapped constraint
+  // violation.
   @@map("vaults")
 }
 
