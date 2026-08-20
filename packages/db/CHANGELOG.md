@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [SUG-DB-011, VLT-02] Typed error helpers: `isUniqueViolation`/`isForeignKeyViolation`
+
+- **Problem:** `packages/db/src/index.ts` re-exports `@prisma/client` wholesale but offered no blessed way to discriminate a P2002/P2003 from any other failure, so `apps/api/src/prisma-repo.ts` had to `instanceof Prisma.PrismaClientKnownRequestError` by hand in two places. (`prisma-repo.ts` already gets `Prisma` through `@repo/db`'s re-export, not a direct `@prisma/client` import, so the line-29 packaging comment itself was never violated — the ad hoc part is the duplicated `instanceof`/code check, not the import path.)
+- **Fix:** added `isUniqueViolation(err: unknown)` and `isForeignKeyViolation(err: unknown)` to `packages/db/src/index.ts`, both total over `unknown` so they drop straight into a `catch (err)` block. No schema/migration change — packaging-only, no `prisma generate` impact.
+- **Not done here (out of data-steward scope, per the suggestion's own plan):** swapping `prisma-repo.ts`'s two inline `instanceof` checks for the new helpers is an `area:api` follow-up, tracked in [#101](https://github.com/hamza-el-miqdam/swab/issues/101) — that file's bare-`catch` masking of VLT-02 was already independently fixed by SUG-API-003, so the follow-up is a DX cleanup, not a bug fix.
+- **Tests:** 8 new pure-unit cases (`tests/error-helpers.test.ts`) against constructed `Prisma.PrismaClientKnownRequestError` instances — true on P2002/P2003 respectively, false on the other code, a plain `Error`, and non-error values (`undefined`/`null`/string). No PGlite/Postgres needed.
+- **Privacy audit:** no data-shape or logging change.
+
 ## 2026-08-19 — [SUG-DB-013, IDT-01] Unbounded `text` columns now carry the API's length caps
 
 - **Problem:** every `String` column mapped to unbounded Postgres `text`, while the API boundary already enforces tight caps (`phoneHash` 32-128, `displayName` 50) — the DB didn't encode the same contract, so any non-route writer (a script, a future admin tool) could insert unbounded data.
