@@ -30,18 +30,28 @@ export async function dbHealth(): Promise<DbHealth> {
 export * from "@prisma/client";
 
 /**
- * True iff `err` is a unique-constraint violation (Postgres 23505 / Prisma
- * P2002). SUG-DB-011: a bare `catch {}` around a `create()` cannot tell a
- * true "row already exists" apart from a dropped connection or an unrelated
- * FK failure — that conflation is what let VLT-02's first-write path report
- * a false 409 for what was actually a 5xx. Total over `unknown` so it drops
- * straight into a `catch (err)` block.
+ * True iff `err` is a unique-constraint violation raised through Prisma's ORM
+ * layer (P2002 — a `create`/`update`/`upsert` write). SUG-DB-011: a bare
+ * `catch {}` around a `create()` cannot tell a true "row already exists"
+ * apart from a dropped connection or an unrelated FK failure — that
+ * conflation is what let VLT-02's first-write path report a false 409 for
+ * what was actually a 5xx. Total over `unknown` so it drops straight into a
+ * `catch (err)` block.
+ *
+ * Does NOT cover a 23505 raised inside `$queryRaw`/`$executeRaw` — Prisma
+ * wraps raw-query failures as P2010, not P2002, so this returns `false` for
+ * those even though Postgres reports the same underlying constraint code.
  */
 export function isUniqueViolation(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
 }
 
-/** True iff `err` is a foreign-key violation (Postgres 23503 / Prisma P2003). */
+/**
+ * True iff `err` is a foreign-key violation raised through Prisma's ORM layer
+ * (P2003 — a `create`/`update`/`upsert` write). Same raw-query caveat as
+ * {@link isUniqueViolation}: a 23503 from `$queryRaw`/`$executeRaw` surfaces
+ * as P2010, not P2003, and is not recognised here.
+ */
 export function isForeignKeyViolation(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003";
 }
