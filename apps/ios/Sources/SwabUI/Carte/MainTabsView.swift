@@ -7,14 +7,16 @@ import SwiftUI
 
 public struct MainTabsView: View {
     private let vault: Vault
+    private let reporter: ErrorReporter
 
-    public init(vault: Vault) {
+    public init(vault: Vault, reporter: ErrorReporter = NoopErrorReporter()) {
         self.vault = vault
+        self.reporter = reporter
     }
 
     public var body: some View {
         TabView {
-            CarteView(viewModel: CarteViewModel(vault: vault))
+            CarteView(viewModel: CarteViewModel(vault: vault, reporter: reporter))
                 .tabItem { Text(Fr.t(.navCarte)) }
                 .accessibilityLabel(Fr.t(.navCarte))
 
