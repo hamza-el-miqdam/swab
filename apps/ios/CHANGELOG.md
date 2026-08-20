@@ -13,6 +13,15 @@
 - **`VaultKeyStore` deliberately does not get a delete method** — destroying the vault key is the VLT-05 data-loss event and needs its own reviewed change.
 - Verified: `xcrun swift test` 142/142 (new: `test_delete_removesItem_andIsIdempotent`, `test_IDT02_clearTokens_removesAccessAndRefresh`).
 
+## 2026-08-20 — [G3, SUG-IOS-005] Error-boundary reporter — every `try?` vault swallow now reports
+
+- **What changed:** new `Sources/SwabCore/Observability/ErrorReporter.swift` (`ErrorReporter` protocol, `ReportedError`, `OSLogErrorReporter`, `NoopErrorReporter`). `CarteViewModel`, `FicheViewModel`, `ContactsViewModel`, `CalibrateViewModel`, `DoneViewModel`, and `FileKeyValueStore.persist()` take a `reporter: ErrorReporter = NoopErrorReporter()` and now `do/catch { reporter.report(...) }` instead of discarding failures with `try?`. `SwabApp.swift`'s composition root wires one real `OSLogErrorReporter()` into all of them. User-facing fallback behavior on failure is unchanged (empty list / unchanged contact, matching the prior `try?`/`?? []` outcomes).
+- **Why:** G3 requires "Mobile/web report errors via a single error-boundary reporter"; every failure (dropped vault write, sync conflict, disk persist) was previously unobservable both on-device and to a developer.
+- **Privacy is the point of the PR, not an afterthought:** `ReportedError.errorDescription` is always a fixed short code (`VaultError.reportCode(for:)` / `VaultSyncError.reportCode(for:)` — `"blobUnavailable"`, `"invalidRing"`, `"unreadable"`, `"conflictPersisted"`, `"syncFailed"`), never `Error.localizedDescription`, since `DecodingError.dataCorrupted`'s context string can embed decoded blob fragments.
+- `DoneViewModel.finish()` also wraps `VaultSync.sync()` in an `OSSignposter` interval (duration only, no payload) — the closest vendor-neutral G3 metric available without adding OTel to a Swift package that has zero third-party deps.
+- New `Tests/SwabUITests/ErrorReporterPrivacyTests.swift` (not `SwabCoreTests` as the audit suggestion assumed — reporting happens at the SwabUI view-model boundary, which `SwabCoreTests` can't import): forces a real corrupt-blob decrypt failure and a persisted `VaultSync` conflict, asserts no `ReportedError` field ever contains ring/état/ressenti/rôle vocabulary or the seeded display name.
+- Verified: `xcrun swift test` 142/142.
+
 ## 2026-08-16 — [FCH-09, SUG-IOS-011] Stored classification values are identifiers, not French copy
 
 - **What changed:** new `ClassificationValues.swift` with `Etat` / `Ressenti` / `RoleContexte` (identifiers per FS-03 § *Stored value vocabulary*). The vault now persists `busy`, not `occupé`; `EtatColors` is keyed by `Etat` instead of by `Fr.t(...)`; `FicheFilterConsequence` compares `.paused`; `Vault`'s setters take the typed value, so writing display copy into the vault is a compile error.

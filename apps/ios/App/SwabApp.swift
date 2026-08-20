@@ -107,6 +107,9 @@ struct RootView: View {
     private let apiClient: ApiClient
     private let vaultSync: VaultSync
     private let config: AppConfig
+    /// G3 — the single error-boundary reporter, threaded into every view
+    /// model from here (`OSLogErrorReporter` in production).
+    private let reporter: ErrorReporter = OSLogErrorReporter()
 
     init() {
         // G1/SUG-IOS-008: fail fast at boot on missing/invalid config rather
@@ -121,7 +124,7 @@ struct RootView: View {
         #if DEBUG
         UITestHooks.apply(storeURL: RootView.storeURL(), secureStore: secureStore)
         #endif
-        let kv = FileKeyValueStore(url: RootView.storeURL())
+        let kv = FileKeyValueStore(url: RootView.storeURL(), reporter: reporter)
         self.secureStore = secureStore
         self.kv = kv
         self.onboarding = OnboardingStateStore(kv: kv)
@@ -195,21 +198,26 @@ struct RootView: View {
                     vault: vault,
                     importer: FakeContactsImporter(granted: false),
                     onboarding: onboarding,
-                    salt: config.phoneHashSalt
+                    salt: config.phoneHashSalt,
+                    reporter: reporter
                 )
             ) {
                 step = .calibrate
             }
         case .calibrate:
-            CalibrateView(viewModel: CalibrateViewModel(vault: vault, onboarding: onboarding)) {
+            CalibrateView(
+                viewModel: CalibrateViewModel(vault: vault, onboarding: onboarding, reporter: reporter)
+            ) {
                 step = .done
             }
         case .done:
-            DoneView(viewModel: DoneViewModel(onboarding: onboarding, vaultSync: vaultSync)) {
+            DoneView(
+                viewModel: DoneViewModel(onboarding: onboarding, vaultSync: vaultSync, reporter: reporter)
+            ) {
                 step = .complete
             }
         case .complete:
-            MainTabsView(vault: vault)
+            MainTabsView(vault: vault, reporter: reporter)
         }
     }
 }

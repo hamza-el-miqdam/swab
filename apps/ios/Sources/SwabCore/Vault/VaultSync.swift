@@ -10,6 +10,15 @@ public protocol VaultSyncApi: Sendable {
 
 public enum VaultSyncError: Error, Equatable, Sendable {
     case conflictPersisted
+
+    /// G3: fixed, privacy-safe code for `ErrorReporter` — mirrors
+    /// `VaultError.reportCode(for:)`.
+    public static func reportCode(for error: Error) -> String {
+        switch error {
+        case VaultSyncError.conflictPersisted: return "conflictPersisted"
+        default: return "syncFailed"
+        }
+    }
 }
 
 public struct VaultSync: Sendable {

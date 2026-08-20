@@ -13,10 +13,18 @@ public final class FicheViewModel {
     public private(set) var contact: VaultContact
 
     private let vault: Vault
+    private let reporter: ErrorReporter
 
-    public init(vault: Vault, contact: VaultContact) {
+    public init(vault: Vault, contact: VaultContact, reporter: ErrorReporter = NoopErrorReporter()) {
         self.vault = vault
         self.contact = contact
+        self.reporter = reporter
+    }
+
+    /// G3: every `try?` swallow below reports through here first — domain
+    /// `"fiche.vault"`, a fixed vault error code (never `localizedDescription`).
+    private func report(_ operation: String, _ error: Error) {
+        reporter.report(ReportedError(domain: "fiche.vault", operation: operation, errorDescription: VaultError.reportCode(for: error)))
     }
 
     /// FCH-08: envie eligibility — inactive until the pending contact link
@@ -49,13 +57,19 @@ public final class FicheViewModel {
     }
 
     public func refresh() async {
-        if let latest = try? await vault.getContact(id: contact.id) {
-            contact = latest
+        do {
+            contact = try await vault.getContact(id: contact.id) ?? contact
+        } catch {
+            report("refresh", error)
         }
     }
 
     public func setRing(_ ring: Int) async {
-        try? await vault.setFicheRing(id: contact.id, ring: ring)
+        do {
+            try await vault.setFicheRing(id: contact.id, ring: ring)
+        } catch {
+            report("setRing", error)
+        }
         await refresh()
     }
 
@@ -63,12 +77,20 @@ public final class FicheViewModel {
     // label back to it, so display copy stops at the view boundary.
 
     public func setEtat(_ etat: Etat) async {
-        try? await vault.setFicheEtat(id: contact.id, etat: etat)
+        do {
+            try await vault.setFicheEtat(id: contact.id, etat: etat)
+        } catch {
+            report("setEtat", error)
+        }
         await refresh()
     }
 
     public func setRessenti(_ ressenti: Ressenti) async {
-        try? await vault.setFicheRessenti(id: contact.id, ressenti: ressenti)
+        do {
+            try await vault.setFicheRessenti(id: contact.id, ressenti: ressenti)
+        } catch {
+            report("setRessenti", error)
+        }
         await refresh()
     }
 
@@ -84,17 +106,29 @@ public final class FicheViewModel {
             selected.insert(role)
         }
         let roles = RoleContexte.allCases.filter(selected.contains)
-        try? await vault.setFicheRoles(id: contact.id, roles: roles)
+        do {
+            try await vault.setFicheRoles(id: contact.id, roles: roles)
+        } catch {
+            report("setRoles", error)
+        }
         await refresh()
     }
 
     public func reconfirmStillAccurate() async {
-        try? await vault.reconfirmFicheStaleness(id: contact.id)
+        do {
+            try await vault.reconfirmFicheStaleness(id: contact.id)
+        } catch {
+            report("reconfirmStaleness", error)
+        }
         await refresh()
     }
 
     public func snoozeStaleness() async {
-        try? await vault.snoozeFicheStaleness(id: contact.id)
+        do {
+            try await vault.snoozeFicheStaleness(id: contact.id)
+        } catch {
+            report("snoozeStaleness", error)
+        }
         await refresh()
     }
 }
