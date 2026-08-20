@@ -4,7 +4,13 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/android-CHANGELOG-pre-2026-08-15.md](../../docs/archive/android-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
-## 2026-08-16 — [FCH-09] Stored classification values are identifiers, not French copy
+## 2026-08-20 — [G3] SUG-AND-012 a logging seam + crash reporter, where there was none
+
+- **What changed:** new `observability/SwabLog.kt` (`SwabLogger`: `LogcatLogger` debug-only, `NoopLogger` release/test default), wired through `AppContainer`. `SignupViewModel`'s two anonymous `catch (_: Exception)` blocks, `MainActivity`'s discarded initial-sync failure, and `VaultSync`'s 409-retry path now log an event name + whitelisted scalar fields (never the raw phone number, its hash, tokens, or the vault blob). `ApiClient` sends a fresh `x-request-id` per request — `apps/api` already reads that header (`app.ts:68`), so client and server logs now correlate. New `SwabApplication` installs a default `UncaughtExceptionHandler` (logs exception type only, then rethrows) as the minimum-viable G3 error-boundary reporter.
+- **Why:** G3 required structured logging + a single error-boundary reporter; the Android app had zero logger seam (`grep -r "Log\."` found nothing), so a live onboarding/sync failure was undebuggable without adb-less guesswork.
+- **Gotcha:** the privacy blacklist is enforced by `SwabLogPrivacyTest`, not just the doc comment on `SwabLogger.event` — never widen a logged field to a free-form string that could carry user data.
+- No crash-reporting SaaS added (new dependency, no G4 justification yet) — `SwabApplication` only logs and rethrows.
+- E2E gate not run this PR (worker operates without an emulator); JVM suite green (`./gradlew test`).
 
 - **What changed:** new `fiche/ClassificationValues.kt` with `Etat` / `Ressenti` / `RoleContexte` (identifiers per FS-03 § *Stored value vocabulary*). The vault persists `busy`, not `occupé`; `EtatColors.ETAT_COLORS` is keyed by `Etat` instead of by `Fr.ETAT_*`; `FicheFilterConsequence.forValue` takes an `Etat?`; `Vault`'s setters take the typed value, so writing display copy into the vault is a compile error.
 - **Why:** ADR-001 stage 0b, mirroring iOS `SUG-IOS-011`. Rewording a label — or shipping the planned Arabic locale — silently orphaned every stored value. After stage 2 these are database columns and the same rewording becomes a data migration.
