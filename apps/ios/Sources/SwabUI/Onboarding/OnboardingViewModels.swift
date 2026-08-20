@@ -3,6 +3,7 @@
 /// and in SwabCore — nothing UI-specific leaks into SwabCore.
 import Observation
 import SwabCore
+import os
 
 @MainActor
 @Observable
@@ -145,6 +146,7 @@ public final class ContactsViewModel {
     /// Deployment-scoped (SUG-IOS-008), same default/override contract as
     /// `PhoneViewModel.salt`.
     private let salt: String
+    private let reporter: ErrorReporter
     /// Device-import bookkeeping only (SUG-IOS-013), not a product rule:
     /// guards against re-picking the same `DeviceContact` (e.g. a rapid
     /// double-tap before `importable` re-renders without it). Two
@@ -156,17 +158,27 @@ public final class ContactsViewModel {
         vault: Vault,
         importer: ContactsImporting,
         onboarding: OnboardingStateStore,
-        salt: String = PhoneHash.defaultSalt
+        salt: String = PhoneHash.defaultSalt,
+        reporter: ErrorReporter = NoopErrorReporter()
     ) {
         self.vault = vault
         self.importer = importer
         self.onboarding = onboarding
         self.salt = salt
+        self.reporter = reporter
+    }
+
+    private func report(_ operation: String, _ error: Error) {
+        reporter.report(ReportedError(domain: "onboarding.vault", operation: operation, errorDescription: VaultError.reportCode(for: error)))
     }
 
     public func refresh() async {
-        let contacts = (try? await vault.getContacts()) ?? []
-        addedNames = contacts.map(\.displayName)
+        do {
+            addedNames = try await vault.getContacts().map(\.displayName)
+        } catch {
+            report("refresh", error)
+            addedNames = []
+        }
     }
 
     /// ONB-03: OS-level denial degrades gracefully — the manual path below
@@ -184,7 +196,11 @@ public final class ContactsViewModel {
         guard !pickedIds.contains(contact.id) else { return }
         pickedIds.insert(contact.id)
         let phoneHash = contact.phone.map { PhoneHash.hash($0, salt: salt) }
-        _ = try? await vault.addContact(displayName: contact.name, phoneHash: phoneHash)
+        do {
+            _ = try await vault.addContact(displayName: contact.name, phoneHash: phoneHash)
+        } catch {
+            report("pick", error)
+        }
         importable.removeAll { $0.id == contact.id }
         await refresh()
     }
@@ -192,7 +208,11 @@ public final class ContactsViewModel {
     public func addManual() async {
         let name = manualName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
-        _ = try? await vault.addContact(displayName: name)
+        do {
+            _ = try await vault.addContact(displayName: name)
+        } catch {
+            report("addManual", error)
+        }
         manualName = ""
         await refresh()
     }
@@ -215,10 +235,16 @@ public final class CalibrateViewModel {
 
     private let vault: Vault
     private let onboarding: OnboardingStateStore
+    private let reporter: ErrorReporter
 
-    public init(vault: Vault, onboarding: OnboardingStateStore) {
+    public init(vault: Vault, onboarding: OnboardingStateStore, reporter: ErrorReporter = NoopErrorReporter()) {
         self.vault = vault
         self.onboarding = onboarding
+        self.reporter = reporter
+    }
+
+    private func report(_ operation: String, _ error: Error) {
+        reporter.report(ReportedError(domain: "calibrate.vault", operation: operation, errorDescription: VaultError.reportCode(for: error)))
     }
 
     public var selected: VaultContact? {
@@ -230,26 +256,43 @@ public final class CalibrateViewModel {
     }
 
     public func refresh() async {
-        contacts = (try? await vault.getContacts()) ?? []
+        do {
+            contacts = try await vault.getContacts()
+        } catch {
+            report("refresh", error)
+            contacts = []
+        }
     }
 
     /// ONB-05: written to the vault only — no network call exists in this
     /// view model, by design.
     public func place(ring: Int) async {
         guard let selectedId else { return }
-        try? await vault.setRing(id: selectedId, ring: ring)
+        do {
+            try await vault.setRing(id: selectedId, ring: ring)
+        } catch {
+            report("place", error)
+        }
         await refresh()
     }
 
     public func setEtat(_ etat: Etat?) async {
         guard let selectedId else { return }
-        try? await vault.setEtat(id: selectedId, etat: etat)
+        do {
+            try await vault.setEtat(id: selectedId, etat: etat)
+        } catch {
+            report("setEtat", error)
+        }
         await refresh()
     }
 
     public func setRessenti(_ ressenti: Ressenti?) async {
         guard let selectedId else { return }
-        try? await vault.setRessenti(id: selectedId, ressenti: ressenti)
+        do {
+            try await vault.setRessenti(id: selectedId, ressenti: ressenti)
+        } catch {
+            report("setRessenti", error)
+        }
         await refresh()
     }
 
@@ -263,16 +306,33 @@ public final class CalibrateViewModel {
 public final class DoneViewModel {
     private let onboarding: OnboardingStateStore
     private let vaultSync: VaultSync
+    private let reporter: ErrorReporter
+    private static let signposter = OSSignposter(subsystem: "com.swab.ios", category: "vault.sync")
 
-    public init(onboarding: OnboardingStateStore, vaultSync: VaultSync) {
+    public init(
+        onboarding: OnboardingStateStore,
+        vaultSync: VaultSync,
+        reporter: ErrorReporter = NoopErrorReporter()
+    ) {
         self.onboarding = onboarding
         self.vaultSync = vaultSync
+        self.reporter = reporter
     }
 
     /// Vault sync is attempted best-effort — offline completion is a
     /// first-class path (FS-01 acceptance 1); sync retries later (VLT-04).
+    /// G3: wrapped in a signpost interval (duration only, no payload) and
+    /// reports a failure once instead of silently dropping it.
     public func finish() async {
-        try? await vaultSync.sync()
+        let state = Self.signposter.beginInterval("sync")
+        do {
+            try await vaultSync.sync()
+        } catch {
+            reporter.report(
+                ReportedError(domain: "vault.sync", operation: "finish", errorDescription: VaultSyncError.reportCode(for: error))
+            )
+        }
+        Self.signposter.endInterval("sync", state)
         await onboarding.setStep(.complete)
     }
 }

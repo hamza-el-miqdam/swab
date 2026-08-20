@@ -17,9 +17,11 @@ public final class CarteViewModel {
     public var selected: VaultContact?
 
     private let vault: Vault
+    private let reporter: ErrorReporter
 
-    public init(vault: Vault) {
+    public init(vault: Vault, reporter: ErrorReporter = NoopErrorReporter()) {
         self.vault = vault
+        self.reporter = reporter
     }
 
     public var unplaced: [VaultContact] {
@@ -34,7 +36,14 @@ public final class CarteViewModel {
     /// the app returns to foreground, so an FS-03 re-tag is reflected with
     /// an animated move rather than requiring a relaunch.
     public func refresh() async {
-        contacts = (try? await vault.getContacts()) ?? []
+        do {
+            contacts = try await vault.getContacts()
+        } catch {
+            reporter.report(
+                ReportedError(domain: "carte.vault", operation: "refresh", errorDescription: VaultError.reportCode(for: error))
+            )
+            contacts = []
+        }
     }
 
     public func select(_ contact: VaultContact) {
@@ -53,6 +62,6 @@ public final class CarteViewModel {
     /// view model's private `vault` reference — `CarteView` calls this when
     /// « Ouvrir la fiche » is tapped instead of holding its own `Vault`.
     public func makeFicheViewModel(for contact: VaultContact) -> FicheViewModel {
-        FicheViewModel(vault: vault, contact: contact)
+        FicheViewModel(vault: vault, contact: contact, reporter: reporter)
     }
 }

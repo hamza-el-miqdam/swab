@@ -151,6 +151,20 @@ public struct VaultData: Codable, Equatable, Sendable {
 public enum VaultError: Error, Equatable, Sendable {
     case blobUnavailable
     case invalidRing(Int)
+
+    /// G3: fixed, privacy-safe code for `ErrorReporter` (see
+    /// `Observability/ErrorReporter.swift`). Deliberately never derived from
+    /// `localizedDescription` — decrypt/decode failures crossing this
+    /// boundary (corrupt blob, foreign-client payload) surface as raw
+    /// `CryptoKit`/`DecodingError` values, not `VaultError`, and their
+    /// descriptions are not privacy-audited.
+    public static func reportCode(for error: Error) -> String {
+        switch error {
+        case VaultError.blobUnavailable: return "blobUnavailable"
+        case VaultError.invalidRing: return "invalidRing"
+        default: return "unreadable"
+        }
+    }
 }
 
 public actor Vault {
