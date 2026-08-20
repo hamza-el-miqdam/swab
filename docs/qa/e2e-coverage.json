@@ -518,11 +518,7 @@
         "status": "automated",
         "tests": [
           "RegressionAndResilienceE2ETests.test_vaultBackwardCompat_legacyShapeDoesNotCrashOnLaunch",
-          "RegressionAndResilienceE2ETests.test_VLT05_corruptVault_showsHonestUnreadableState",
-          "CarteLoadStateTests.test_VLT01_freshVault_loadStateIsLoadedNotUnreadable",
-          "CarteLoadStateTests.test_VLT01_corruptBlob_loadStateIsUnreadableNotLoaded",
-          "VaultTests.test_VLT01_corruptBlob_throwsUnreadableNotEmpty",
-          "VaultTests.test_VLT01_blobEncryptedUnderDifferentKey_throwsUnreadable"
+          "RegressionAndResilienceE2ETests.test_VLT05_corruptVault_showsHonestUnreadableState"
         ]
       },
       "android": {
@@ -533,7 +529,7 @@
           "AndroidKeystoreVaultKeyStoreTest.test_VLT01_getOrCreateVaultKey_isStableAcrossCalls"
         ]
       },
-      "notes": "E2E exercises the real encrypt/decrypt path via the legacy-blob seed hooks (also the pre-FS-03 backward-compat regression guard); full crypto properties live in the cross-platform vector unit tests (docs/migration/vault-test-vectors.json). Recovery-phrase backup is IDT-05/VLT-05 territory. SUG-IOS-004 (iOS-only so far) added the undecryptable-vault honest-state guard: `VaultError.unreadable` + `CarteViewModel.loadState`, unit-tested directly and via a corrupt-blob XCUITest seed hook — an Android AND-004 equivalent already landed against the crash-loop half of the same bug. ⚠️ Transitional (ADR-001, 2026-08-16): the named tests verify the SUPERSEDED on-device encrypted-vault implementation, which is still what ships. They stay green and must not be deleted before the migration; replace them with tests of the server-side behaviour in the client-stage PR, and reclassify then."
+      "notes": "E2E exercises the real encrypt/decrypt path via the legacy-blob seed hooks (also the pre-FS-03 backward-compat regression guard); full crypto properties live in the cross-platform vector unit tests (docs/migration/vault-test-vectors.json). Recovery-phrase backup is IDT-05/VLT-05 territory. SUG-IOS-004 (iOS-only so far) added the undecryptable-vault honest-state guard: `VaultError.unreadable` + `CarteViewModel.loadState`, unit-tested directly (`VaultTests` + `CarteLoadStateTests`, run by `xcrun swift test`) and via a corrupt-blob XCUITest seed hook. Only XCUITests belong in the `tests` arrays above: `scripts/e2e-report.mjs` joins them against the `SwabAppUITests` xcresult bundle, so a SwiftPM unit-test name listed there is a guaranteed drift-guard failure — an Android AND-004 equivalent already landed against the crash-loop half of the same bug. ⚠️ Transitional (ADR-001, 2026-08-16): the named tests verify the SUPERSEDED on-device encrypted-vault implementation, which is still what ships. They stay green and must not be deleted before the migration; replace them with tests of the server-side behaviour in the client-stage PR, and reclassify then."
     },
     "VLT-02": {
       "fs": "FS-07",

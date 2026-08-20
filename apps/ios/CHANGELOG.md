@@ -11,7 +11,8 @@
 - **Why:** a corrupted blob or a key/blob mismatch (e.g. an Application Support backup restored without its `ThisDeviceOnly` Keychain key) was indistinguishable from a genuinely empty vault — silent data loss, and VLT-05's "state the trade-off honestly" applies here too.
 - **Scoped down from the audit suggestion:** the plan also asked to mirror the load-state distinction into `FicheViewModel`/onboarding view models. Skipped here — `FicheView` is only reachable from a contact already listed on Carte, so it's already gated by the same fix, and the acceptance criteria didn't require it. `ContactsViewModel.addManual`/`pick` failures still only report (no user-facing `showError`) — left as a fast-follow, not silently dropped.
 - New `App/SwabApp.swift` UI-test hook `--uitesting-seed-corrupt-vault` seeds a non-ciphertext blob for the new XCUITest. `CarteLoadStateTests.swift` (new `SwabUITests` file, now that IOS-005 added the target) unit-tests the state machine directly.
-- Verified: `xcrun swift test` 152/152. `scripts/e2e-ios.sh` not run locally per operating constraints (needs a booted Simulator + local API) — the new XCUITest runs under CI's native matrix (OPS-001).
+- Verified: `xcrun swift test` 148/148, plus the full `scripts/e2e-ios.sh` gate on a booted simulator — 17/17 XCUITests pass (incl. the new `test_VLT05_corruptVault_showsHonestUnreadableState`) and the report is PASS with zero drift.
+- **Gotcha:** no CI job runs the XCUITest suite — `ios-unit` runs `xcrun swift test` only, and no workflow invokes `scripts/e2e-ios.sh`. The E2E gate is local-only today, so the manifest's iOS `tests` arrays must list XCUITests exclusively; a unit-test name there fails the drift guard (caught exactly that way in review).
 
 ## 2026-08-20 — [IDT-02, IDT-04, SUG-IOS-012] `SecureStore` gains `delete`; `Session.clearTokens()`
 
