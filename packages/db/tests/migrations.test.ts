@@ -168,6 +168,78 @@ describe("cascades", () => {
     );
     expect(left.rows[0]?.n).toBe(0);
   });
+
+  /**
+   * data-specialist.md rule 2: "account deletion must cascade to everything
+   * (Vault, Device, ContactLink, Envie, EnvieRecipient, Match, Proposal) —
+   * maintain a deletion integration test proving zero orphaned rows for a
+   * deleted user." The tests above each prove one edge in isolation; this one
+   * builds the full graph — including a link where the deleted user is the
+   * *target*, not just the owner, and an envie the deleted user only
+   * *receives*, not authors — and deletes once, at the root.
+   */
+  it("test_IDT04_deletion_zero_orphans: deleting a user cascades through the full object graph", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-graph','h-graph','G'), ('u-graph-peer','h-graph-peer','P')`,
+    );
+    await db.exec(
+      `insert into vaults (user_id, blob, version, updated_at) values ('u-graph', '\\x00', 1, now())`,
+    );
+    await db.exec(`insert into devices (id, user_id, platform) values ('device-graph', 'u-graph', 'IOS')`);
+    // Link where u-graph is the owner, and one where u-graph is the target —
+    // both FKs (owner_id, target_id) are onDelete: Cascade.
+    await db.exec(
+      `insert into contact_links (id, owner_id, target_id, updated_at) values ('link-out-graph','u-graph','u-graph-peer', now())`,
+    );
+    await db.exec(
+      `insert into contact_roles (contact_link_id, role, updated_at) values ('link-out-graph','colleague', now())`,
+    );
+    await db.exec(
+      `insert into contact_links (id, owner_id, target_id, updated_at) values ('link-in-graph','u-graph-peer','u-graph', now())`,
+    );
+    // An envie u-graph authors, and one u-graph only receives (peer's envie).
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values ('envie-authored-graph','u-graph','v','c', now() + interval '1 day')`,
+    );
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values ('envie-peer-graph','u-graph-peer','v','c', now() + interval '1 day')`,
+    );
+    await db.exec(
+      `insert into envie_recipients (envie_id, recipient_id) values ('envie-peer-graph','u-graph')`,
+    );
+    await db.exec(
+      `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+         values ('match-graph','envie-authored-graph','envie-peer-graph','u-graph','u-graph-peer')`,
+    );
+    await db.exec(
+      `insert into proposals (id, match_id, proposer_id) values ('proposal-graph','match-graph','u-graph')`,
+    );
+
+    await db.exec(`delete from users where id = 'u-graph'`);
+
+    const orphans = await db.query<{ table_name: string; n: number }>(`
+      select 'vault' as table_name, count(*)::int as n from vaults where user_id = 'u-graph'
+      union all select 'device', count(*)::int from devices where user_id = 'u-graph'
+      union all select 'contact_link_owner', count(*)::int from contact_links where owner_id = 'u-graph'
+      union all select 'contact_link_target', count(*)::int from contact_links where target_id = 'u-graph'
+      union all select 'contact_role', count(*)::int from contact_roles where contact_link_id = 'link-out-graph'
+      union all select 'envie_authored', count(*)::int from envies where author_id = 'u-graph'
+      union all select 'envie_recipient', count(*)::int from envie_recipients where recipient_id = 'u-graph'
+      union all select 'match', count(*)::int from matches where user_a_id = 'u-graph' or user_b_id = 'u-graph'
+      union all select 'proposal', count(*)::int from proposals where proposer_id = 'u-graph'
+    `);
+    expect(Object.fromEntries(orphans.rows.map((r) => [r.table_name, r.n]))).toEqual({
+      vault: 0,
+      device: 0,
+      contact_link_owner: 0,
+      contact_link_target: 0,
+      contact_role: 0,
+      envie_authored: 0,
+      envie_recipient: 0,
+      match: 0,
+      proposal: 0,
+    });
+  });
 });
 
 describe("VLT-08 delta-pull index", () => {
@@ -380,6 +452,49 @@ describe("ENV-09 match pair canonical order (SUG-DB-003)", () => {
            values ('match-duplicate', 'env-e1', 'env-e2', 'u1', 'u2')`,
       ),
     ).rejects.toThrow(/matches_envie_a_id_envie_b_id_key/);
+  });
+});
+
+/**
+ * data-specialist.md rule 5: "keep an integration test that hammers
+ * concurrent envie creation and proves single-match." PGlite is a
+ * single-process engine, so it can't reproduce two separate Postgres
+ * backends racing on the wire the way apps/api's real-Postgres suite could —
+ * but firing both inserts via Promise.allSettled (rather than sequential
+ * awaits, as the block above does) still proves the half of the guarantee
+ * that lives in this layer: the `@@unique([envieAId, envieBId])` constraint
+ * (SUG-DB-003) arbitrates the race so exactly one of two concurrent attempts
+ * to record the same reciprocal pair ever persists, regardless of arrival
+ * order — which is what backend code retrying on conflict depends on.
+ */
+describe("ENV-09 concurrent reciprocal envie creation (SUG-DB-004)", () => {
+  beforeAll(async () => {
+    await db.exec(
+      `insert into envies (id, author_id, verb, category, expires_at) values
+         ('env-race-1', 'u1', 'v', 'c', now() + interval '1 day'),
+         ('env-race-2', 'u2', 'v', 'c', now() + interval '1 day')`,
+    );
+  });
+
+  it("test_ENV09_reciprocal_race_single_match: two concurrent inserts of the same canonical pair settle to exactly one match row", async () => {
+    const results = await Promise.allSettled([
+      db.exec(
+        `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+           values ('match-race-a', 'env-race-1', 'env-race-2', 'u1', 'u2')`,
+      ),
+      db.exec(
+        `insert into matches (id, envie_a_id, envie_b_id, user_a_id, user_b_id)
+           values ('match-race-b', 'env-race-1', 'env-race-2', 'u1', 'u2')`,
+      ),
+    ]);
+
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((r) => r.status === "rejected")).toHaveLength(1);
+
+    const rows = await db.query<{ id: string }>(
+      `select id from matches where envie_a_id = 'env-race-1' and envie_b_id = 'env-race-2'`,
+    );
+    expect(rows.rows).toHaveLength(1);
   });
 });
 
