@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-19 — [SUG-API-014] Shutdown now has a deadline, handles a rejected close, and disconnects Prisma
+
+- `SIGINT`/`SIGTERM` used to call `app.close().then(() => process.exit(0))` with no timeout: a stuck in-flight request (slow client, wedged DB call) meant the process never exited, and a rejected `close()` hung silently with no exit at all. A second signal also re-entered the handler and called `close()` again.
+- Extracted the handler into `src/lib/shutdown.ts`'s `createShutdown(app, exit, timeoutMs)`: an 8s deadline (stays under Docker's default 10s SIGKILL grace, `unref()`'d so it never blocks the happy path) force-exits 1 with a warn log; a rejected `close()` logs and exits 1; a re-entrant signal while already closing is a no-op.
+- `server.ts` also now registers `app.addHook("onClose", () => prisma.$disconnect())` — the client was never explicitly closed before.
+- `src/server.ts` stays excluded from coverage (boot wiring) — the extraction makes the actual logic unit-testable. Tests: `tests/shutdown.test.ts` (resolve → exit 0, reject → exit 1 + log, deadline exceeded → force exit 1, second signal → close called once).
+- **CI note:** `tests/prisma-repo.test.ts` fails locally (no Postgres in this dev environment) — pre-existing, unrelated to this change, green in CI's `postgres:17` service. All other tests (incl. 4 new ones) pass; lint/typecheck/build all green.
+
 ## 2026-08-19 — [IDT-01, IDT-09] SUG-API-015 displayName rejects control and bidi-override characters
 
 - `otpVerifySchema.displayName` (`routes/auth.ts`) only trimmed edge whitespace, so C0/C1 control characters, embedded newlines, and Unicode bidi-override characters (U+202E RIGHT-TO-LEFT OVERRIDE, a classic spoofing primitive) passed straight through. Per IDT-09 this is the one user string rendered to non-members (invite landing page) as well as match/proposal counterparts — the API is the single choke point every client's displayName passes, so rejecting non-printable content here protects every future rendering surface at once (G1).
