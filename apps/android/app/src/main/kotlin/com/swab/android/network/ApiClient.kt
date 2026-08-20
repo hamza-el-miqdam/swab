@@ -2,6 +2,7 @@ package com.swab.android.network
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.util.UUID
 
 /**
  * Port of apps/mobile/src/api/client.ts.
@@ -54,7 +55,13 @@ class ApiClient(
 
     private suspend fun headers(): Map<String, String> {
         val token = accessTokenProvider()
-        val base = mapOf("content-type" to "application/json")
+        // SUG-AND-012 / G3: a fresh id per request so a client-side failure log
+        // can be joined to the matching apps/api pino line (app.ts reads this
+        // header into its requestId).
+        val base = mapOf(
+            "content-type" to "application/json",
+            "x-request-id" to UUID.randomUUID().toString(),
+        )
         return if (token != null) base + ("authorization" to "Bearer $token") else base
     }
 

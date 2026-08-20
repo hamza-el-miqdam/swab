@@ -16,10 +16,12 @@ class ApiClientTest {
     private class RecordingTransport(private val response: HttpResponse) : HttpTransport {
         var lastBody: String? = null
         var lastUrl: String? = null
+        var lastHeaders: Map<String, String>? = null
 
         override suspend fun request(method: String, url: String, headers: Map<String, String>, body: String?): HttpResponse {
             lastBody = body
             lastUrl = url
+            lastHeaders = headers
             return response
         }
     }
@@ -74,5 +76,20 @@ class ApiClientTest {
         val transport = RecordingTransport(HttpResponse(500, ""))
         val client = ApiClient(transport, baseUrl = "http://x")
         client.requestOtp(OtpRequestBody("abc"))
+    }
+
+    /** SUG-AND-012 / G3: every request carries a fresh x-request-id so a client failure joins to the API's pino log line. */
+    @Test
+    fun `test_G3_apiClient_sendsXRequestIdHeader`() = runTest {
+        val transport = RecordingTransport(HttpResponse(200, """{"devCode":"123456"}"""))
+        val client = ApiClient(transport, baseUrl = "http://x")
+
+        client.requestOtp(OtpRequestBody(phoneHash = "abc"))
+        val firstId = transport.lastHeaders?.get("x-request-id")
+        assertTrue(firstId != null && firstId.matches(Regex("[0-9a-f-]{36}")))
+
+        client.requestOtp(OtpRequestBody(phoneHash = "abc"))
+        val secondId = transport.lastHeaders?.get("x-request-id")
+        assertTrue(secondId != null && secondId != firstId)
     }
 }
