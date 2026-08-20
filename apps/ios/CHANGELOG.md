@@ -5,6 +5,14 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md](../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
 
+## 2026-08-20 — [VLT-01, MAP-06, SUG-IOS-004] Undecryptable vault renders an honest state, not the calm empty map
+
+- **What changed:** `Vault.hydrate()` now catches decrypt/decode failures and rethrows a new `VaultError.unreadable` (was previously left to bubble up as a raw `CryptoKit`/`DecodingError` that every call site's `try?`/`?? []` collapsed into "empty"). `CarteViewModel` gains `loadState: LoadState { .loading, .loaded, .unreadable }`; `CarteView` renders a new `Fr.carteUnreadable` message instead of MAP-06's calm empty-map copy when the vault couldn't be read.
+- **Why:** a corrupted blob or a key/blob mismatch (e.g. an Application Support backup restored without its `ThisDeviceOnly` Keychain key) was indistinguishable from a genuinely empty vault — silent data loss, and VLT-05's "state the trade-off honestly" applies here too.
+- **Scoped down from the audit suggestion:** the plan also asked to mirror the load-state distinction into `FicheViewModel`/onboarding view models. Skipped here — `FicheView` is only reachable from a contact already listed on Carte, so it's already gated by the same fix, and the acceptance criteria didn't require it. `ContactsViewModel.addManual`/`pick` failures still only report (no user-facing `showError`) — left as a fast-follow, not silently dropped.
+- New `App/SwabApp.swift` UI-test hook `--uitesting-seed-corrupt-vault` seeds a non-ciphertext blob for the new XCUITest. `CarteLoadStateTests.swift` (new `SwabUITests` file, now that IOS-005 added the target) unit-tests the state machine directly.
+- Verified: `xcrun swift test` 152/152. `scripts/e2e-ios.sh` not run locally per operating constraints (needs a booted Simulator + local API) — the new XCUITest runs under CI's native matrix (OPS-001).
+
 ## 2026-08-20 — [IDT-02, IDT-04, SUG-IOS-012] `SecureStore` gains `delete`; `Session.clearTokens()`
 
 - **What changed:** `SecureStore` protocol gets a third method, `delete(_:)`; `KeychainSecureStore` implements it via `SecItemDelete` (idempotent — `errSecItemNotFound` counts as success), `InMemorySecureStore` via `storage[key] = nil`. New `Session.clearTokens()` deletes both the access and refresh keys.

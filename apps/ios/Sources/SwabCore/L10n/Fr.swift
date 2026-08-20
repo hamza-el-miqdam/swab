@@ -78,6 +78,10 @@ public enum I18nKey: String, CaseIterable, Sendable {
     case carteTitle = "carte.title"
     case carteSubtitle = "carte.subtitle"
     case carteEmpty = "carte.empty"
+    // SUG-IOS-004: honest state for an undecryptable/corrupted vault —
+    // never the calm carteEmpty copy, which is reserved for a genuinely
+    // empty vault (approved addition, same status as carte.empty).
+    case carteUnreadable = "carte.unreadable"
     case carteMe = "carte.me"
     case carteListMode = "carte.listMode"
     case carteLegend = "carte.legend"
@@ -188,6 +192,7 @@ public enum Fr {
         .carteTitle: "Ma carte",
         .carteSubtitle: "ton cercle, à l’instant",
         .carteEmpty: "Ta carte est calme. Ajoute qui compte pour toi, quand tu veux.",
+        .carteUnreadable: "Ta carte n’a pas pu être lue cette fois. Réessaie dans un instant.",
         .carteMe: "moi",
         .carteListMode: "Affichage en liste",
         .carteLegend: "Légende des états",

@@ -137,6 +137,44 @@ final class VaultTests: XCTestCase {
         XCTAssertEqual(version, 9)
     }
 
+    /// SUG-IOS-004 / VLT-01: a blob that exists but isn't valid ciphertext
+    /// must surface as `.unreadable`, never collapse to an empty vault —
+    /// that's the exact silent-data-loss bug this fixes.
+    func test_VLT01_corruptBlob_throwsUnreadableNotEmpty() async throws {
+        let kv = InMemoryKeyValueStore()
+        await kv.set("vault.blob.v1", value: "not-a-valid-ciphertext-blob")
+        let vault = Vault(kv: kv, secureStore: InMemorySecureStore())
+
+        do {
+            _ = try await vault.getContacts()
+            XCTFail("expected VaultError.unreadable")
+        } catch VaultError.unreadable {
+            // expected
+        }
+    }
+
+    /// A blob that IS valid ciphertext, just encrypted under a different key
+    /// than this vault instance holds (e.g. a restored Application Support
+    /// backup paired with a `ThisDeviceOnly` Keychain key that didn't
+    /// restore with it), must also surface as `.unreadable` rather than
+    /// crash or silently return an empty vault.
+    func test_VLT01_blobEncryptedUnderDifferentKey_throwsUnreadable() async throws {
+        let kv = InMemoryKeyValueStore()
+        let writerVault = Vault(kv: kv, secureStore: InMemorySecureStore())
+        _ = try await writerVault.addContact(displayName: "A")
+
+        // Same blob storage, but a fresh secure store — mints its own vault
+        // key on first access, distinct from the one the blob was encrypted
+        // under.
+        let readerVault = Vault(kv: kv, secureStore: InMemorySecureStore())
+        do {
+            _ = try await readerVault.getContacts()
+            XCTFail("expected VaultError.unreadable")
+        } catch VaultError.unreadable {
+            // expected
+        }
+    }
+
     /// The plain key-value store must only ever see ciphertext for the vault
     /// blob key — never a JSON fragment of contacts/rings/roles/état/ressenti.
     func test_VLT01_underlyingStorageNeverContainsPlaintextClassificationData() async throws {

@@ -31,6 +31,26 @@ final class RegressionAndResilienceE2ETests: SwabUITestCase {
         )
     }
 
+    /// SUG-IOS-004 / VLT-05: an undecryptable vault (corrupt blob, no
+    /// matching key — `UITestHooks.seedCorruptVaultArgument`) must render the
+    /// honest "unreadable" state, never MAP-06's calm empty-map copy, which
+    /// is reserved for a genuinely empty vault. Before this fix both cases
+    /// were indistinguishable — silent data loss.
+    @MainActor
+    func test_VLT05_corruptVault_showsHonestUnreadableState() throws {
+        launchApp(seedCorruptVault: true)
+
+        XCTAssertTrue(
+            app.staticTexts[Fr.t(.carteUnreadable)].waitForExistence(timeout: 30),
+            "Honest unreadable-vault copy did not appear"
+        )
+        XCTAssertFalse(
+            app.staticTexts[Fr.t(.carteEmpty)].exists,
+            "Calm empty-state copy must not render for a corrupt/unreadable vault"
+        )
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
     /// Basic resilience check (not a full FS-07 offline/sync test, which is
     /// already covered at the unit level): backgrounding and foregrounding
     /// the app mid-flow must not crash it.
