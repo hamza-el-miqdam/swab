@@ -34,6 +34,7 @@ import com.swab.android.fiche.FicheViewModel
 import com.swab.android.onboarding.CalibrateViewModel
 import com.swab.android.onboarding.ContactsViewModel
 import com.swab.android.onboarding.DeviceContactReader
+import com.swab.android.observability.SwabLogger
 import com.swab.android.onboarding.OnboardingStep
 import com.swab.android.onboarding.OnboardingViewModel
 import com.swab.android.onboarding.SignupViewModel
@@ -136,6 +137,7 @@ private fun SwabNavHost(container: AppContainer) {
             tokenStore = container.tokenStore,
             vaultKeyStore = container.vaultKeyStore,
             onboardingStateStore = container.onboardingStateStore,
+            logger = container.logger,
         )
     }
 
@@ -219,7 +221,15 @@ private fun SwabNavHost(container: AppContainer) {
         composable(Routes.DONE) {
             DoneScreen(onFinish = {
                 scope.launch {
-                    runCatching { container.vaultSync.syncVault() } // offline is fine (VLT-04)
+                    // offline is fine (VLT-04) — a failure here is logged, not surfaced.
+                    runCatching { container.vaultSync.syncVault() }
+                        .onFailure {
+                            container.logger.event(
+                                SwabLogger.Level.WARN,
+                                "vault.sync.initial.failed",
+                                mapOf("type" to it.javaClass.simpleName),
+                            )
+                        }
                     onboardingViewModel.advanceTo(OnboardingStep.COMPLETE)
                 }
                 navController.navigate(Routes.CARTE)

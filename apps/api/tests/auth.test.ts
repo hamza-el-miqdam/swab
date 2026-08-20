@@ -250,3 +250,41 @@ describe("POST /auth/otp/* — per-IP rate limit tier (SUG-API-005, IDT-03)", ()
     }
   });
 });
+
+describe("POST /auth/otp/verify — displayName rejects control/bidi-override chars (SUG-API-015, IDT-01/IDT-09)", () => {
+  it.each([
+    ["a C0 control character", "A\u0000mina"],
+    ["a bidi right-to-left override", "Amina‮"],
+    ["an embedded newline", "a\nb"],
+  ])("IDT-01/G1: displayName with %s is rejected 400 and no user is created", async (_label, displayName) => {
+    const { app, repo } = await makeApp();
+    const requested = await app.inject({
+      method: "POST",
+      url: "/auth/otp/request",
+      payload: { phoneHash: PHONE_HASH_A },
+    });
+    const { devCode } = requested.json<{ devCode: string }>();
+
+    const verified = await app.inject({
+      method: "POST",
+      url: "/auth/otp/verify",
+      payload: { phoneHash: PHONE_HASH_A, code: devCode, displayName },
+    });
+
+    expect(verified.statusCode).toBe(400);
+    expect(verified.headers["content-type"]).toContain("application/problem+json");
+    expect(JSON.stringify(verified.json())).not.toContain(displayName);
+    expect(repo.users.size).toBe(0);
+  });
+
+  it.each([
+    ["accented Latin", "Élodie"],
+    ["Arabic script", "صواب"],
+    ["a composite emoji (ZWJ sequence)", "Amina \u{1F469}‍\u{1F469}‍\u{1F467}"],
+  ])("IDT-01: displayName with %s is accepted", async (_label, displayName) => {
+    const { app, repo } = await makeApp();
+    const tokens = await signup(app, phoneHash(900 + displayName.length), displayName);
+    expect(tokens.isNewUser).toBe(true);
+    expect(repo.users.size).toBe(1);
+  });
+});

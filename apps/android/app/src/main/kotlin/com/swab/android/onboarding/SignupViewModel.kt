@@ -10,6 +10,8 @@ import com.swab.android.network.ApiClient
 import com.swab.android.network.ApiError
 import com.swab.android.network.OtpRequestBody
 import com.swab.android.network.OtpVerifyBody
+import com.swab.android.observability.NoopLogger
+import com.swab.android.observability.SwabLogger
 import com.swab.android.vault.VaultKeyStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,7 @@ class SignupViewModel(
     private val vaultKeyStore: VaultKeyStore,
     private val onboardingStateStore: OnboardingStateStore,
     private val pendingSignup: PendingSignup = PendingSignup(),
+    private val logger: SwabLogger = NoopLogger(),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignupUiState())
@@ -58,7 +61,8 @@ class SignupViewModel(
                 pendingSignup.setDevCode(response.devCode)
                 _uiState.value = _uiState.value.copy(busy = false, devCode = response.devCode)
                 onSuccess()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                logger.event(SwabLogger.Level.WARN, "otp.request.failed", mapOf("type" to e.javaClass.simpleName))
                 _uiState.value = _uiState.value.copy(busy = false, phoneError = true)
             }
         }
@@ -87,7 +91,8 @@ class SignupViewModel(
                 } else {
                     _uiState.value = _uiState.value.copy(busy = false, otpError = true)
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                logger.event(SwabLogger.Level.WARN, "otp.verify.failed", mapOf("type" to e.javaClass.simpleName))
                 _uiState.value = _uiState.value.copy(busy = false, otpError = true)
             }
         }

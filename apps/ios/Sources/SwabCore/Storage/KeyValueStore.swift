@@ -30,9 +30,11 @@ public actor InMemoryKeyValueStore: KeyValueStore {
 public actor FileKeyValueStore: KeyValueStore {
     private let url: URL
     private var cache: [String: String]
+    private let reporter: ErrorReporter
 
-    public init(url: URL) {
+    public init(url: URL, reporter: ErrorReporter = NoopErrorReporter()) {
         self.url = url
+        self.reporter = reporter
         if let data = try? Data(contentsOf: url),
             let decoded = try? JSONDecoder().decode([String: String].self, from: data)
         {
@@ -51,8 +53,19 @@ public actor FileKeyValueStore: KeyValueStore {
         persist()
     }
 
+    /// G3: a dropped write here is not observable to `KeyValueStore`
+    /// callers (`set` returns `Void`) — report it instead of discarding it.
+    /// `errorDescription` is a fixed code, never `localizedDescription`
+    /// (which for `Error.write` failures can embed the file path).
     private func persist() {
-        guard let data = try? JSONEncoder().encode(cache) else { return }
-        try? data.write(to: url, options: .atomic)
+        guard let data = try? JSONEncoder().encode(cache) else {
+            reporter.report(ReportedError(domain: "storage.kv", operation: "persist", errorDescription: "encodeFailed"))
+            return
+        }
+        do {
+            try data.write(to: url, options: .atomic)
+        } catch {
+            reporter.report(ReportedError(domain: "storage.kv", operation: "persist", errorDescription: "writeFailed"))
+        }
     }
 }
