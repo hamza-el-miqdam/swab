@@ -5,6 +5,10 @@
 /// reference (`expo-secure-store`) and the Android target (Keystore).
 import Foundation
 
+/// Deliberately has no `deleteKey`: destroying the vault key is the VLT-05
+/// data-loss event (it orphans every locally-cached ciphertext) and deserves
+/// its own reviewed change, not a side effect of the generic `SecureStore`
+/// delete added for session-token cleanup (SUG-IOS-012).
 public struct VaultKeyStore: Sendable {
     static let storeId = "swab.vault.key.v1"
 

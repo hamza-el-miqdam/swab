@@ -5,6 +5,14 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md](../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
 
+## 2026-08-20 — [IDT-02, IDT-04, SUG-IOS-012] `SecureStore` gains `delete`; `Session.clearTokens()`
+
+- **What changed:** `SecureStore` protocol gets a third method, `delete(_:)`; `KeychainSecureStore` implements it via `SecItemDelete` (idempotent — `errSecItemNotFound` counts as success), `InMemorySecureStore` via `storage[key] = nil`. New `Session.clearTokens()` deletes both the access and refresh keys.
+- **Why:** logout (IDT-02) and client-side account deletion (IDT-04) both need to remove tokens from the Keychain, and there was no way to do that without a raw `SecItemDelete`. Also fixes the Keychain test's cleanup, which was writing an empty string instead of removing its probe item.
+- **Not wired into any production flow yet** — this is enabling plumbing; a logout UI is future FS-07 work.
+- **`VaultKeyStore` deliberately does not get a delete method** — destroying the vault key is the VLT-05 data-loss event and needs its own reviewed change.
+- Verified: `xcrun swift test` 142/142 (new: `test_delete_removesItem_andIsIdempotent`, `test_IDT02_clearTokens_removesAccessAndRefresh`).
+
 ## 2026-08-20 — [G3, SUG-IOS-005] Error-boundary reporter — every `try?` vault swallow now reports
 
 - **What changed:** new `Sources/SwabCore/Observability/ErrorReporter.swift` (`ErrorReporter` protocol, `ReportedError`, `OSLogErrorReporter`, `NoopErrorReporter`). `CarteViewModel`, `FicheViewModel`, `ContactsViewModel`, `CalibrateViewModel`, `DoneViewModel`, and `FileKeyValueStore.persist()` take a `reporter: ErrorReporter = NoopErrorReporter()` and now `do/catch { reporter.report(...) }` instead of discarding failures with `try?`. `SwabApp.swift`'s composition root wires one real `OSLogErrorReporter()` into all of them. User-facing fallback behavior on failure is unchanged (empty list / unchanged contact, matching the prior `try?`/`?? []` outcomes).

@@ -39,6 +39,10 @@ private enum UITestHooks {
         guard args.contains(resetArgument) else { return }
 
         try? FileManager.default.removeItem(at: storeURL)
+        // Intentionally a raw, service-wide SecItemDelete rather than
+        // `SecureStore.delete(_:)` (SUG-IOS-012): that protocol method
+        // deletes one known key, but a fresh-install reset must wipe every
+        // item under this service — including keys added by future code.
         let keychainQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,

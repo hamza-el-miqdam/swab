@@ -23,7 +23,7 @@ final class KeychainSecureStoreTests: XCTestCase {
             try skipIfKeychainUnavailable(error)
             return
         }
-        defer { try? store.set(testKey, value: "") }
+        defer { try? store.delete(testKey) }
         XCTAssertEqual(try store.get(testKey), "probe-value")
     }
 
@@ -35,5 +35,19 @@ final class KeychainSecureStoreTests: XCTestCase {
         } catch let error as SecureStoreError {
             try skipIfKeychainUnavailable(error)
         }
+    }
+
+    func test_delete_removesItem_andIsIdempotent() throws {
+        let store = KeychainSecureStore(service: "com.swab.tests")
+        do {
+            try store.set(testKey, value: "probe-value")
+        } catch let error as SecureStoreError {
+            try skipIfKeychainUnavailable(error)
+            return
+        }
+        try store.delete(testKey)
+        XCTAssertNil(try store.get(testKey))
+        // Deleting again must not throw (idempotent — errSecItemNotFound is success).
+        try store.delete(testKey)
     }
 }

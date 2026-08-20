@@ -10,6 +10,9 @@ import Security
 public protocol SecureStore: Sendable {
     func get(_ key: String) throws -> String?
     func set(_ key: String, value: String) throws
+    /// Idempotent: deleting a key that isn't present succeeds silently rather
+    /// than throwing, so callers don't need a get-then-delete dance.
+    func delete(_ key: String) throws
 }
 
 public enum SecureStoreError: Error, Equatable, Sendable {
@@ -32,6 +35,12 @@ public final class InMemorySecureStore: SecureStore, @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         storage[key] = value
+    }
+
+    public func delete(_ key: String) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        storage[key] = nil
     }
 }
 
@@ -90,6 +99,13 @@ public final class KeychainSecureStore: SecureStore, @unchecked Sendable {
         let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
         guard addStatus == errSecSuccess else {
             throw SecureStoreError.keychain(addStatus)
+        }
+    }
+
+    public func delete(_ key: String) throws {
+        let status = SecItemDelete(baseQuery(for: key) as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw SecureStoreError.keychain(status)
         }
     }
 }
