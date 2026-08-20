@@ -115,14 +115,14 @@ async function main(): Promise<void> {
   });
 
   await prisma.device.create({
-    data: { userId: amina.id, platform: Platform.IOS, pushToken: "synthetic-push-token-amina", createdAt: T0 },
+    data: { userId: amina.id, platform: Platform.IOS, pushToken: "synthetic-push-token-amina", createdAt: T0, updatedAt: T0 },
   });
   await prisma.device.create({
-    data: { userId: bilal.id, platform: Platform.ANDROID, pushToken: null, createdAt: T0 },
+    data: { userId: bilal.id, platform: Platform.ANDROID, pushToken: null, createdAt: T0, updatedAt: T0 },
   });
   // SUG-DB-014: WEB was unrepresented in Platform coverage.
   await prisma.device.create({
-    data: { userId: chirine.id, platform: Platform.WEB, pushToken: null, createdAt: T0 },
+    data: { userId: chirine.id, platform: Platform.WEB, pushToken: null, createdAt: T0, updatedAt: T0 },
   });
 
   // Edges AND the owner's classification of the target (ADR-001). Links stay
@@ -213,6 +213,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(1),
+      updatedAt: hoursFromT0(1),
       recipients: {
         create: [
           { recipientId: bilal.id, createdAt: hoursFromT0(1) },
@@ -230,6 +231,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(2),
+      updatedAt: hoursFromT0(2),
       recipients: { create: [{ recipientId: amina.id, createdAt: hoursFromT0(2) }] },
     },
     select: { id: true },
@@ -251,6 +253,7 @@ async function main(): Promise<void> {
       state: MatchState.OPEN,
       notifiedAt: hoursFromT0(2), // both sides notified atomically
       createdAt: hoursFromT0(2),
+      updatedAt: hoursFromT0(2), // never left OPEN, so no later transition
     },
     select: { id: true },
   });
@@ -262,6 +265,7 @@ async function main(): Promise<void> {
       timeslot: hoursFromT0(72),
       state: ProposalState.PENDING,
       createdAt: hoursFromT0(3),
+      updatedAt: hoursFromT0(3),
     },
   });
   // SUG-DB-014: a second and third proposal on the same match — legal
@@ -274,6 +278,7 @@ async function main(): Promise<void> {
       place: "Café des Fédérations",
       state: ProposalState.DECLINED,
       createdAt: hoursFromT0(4),
+      updatedAt: hoursFromT0(4), // born declined — no separate PENDING row preceded it
     },
   });
   await prisma.proposal.create({
@@ -283,6 +288,7 @@ async function main(): Promise<void> {
       timeslot: hoursFromT0(30),
       state: ProposalState.LAPSED,
       createdAt: hoursFromT0(5),
+      updatedAt: hoursFromT0(5), // born lapsed, same reasoning
     },
   });
 
@@ -296,6 +302,10 @@ async function main(): Promise<void> {
       status: EnvieStatus.WITHDRAWN,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(6),
+      // Withdrawn 30 min after creation (synthetic) — must differ from
+      // createdAt, or the row misrepresents when the status flipped
+      // (review round 3, finding 1).
+      updatedAt: hoursFromT0(6.5),
       recipients: { create: [{ recipientId: bilal.id, createdAt: hoursFromT0(6) }] },
     },
   });
@@ -310,6 +320,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(7),
+      updatedAt: hoursFromT0(7),
       recipients: { create: [{ recipientId: farid.id, createdAt: hoursFromT0(7) }] },
     },
     select: { id: true },
@@ -322,6 +333,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(8),
+      updatedAt: hoursFromT0(8),
       recipients: { create: [{ recipientId: emna.id, createdAt: hoursFromT0(8) }] },
     },
     select: { id: true },
@@ -340,6 +352,7 @@ async function main(): Promise<void> {
       state: MatchState.SCHEDULED,
       notifiedAt: hoursFromT0(8),
       createdAt: hoursFromT0(8),
+      updatedAt: hoursFromT0(9), // flips OPEN→SCHEDULED when the proposal below is accepted
     },
     select: { id: true },
   });
@@ -351,14 +364,17 @@ async function main(): Promise<void> {
       timeslot: hoursFromT0(80),
       state: ProposalState.ACCEPTED,
       createdAt: hoursFromT0(9),
+      updatedAt: hoursFromT0(9), // born accepted — no separate PENDING row preceded it
     },
   });
 
-  // SUG-DB-014: third reciprocal pair, proposal stage not reached yet —
-  // covers MatchState.PROPOSED (the shared enum; SUG-DB-006 made PASSED
-  // per-side, not a value here). Also the only fixture that sets a per-side
-  // pass column (passedByAAt): userA silently passed before any proposal was
-  // made, while userB's view stays computed from `state` alone (ENV-15).
+  // SUG-DB-014: third reciprocal pair — covers MatchState.PROPOSED (the
+  // shared enum; SUG-DB-006 made PASSED per-side, not a value here). Daoud
+  // proposes a place; Amina (the recipient) silently passes on it before
+  // responding — the only fixture that sets a per-side pass column
+  // (passedByAAt), pinned to Amina by identity rather than to whichever
+  // envie id happens to sort first (review round 3, finding 3). userB's
+  // view stays computed from `state` alone (ENV-15).
   const envieE = await prisma.envie.create({
     data: {
       authorId: amina.id,
@@ -367,6 +383,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(10),
+      updatedAt: hoursFromT0(10),
       recipients: { create: [{ recipientId: daoud.id, createdAt: hoursFromT0(10) }] },
     },
     select: { id: true },
@@ -379,6 +396,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(11),
+      updatedAt: hoursFromT0(11),
       recipients: { create: [{ recipientId: amina.id, createdAt: hoursFromT0(11) }] },
     },
     select: { id: true },
@@ -387,7 +405,7 @@ async function main(): Promise<void> {
     envieE.id < envieF.id ? [envieE.id, envieF.id] : [envieF.id, envieE.id];
   const [proposedUserAId, proposedUserBId] =
     proposedAId === envieE.id ? [amina.id, daoud.id] : [daoud.id, amina.id];
-  await prisma.match.create({
+  const proposedMatch = await prisma.match.create({
     data: {
       envieAId: proposedAId,
       envieBId: proposedBId,
@@ -396,7 +414,28 @@ async function main(): Promise<void> {
       state: MatchState.PROPOSED,
       notifiedAt: hoursFromT0(11),
       createdAt: hoursFromT0(11),
-      passedByAAt: hoursFromT0(11.5), // SUG-DB-006: userA's private pass marker
+      // Reflects the pass write below (the row's last touch), not the
+      // PENDING proposal that flips OPEN→PROPOSED at hoursFromT0(11.2).
+      updatedAt: hoursFromT0(11.5),
+      // SUG-DB-006: a private per-side pass marker, pinned to whichever side
+      // is really Amina — proposedUserAId only tells us who authored the
+      // lexicographically-first envie, not who passed (finding 3).
+      ...(proposedUserAId === amina.id
+        ? { passedByAAt: hoursFromT0(11.5) }
+        : { passedByBAt: hoursFromT0(11.5) }),
+    },
+    select: { id: true },
+  });
+  // MatchState.PROPOSED means "a proposal is pending" (ENV-13) — without a
+  // proposal row the state had no fixture backing it (review round 3, finding 2).
+  await prisma.proposal.create({
+    data: {
+      matchId: proposedMatch.id,
+      proposerId: daoud.id,
+      place: "Le Comptoir",
+      state: ProposalState.PENDING,
+      createdAt: hoursFromT0(11.2),
+      updatedAt: hoursFromT0(11.2),
     },
   });
 
@@ -413,6 +452,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.EXPIRED,
       createdAt: hoursFromT0(-52),
       expiresAt: hoursFromT0(-4), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(-4), // flips at its own expiry
       recipients: { create: [{ recipientId: chirine.id, createdAt: hoursFromT0(-52) }] },
     },
     select: { id: true },
@@ -425,6 +465,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.EXPIRED,
       createdAt: hoursFromT0(-51),
       expiresAt: hoursFromT0(-3), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(-3), // flips at its own expiry
       recipients: { create: [{ recipientId: bilal.id, createdAt: hoursFromT0(-51) }] },
     },
     select: { id: true },
@@ -442,6 +483,10 @@ async function main(): Promise<void> {
       state: MatchState.EXPIRED,
       notifiedAt: hoursFromT0(-50),
       createdAt: hoursFromT0(-50),
+      // Aged out once both linked envies had expired (synthetic — no
+      // match-expiry sweep is designed yet); the later of envieG/envieH's
+      // own expiresAt values.
+      updatedAt: hoursFromT0(-3),
     },
   });
 
@@ -457,6 +502,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.EXPIRED,
       createdAt: hoursFromT0(14),
       expiresAt: hoursFromT0(16), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(16), // flips at its own expiry
       recipients: { create: [{ recipientId: emna.id, createdAt: hoursFromT0(14) }] },
     },
     select: { id: true },
@@ -469,6 +515,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       createdAt: hoursFromT0(15),
       expiresAt: hoursFromT0(59), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(15),
       recipients: { create: [{ recipientId: daoud.id, createdAt: hoursFromT0(15) }] },
     },
     select: { id: true },
@@ -486,6 +533,7 @@ async function main(): Promise<void> {
       state: MatchState.OPEN,
       notifiedAt: hoursFromT0(15),
       createdAt: hoursFromT0(15),
+      updatedAt: hoursFromT0(15), // never left OPEN — that's ENV-12's whole point
     },
   });
 
@@ -500,6 +548,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(12),
+      updatedAt: hoursFromT0(12),
       recipients: { create: [{ recipientId: daoud.id, createdAt: hoursFromT0(12) }] },
     },
   });
@@ -511,6 +560,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(13),
+      updatedAt: hoursFromT0(13),
       recipients: { create: [{ recipientId: chirine.id, createdAt: hoursFromT0(13) }] },
     },
   });
@@ -524,6 +574,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.EXPIRED,
       expiresAt: hoursFromT0(-2),
       createdAt: hoursFromT0(-50),
+      updatedAt: hoursFromT0(-2), // flips at its own expiry
       recipients: { create: [{ recipientId: amina.id, createdAt: hoursFromT0(-50) }] },
     },
   });

@@ -10,7 +10,7 @@
  * assert — and a real managed-Postgres hostname here would trip the G4
  * portability lint (`scripts/portability-lint.mjs`).
  */
-import { EnvieStatus, MatchState, Platform, ProposalState } from "@prisma/client";
+import { Etat, EnvieStatus, MatchState, Platform, ProposalState, Ressenti, RoleContexte } from "@prisma/client";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -105,5 +105,21 @@ describe("SUG-DB-014 seed enum-state coverage", () => {
 
   it("references every Platform member", () => {
     expectEveryMemberReferenced("Platform", Platform);
+  });
+
+  // Review round 3, finding 4: the guard only covered the four
+  // MatchState-adjacent enums. Etat/Ressenti/RoleContexte are the FS-03/
+  // FCH-09 classification vocabularies — the ones most likely to gain a
+  // member — and the data already covers all of their members today.
+  it("references every Etat member", () => {
+    expectEveryMemberReferenced("Etat", Etat);
+  });
+
+  it("references every Ressenti member", () => {
+    expectEveryMemberReferenced("Ressenti", Ressenti);
+  });
+
+  it("references every RoleContexte member", () => {
+    expectEveryMemberReferenced("RoleContexte", RoleContexte);
   });
 });
