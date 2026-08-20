@@ -25,4 +25,15 @@ final class SessionTests: XCTestCase {
         try session.saveTokens(SessionTokens(accessToken: "new", refreshToken: "new-r"))
         XCTAssertEqual(try session.getAccessToken(), "new")
     }
+
+    func test_IDT02_clearTokens_removesAccessAndRefresh() throws {
+        let store = InMemorySecureStore()
+        let session = Session(store: store)
+        try session.saveTokens(SessionTokens(accessToken: "access-1", refreshToken: "refresh-1"))
+
+        try session.clearTokens()
+
+        XCTAssertNil(try session.getAccessToken())
+        XCTAssertNil(try store.get("swab.session.refresh.v1"))
+    }
 }

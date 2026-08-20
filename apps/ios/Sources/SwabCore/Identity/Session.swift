@@ -29,4 +29,12 @@ public struct Session: Sendable {
     public func getAccessToken() throws -> String? {
         try store.get(Self.accessKey)
     }
+
+    /// IDT-02 logout: revokes the local session by deleting both tokens.
+    /// Not yet wired into any production flow — enabling plumbing for a
+    /// future logout UI (FS-07).
+    public func clearTokens() throws {
+        try store.delete(Self.accessKey)
+        try store.delete(Self.refreshKey)
+    }
 }
