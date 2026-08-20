@@ -2,11 +2,19 @@
  * Deterministic synthetic seed — no faker, no randomness, fixed clock (Data
  * Steward rule 4: reproducible, entirely synthetic, tiny for the free tier).
  *
- * Covers: 6 users, devices, mutual + pending contact links WITH their
- * classification (ADR-001: rings, états, ressentis, rôles), a reciprocal envie
- * pair producing exactly 1 match, a pending proposal, and an expired envie.
- * Also two deprecated Vault rows, kept only while the blob endpoints still
- * exist (removed at ADR-001 stage 3/4 with the model).
+ * Covers: 6 users, devices (IOS/ANDROID/WEB), mutual + pending contact links
+ * WITH their classification (ADR-001: rings, états, ressentis, rôles), and
+ * every member of EnvieStatus/MatchState/ProposalState (SUG-DB-014, rule 4):
+ * a reciprocal ACTIVE/PROPOSED pair with a PENDING + DECLINED + LAPSED proposal,
+ * a second reciprocal pair SCHEDULED via an ACCEPTED proposal, a third
+ * reciprocal pair still PROPOSED with userA's private passedByAAt set
+ * (SUG-DB-006), a fourth pair whose match itself aged out (MatchState.EXPIRED),
+ * a fifth pair whose match stays OPEN even though one envie has EXPIRED
+ * (ENV-12: existing matches survive their envie's expiry), a WITHDRAWN envie,
+ * an EXPIRED envie with no counterpart, and a same-category-mismatch
+ * near-miss pair that must NOT match (ENV-08 negative fixture). Also two
+ * deprecated Vault rows, kept only while the blob endpoints still exist
+ * (removed at ADR-001 stage 3/4 with the model).
  *
  * The classification values are as synthetic as the rest — invented people,
  * invented opinions. They exist so a developer can see the four axes render
@@ -100,17 +108,33 @@ async function main(): Promise<void> {
   // DEPRECATED (ADR-001): kept only until the blob endpoints go at stage 3/4.
   // Opaque synthetic bytes — content is meaningless by design (VLT-03).
   await prisma.vault.create({
-    data: { userId: amina.id, blob: Buffer.from("synthetic-opaque-vault-amina"), version: 3, createdAt: T0 },
+    data: {
+      userId: amina.id,
+      blob: Buffer.from("synthetic-opaque-vault-amina"),
+      version: 3,
+      createdAt: T0,
+      updatedAt: T0,
+    },
   });
   await prisma.vault.create({
-    data: { userId: bilal.id, blob: Buffer.from("synthetic-opaque-vault-bilal"), version: 1, createdAt: T0 },
+    data: {
+      userId: bilal.id,
+      blob: Buffer.from("synthetic-opaque-vault-bilal"),
+      version: 1,
+      createdAt: T0,
+      updatedAt: T0,
+    },
   });
 
   await prisma.device.create({
-    data: { userId: amina.id, platform: Platform.IOS, pushToken: "synthetic-push-token-amina", createdAt: T0 },
+    data: { userId: amina.id, platform: Platform.IOS, pushToken: "synthetic-push-token-amina", createdAt: T0, updatedAt: T0 },
   });
   await prisma.device.create({
-    data: { userId: bilal.id, platform: Platform.ANDROID, pushToken: null, createdAt: T0 },
+    data: { userId: bilal.id, platform: Platform.ANDROID, pushToken: null, createdAt: T0, updatedAt: T0 },
+  });
+  // SUG-DB-014: WEB was unrepresented in Platform coverage.
+  await prisma.device.create({
+    data: { userId: chirine.id, platform: Platform.WEB, pushToken: null, createdAt: T0, updatedAt: T0 },
   });
 
   // Edges AND the owner's classification of the target (ADR-001). Links stay
@@ -153,7 +177,12 @@ async function main(): Promise<void> {
         etatUpdatedAt: edge.etat ? T0 : null,
         ressentiUpdatedAt: edge.ressenti ? T0 : null,
         lastAxisChangeAt: T0,
-        roles: { create: edge.roles.map((role) => ({ role, createdAt: T0 })) },
+        // Record-level updatedAt (VLT-08 delta-pull cursor) must match
+        // createdAt here too, or every seeded link/role reads as "changed
+        // just now" against field-level timestamps that say T0 (review
+        // round 4, finding 1).
+        updatedAt: T0,
+        roles: { create: edge.roles.map((role) => ({ role, createdAt: T0, updatedAt: T0 })) },
       },
     });
   }
@@ -173,7 +202,8 @@ async function main(): Promise<void> {
       ringUpdatedAt: T0,
       etatUpdatedAt: T0,
       lastAxisChangeAt: T0,
-      roles: { create: [{ role: RoleContexte.COMMUNITY, createdAt: T0 }] },
+      updatedAt: T0,
+      roles: { create: [{ role: RoleContexte.COMMUNITY, createdAt: T0, updatedAt: T0 }] },
     },
   });
 
@@ -187,6 +217,7 @@ async function main(): Promise<void> {
       displayName: "Daoud",
       ring: 4,
       createdAt: T0,
+      updatedAt: T0,
       deletedAt: T0,
     },
   });
@@ -201,6 +232,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(1),
+      updatedAt: hoursFromT0(1),
       recipients: {
         create: [
           { recipientId: bilal.id, createdAt: hoursFromT0(1) },
@@ -218,6 +250,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.ACTIVE,
       expiresAt: hoursFromT0(48),
       createdAt: hoursFromT0(2),
+      updatedAt: hoursFromT0(2),
       recipients: { create: [{ recipientId: amina.id, createdAt: hoursFromT0(2) }] },
     },
     select: { id: true },
@@ -236,9 +269,13 @@ async function main(): Promise<void> {
       envieBId: canonicalEnvieBId,
       userAId: canonicalUserAId,
       userBId: canonicalUserBId,
-      state: MatchState.OPEN,
+      // MatchState.PROPOSED means "a proposal is pending" (ENV-13) — the
+      // PENDING proposal below is never resolved in this fixture, so the
+      // match stays PROPOSED rather than OPEN (review round 4, finding 2).
+      state: MatchState.PROPOSED,
       notifiedAt: hoursFromT0(2), // both sides notified atomically
       createdAt: hoursFromT0(2),
+      updatedAt: hoursFromT0(3), // flips OPEN→PROPOSED when the proposal below is created
     },
     select: { id: true },
   });
@@ -250,6 +287,312 @@ async function main(): Promise<void> {
       timeslot: hoursFromT0(72),
       state: ProposalState.PENDING,
       createdAt: hoursFromT0(3),
+      updatedAt: hoursFromT0(3),
+    },
+  });
+  // SUG-DB-014: a second and third proposal on the same match — legal
+  // (Match.proposals is a list) — covers ProposalState.DECLINED/LAPSED
+  // without needing another match.
+  await prisma.proposal.create({
+    data: {
+      matchId: match.id,
+      proposerId: bilal.id,
+      place: "Café des Fédérations",
+      state: ProposalState.DECLINED,
+      createdAt: hoursFromT0(4),
+      // Answered 30 min after being raised — DECLINED is a transition of an
+      // existing PENDING row (ENV-14), so updatedAt must postdate createdAt
+      // (review round 4, finding 3).
+      updatedAt: hoursFromT0(4.5),
+    },
+  });
+  await prisma.proposal.create({
+    data: {
+      matchId: match.id,
+      proposerId: amina.id,
+      timeslot: hoursFromT0(30),
+      state: ProposalState.LAPSED,
+      createdAt: hoursFromT0(5),
+      // Lapses after its own timeslot passes unanswered, not at creation
+      // (review round 4, finding 3).
+      updatedAt: hoursFromT0(30.5),
+    },
+  });
+
+  // SUG-DB-014: a withdrawn envie — ENV-06/ENV-12's "can no longer produce
+  // matches" path, previously uncovered.
+  await prisma.envie.create({
+    data: {
+      authorId: daoud.id,
+      verb: "envie de jouer au foot",
+      category: "sport",
+      status: EnvieStatus.WITHDRAWN,
+      expiresAt: hoursFromT0(48),
+      createdAt: hoursFromT0(6),
+      // Withdrawn 30 min after creation (synthetic) — must differ from
+      // createdAt, or the row misrepresents when the status flipped
+      // (review round 3, finding 1).
+      updatedAt: hoursFromT0(6.5),
+      recipients: { create: [{ recipientId: bilal.id, createdAt: hoursFromT0(6) }] },
+    },
+  });
+
+  // SUG-DB-014: second reciprocal pair → SCHEDULED match via an ACCEPTED
+  // proposal (ENV-14 happy path end-to-end).
+  const envieC = await prisma.envie.create({
+    data: {
+      authorId: emna.id,
+      verb: "envie d'aller au cinéma",
+      category: "cinema",
+      status: EnvieStatus.ACTIVE,
+      expiresAt: hoursFromT0(48),
+      createdAt: hoursFromT0(7),
+      updatedAt: hoursFromT0(7),
+      recipients: { create: [{ recipientId: farid.id, createdAt: hoursFromT0(7) }] },
+    },
+    select: { id: true },
+  });
+  const envieD = await prisma.envie.create({
+    data: {
+      authorId: farid.id,
+      verb: "envie de voir un film",
+      category: "cinema",
+      status: EnvieStatus.ACTIVE,
+      expiresAt: hoursFromT0(48),
+      createdAt: hoursFromT0(8),
+      updatedAt: hoursFromT0(8),
+      recipients: { create: [{ recipientId: emna.id, createdAt: hoursFromT0(8) }] },
+    },
+    select: { id: true },
+  });
+  // SUG-DB-003: sort the pair before insert, same rule as the amina/bilal match above.
+  const [scheduledAId, scheduledBId] =
+    envieC.id < envieD.id ? [envieC.id, envieD.id] : [envieD.id, envieC.id];
+  const [scheduledUserAId, scheduledUserBId] =
+    scheduledAId === envieC.id ? [emna.id, farid.id] : [farid.id, emna.id];
+  const scheduledMatch = await prisma.match.create({
+    data: {
+      envieAId: scheduledAId,
+      envieBId: scheduledBId,
+      userAId: scheduledUserAId,
+      userBId: scheduledUserBId,
+      state: MatchState.SCHEDULED,
+      notifiedAt: hoursFromT0(8),
+      createdAt: hoursFromT0(8),
+      updatedAt: hoursFromT0(9.5), // flips OPEN→SCHEDULED when the proposal below is accepted
+    },
+    select: { id: true },
+  });
+  await prisma.proposal.create({
+    data: {
+      matchId: scheduledMatch.id,
+      proposerId: farid.id,
+      place: "Cinéma Pathé Bellecour",
+      timeslot: hoursFromT0(80),
+      state: ProposalState.ACCEPTED,
+      createdAt: hoursFromT0(9),
+      // Accepted 30 min after being raised — ACCEPTED is a transition of an
+      // existing PENDING row (ENV-14), so updatedAt must postdate createdAt;
+      // the match's own updatedAt above moves to match, since accepting is
+      // what flips the match to SCHEDULED (review round 4, finding 3).
+      updatedAt: hoursFromT0(9.5),
+    },
+  });
+
+  // SUG-DB-014: third reciprocal pair — covers MatchState.PROPOSED (the
+  // shared enum; SUG-DB-006 made PASSED per-side, not a value here). Daoud
+  // proposes a place; Amina (the recipient) silently passes on it before
+  // responding — the only fixture that sets a per-side pass column
+  // (passedByAAt), pinned to Amina by identity rather than to whichever
+  // envie id happens to sort first (review round 3, finding 3). userB's
+  // view stays computed from `state` alone (ENV-15).
+  const envieE = await prisma.envie.create({
+    data: {
+      authorId: amina.id,
+      verb: "envie de prendre un café",
+      category: "cafe",
+      status: EnvieStatus.ACTIVE,
+      expiresAt: hoursFromT0(48),
+      createdAt: hoursFromT0(10),
+      updatedAt: hoursFromT0(10),
+      recipients: { create: [{ recipientId: daoud.id, createdAt: hoursFromT0(10) }] },
+    },
+    select: { id: true },
+  });
+  const envieF = await prisma.envie.create({
+    data: {
+      authorId: daoud.id,
+      verb: "envie de boire un café",
+      category: "cafe",
+      status: EnvieStatus.ACTIVE,
+      expiresAt: hoursFromT0(48),
+      createdAt: hoursFromT0(11),
+      updatedAt: hoursFromT0(11),
+      recipients: { create: [{ recipientId: amina.id, createdAt: hoursFromT0(11) }] },
+    },
+    select: { id: true },
+  });
+  const [proposedAId, proposedBId] =
+    envieE.id < envieF.id ? [envieE.id, envieF.id] : [envieF.id, envieE.id];
+  const [proposedUserAId, proposedUserBId] =
+    proposedAId === envieE.id ? [amina.id, daoud.id] : [daoud.id, amina.id];
+  const proposedMatch = await prisma.match.create({
+    data: {
+      envieAId: proposedAId,
+      envieBId: proposedBId,
+      userAId: proposedUserAId,
+      userBId: proposedUserBId,
+      state: MatchState.PROPOSED,
+      notifiedAt: hoursFromT0(11),
+      createdAt: hoursFromT0(11),
+      // Reflects the pass write below (the row's last touch), not the
+      // PENDING proposal that flips OPEN→PROPOSED at hoursFromT0(11.2).
+      updatedAt: hoursFromT0(11.5),
+      // SUG-DB-006: a private per-side pass marker, pinned to whichever side
+      // is really Amina — proposedUserAId only tells us who authored the
+      // lexicographically-first envie, not who passed (finding 3).
+      ...(proposedUserAId === amina.id
+        ? { passedByAAt: hoursFromT0(11.5) }
+        : { passedByBAt: hoursFromT0(11.5) }),
+    },
+    select: { id: true },
+  });
+  // MatchState.PROPOSED means "a proposal is pending" (ENV-13) — without a
+  // proposal row the state had no fixture backing it (review round 3, finding 2).
+  await prisma.proposal.create({
+    data: {
+      matchId: proposedMatch.id,
+      proposerId: daoud.id,
+      place: "Le Comptoir",
+      state: ProposalState.PENDING,
+      createdAt: hoursFromT0(11.2),
+      updatedAt: hoursFromT0(11.2),
+    },
+  });
+
+  // SUG-DB-014: fourth pair — both envies aged out inside ENV-17's 48h bound
+  // and the match itself also expired, covering MatchState.EXPIRED. Kept
+  // separate from the ENV-12 "survives" fixture below (a match staying OPEN
+  // while its envie expires is a different case from a match that itself
+  // aged out — conflating them into one fixture proved nothing about either).
+  const envieG = await prisma.envie.create({
+    data: {
+      authorId: bilal.id,
+      verb: "envie de voir une expo",
+      category: "culture",
+      status: EnvieStatus.EXPIRED,
+      createdAt: hoursFromT0(-52),
+      expiresAt: hoursFromT0(-4), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(-4), // flips at its own expiry
+      recipients: { create: [{ recipientId: chirine.id, createdAt: hoursFromT0(-52) }] },
+    },
+    select: { id: true },
+  });
+  const envieH = await prisma.envie.create({
+    data: {
+      authorId: chirine.id,
+      verb: "envie d'aller à une expo",
+      category: "culture",
+      status: EnvieStatus.EXPIRED,
+      createdAt: hoursFromT0(-51),
+      expiresAt: hoursFromT0(-3), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(-3), // flips at its own expiry
+      recipients: { create: [{ recipientId: bilal.id, createdAt: hoursFromT0(-51) }] },
+    },
+    select: { id: true },
+  });
+  const [expiredAId, expiredBId] =
+    envieG.id < envieH.id ? [envieG.id, envieH.id] : [envieH.id, envieG.id];
+  const [expiredUserAId, expiredUserBId] =
+    expiredAId === envieG.id ? [bilal.id, chirine.id] : [chirine.id, bilal.id];
+  await prisma.match.create({
+    data: {
+      envieAId: expiredAId,
+      envieBId: expiredBId,
+      userAId: expiredUserAId,
+      userBId: expiredUserBId,
+      state: MatchState.EXPIRED,
+      notifiedAt: hoursFromT0(-50),
+      createdAt: hoursFromT0(-50),
+      // Aged out once both linked envies had expired (synthetic — no
+      // match-expiry sweep is designed yet); the later of envieG/envieH's
+      // own expiresAt values.
+      updatedAt: hoursFromT0(-3),
+    },
+  });
+
+  // SUG-DB-014: fifth pair — envieI has EXPIRED but the match stays OPEN,
+  // demonstrating ENV-12 ("an expired envie can no longer produce matches;
+  // existing matches survive"). Unlike the fourth pair above, the match row
+  // itself never transitions — that's the whole point of the fixture.
+  const envieI = await prisma.envie.create({
+    data: {
+      authorId: daoud.id,
+      verb: "envie de lire au parc",
+      category: "lecture",
+      status: EnvieStatus.EXPIRED,
+      createdAt: hoursFromT0(14),
+      expiresAt: hoursFromT0(16), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(16), // flips at its own expiry
+      recipients: { create: [{ recipientId: emna.id, createdAt: hoursFromT0(14) }] },
+    },
+    select: { id: true },
+  });
+  const envieJ = await prisma.envie.create({
+    data: {
+      authorId: emna.id,
+      verb: "envie de bouquiner",
+      category: "lecture",
+      status: EnvieStatus.ACTIVE,
+      createdAt: hoursFromT0(15),
+      expiresAt: hoursFromT0(59), // ENV-17: <= createdAt + 48h
+      updatedAt: hoursFromT0(15),
+      recipients: { create: [{ recipientId: daoud.id, createdAt: hoursFromT0(15) }] },
+    },
+    select: { id: true },
+  });
+  const [survivedAId, survivedBId] =
+    envieI.id < envieJ.id ? [envieI.id, envieJ.id] : [envieJ.id, envieI.id];
+  const [survivedUserAId, survivedUserBId] =
+    survivedAId === envieI.id ? [daoud.id, emna.id] : [emna.id, daoud.id];
+  await prisma.match.create({
+    data: {
+      envieAId: survivedAId,
+      envieBId: survivedBId,
+      userAId: survivedUserAId,
+      userBId: survivedUserBId,
+      state: MatchState.OPEN,
+      notifiedAt: hoursFromT0(15),
+      createdAt: hoursFromT0(15),
+      updatedAt: hoursFromT0(15), // never left OPEN — that's ENV-12's whole point
+    },
+  });
+
+  // SUG-DB-014: near-miss — same two users, mismatched category, must NOT
+  // match (ENV-08 negative fixture; the canary if a future matching engine
+  // ever backfills matches from seed data).
+  await prisma.envie.create({
+    data: {
+      authorId: chirine.id,
+      verb: "envie de faire du sport",
+      category: "sport",
+      status: EnvieStatus.ACTIVE,
+      expiresAt: hoursFromT0(48),
+      createdAt: hoursFromT0(12),
+      updatedAt: hoursFromT0(12),
+      recipients: { create: [{ recipientId: daoud.id, createdAt: hoursFromT0(12) }] },
+    },
+  });
+  await prisma.envie.create({
+    data: {
+      authorId: daoud.id,
+      verb: "envie de manger dehors",
+      category: "food",
+      status: EnvieStatus.ACTIVE,
+      expiresAt: hoursFromT0(48),
+      createdAt: hoursFromT0(13),
+      updatedAt: hoursFromT0(13),
+      recipients: { create: [{ recipientId: chirine.id, createdAt: hoursFromT0(13) }] },
     },
   });
 
@@ -262,6 +605,7 @@ async function main(): Promise<void> {
       status: EnvieStatus.EXPIRED,
       expiresAt: hoursFromT0(-2),
       createdAt: hoursFromT0(-50),
+      updatedAt: hoursFromT0(-2), // flips at its own expiry
       recipients: { create: [{ recipientId: amina.id, createdAt: hoursFromT0(-50) }] },
     },
   });
