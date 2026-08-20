@@ -5,7 +5,7 @@
  * Covers: 6 users, devices (IOS/ANDROID/WEB), mutual + pending contact links
  * WITH their classification (ADR-001: rings, états, ressentis, rôles), and
  * every member of EnvieStatus/MatchState/ProposalState (SUG-DB-014, rule 4):
- * a reciprocal ACTIVE/OPEN pair with a PENDING + DECLINED + LAPSED proposal,
+ * a reciprocal ACTIVE/PROPOSED pair with a PENDING + DECLINED + LAPSED proposal,
  * a second reciprocal pair SCHEDULED via an ACCEPTED proposal, a third
  * reciprocal pair still PROPOSED with userA's private passedByAAt set
  * (SUG-DB-006), a fourth pair whose match itself aged out (MatchState.EXPIRED),
@@ -108,10 +108,22 @@ async function main(): Promise<void> {
   // DEPRECATED (ADR-001): kept only until the blob endpoints go at stage 3/4.
   // Opaque synthetic bytes — content is meaningless by design (VLT-03).
   await prisma.vault.create({
-    data: { userId: amina.id, blob: Buffer.from("synthetic-opaque-vault-amina"), version: 3, createdAt: T0 },
+    data: {
+      userId: amina.id,
+      blob: Buffer.from("synthetic-opaque-vault-amina"),
+      version: 3,
+      createdAt: T0,
+      updatedAt: T0,
+    },
   });
   await prisma.vault.create({
-    data: { userId: bilal.id, blob: Buffer.from("synthetic-opaque-vault-bilal"), version: 1, createdAt: T0 },
+    data: {
+      userId: bilal.id,
+      blob: Buffer.from("synthetic-opaque-vault-bilal"),
+      version: 1,
+      createdAt: T0,
+      updatedAt: T0,
+    },
   });
 
   await prisma.device.create({
@@ -165,7 +177,12 @@ async function main(): Promise<void> {
         etatUpdatedAt: edge.etat ? T0 : null,
         ressentiUpdatedAt: edge.ressenti ? T0 : null,
         lastAxisChangeAt: T0,
-        roles: { create: edge.roles.map((role) => ({ role, createdAt: T0 })) },
+        // Record-level updatedAt (VLT-08 delta-pull cursor) must match
+        // createdAt here too, or every seeded link/role reads as "changed
+        // just now" against field-level timestamps that say T0 (review
+        // round 4, finding 1).
+        updatedAt: T0,
+        roles: { create: edge.roles.map((role) => ({ role, createdAt: T0, updatedAt: T0 })) },
       },
     });
   }
@@ -185,7 +202,8 @@ async function main(): Promise<void> {
       ringUpdatedAt: T0,
       etatUpdatedAt: T0,
       lastAxisChangeAt: T0,
-      roles: { create: [{ role: RoleContexte.COMMUNITY, createdAt: T0 }] },
+      updatedAt: T0,
+      roles: { create: [{ role: RoleContexte.COMMUNITY, createdAt: T0, updatedAt: T0 }] },
     },
   });
 
@@ -199,6 +217,7 @@ async function main(): Promise<void> {
       displayName: "Daoud",
       ring: 4,
       createdAt: T0,
+      updatedAt: T0,
       deletedAt: T0,
     },
   });
@@ -250,10 +269,13 @@ async function main(): Promise<void> {
       envieBId: canonicalEnvieBId,
       userAId: canonicalUserAId,
       userBId: canonicalUserBId,
-      state: MatchState.OPEN,
+      // MatchState.PROPOSED means "a proposal is pending" (ENV-13) — the
+      // PENDING proposal below is never resolved in this fixture, so the
+      // match stays PROPOSED rather than OPEN (review round 4, finding 2).
+      state: MatchState.PROPOSED,
       notifiedAt: hoursFromT0(2), // both sides notified atomically
       createdAt: hoursFromT0(2),
-      updatedAt: hoursFromT0(2), // never left OPEN, so no later transition
+      updatedAt: hoursFromT0(3), // flips OPEN→PROPOSED when the proposal below is created
     },
     select: { id: true },
   });
@@ -278,7 +300,10 @@ async function main(): Promise<void> {
       place: "Café des Fédérations",
       state: ProposalState.DECLINED,
       createdAt: hoursFromT0(4),
-      updatedAt: hoursFromT0(4), // born declined — no separate PENDING row preceded it
+      // Answered 30 min after being raised — DECLINED is a transition of an
+      // existing PENDING row (ENV-14), so updatedAt must postdate createdAt
+      // (review round 4, finding 3).
+      updatedAt: hoursFromT0(4.5),
     },
   });
   await prisma.proposal.create({
@@ -288,7 +313,9 @@ async function main(): Promise<void> {
       timeslot: hoursFromT0(30),
       state: ProposalState.LAPSED,
       createdAt: hoursFromT0(5),
-      updatedAt: hoursFromT0(5), // born lapsed, same reasoning
+      // Lapses after its own timeslot passes unanswered, not at creation
+      // (review round 4, finding 3).
+      updatedAt: hoursFromT0(30.5),
     },
   });
 
@@ -352,7 +379,7 @@ async function main(): Promise<void> {
       state: MatchState.SCHEDULED,
       notifiedAt: hoursFromT0(8),
       createdAt: hoursFromT0(8),
-      updatedAt: hoursFromT0(9), // flips OPEN→SCHEDULED when the proposal below is accepted
+      updatedAt: hoursFromT0(9.5), // flips OPEN→SCHEDULED when the proposal below is accepted
     },
     select: { id: true },
   });
@@ -364,7 +391,11 @@ async function main(): Promise<void> {
       timeslot: hoursFromT0(80),
       state: ProposalState.ACCEPTED,
       createdAt: hoursFromT0(9),
-      updatedAt: hoursFromT0(9), // born accepted — no separate PENDING row preceded it
+      // Accepted 30 min after being raised — ACCEPTED is a transition of an
+      // existing PENDING row (ENV-14), so updatedAt must postdate createdAt;
+      // the match's own updatedAt above moves to match, since accepting is
+      // what flips the match to SCHEDULED (review round 4, finding 3).
+      updatedAt: hoursFromT0(9.5),
     },
   });
 
