@@ -261,20 +261,29 @@ final class FicheVaultTests: XCTestCase {
         XCTAssertEqual(updated?.history.count, 2, "the 11-month-old event must survive the prune")
     }
 
-    /// VLT-03: pruning keeps the blob bounded even under sustained editing —
-    /// locks in that the mechanism exists, not just the two date cases above.
+    /// VLT-03: pruning keeps the blob bounded under sustained editing. The
+    /// 50 back-dated events seeded first are what give the `== 100`
+    /// assertion teeth: without pruning the feed would hold 150, so this
+    /// fails if the mechanism regresses. (Seeding matters — a bare
+    /// 100-edit loop asserts only that the loop ran 100 times, and passes
+    /// with pruning disabled.)
     func test_VLT03_hundredEdits_historyStaysBounded() async throws {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Yara")
+        let thirteenMonthsAgo = Calendar.current.date(byAdding: .month, value: -13, to: Date())!
+        try await vault.setTestHistory(
+            id: contact.id,
+            history: (0..<50).map { _ in FicheHistoryEvent(date: thirteenMonthsAgo, kind: .reconfirmed) }
+        )
 
         for _ in 0..<100 {
             try await vault.reconfirmFicheStaleness(id: contact.id)
         }
 
         let updated = try await vault.getContact(id: contact.id)
-        XCTAssertEqual(updated?.history.count, 100, "all same-day events are within the 12-month window")
+        XCTAssertEqual(updated?.history.count, 100, "the 50 stale events must be pruned; only the 100 fresh ones remain")
         let encoded = try JSONEncoder().encode(updated?.history)
-        XCTAssertLessThan(encoded.count, 50_000, "sanity ceiling — pruning must bound growth, not just cap the loop")
+        XCTAssertLessThan(encoded.count, 50_000, "sanity ceiling on the serialized feed")
     }
 
     /// Backward compatibility: a Wave 1/2 blob shape (no FS-03 fields at

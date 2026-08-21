@@ -13,7 +13,8 @@
 - Match-event (`.relationshipEvent`) retention is intentionally not special-cased — FS-05 doesn't exist yet and FCH-04 scopes the whole feed to 12 months; re-decide when match events land.
 - New internal (non-public, `@testable`-only) `Vault.setTestHistory(id:history:)` test seam, since every production write path stamps `Date()` and tests need to seed back-dated events to exercise the prune.
 - **Cross-platform follow-up:** Android stores history the same unbounded way (`apps/android/.../vault/Vault.kt`, SUG-AND-013) and needs the equivalent fix — not done here, out of this PR's `area:ios` scope.
-- Verified: `xcrun swift test` 154/154.
+- Verified: `xcrun swift test` 151/151, and mutation-tested: disabling `prunedHistory` fails `test_FCH04_historyOlderThanTwelveMonths_isPrunedOnNextWrite` and `test_VLT03_hundredEdits_historyStaysBounded`.
+- **Gotcha:** `test_VLT03_hundredEdits_historyStaysBounded` seeds 50 back-dated events before its 100-edit loop on purpose. A bare loop of same-day edits asserts only that the loop ran — it passes with pruning disabled. The seeded stale events are what make `== 100` a statement about the prune.
 
 ## 2026-08-20 — [VLT-01, MAP-06, SUG-IOS-004] Undecryptable vault renders an honest state, not the calm empty map
 
