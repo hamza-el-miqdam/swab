@@ -252,6 +252,15 @@ public actor Vault {
         try await mutateContact(id: id) { $0.ring = ring }
     }
 
+    /// Test-only seam (SUG-IOS-007): every production write path stamps
+    /// history events with `Date()`, so tests need a way to seed a
+    /// back-dated event to exercise the 12-month prune. Not `public` — only
+    /// reachable via `@testable import SwabCore`. Bypasses pruning itself so
+    /// tests can assert on the *next* write's behavior.
+    func setTestHistory(id: String, history: [FicheHistoryEvent]) async throws {
+        try await mutateContact(id: id) { $0.history = history }
+    }
+
     // FCH-09: the setters take the typed value, not a String, so writing
     // French copy into the vault is a compile error rather than a review catch.
 
@@ -327,7 +336,21 @@ public actor Vault {
             FicheHistoryEvent(date: now, kind: .axisChanged(axis: axis.rawValue, value: value)),
             at: 0
         )
+        data.contacts[index].history = prunedHistory(data.contacts[index].history, now: now)
         try await persist(data)
+    }
+
+    /// SUG-IOS-007/VLT-03: FCH-04 only ever *displays* 12 months
+    /// (`FicheViewModel.recentHistory` filters at read time) but storage
+    /// retained everything forever, which will eventually blow the
+    /// server's ≤1 MB vault-blob quota. Pruning here, inside the same
+    /// mutate-then-persist transaction as the write that triggered it,
+    /// keeps the two in sync without a separate read-modify-write pass.
+    /// Read-time filtering in `FicheViewModel` stays as-is — it remains the
+    /// display source of truth for legacy blobs and clock-skew edge cases.
+    private func prunedHistory(_ history: [FicheHistoryEvent], now: Date) -> [FicheHistoryEvent] {
+        let cutoff = Calendar.current.date(byAdding: .month, value: -12, to: now) ?? .distantPast
+        return history.filter { $0.date >= cutoff }
     }
 
     /// FCH-05 "C'est toujours ça": re-confirms without changing any axis
@@ -343,6 +366,7 @@ public actor Vault {
         data.contacts[index].lastAxisChangeAt = now
         data.contacts[index].stalenessSnoozedUntil = nil
         data.contacts[index].history.insert(FicheHistoryEvent(date: now, kind: .reconfirmed), at: 0)
+        data.contacts[index].history = prunedHistory(data.contacts[index].history, now: now)
         try await persist(data)
     }
 
