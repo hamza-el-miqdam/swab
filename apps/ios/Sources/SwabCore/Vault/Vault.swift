@@ -151,6 +151,13 @@ public struct VaultData: Codable, Equatable, Sendable {
 public enum VaultError: Error, Equatable, Sendable {
     case blobUnavailable
     case invalidRing(Int)
+    /// SUG-IOS-004 / VLT-01: the blob exists but could not be decrypted or
+    /// decoded (bad/foreign key, tampered/corrupted bytes, garbage JSON).
+    /// Distinct from "no blob at all" (which hydrates to an empty vault) —
+    /// callers must not collapse the two into the same "empty" UI state,
+    /// since that was silent data loss (MAP-06's calm empty copy is only
+    /// honest for a genuinely empty vault).
+    case unreadable
 
     /// G3: fixed, privacy-safe code for `ErrorReporter` (see
     /// `Observability/ErrorReporter.swift`). Deliberately never derived from
@@ -162,6 +169,7 @@ public enum VaultError: Error, Equatable, Sendable {
         switch error {
         case VaultError.blobUnavailable: return "blobUnavailable"
         case VaultError.invalidRing: return "invalidRing"
+        case VaultError.unreadable: return "unreadable"
         default: return "unreadable"
         }
     }
@@ -195,8 +203,16 @@ public actor Vault {
             return empty
         }
         let key = try keyStore.getOrCreateKey()
-        let plaintext = try VaultCrypto.decrypt(blobBase64: blob, key: key)
-        let data = try JSONDecoder().decode(VaultData.self, from: Data(plaintext.utf8))
+        // SUG-IOS-004: decrypt+decode failures are reported as `.unreadable`,
+        // never left to bubble up as a raw CryptoKit/DecodingError that a
+        // caller's `try?`/`?? []` collapses into "empty, nothing wrong here".
+        let data: VaultData
+        do {
+            let plaintext = try VaultCrypto.decrypt(blobBase64: blob, key: key)
+            data = try JSONDecoder().decode(VaultData.self, from: Data(plaintext.utf8))
+        } catch {
+            throw VaultError.unreadable
+        }
         cache = data
         return data
     }
