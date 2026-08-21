@@ -35,3 +35,15 @@
 - `.completeFileProtection` (strict) would break any future background sync writes while locked — coordinate the choice with SUG-IOS-002's background trigger before picking the strictest class.
 - Protocol additions ripple to every conformer; the default-implementation approach keeps `InMemoryKeyValueStore` and test doubles compiling.
 - Do not make `set` throwing — that churns every call site (`OnboardingStateStore`, `Vault`, UITest hooks) for little gain; the reporter hook covers observability.
+
+---
+
+## Resolution (2026-08-21) — implemented, with one step dropped as superseded
+
+Landed in PR #111. Two deviations from the plan above:
+
+**1. Step 2 (`lastPersistError` / `onPersistFailure`) was not built — deliberately.** SUG-IOS-005 (PR #103) had already given `FileKeyValueStore` a constructor-injected `ErrorReporter` and replaced the `try?` in `persist()` with `do/catch` reporting `writeFailed` / `encodeFailed`. Adding the hook on top would have meant two competing observability paths for the same failure. The step's intent — a dropped write must not be silent — is satisfied; the mechanism differs.
+
+**2. Step 3's file-protection assertion cannot be tested the way the plan implies.** `SwabCoreTests` runs on the *macOS host* (`xcrun swift test`, no Simulator target), and macOS honours data-protection classes inconsistently: macOS 26 reports `completeUnlessOpen` for the write, while the macOS-15 CI runner reports the volume default `completeUntilFirstUserAuthentication` for the identical write. A plain `XCTAssertEqual(values.fileProtection, .completeUnlessOpen)` therefore passes locally and fails in CI. What shipped: `FileKeyValueStore.writeOptions` is a public constant `persist()` passes verbatim, and the portable test asserts *that*; a second test still checks the real on-disk class, but only after a control write with no protection option proves the host implements classes at all — otherwise it skips rather than passing vacuously. **Do not "simplify" it back to a bare resource-value assertion.**
+
+`isExcludedFromBackup` was left at its default (`false`) per the plan, and the reasoning is recorded in the changelog entry.

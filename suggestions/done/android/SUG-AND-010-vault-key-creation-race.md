@@ -53,3 +53,11 @@ Low probability, catastrophic outcome (silent classification-data loss), trivial
 - Hold the mutex across the whole read-unwrap-or-create-persist sequence — locking only the create branch reintroduces the race.
 - Do not switch to `synchronized`: `kv.get`/`kv.set` are suspend functions (KeyValueStore.kt:15-16); a coroutine Mutex is the correct primitive.
 - Zero behavior change on the happy path; existing on-disk wrapped keys and vector tests (VaultCryptoVectorTest, AndroidKeystoreVaultKeyStoreTest) must remain untouched and green.
+
+---
+
+## Resolution (2026-08-21) — implemented as planned
+
+Landed in PR #109, following the plan step for step: a `kotlinx.coroutines.sync.Mutex` wraps the whole read-unwrap-or-create-persist body in both `AndroidKeystoreVaultKeyStore` and `InMemoryVaultKeyStore`, the interface KDoc carries the concurrency contract, and `getOrCreateWrapKey` is covered transitively because it only ever runs inside the locked body.
+
+The plan offered a choice between injecting a suspension point and accepting the statistical test; the statistical one shipped (50-way concurrent `getOrCreateVaultKey()` on `Dispatchers.Default`) and was verified to have teeth — removing the `Mutex` fails it with an `ArrayComparisonFailure` on 3/3 runs, and it passes deterministically with the fix.
