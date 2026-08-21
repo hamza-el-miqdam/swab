@@ -108,6 +108,18 @@ class Vault(
 
         /** FCH-05 « À revoir plus tard » re-eligibility window — 30 days, per spec. */
         const val SNOOZE_MILLIS: Long = 30L * 24 * 60 * 60 * 1000
+
+        /**
+         * FCH-04 retention window — the history feed is defined as
+         * "over 12 months, newest first" (FS-03), so anything older is not
+         * product surface and is dropped at write time rather than kept
+         * forever against the 1 MB per-user vault cap (SUG-AND-013) —
+         * enforced by `MAX_VAULT_BYTES` in `apps/api/src/routes/vault.ts`
+         * and a DB CHECK, not by a current FS-07 requirement ID.
+         * [FicheViewModel] filters by this same constant at read time; the
+         * two must not drift.
+         */
+        const val HISTORY_RETENTION_MILLIS: Long = 365L * 24 * 60 * 60 * 1000
     }
 
     private val json = Json { ignoreUnknownKeys = true } // shape grows with FS-03/04/06
@@ -253,7 +265,43 @@ class Vault(
             val updatedContacts = data.contacts.toMutableList()
             updatedContacts[index] = updatedContacts[index].copy(lastAxisChangeAt = at, staleSnoozedUntil = null)
             val event = VaultHistoryEvent(id = idGenerator(), contactId = contactId, axis = axis, summary = summary, at = at)
-            val next = data.copy(contacts = updatedContacts, history = data.history + event)
+            // SUG-AND-013 / FCH-04 — prune inside the same lock + single
+            // persist as the append, so the blob never holds more than
+            // FCH-04's 12-month window. This is the vault's ONLY history
+            // append path, so append-time pruning bounds growth without a
+            // background job. The prune is blob-wide, not per contact: the
+            // cap is on the blob and FCH-04 shows nothing out of window for
+            // any contact anyway.
+            //
+            // `at` is the caller's clock seam (never System.currentTimeMillis()
+            // in here), which keeps this deterministic — but a clock seam is
+            // still a clock, and a device whose clock runs years fast would
+            // otherwise compute a cutoff in the FUTURE and delete every real
+            // event. That is not a display glitch: persist() writes it
+            // immediately and VaultSync pushes the whole blob (re-pushing it
+            // unmerged on 409), so the deletion reaches the server, which is
+            // the VLT-05 restore source. Hiding history on a bad clock is
+            // survivable; destroying it is not.
+            //
+            // So `at` is corroborated against the newest timestamp already
+            // stored: real events are evidence that real time passed. If the
+            // caller's clock is further ahead of that than the whole retention
+            // window, we cannot tell a clock jump from a long dormancy — and
+            // in that doubt we append without deleting. Growth stays bounded
+            // regardless: blobs grow through FREQUENT edits, and frequent
+            // edits keep `newest` recent, which keeps the guard satisfied.
+            // A deferred prune costs one write; a wrong prune costs the data.
+            //
+            // Future: when contact deletion lands, it must prune that
+            // contact's history rows here too.
+            val newest = data.history.maxOfOrNull { it.at }
+            val clockIsCorroborated = newest == null || at - newest <= HISTORY_RETENTION_MILLIS
+            val retained = if (clockIsCorroborated) {
+                data.history.filter { it.at >= at - HISTORY_RETENTION_MILLIS }
+            } else {
+                data.history
+            }
+            val next = data.copy(contacts = updatedContacts, history = retained + event)
             cache = next
             persist(next)
         }
