@@ -4,6 +4,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/android-CHANGELOG-pre-2026-08-15.md](../../docs/archive/android-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-21 — [FCH-04, VLT-03] SUG-AND-013 prune vault history to 12 months on write, not just on read
+
+- **What changed:** `Vault.recordAxisEdit` now prunes `history` to the trailing 12 months (new `Vault.HISTORY_RETENTION_MILLIS`) inside its existing lock, in the same persist as the append. `FicheViewModel` drops its own local `TWELVE_MONTHS_MILLIS` and filters against `Vault.HISTORY_RETENTION_MILLIS` instead, so read- and write-time windows can't drift.
+- **Why:** the list only ever grew — FCH-04's 12-month window was applied at read time only, so the stored blob kept every axis edit since install against VLT-03's ≤ 1 MB server quota. Every chip tap on the fiche is an edit, so an active user with years of re-tags would eventually hit the quota with no client-side handling.
+- **Gotcha:** the prune is blob-wide (one flat history list for the whole vault, unlike iOS's per-contact nesting), which is correct — the quota is on the blob and FCH-04 never shows anything out of window regardless of contact. `FicheViewModel`'s read-time filter stays as a second line of defence for blobs written before this landed.
+- Follow-up noted in code, not implemented: when contact deletion lands, it must also prune that contact's history rows.
+- Verified: `./gradlew test` 154/154, including 4 new/regression cases. `pnpm turbo run lint typecheck test build` clean except the pre-existing, unrelated `apps/api` `prisma-repo.test.ts` (needs a live Postgres this sandbox doesn't have — same suite CI runs against its `postgres:17` service).
+
 ## 2026-08-20 — [G3] SUG-AND-012 a logging seam + crash reporter, where there was none
 
 - **What changed:** new `observability/SwabLog.kt` (`SwabLogger`: `LogcatLogger` debug-only, `NoopLogger` release/test default), wired through `AppContainer`. `SignupViewModel`'s two anonymous `catch (_: Exception)` blocks, `MainActivity`'s discarded initial-sync failure, and `VaultSync`'s 409-retry path now log an event name + whitelisted scalar fields (never the raw phone number, its hash, tokens, or the vault blob). `ApiClient` sends a fresh `x-request-id` per request — `apps/api` already reads that header (`app.ts:68`), so client and server logs now correlate. New `SwabApplication` installs a default `UncaughtExceptionHandler` (logs exception type only, then rethrows) as the minimum-viable G3 error-boundary reporter.

@@ -16,7 +16,6 @@ private const val AXIS_INTIMITE = "intimite"
 private const val AXIS_ROLES = "roles"
 private const val AXIS_ETAT = "etat"
 private const val AXIS_RESSENTI = "ressenti"
-private const val TWELVE_MONTHS_MILLIS = 365L * 24 * 60 * 60 * 1000
 
 /**
  * FS-03 « Fiche contact » — per-relation detail/editing (FCH-01..08). Sourced
@@ -56,7 +55,14 @@ class FicheViewModel(
             val c = vault.getContacts().firstOrNull { it.id == contactId }
             _contact.value = c
             val now = nowProvider()
-            _history.value = vault.getHistory(contactId).filter { now - it.at <= TWELVE_MONTHS_MILLIS }
+            // FCH-04 12-month window. The vault now prunes to the same bound at
+            // write time (SUG-AND-013), so this is a second line of defence,
+            // not the only one: it still covers blobs written before that
+            // landed, and a stale event whose contact has had no edits since.
+            // Deliberately Vault.HISTORY_RETENTION_MILLIS, not a local copy —
+            // a drifting duplicate here would silently hide retained events.
+            _history.value = vault.getHistory(contactId)
+                .filter { now - it.at <= Vault.HISTORY_RETENTION_MILLIS }
             _staleNudgeVisible.value = c != null &&
                 FicheStaleness.isStale(c.lastAxisChangeAt, c.staleSnoozedUntil, now)
         }

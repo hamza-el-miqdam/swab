@@ -108,6 +108,16 @@ class Vault(
 
         /** FCH-05 « À revoir plus tard » re-eligibility window — 30 days, per spec. */
         const val SNOOZE_MILLIS: Long = 30L * 24 * 60 * 60 * 1000
+
+        /**
+         * FCH-04 retention window — the history feed is defined as
+         * "over 12 months, newest first" (FS-03), so anything older is not
+         * product surface and is dropped at write time rather than kept
+         * forever against VLT-03's ≤ 1 MB server-side blob quota
+         * (SUG-AND-013). [FicheViewModel] filters by this same constant at
+         * read time; the two must not drift.
+         */
+        const val HISTORY_RETENTION_MILLIS: Long = 365L * 24 * 60 * 60 * 1000
     }
 
     private val json = Json { ignoreUnknownKeys = true } // shape grows with FS-03/04/06
@@ -253,7 +263,21 @@ class Vault(
             val updatedContacts = data.contacts.toMutableList()
             updatedContacts[index] = updatedContacts[index].copy(lastAxisChangeAt = at, staleSnoozedUntil = null)
             val event = VaultHistoryEvent(id = idGenerator(), contactId = contactId, axis = axis, summary = summary, at = at)
-            val next = data.copy(contacts = updatedContacts, history = data.history + event)
+            // SUG-AND-013 / VLT-03 — prune inside the same lock + single
+            // persist as the append, so the blob never holds more than
+            // FCH-04's 12-month window. This is the vault's ONLY history
+            // append path, so append-time pruning bounds growth without a
+            // background job. `at` (the caller's clock seam, never
+            // System.currentTimeMillis() in here) is "now", keeping it
+            // deterministic. The prune is blob-wide, not per contact: the
+            // quota is on the blob and FCH-04 shows nothing out of window
+            // anyway. Read-time filtering in FicheViewModel stays — it still
+            // covers legacy blobs written before this and clock skew.
+            // Future: when contact deletion lands, it must prune that
+            // contact's history rows here too.
+            val cutoff = at - HISTORY_RETENTION_MILLIS
+            val prunedHistory = data.history.filter { it.at >= cutoff }
+            val next = data.copy(contacts = updatedContacts, history = prunedHistory + event)
             cache = next
             persist(next)
         }

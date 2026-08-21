@@ -160,6 +160,93 @@ class VaultTest {
         assertEquals("first", history[1].summary)
     }
 
+    // ---- SUG-AND-013 / VLT-03: history is pruned at write time ----------
+    //
+    // FCH-04's 12-month window used to be applied only at read time
+    // (FicheViewModel.refresh), so the stored list grew forever against
+    // VLT-03's ≤ 1 MB server-side blob quota. Pruning happens inside
+    // recordAxisEdit — the vault's only history-append path — using the
+    // caller-supplied `at` as "now", so these stay deterministic.
+
+    @Test
+    fun `FCH-04 recordAxisEdit prunes events older than 12 months`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Nadia")
+        vault.recordAxisEdit(contact.id, axis = "etat", summary = "stale", at = 0L)
+
+        vault.recordAxisEdit(
+            contact.id,
+            axis = "ressenti",
+            summary = "fresh",
+            at = Vault.HISTORY_RETENTION_MILLIS + 1_000L,
+        )
+
+        val history = vault.getHistory(contact.id)
+        assertEquals("the out-of-window event must be dropped by the write", 1, history.size)
+        assertEquals("fresh", history.first().summary)
+    }
+
+    @Test
+    fun `FCH-04 events inside the 12-month window are never pruned`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Nadia")
+        // Sits exactly ON the cutoff of the write below — the retention
+        // boundary is inclusive, so `>` instead of `>=` fails here.
+        vault.recordAxisEdit(contact.id, axis = "etat", summary = "oldest kept", at = 1_000L)
+
+        vault.recordAxisEdit(
+            contact.id,
+            axis = "ressenti",
+            summary = "newest",
+            at = Vault.HISTORY_RETENTION_MILLIS + 1_000L,
+        )
+
+        val history = vault.getHistory(contact.id)
+        assertEquals(2, history.size)
+        assertEquals("newest", history.first().summary)
+        assertEquals("oldest kept", history[1].summary)
+    }
+
+    @Test
+    fun `VLT-03 a write prunes stale events for every contact, not just the edited one`() = runTest {
+        // Android keeps ONE flat history list for the whole vault (iOS nests
+        // it per contact), so the prune is blob-wide by construction. That is
+        // the point — the quota is on the blob, not per contact — and FCH-04
+        // never displays anything out of window anyway. Pinned so a future
+        // "only prune the contact I touched" refactor has to argue with a test.
+        val vault = Vault(InMemoryKeyValueStore(), InMemoryVaultKeyStore())
+        val a = vault.addContact("A")
+        val b = vault.addContact("B")
+        vault.recordAxisEdit(b.id, axis = "etat", summary = "B's ancient edit", at = 0L)
+
+        vault.recordAxisEdit(a.id, axis = "etat", summary = "A's fresh edit", at = Vault.HISTORY_RETENTION_MILLIS + 1_000L)
+
+        assertTrue("B's out-of-window event must go too", vault.getHistory(b.id).isEmpty())
+        assertEquals(1, vault.getHistory(a.id).size)
+    }
+
+    @Test
+    fun `VLT-03 blob size stays bounded under repeated edits`() = runTest {
+        val vault = newVault()
+        val contact = vault.addContact("Yara")
+        // The 50 back-dated events are what give the `== 100` assertion its
+        // teeth: without pruning the feed holds 150. A bare 100-edit loop
+        // would only assert that the loop ran, and passes with pruning off.
+        repeat(50) { i ->
+            vault.recordAxisEdit(contact.id, axis = "etat", summary = "ancient $i", at = i.toLong())
+        }
+        assertEquals("all 50 seeds land in the same epoch window", 50, vault.getHistory(contact.id).size)
+
+        val freshBase = Vault.HISTORY_RETENTION_MILLIS + 1_000L
+        repeat(100) { i ->
+            vault.recordAxisEdit(contact.id, axis = "etat", summary = "recent $i", at = freshBase + i)
+        }
+
+        val history = vault.getHistory(contact.id)
+        assertEquals("the 50 stale events are pruned; only the 100 in-window ones remain", 100, history.size)
+        assertTrue("nothing older than the window survives", history.all { it.at >= freshBase + 99 - Vault.HISTORY_RETENTION_MILLIS })
+    }
+
     @Test
     fun `FCH-05 confirmStillAccurate resets the timer and clears the snooze`() = runTest {
         val vault = newVault()
