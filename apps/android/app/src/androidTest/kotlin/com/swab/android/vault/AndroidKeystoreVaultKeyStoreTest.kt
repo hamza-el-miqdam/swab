@@ -4,7 +4,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.swab.android.storage.DataStoreKeyValueStore
 import com.swab.android.storage.KeyValueStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -53,5 +56,21 @@ class AndroidKeystoreVaultKeyStoreTest {
         val second = store.getOrCreateVaultKey()
 
         assertArrayEquals(first, second)
+    }
+
+    /** SUG-AND-010: concurrent first calls must mint exactly one key, never two. */
+    @Test
+    fun test_VLT01_concurrentGetOrCreate_singleKeyPersisted() = runBlocking {
+        val store = AndroidKeystoreVaultKeyStore(freshKv())
+
+        val (first, second) = withContext(Dispatchers.Default) {
+            val a = async { store.getOrCreateVaultKey() }
+            val b = async { store.getOrCreateVaultKey() }
+            a.await() to b.await()
+        }
+        val third = store.getOrCreateVaultKey()
+
+        assertArrayEquals(first, second)
+        assertArrayEquals(first, third)
     }
 }

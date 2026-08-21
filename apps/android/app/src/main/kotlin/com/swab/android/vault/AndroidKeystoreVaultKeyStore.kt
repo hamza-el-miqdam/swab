@@ -2,6 +2,8 @@ package com.swab.android.vault
 
 import com.swab.android.security.KeystoreEnvelope
 import com.swab.android.storage.KeyValueStore
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.security.SecureRandom
 
 /**
@@ -40,14 +42,23 @@ class AndroidKeystoreVaultKeyStore(private val kv: KeyValueStore) : VaultKeyStor
     }
 
     private val envelope = KeystoreEnvelope(WRAP_KEY_ALIAS)
+    private val mutex = Mutex()
 
-    override suspend fun getOrCreateVaultKey(): ByteArray {
+    // SUG-AND-010: check-then-act, so it must run under a lock — two
+    // concurrent first calls (SignupViewModel's own scope racing
+    // Vault.hydrate()/persist()) could otherwise both see no wrapped key,
+    // mint two different ones, and silently strand whichever loses the
+    // kv.set race (SUG-AND-004's crash loop). This is the sole caller that
+    // ever touches WRAP_KEY_ALIAS, so KeystoreEnvelope.getOrCreateKey()'s own
+    // check-then-act on that alias is covered transitively — it only runs
+    // inside this locked body.
+    override suspend fun getOrCreateVaultKey(): ByteArray = mutex.withLock {
         val wrapped = kv.get(VaultKeyStore.STORE_ID)
-        if (wrapped != null) return envelope.decrypt(wrapped)
+        if (wrapped != null) return@withLock envelope.decrypt(wrapped)
 
         val vaultKey = ByteArray(VaultKeyStore.KEY_LENGTH_BYTES)
         SecureRandom().nextBytes(vaultKey)
         kv.set(VaultKeyStore.STORE_ID, envelope.encrypt(vaultKey))
-        return vaultKey
+        vaultKey
     }
 }

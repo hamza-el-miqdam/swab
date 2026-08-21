@@ -4,6 +4,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/android-CHANGELOG-pre-2026-08-15.md](../../docs/archive/android-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-21 — [VLT-01, ONB-02] SUG-AND-010 lock getOrCreateVaultKey against concurrent first calls
+
+- **What changed:** `AndroidKeystoreVaultKeyStore.getOrCreateVaultKey()` and `InMemoryVaultKeyStore.getOrCreateVaultKey()` now run their check-then-act body under a `Mutex` (same `kotlinx.coroutines.sync.Mutex` pattern as `Vault.kt`, no new dependency).
+- **Why:** the method was check-then-act with no synchronization. `SignupViewModel.verifyOtp` calls it in its own `viewModelScope`, independently of `Vault.hydrate()`/`persist()`'s calls — two concurrent first calls could both see no wrapped key, mint two different 32-byte keys, and whichever lost the `kv.set` race left its own data permanently undecryptable (SUG-AND-004's crash loop).
+- **Covered transitively:** `AndroidKeystoreVaultKeyStore` is the only caller that ever touches `WRAP_KEY_ALIAS`, so `KeystoreEnvelope.getOrCreateKey()`'s own check-then-act on that alias is now serialized too — no separate lock needed there.
+- **Tests:** new `VaultKeyStoreConcurrencyTest` (JVM, `InMemoryVaultKeyStore`, 50-way concurrent `getOrCreateVaultKey()` on `Dispatchers.Default` for real thread parallelism) — reliably fails pre-fix, deterministically passes post-fix. New instrumented `test_VLT01_concurrentGetOrCreate_singleKeyPersisted` in `AndroidKeystoreVaultKeyStoreTest` (real Keystore, runs in `scripts/e2e-android.sh`).
+- `./gradlew test` **157/157 per variant** (count includes the 6 cases SUG-AND-013 added on `main`; this PR adds 1), `jacocoDomainCoverageVerification` and `lintDebug` green. Mutation-checked: removing the `Mutex` from `InMemoryVaultKeyStore` fails the concurrency test on 3/3 runs. E2E gate not run this PR (no emulator available); CI's native matrix covers it.
+
 ## 2026-08-21 — [FCH-04] SUG-AND-013 prune vault history to 12 months on write, not just on read
 
 - **What changed:** `Vault.recordAxisEdit` now prunes `history` to the trailing 12 months (new `Vault.HISTORY_RETENTION_MILLIS`) inside its existing lock, in the same persist as the append. `FicheViewModel` drops its own local `TWELVE_MONTHS_MILLIS` and filters against `Vault.HISTORY_RETENTION_MILLIS` instead, so read- and write-time windows can't drift.

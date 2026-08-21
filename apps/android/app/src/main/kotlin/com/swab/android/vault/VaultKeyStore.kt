@@ -1,5 +1,7 @@
 package com.swab.android.vault
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.security.SecureRandom
 
 /**
@@ -17,7 +19,8 @@ interface VaultKeyStore {
      * Returns the existing 32-byte vault key, or generates and persists a
      * fresh one. Called right after OTP verification, before any
      * classification input is possible (ONB-02) — the key never leaves the
-     * device.
+     * device. SUG-AND-010: implementations MUST be safe under concurrent
+     * first-call; exactly one key may ever be minted per install.
      */
     suspend fun getOrCreateVaultKey(): ByteArray
 
@@ -29,16 +32,17 @@ interface VaultKeyStore {
 
 /** JVM test fake — holds the key in memory only. */
 class InMemoryVaultKeyStore : VaultKeyStore {
+    private val mutex = Mutex()
     private var key: ByteArray? = null
 
-    override suspend fun getOrCreateVaultKey(): ByteArray {
+    override suspend fun getOrCreateVaultKey(): ByteArray = mutex.withLock {
         val existing = key
         if (existing != null) {
-            return existing
+            return@withLock existing
         }
         val fresh = ByteArray(VaultKeyStore.KEY_LENGTH_BYTES)
         SecureRandom().nextBytes(fresh)
         key = fresh
-        return fresh
+        fresh
     }
 }
