@@ -78,23 +78,28 @@ public actor FileKeyValueStore: KeyValueStore {
         persist()
     }
 
-    /// G3: a dropped write here is not observable to `KeyValueStore`
-    /// callers (`set` returns `Void`) — report it instead of discarding it.
-    /// `errorDescription` is a fixed code, never `localizedDescription`
-    /// (which for `Error.write` failures can embed the file path).
-    ///
     /// SUG-IOS-009: `.completeFileProtectionUnlessOpen` matches the
     /// Keychain-backed wrap key's `WhenUnlockedThisDeviceOnly`
     /// (`SecureStore.swift`) — `UnlessOpen` rather than the strictest class
     /// so a write already in flight isn't invalidated by the device
     /// locking mid-write; revisit if SUG-IOS-002 adds writes while locked.
+    ///
+    /// Exposed so tests can assert what `persist()` *requests*: the class the
+    /// filesystem ends up reporting is host-dependent (see
+    /// `KeyValueStoreTests`), so the request is the only portable contract.
+    public static let writeOptions: Data.WritingOptions = [.atomic, .completeFileProtectionUnlessOpen]
+
+    /// G3: a dropped write here is not observable to `KeyValueStore`
+    /// callers (`set` returns `Void`) — report it instead of discarding it.
+    /// `errorDescription` is a fixed code, never `localizedDescription`
+    /// (which for `Error.write` failures can embed the file path).
     private func persist() {
         guard let data = try? JSONEncoder().encode(cache) else {
             reporter.report(ReportedError(domain: "storage.kv", operation: "persist", errorDescription: "encodeFailed"))
             return
         }
         do {
-            try data.write(to: url, options: [.atomic, .completeFileProtectionUnlessOpen])
+            try data.write(to: url, options: Self.writeOptions)
         } catch {
             reporter.report(ReportedError(domain: "storage.kv", operation: "persist", errorDescription: "writeFailed"))
         }

@@ -91,13 +91,51 @@ final class FileKeyValueStoreTests: XCTestCase {
     /// counter, not secret on its own, but should carry the same
     /// defense-in-depth as the Keychain-backed wrap key
     /// (`SecureStore.swift`'s `WhenUnlockedThisDeviceOnly`).
-    func test_write_setsCompleteFileProtectionUnlessOpen() async throws {
+    ///
+    /// Asserts what `persist()` *requests*, which is the only portable
+    /// contract: `SwabCoreTests` runs on the macOS host (`swift test`), and
+    /// macOS honours data-protection classes inconsistently — see
+    /// `test_write_appliesCompleteFileProtection_whereTheHostHonoursIt`.
+    /// Has teeth because `persist()` passes exactly this value to
+    /// `Data.write(to:options:)`; dropping the option here changes the write.
+    func test_write_requestsCompleteFileProtectionUnlessOpen() {
+        XCTAssertTrue(
+            FileKeyValueStore.writeOptions.contains(.completeFileProtectionUnlessOpen),
+            "the on-disk vault file must carry the same protection class as its Keychain wrap key"
+        )
+        XCTAssertTrue(
+            FileKeyValueStore.writeOptions.contains(.atomic),
+            "a torn write would leave the vault blob unparseable"
+        )
+    }
+
+    /// The end-to-end half of the assertion above: the file really does come
+    /// out of `persist()` carrying the class, on hosts that implement data
+    /// protection at all.
+    ///
+    /// Whether the host does is established independently, by a control write
+    /// with no protection option: if the control and the probe land on the
+    /// same class, the platform is ignoring protection classes entirely and
+    /// there is nothing here to assert. macOS 26 honours them (the probe
+    /// reports `completeUnlessOpen`); the macOS 15 CI runner does not (both
+    /// report the volume default `completeUntilFirstUserAuthentication`),
+    /// which is why this cannot be a plain unconditional assertion.
+    func test_write_appliesCompleteFileProtection_whereTheHostHonoursIt() async throws {
+        let controlURL = makeTempURL()
+        defer { try? FileManager.default.removeItem(at: controlURL) }
+        try Data("control".utf8).write(to: controlURL, options: [.atomic])
+        let controlClass = try controlURL.resourceValues(forKeys: [.fileProtectionKey]).fileProtection
+
         let url = makeTempURL()
         defer { try? FileManager.default.removeItem(at: url) }
         let store = FileKeyValueStore(url: url)
         await store.set("k", value: "v")
-
         let values = try url.resourceValues(forKeys: [.fileProtectionKey])
+
+        try XCTSkipIf(
+            values.fileProtection == controlClass,
+            "host does not implement data-protection classes (both writes report \(String(describing: controlClass))) — the requested-options test covers the contract instead"
+        )
         XCTAssertEqual(values.fileProtection, .completeUnlessOpen)
     }
 }
