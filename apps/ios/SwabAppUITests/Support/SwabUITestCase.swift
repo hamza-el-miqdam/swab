@@ -27,11 +27,16 @@ class SwabUITestCase: XCTestCase {
 
     /// Launches with the reset hook. Pass `seedLegacyVault: true` to also
     /// exercise the pre-FS-03 vault backward-compat seam end-to-end
-    /// (`UITestHooks.seedLegacyVaultArgument` in `App/SwabApp.swift`).
-    func launchApp(seedLegacyVault: Bool = false) {
+    /// (`UITestHooks.seedLegacyVaultArgument` in `App/SwabApp.swift`), or
+    /// `seedCorruptVault: true` to seed an undecryptable blob
+    /// (`UITestHooks.seedCorruptVaultArgument`, SUG-IOS-004).
+    func launchApp(seedLegacyVault: Bool = false, seedCorruptVault: Bool = false) {
         var args = ["--uitesting-reset"]
         if seedLegacyVault {
             args.append("--uitesting-seed-legacy-vault")
+        }
+        if seedCorruptVault {
+            args.append("--uitesting-seed-corrupt-vault")
         }
         app.launchArguments = args
         app.launch()

@@ -86,8 +86,16 @@ public struct CarteView: View {
         RadialMapView(contacts: viewModel.contacts, onTapContact: viewModel.select)
             .frame(maxWidth: .infinity)
 
-        // MAP-06: a calm, non-alarming empty state — no progress framing.
-        if viewModel.contacts.isEmpty {
+        // SUG-IOS-004: an unreadable vault is NOT the same state as a
+        // genuinely empty one — showing MAP-06's calm empty copy here would
+        // be silent data loss. Checked before the empty-state branch since
+        // an unreadable vault also reports zero contacts.
+        if viewModel.loadState == .unreadable {
+            Text(Fr.t(.carteUnreadable))
+                .swabType(DesignTokens.Typography.base, relativeTo: .body)
+                .foregroundStyle(Color(hex: CarteTheme.textDim))
+        } else if viewModel.contacts.isEmpty {
+            // MAP-06: a calm, non-alarming empty state — no progress framing.
             Text(Fr.t(.carteEmpty))
                 .swabType(DesignTokens.Typography.base, relativeTo: .body)
                 .foregroundStyle(Color(hex: CarteTheme.textDim))

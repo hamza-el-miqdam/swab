@@ -28,6 +28,11 @@ private enum UITestHooks {
     /// backward-compat contract `VaultContact.init(from:)` promises, but
     /// exercised end-to-end instead of at the unit level.
     static let seedLegacyVaultArgument = "--uitesting-seed-legacy-vault"
+    /// SUG-IOS-004: seeds a blob that is NOT valid ciphertext under any key
+    /// this process will hold, so a UI test can assert the app renders the
+    /// honest "unreadable" state (`Fr.carteUnreadable`) instead of the calm
+    /// MAP-06 empty-map copy — the exact silent-data-loss bug this fixes.
+    static let seedCorruptVaultArgument = "--uitesting-seed-corrupt-vault"
     private static let keychainService = "com.swab.app"
     /// Mirrors `VaultKeyStore.storeId` (internal to `SwabCore`) — a stable,
     /// documented cross-platform key name, not a guessed implementation
@@ -49,8 +54,11 @@ private enum UITestHooks {
         ]
         SecItemDelete(keychainQuery as CFDictionary)
 
-        guard args.contains(seedLegacyVaultArgument) else { return }
-        seedLegacyVault(storeURL: storeURL, secureStore: secureStore)
+        if args.contains(seedLegacyVaultArgument) {
+            seedLegacyVault(storeURL: storeURL, secureStore: secureStore)
+        } else if args.contains(seedCorruptVaultArgument) {
+            seedCorruptVault(storeURL: storeURL)
+        }
     }
 
     private static func seedLegacyVault(storeURL: URL, secureStore: SecureStore) {
@@ -74,6 +82,24 @@ private enum UITestHooks {
             try data.write(to: storeURL, options: .atomic)
         } catch {
             assertionFailure("UI test legacy vault seed failed: \(error)")
+        }
+    }
+
+    /// SUG-IOS-004: deliberately NOT valid AES-GCM ciphertext for any key —
+    /// `Vault.hydrate()` must surface this as `VaultError.unreadable`, never
+    /// silently decrypt/decode it. No secure-store seeding needed: a fresh
+    /// vault key is minted on first access, same as any other fresh install.
+    private static func seedCorruptVault(storeURL: URL) {
+        do {
+            let seeded: [String: String] = [
+                "vault.blob.v1": "not-a-valid-ciphertext-blob",
+                "vault.version.v1": "1",
+                "onboarding.step.v1": "complete",
+            ]
+            let data = try JSONEncoder().encode(seeded)
+            try data.write(to: storeURL, options: .atomic)
+        } catch {
+            assertionFailure("UI test corrupt vault seed failed: \(error)")
         }
     }
 }

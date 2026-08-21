@@ -255,3 +255,4 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 | Map node size must not collapse on high-density screens | Wave 2 (`Float.toDp()` double conversion) | Android `test_densityRegression_placedNodeSizeIsNotCollapsed` |
 | « Ouvrir la fiche » must be enabled in the peek sheet | Wave 2→3 regression | both platforms' MAP-04 tests |
 | Pre-FS-03 vault blob must load without crash | Wave 3 vault shape change | both platforms' legacy-vault backward-compat tests |
+| Corrupt/undecryptable vault must show the honest "unreadable" state, never the calm empty-map copy | SUG-IOS-004 (silent data loss) | iOS `test_VLT05_corruptVault_showsHonestUnreadableState` |

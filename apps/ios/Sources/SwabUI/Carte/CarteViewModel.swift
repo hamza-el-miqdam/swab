@@ -11,7 +11,15 @@ import SwabCore
 @MainActor
 @Observable
 public final class CarteViewModel {
+    /// SUG-IOS-004 / VLT-01 / MAP-06: distinguishes "no data yet"/"genuinely
+    /// no contacts" from "data exists but couldn't be read" — the two must
+    /// never render the same calm-empty copy (that was silent data loss).
+    public enum LoadState: Equatable {
+        case loading, loaded, unreadable
+    }
+
     public private(set) var contacts: [VaultContact] = []
+    public private(set) var loadState: LoadState = .loading
     public var listMode = false
     public var legendOpen = false
     public var selected: VaultContact?
@@ -38,11 +46,13 @@ public final class CarteViewModel {
     public func refresh() async {
         do {
             contacts = try await vault.getContacts()
+            loadState = .loaded
         } catch {
             reporter.report(
                 ReportedError(domain: "carte.vault", operation: "refresh", errorDescription: VaultError.reportCode(for: error))
             )
             contacts = []
+            loadState = .unreadable
         }
     }
 
