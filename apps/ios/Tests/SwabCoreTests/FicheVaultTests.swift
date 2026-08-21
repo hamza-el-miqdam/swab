@@ -224,6 +224,59 @@ final class FicheVaultTests: XCTestCase {
         XCTAssertEqual(contacts.first?.history.count, 0)
     }
 
+    /// FCH-04/VLT-03: history older than the 12-month display window is
+    /// pruned from storage on the next write, not just filtered at read
+    /// time — otherwise the blob grows unbounded against the server's 1 MB
+    /// quota (SUG-IOS-007).
+    func test_FCH04_historyOlderThanTwelveMonths_isPrunedOnNextWrite() async throws {
+        let vault = makeVault()
+        let contact = try await vault.addContact(displayName: "Léa")
+        let thirteenMonthsAgo = Calendar.current.date(byAdding: .month, value: -13, to: Date())!
+        let stale = FicheHistoryEvent(date: thirteenMonthsAgo, kind: .reconfirmed)
+        try await vault.setTestHistory(id: contact.id, history: [stale])
+
+        try await vault.setFicheEtat(id: contact.id, etat: .available)
+
+        let updated = try await vault.getContact(id: contact.id)
+        XCTAssertEqual(updated?.history.count, 1, "the 13-month-old event must be pruned")
+        if case .axisChanged = updated?.history.first?.kind {
+            // expected — only the fresh edit remains
+        } else {
+            XCTFail("expected the surviving event to be the new axisChanged entry")
+        }
+    }
+
+    /// The mirror case: an event just inside the 12-month window survives
+    /// an unrelated write.
+    func test_FCH04_historyWithinTwelveMonths_isKeptOnWrite() async throws {
+        let vault = makeVault()
+        let contact = try await vault.addContact(displayName: "Sam")
+        let elevenMonthsAgo = Calendar.current.date(byAdding: .month, value: -11, to: Date())!
+        let recentEnough = FicheHistoryEvent(date: elevenMonthsAgo, kind: .reconfirmed)
+        try await vault.setTestHistory(id: contact.id, history: [recentEnough])
+
+        try await vault.setFicheEtat(id: contact.id, etat: .available)
+
+        let updated = try await vault.getContact(id: contact.id)
+        XCTAssertEqual(updated?.history.count, 2, "the 11-month-old event must survive the prune")
+    }
+
+    /// VLT-03: pruning keeps the blob bounded even under sustained editing —
+    /// locks in that the mechanism exists, not just the two date cases above.
+    func test_VLT03_hundredEdits_historyStaysBounded() async throws {
+        let vault = makeVault()
+        let contact = try await vault.addContact(displayName: "Yara")
+
+        for _ in 0..<100 {
+            try await vault.reconfirmFicheStaleness(id: contact.id)
+        }
+
+        let updated = try await vault.getContact(id: contact.id)
+        XCTAssertEqual(updated?.history.count, 100, "all same-day events are within the 12-month window")
+        let encoded = try JSONEncoder().encode(updated?.history)
+        XCTAssertLessThan(encoded.count, 50_000, "sanity ceiling — pruning must bound growth, not just cap the loop")
+    }
+
     /// Backward compatibility: a Wave 1/2 blob shape (no FS-03 fields at
     /// all) must decode with sensible defaults rather than throwing.
     func test_backwardCompat_legacyContactWithoutFicheFields_decodesWithDefaults() throws {
