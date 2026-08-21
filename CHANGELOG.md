@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-21 — Reconcile `suggestions/` open-vs-done bookkeeping
+
+- **What changed:** moved seven shipped suggestions into `done/<area>/` — `SUG-IOS-004` (#105), `SUG-IOS-005` (#103), `SUG-IOS-007` (#107), `SUG-IOS-009` (#111), `SUG-IOS-012` (#104), `SUG-AND-010` (#109), `SUG-AND-012` (#102) — and updated `suggestions/README.md`: iOS 6 open/12 done, Android 2 open/16 done, **32 open / 84 done** (116 total, unchanged). Also fixed two `SUG-AND-013` links left pointing at its old path by #108.
+- **Why:** all seven had shipped with changelog entries but were still filed as open, so the README overstated remaining work by seven and several links 404'd. The drift was flagged in #108; this is the sweep it asked for.
+- **Resolution notes** added to `SUG-IOS-009` and `SUG-AND-010`, the two reviewed in depth at merge time. The other five were merged in earlier sessions and were moved without back-filling notes rather than inventing detail — the shipped behaviour is recorded in their area changelogs.
+- **Gotcha for future PRs:** moving the file is the *implementing* PR's own bookkeeping, and the scope guard permits it from any area (`SHARED_ALLOWED_PREFIXES` includes `suggestions/`). Skipping it is what caused this drift; a sweep like this should not be needed again.
+
 ## 2026-08-19 — [agents] New Agent 11: Code Review Specialist (area:review)
 
 - **Why:** every specialist ships code and writes its own changelog entry, but nothing in the roster reviews the result. Adds `agents/review-specialist.md` as the source of truth, rendered to `.claude/agents/review-specialist.md`. It comments findings with `file:line` + a failure scenario and approves only on verified evidence; it never pushes to a PR branch, never merges, and writes no changelog entry for reviewing.
