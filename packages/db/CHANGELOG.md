@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-21 — [SUG-DB-004, IDT-04, ENV-09] Close the last two named test gaps: full-graph deletion cascade + concurrent match race
+
+- **Problem:** SUG-DB-004 ("packages/db has zero tests") was overtaken by events — every subsequent `SUG-DB-*` PR since ADR-001 stage 2 added its own PGlite cases to `tests/migrations.test.ts`, so migrations/constraints/seed coverage now exists (89 tests). But data-specialist.md's two named acceptance tests were still missing in their explicit form: rule 2's full-object-graph deletion test and rule 5's *concurrent* (not just sequential) reciprocal-match race.
+- **Fix:** two additions to `tests/migrations.test.ts`, no schema change (the `onDelete: Cascade` FKs and `@@unique([envieAId, envieBId])` this proves already exist): `test_IDT04_deletion_zero_orphans` builds one full graph for a user — vault, device, a link they own AND one where they're the target, an envie they author AND one they only receive, a match, a proposal — deletes the user once, and asserts zero rows remain across all nine tables in one query. `test_ENV09_reciprocal_race_single_match` fires two `Promise.allSettled` inserts of the same canonical pair and asserts exactly one commits.
+- **Gotcha:** PGlite is single-process, so the race test can't reproduce two real Postgres backends contending on the wire — it proves the constraint arbitrates correctly regardless of arrival order, which is the half of the guarantee this layer owns. True multi-connection timing is `apps/api`'s real-Postgres suite's to prove.
+- **Tests:** `pnpm --filter @repo/db test` — 89/89 green (67 in `migrations.test.ts`, up from 65).
+- **SUG-DB-004 is not fully closed by this PR:** its steps 1–2 (a `vitest.config.ts` carrying G2's 80% line threshold, and `test` running `vitest run --coverage`) are still open — `@vitest/coverage-v8` isn't a devDependency here, so `packages/db` is the one package the coverage gate never applies to. That needs its own PR with the G4 dependency justification; don't mark the suggestion done until it lands.
+
 ## 2026-08-19 — [SUG-DB-011, VLT-02] Typed error helpers: `isUniqueViolation`/`isForeignKeyViolation`
 
 - **Problem:** `packages/db/src/index.ts` re-exports `@prisma/client` wholesale but offered no blessed way to discriminate a P2002/P2003 from any other failure, so `apps/api/src/prisma-repo.ts` had to `instanceof Prisma.PrismaClientKnownRequestError` by hand in two places. (`prisma-repo.ts` already gets `Prisma` through `@repo/db`'s re-export, not a direct `@prisma/client` import, so the line-29 packaging comment itself was never violated — the ad hoc part is the duplicated `instanceof`/code check, not the import path.)
