@@ -5,6 +5,14 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md](../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
 
+## 2026-08-21 — [VLT-01, VLT-02, ONB-08, SUG-IOS-009] `FileKeyValueStore` writes the vault blob+version pair atomically, gains file protection
+
+- **What changed:** `KeyValueStore` gains `setMany(_:)` (default: loops over `set`, fine for `InMemoryKeyValueStore`); `FileKeyValueStore` overrides it to mutate every entry in the cache and persist once. `Vault.persist(_:)` now calls `kv.setMany([blobKey: blob, versionKey: version])` instead of two sequential `set` calls. `FileKeyValueStore`'s writes also add `.completeFileProtectionUnlessOpen` alongside the existing `.atomic`.
+- **Why:** the blob and its version were two separate full-file writes; a crash between them left a stale version next to a fresh blob (harmless for decryption, but could trigger an avoidable VLT-02 409 loop). The file held only `.atomic` protection while the Keychain-backed wrap key already commits to `WhenUnlockedThisDeviceOnly` — the on-disk ciphertext file should carry comparable defense-in-depth.
+- **Scoped down from the audit suggestion:** skipped the `lastPersistError`/`onPersistFailure` hook — SUG-IOS-005 already wired a constructor-injected `ErrorReporter` into `FileKeyValueStore.persist()` that reports write/encode failures, which supersedes that step; redoing it would have meant two competing observability paths.
+- `.completeFileProtectionUnlessOpen`, not the stricter `.completeFileProtection` — a write already in flight shouldn't be invalidated by the device locking mid-write; revisit if SUG-IOS-002's background sync ever needs to write while locked.
+- Verified: `xcrun swift test` 154/154; mutation-tested — reverting `Vault.persist` to two `set` calls fails the new spy-based test, and the file-protection resource-value assertion was checked against `/tmp` on the macOS host toolchain to confirm the option isn't iOS-only.
+
 ## 2026-08-21 — [FCH-04, VLT-03, SUG-IOS-007] Fiche history is pruned to 12 months on every write
 
 - **What changed:** `Vault.recordAxisEdit` and `Vault.reconfirmFicheStaleness` now prune `contact.history` to the last 12 months (relative to the write's own timestamp) inside the same mutate-then-persist transaction, via a new private `prunedHistory(_:now:)` helper. Previously only `FicheViewModel.recentHistory` filtered at read time — storage retained every event forever.

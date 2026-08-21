@@ -70,4 +70,34 @@ final class FileKeyValueStoreTests: XCTestCase {
         let value = await reopened.get("k")
         XCTAssertEqual(value, "second")
     }
+
+    /// SUG-IOS-009: `setMany` must land every entry in one file write, not
+    /// one `set` per key — a crash between two separate writes is exactly
+    /// how `Vault.persist`'s blob/version pair could land mismatched.
+    func test_setMany_persistsAllKeysAcrossReopen() async {
+        let url = makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let store = FileKeyValueStore(url: url)
+        await store.setMany(["a": "1", "b": "2"])
+
+        let reopened = FileKeyValueStore(url: url)
+        let a = await reopened.get("a")
+        let b = await reopened.get("b")
+        XCTAssertEqual(a, "1")
+        XCTAssertEqual(b, "2")
+    }
+
+    /// SUG-IOS-009: the vault blob/version pair is ciphertext + a version
+    /// counter, not secret on its own, but should carry the same
+    /// defense-in-depth as the Keychain-backed wrap key
+    /// (`SecureStore.swift`'s `WhenUnlockedThisDeviceOnly`).
+    func test_write_setsCompleteFileProtectionUnlessOpen() async throws {
+        let url = makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let store = FileKeyValueStore(url: url)
+        await store.set("k", value: "v")
+
+        let values = try url.resourceValues(forKeys: [.fileProtectionKey])
+        XCTAssertEqual(values.fileProtection, .completeUnlessOpen)
+    }
 }

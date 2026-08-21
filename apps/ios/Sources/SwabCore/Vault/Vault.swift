@@ -223,8 +223,9 @@ public actor Vault {
         let json = try JSONEncoder().encode(data)
         let plaintext = String(decoding: json, as: UTF8.self)
         let blob = try VaultCrypto.encrypt(plaintext: plaintext, key: key)
-        await kv.set(Self.blobKey, value: blob)
-        await kv.set(Self.versionKey, value: String(version))
+        // SUG-IOS-009: one batched write — two separate `set` calls could
+        // leave a crash between them with the new blob but the old version.
+        await kv.setMany([Self.blobKey: blob, Self.versionKey: String(version)])
         cache = data
     }
 

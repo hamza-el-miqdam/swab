@@ -7,6 +7,21 @@ import Foundation
 public protocol KeyValueStore: Sendable {
     func get(_ key: String) async -> String?
     func set(_ key: String, value: String) async
+    /// SUG-IOS-009: write several keys as one logical unit. The default
+    /// implementation loops over `set` (fine for `InMemoryKeyValueStore`,
+    /// which has no torn-write risk); `FileKeyValueStore` overrides it to
+    /// do a single file write, since two separate writes to a pair like the
+    /// vault blob + its version could leave a crash between them with a
+    /// stale version next to a fresh blob.
+    func setMany(_ entries: [String: String]) async
+}
+
+extension KeyValueStore {
+    public func setMany(_ entries: [String: String]) async {
+        for (key, value) in entries {
+            await set(key, value: value)
+        }
+    }
 }
 
 /// Test double / ephemeral in-process store.
@@ -53,17 +68,33 @@ public actor FileKeyValueStore: KeyValueStore {
         persist()
     }
 
+    /// SUG-IOS-009: mutate every entry in memory first, then persist once —
+    /// one file write instead of one per key, so a pair like the vault blob
+    /// + its version either both land or neither does.
+    public func setMany(_ entries: [String: String]) async {
+        for (key, value) in entries {
+            cache[key] = value
+        }
+        persist()
+    }
+
     /// G3: a dropped write here is not observable to `KeyValueStore`
     /// callers (`set` returns `Void`) — report it instead of discarding it.
     /// `errorDescription` is a fixed code, never `localizedDescription`
     /// (which for `Error.write` failures can embed the file path).
+    ///
+    /// SUG-IOS-009: `.completeFileProtectionUnlessOpen` matches the
+    /// Keychain-backed wrap key's `WhenUnlockedThisDeviceOnly`
+    /// (`SecureStore.swift`) — `UnlessOpen` rather than the strictest class
+    /// so a write already in flight isn't invalidated by the device
+    /// locking mid-write; revisit if SUG-IOS-002 adds writes while locked.
     private func persist() {
         guard let data = try? JSONEncoder().encode(cache) else {
             reporter.report(ReportedError(domain: "storage.kv", operation: "persist", errorDescription: "encodeFailed"))
             return
         }
         do {
-            try data.write(to: url, options: .atomic)
+            try data.write(to: url, options: [.atomic, .completeFileProtectionUnlessOpen])
         } catch {
             reporter.report(ReportedError(domain: "storage.kv", operation: "persist", errorDescription: "writeFailed"))
         }

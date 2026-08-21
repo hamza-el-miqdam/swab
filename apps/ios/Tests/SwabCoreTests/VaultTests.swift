@@ -190,4 +190,45 @@ final class VaultTests: XCTestCase {
         XCTAssertFalse(blob!.contains("disponible"), "the pre-FCH-09 display copy")
         XCTAssertFalse(blob!.contains("available"), "nor the FCH-09 identifier now stored in its place")
     }
+
+    /// SUG-IOS-009: blob and version must land in one file write, not two —
+    /// a crash between separate writes could leave version N-1 next to blob
+    /// N. Spies on the underlying store to prove `persist` uses the batched
+    /// path rather than two `set` calls.
+    func test_VLT01_persist_writesBlobAndVersionInOneBatchedCall() async throws {
+        let kv = SetCallSpyingKeyValueStore()
+        let vault = Vault(kv: kv, secureStore: InMemorySecureStore())
+
+        _ = try await vault.addContact(displayName: "A")
+
+        let setCalls = await kv.setCalls
+        let setManyCalls = await kv.setManyCalls
+        XCTAssertEqual(setCalls, 0, "persist must not fall back to per-key set calls")
+        XCTAssertEqual(setManyCalls.count, 1)
+        XCTAssertEqual(setManyCalls.first?.keys.sorted(), ["vault.blob.v1", "vault.version.v1"])
+    }
+}
+
+/// Test-only spy distinguishing a batched `setMany` write from separate
+/// `set` calls — wraps `InMemoryKeyValueStore` for storage, records calls.
+private actor SetCallSpyingKeyValueStore: KeyValueStore {
+    private let inner = InMemoryKeyValueStore()
+    private(set) var setCalls = 0
+    private(set) var setManyCalls: [[String: String]] = []
+
+    func get(_ key: String) async -> String? {
+        await inner.get(key)
+    }
+
+    func set(_ key: String, value: String) async {
+        setCalls += 1
+        await inner.set(key, value: value)
+    }
+
+    func setMany(_ entries: [String: String]) async {
+        setManyCalls.append(entries)
+        for (key, value) in entries {
+            await inner.set(key, value: value)
+        }
+    }
 }
