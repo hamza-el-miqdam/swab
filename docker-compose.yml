@@ -74,7 +74,7 @@ services:
   # Chosen over DbGate/pgAdmin for footprint (free-tier laptop ethos).
   # Dev-stack only: never deploy this alongside a real environment (G1).
   adminer:
-    image: adminer:5
+    image: adminer:6
     environment:
       ADMINER_DEFAULT_SERVER: db
       ADMINER_DESIGN: dracula
