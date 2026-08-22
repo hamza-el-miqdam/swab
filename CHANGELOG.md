@@ -6,6 +6,15 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-22 — [OQ-FLT-2] Filter evaluation site is settled: on-device, two implementations
+
+- **What changed:** `docs/specs/FS-06-filtering.md` records **OQ-FLT-2 as RESOLVED — on-device**. Also drops the two now-dead conditionals it left behind: FLT-06's "and mirrored server-side if resolution runs there (ENV-05)", and the header's Backend scope "evaluation if resolution runs server-side" (Backend is rule storage only). `docs/STATUS.md`'s FS-06 note updated to match.
+- **Why:** bookkeeping, not a new decision. FS-05 `ENV-05` was corrected on 2026-08-16 to mandate on-device resolution; OQ-FLT-2 still carried the retracted premise that "ENV-05 now permits either". The structural reason is that the server stores filter rules (FLT-06) but **not** subgroup membership — the lattice is derived on-device and never persisted (SGR-07, OQ-SGR-2, VLT-01) — so it cannot resolve a portée on its own.
+- **Consequence for implementers:** `applyFilters` needs **exactly two** implementations, Swift + Kotlin. **No TypeScript evaluator.** The shared cross-platform test vectors are still required and must lock both — in a **new** file; `docs/migration/vault-test-vectors.json` is historical per ADR-001 and MUST NOT be extended.
+- **FS-06 stays ⚪ Not started** — the ambiguity is removed, the feature is not begun.
+- **Gotcha:** ADR-001's "Enabling" section still says filtering/subgroups/matching *can* be computed server-side. That bullet is the over-generalisation ENV-05's correction note retracts; it was left as-is (ADRs are historical records) — read ENV-05 and OQ-FLT-2 as the current rule, not that line.
+- **Not done here:** OQ-FLT-1 (which cases ship default rules) is still genuinely open. The French Notion mirror was not re-synced — deferred until the ADR-001 spec review settles, per `docs/STATUS.md`.
+
 ## 2026-08-21 — Reconcile `suggestions/` open-vs-done bookkeeping
 
 - **What changed:** moved seven shipped suggestions into `done/<area>/` — `SUG-IOS-004` (#105), `SUG-IOS-005` (#103), `SUG-IOS-007` (#107), `SUG-IOS-009` (#111), `SUG-IOS-012` (#104), `SUG-AND-010` (#109), `SUG-AND-012` (#102) — and updated `suggestions/README.md`: iOS 6 open/12 done, Android 2 open/16 done, **32 open / 84 done** (116 total, unchanged). Also fixed two `SUG-AND-013` links left pointing at its old path by #108.
