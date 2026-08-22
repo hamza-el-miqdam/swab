@@ -4,7 +4,7 @@
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 
-_Last updated: 2026-08-16_
+_Last updated: 2026-08-22_
 
 > **Native migration complete.** Mobile is native `apps/ios` + `apps/android`; RN knowledge in `docs/migration/` (see its README for what is still binding). Both E2E suites are a hard DoD gate (`scripts/e2e-{ios,android}.sh`). Open: FS-03 on-device walkthrough, E2E not in CI.
 
@@ -18,7 +18,7 @@ _Last updated: 2026-08-16_
 | FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04); FCH-09 stored identifiers done both platforms — stage-2 unblocked. |
 | FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | FCA stays on-device over the cache (OQ-SGR-2); names/pins/hidden are server-stored. |
 | FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | The only two-agent spec; OpenAPI seam not yet drafted. |
-| FS-06 | Filtering rules | ⚪ Not started | Mobile + Backend | Rules stored server-side; evaluation site still open (OQ-FLT-2). |
+| FS-06 | Filtering rules | ⚪ Not started | Mobile + Backend | Rules stored server-side; evaluation stays on-device (OQ-FLT-2 resolved 2026-08-22, per ENV-05) — Swift + Kotlin only, no TS evaluator. |
 
 Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance tests green) · 🟢⚠️ Implemented against a superseded design (green, but needs rework — see the note) · 🔵 Hardened (privacy audit passed)
 
