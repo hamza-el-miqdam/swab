@@ -50,7 +50,8 @@ class OnboardingCompletionOrderingTest {
         override suspend fun request(method: String, url: String, headers: Map<String, String>, body: String?): HttpResponse {
             stepsAtRequestTime += OnboardingStateStore(kv).getStep()
             if (fail) throw IOException("network unreachable")
-            return HttpResponse(200, """{"blob":"x","version":2}""")
+            // What apps/api actually returns from POST /vault: {version} only.
+            return HttpResponse(200, """{"version":2}""")
         }
     }
 

@@ -82,7 +82,15 @@ private object Routes {
  * onboarding flow, sharing one bottom nav bar via [MainScaffold].
  */
 class MainActivity : ComponentActivity() {
-    private var container: AppContainer? = null
+    /**
+     * The process-wide container (SUG-AND-001 review F3) — NEVER a fresh one
+     * per `onCreate`. `viewModel { }` initializers do not re-run after an
+     * Activity recreation, so a per-Activity container left the surviving
+     * ViewModels writing to a dead `Vault`/`SyncScheduler` while the
+     * lifecycle triggers below drove a new, permanently-empty one. Pinned by
+     * `SyncAcrossRecreationE2ETest`.
+     */
+    private val container: AppContainer by lazy { SwabApplication.from(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,8 +105,9 @@ class MainActivity : ComponentActivity() {
         // anything hydrates the vault.
         E2ESeedHooks.apply(intent, applicationContext)
 
-        val container = AppContainer(applicationContext)
-        this.container = container
+        // Touched only AFTER the seed hook: the container is created lazily,
+        // so this is the first thing that can hydrate the vault.
+        val container = this.container
 
         setContent {
             SwabTheme {
@@ -110,7 +119,8 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * VLT-04 "app background" trigger (SUG-AND-001). `onStop` rather than a
+     * VLT-10 replay trigger: "app background" (SUG-AND-001 — an engineering
+     * choice; the current FS-07 names no trigger). `onStop` rather than a
      * `ProcessLifecycleOwner` observer: that needs
      * `androidx.lifecycle:lifecycle-process`, and a new dependency for one
      * callback isn't justifiable (G4). The cost of the simpler choice is that
@@ -119,7 +129,7 @@ class MainActivity : ComponentActivity() {
      */
     override fun onStop() {
         super.onStop()
-        container?.syncScheduler?.onAppBackground()
+        container.syncScheduler.onAppBackground()
     }
 
     /**
@@ -130,7 +140,7 @@ class MainActivity : ComponentActivity() {
      */
     override fun onStart() {
         super.onStart()
-        container?.syncScheduler?.onAppForeground()
+        container.syncScheduler.onAppForeground()
     }
 }
 
@@ -145,7 +155,7 @@ private fun SwabNavHost(container: AppContainer) {
     val onboardingViewModel: OnboardingViewModel = viewModel {
         OnboardingViewModel(
             container.onboardingStateStore,
-            // VLT-04 post-onboarding trigger. Runs only after the step is
+            // VLT-10 post-onboarding replay. Runs only after the step is
             // persisted — see OnboardingViewModel.complete.
             onCompleted = { container.syncScheduler.syncNow() },
         )
@@ -248,7 +258,7 @@ private fun SwabNavHost(container: AppContainer) {
         }
         composable(Routes.DONE) {
             DoneScreen(onFinish = {
-                // ONB-08 + VLT-04, in that order and not the other one:
+                // ONB-08 + VLT-10, in that order and not the other one:
                 // `complete()` persists COMPLETE first, then fires the
                 // post-onboarding sync (offline is fine — the scheduler keeps
                 // it queued and retries, silently).

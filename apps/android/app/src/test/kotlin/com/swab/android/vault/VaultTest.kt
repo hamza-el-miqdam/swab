@@ -364,6 +364,21 @@ class VaultTest {
     }
 
     @Test
+    fun test_VLT10_getEncryptedVault_materialisingTheFirstBlob_doesNotReArmTheScheduler() = runTest {
+        // getEncryptedVault() is what a SYNC calls. On a vault that has never
+        // been written it has to materialise a blob, and that write used to
+        // fire onPersist — so a read-only sync scheduled another sync, which
+        // materialised nothing and scheduled another. The notification is for
+        // user intent, not for the sync's own bookkeeping.
+        var notifications = 0
+        val vault = Vault(InMemoryKeyValueStore(), InMemoryVaultKeyStore(), onPersist = { notifications++ })
+
+        vault.getEncryptedVault()
+
+        assertEquals(0, notifications)
+    }
+
+    @Test
     fun test_VLT04_anUnreadableVaultNeverNotifies_soNothingPushesOverGoodServerData() = runTest {
         val kv = InMemoryKeyValueStore()
         kv.set("vault.blob.v1", "AAAA") // truncated — Unreadable (SUG-AND-004)

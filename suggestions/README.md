@@ -56,7 +56,7 @@ flowchart TD
     subgraph W2C["Track C — vault"]
         IOS001["IOS-001 unify vault shape · O"]
         LOGSEAM["IOS-005 · S — AND-012 · S (logging seam)"]
-        SYNC["IOS-002 · S — AND-001 · S (VLT-04 triggers)"]
+        SYNC["IOS-002 · S — AND-001 · S (VLT-10 write replay)"]
         DECRYPT["IOS-004 · S — AND-004 · S (decrypt-failure UX)"]
         VHARD["IOS-007/009/018 S · IOS-012 H<br/>AND-006/010/013 · S"]
     end
@@ -144,7 +144,7 @@ flowchart TD
 These findings surfaced independently in several areas and should be coordinated as single initiatives rather than per-area patches:
 
 - **Refresh-token flow is missing end-to-end.** The API issues refresh tokens but has no `/auth/refresh` endpoint ([SUG-API-002](backend/SUG-API-002-refresh-token-rotation.md), needs an `area:db` proposal), and both apps store the token but never use it, so expired sessions silently die ([SUG-IOS-003](ios/SUG-IOS-003-no-token-refresh-or-401-handling.md), [SUG-AND-007](android/SUG-AND-007-refresh-token-never-used.md)). Implement server-side first, then both clients.
-- **VLT-04 vault sync triggers unimplemented on both platforms.** Vault is pushed exactly once at end of onboarding ([SUG-IOS-002](ios/SUG-IOS-002-vlt04-sync-triggers-missing.md), [SUG-AND-001](done/android/SUG-AND-001-vault-sync-triggers-missing.md)).
+- **VLT-10 write replay — Android done, iOS in flight.** Both apps pushed exactly once, at the end of onboarding; Android now schedules replay (post-onboarding, background, foreground retry, debounced write burst, with backoff) via [SUG-AND-001](done/android/SUG-AND-001-vault-sync-triggers-missing.md), and [SUG-IOS-002](ios/SUG-IOS-002-vlt04-sync-triggers-missing.md) does the same for iOS. Both were written against VLT-04's pre-ADR-001 trigger list, which no longer exists; the work is re-cited to VLT-10.
 - **Vault blob shape diverges between iOS and Android** — the same blob is not round-trippable across platforms ([SUG-IOS-001](ios/SUG-IOS-001-vault-shape-cross-platform-divergence.md)). Agree the canonical shape before touching either client.
 - **Undecryptable vault = silent data loss (iOS) or crash loop (Android)** ([SUG-IOS-004](done/ios/SUG-IOS-004-undecryptable-vault-silently-empty.md), [SUG-AND-004](done/android/SUG-AND-004-vault-decrypt-failure-crashes-app.md)).
 - **Vault history grows unbounded vs the 1 MB quota** on both platforms ([SUG-IOS-007](done/ios/SUG-IOS-007-history-grows-unbounded-vs-quota.md), [SUG-AND-013](done/android/SUG-AND-013-history-unbounded-growth.md)).

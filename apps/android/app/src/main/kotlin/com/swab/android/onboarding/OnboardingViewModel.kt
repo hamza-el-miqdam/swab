@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 class OnboardingViewModel(
     private val store: OnboardingStateStore,
     /**
-     * VLT-04 post-onboarding sync trigger, invoked by [complete] only AFTER
+     * VLT-10 post-onboarding replay trigger, invoked by [complete] only AFTER
      * the step is persisted (SUG-AND-001 / ONB-08 — see [complete]).
      */
     private val onCompleted: suspend () -> Unit = {},

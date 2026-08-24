@@ -21,6 +21,7 @@ import com.swab.android.vault.VaultSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Manual DI root (no Hilt/Dagger — G4: one more dependency not justified for
@@ -37,13 +38,15 @@ class AppContainer(context: Context) {
     val vaultKeyStore: VaultKeyStore = AndroidKeystoreVaultKeyStore(keyValueStore)
     val tokenStore: SecureTokenStore = KeystoreTokenStore(keyValueStore)
     val onboardingStateStore = OnboardingStateStore(keyValueStore)
-    // SUG-AND-001 / VLT-04: every persisted write notifies the scheduler.
+    // SUG-AND-001 / VLT-10: every persisted write notifies the scheduler.
     // Deliberate forward reference — the three collaborators form a cycle
     // (vault notifies scheduler -> scheduler flushes vaultSync -> vaultSync
     // reads vault), and the lambda only ever runs on a write, long after this
     // constructor returns. Doing it with a callback instead of an injected
-    // collaborator is what keeps the vault package free of any network or
-    // sync import (SyncTriggerWiringStructuralTest).
+    // collaborator is what keeps `Vault` itself free of any network or sync
+    // import (SyncTriggerWiringStructuralTest). Its neighbour `VaultSync` is
+    // in the same package and does import both — the guard is on the class
+    // that holds the classification data, not on the package.
     // (Explicit types: the cycle below is unresolvable for type inference.)
     val vault: Vault = Vault(keyValueStore, vaultKeyStore, onPersist = { syncScheduler.onWrite() })
     val apiClient: ApiClient = ApiClient(
@@ -69,4 +72,20 @@ class AppContainer(context: Context) {
         isEnabled = { onboardingStateStore.getStep() == OnboardingStep.COMPLETE },
         logger = logger,
     )
+
+    init {
+        // FS-01 acceptance 1: onboarding completed in airplane mode must sync
+        // when connectivity returns — possibly in a LATER process. Nothing
+        // about that failed push survives a restart (the queue counters are
+        // in memory), and both cross-session triggers guard on
+        // `hasPendingWork`, so without arming here the placements would wait
+        // for the user's next edit. One process = at most one redundant
+        // push, and backoff bounds the repeats. Mirrors iOS `SwabApp`.
+        syncScope.launch {
+            if (onboardingStateStore.getStep() == OnboardingStep.COMPLETE) {
+                syncScheduler.assumePendingFromPreviousSession()
+                syncScheduler.onAppForeground()
+            }
+        }
+    }
 }

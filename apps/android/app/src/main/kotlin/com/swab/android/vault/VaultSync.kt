@@ -8,7 +8,8 @@ import com.swab.android.observability.SwabLogger
 import com.swab.android.sync.PendingSync
 
 /**
- * Vault sync (FS-07 VLT-02/VLT-04): pushes the opaque encrypted blob. On 409
+ * Vault sync (FS-07 VLT-02, replayed per VLT-10): pushes the opaque
+ * encrypted blob. On 409
  * the client re-pulls the server version and retries once — single-device
  * POC, last write wins. Port of apps/mobile/src/vault/sync.ts.
  */

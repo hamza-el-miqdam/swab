@@ -54,13 +54,22 @@ class SyncSchedulerTest {
         }
     }
 
-    /** Records every request the real VaultSync path makes; always answers 200. */
+    /**
+     * Records every request the real VaultSync path makes.
+     *
+     * The 200 body is what `apps/api/src/routes/vault.ts` actually sends back
+     * from `POST /vault` — `{"version":N}`, with NO `blob`. This double used
+     * to answer `{"blob":"x","version":N}`, which no server ever sends; that
+     * fidelity gap is precisely why issue #127's decode defect
+     * (`ApiClient.pushVault` decodes the reply as `EncryptedVaultBlobDto`,
+     * whose `blob` is required) survived a green suite.
+     */
     private class RecordingTransport : HttpTransport {
         val requests = mutableListOf<Pair<String, String>>()
 
         override suspend fun request(method: String, url: String, headers: Map<String, String>, body: String?): HttpResponse {
             requests += method to url
-            return HttpResponse(200, """{"blob":"x","version":9}""")
+            return HttpResponse(200, """{"version":9}""")
         }
     }
 
@@ -325,5 +334,220 @@ class SyncSchedulerTest {
         runCurrent()
 
         assertEquals(listOf("POST" to "http://test/vault"), transport.requests)
+    }
+
+    // ------------------------------------------------------------ backoff
+
+    @Test
+    fun test_VLT10_backoffDelay_isOneFreeRetryThenDoublingToACap() {
+        // Pure function, table-driven: no scheduler, no clock.
+        assertEquals(0L, SyncScheduler.backoffDelayMillis(0))
+        assertEquals(0L, SyncScheduler.backoffDelayMillis(1)) // the free retry
+        assertEquals(60_000L, SyncScheduler.backoffDelayMillis(2))
+        assertEquals(120_000L, SyncScheduler.backoffDelayMillis(3))
+        assertEquals(240_000L, SyncScheduler.backoffDelayMillis(4))
+        assertEquals(3_600_000L, SyncScheduler.backoffDelayMillis(12)) // capped
+        assertEquals(3_600_000L, SyncScheduler.backoffDelayMillis(500)) // still capped, no overflow
+    }
+
+    @Test
+    fun test_VLT10_aPushThatCannotSucceed_backsOffInsteadOfRetryingOnEveryTrigger() = runTest {
+        // Issue #127: the first push of a new account can never succeed. With
+        // onStart and onStop both wired, every app switch used to cost another
+        // doomed request, forever.
+        val pending = RecordingPendingSync(failures = Int.MAX_VALUE)
+        val scheduler = SyncScheduler(
+            pending,
+            backgroundScope,
+            nowMillis = { testScheduler.currentTime },
+        )
+
+        scheduler.syncNow()
+        runCurrent()
+        assertEquals(1, pending.flushes)
+        assertFalse("the first failure gets a free retry", scheduler.isBackingOff)
+
+        scheduler.onAppForeground()
+        runCurrent()
+        assertEquals(2, pending.flushes)
+        assertTrue("a second identical failure starts the cool-off", scheduler.isBackingOff)
+
+        // Every trigger during the cool-off is refused.
+        repeat(5) {
+            scheduler.onAppForeground()
+            scheduler.onAppBackground()
+            scheduler.onWrite()
+            runCurrent()
+        }
+        advanceTimeBy(59_000)
+        runCurrent()
+        assertEquals("no further attempt while backing off", 2, pending.flushes)
+
+        // ...and resumes once the window passes.
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertFalse(scheduler.isBackingOff)
+        scheduler.onAppForeground()
+        runCurrent()
+        assertEquals(3, pending.flushes)
+    }
+
+    @Test
+    fun test_VLT10_aDifferentFailureMode_resetsTheBackoff() = runTest {
+        // A changed failure is new information, not more of the same.
+        val pending = object : PendingSync {
+            var flushes = 0
+                private set
+
+            override suspend fun flush() {
+                flushes++
+                if (flushes % 2 == 1) throw IOException("offline") else throw IllegalStateException("other")
+            }
+        }
+        val scheduler = SyncScheduler(pending, backgroundScope, nowMillis = { testScheduler.currentTime })
+
+        repeat(4) {
+            scheduler.syncNow()
+            runCurrent()
+        }
+
+        assertEquals("alternating failure types must never start a cool-off", 4, pending.flushes)
+        assertFalse(scheduler.isBackingOff)
+    }
+
+    @Test
+    fun test_VLT10_aSuccessfulPush_clearsTheBackoff() = runTest {
+        val pending = RecordingPendingSync(failures = 2)
+        val scheduler = SyncScheduler(pending, backgroundScope, nowMillis = { testScheduler.currentTime })
+
+        scheduler.syncNow()
+        runCurrent()
+        scheduler.onAppForeground()
+        runCurrent()
+        assertTrue(scheduler.isBackingOff)
+
+        advanceTimeBy(61_000)
+        runCurrent()
+        scheduler.onAppForeground()
+        runCurrent()
+
+        assertEquals(3, pending.flushes)
+        assertFalse("a success must clear the cool-off", scheduler.isBackingOff)
+        assertFalse(scheduler.hasPendingWork)
+    }
+
+    // ------------------------------------------- launch arming + timers
+
+    @Test
+    fun test_VLT10_assumePendingFromPreviousSession_makesTheNextTriggerFlush() = runTest {
+        // A push that failed in a previous process leaves no in-memory trace,
+        // and both cross-session triggers guard on hasPendingWork.
+        val pending = RecordingPendingSync()
+        val scheduler = SyncScheduler(pending, backgroundScope)
+
+        scheduler.onAppForeground()
+        runCurrent()
+        assertEquals("nothing is assumed without arming", 0, pending.flushes)
+
+        scheduler.assumePendingFromPreviousSession()
+        assertTrue(scheduler.hasPendingWork)
+
+        scheduler.onAppForeground()
+        runCurrent()
+        assertEquals(1, pending.flushes)
+        assertFalse(scheduler.hasPendingWork)
+    }
+
+    @Test
+    fun test_VLT10_syncNow_cancelsAPendingDebounce_soTheBurstIsNotPushedTwice() = runTest {
+        val pending = RecordingPendingSync()
+        val scheduler = SyncScheduler(pending, backgroundScope, debounceMillis = 30_000L)
+
+        scheduler.onWrite()
+        advanceTimeBy(1_000)
+        scheduler.syncNow()
+        runCurrent()
+        assertEquals(1, pending.flushes)
+
+        advanceTimeBy(60_000)
+        runCurrent()
+        assertEquals("the cancelled debounce must not fire a second push", 1, pending.flushes)
+    }
+
+    @Test
+    fun test_VLT10_foregroundFlush_cancelsTheArmedDebounce_noRedundantSecondPush() = runTest {
+        val pending = RecordingPendingSync()
+        val scheduler = SyncScheduler(pending, backgroundScope, debounceMillis = 30_000L)
+
+        scheduler.onWrite() // arms a 30s debounce
+        advanceTimeBy(1_000)
+        scheduler.onAppForeground() // user comes straight back; this flushes
+        runCurrent()
+        assertEquals(1, pending.flushes)
+
+        advanceTimeBy(60_000)
+        runCurrent()
+        assertEquals("byte-identical state must not be pushed again 30s later", 1, pending.flushes)
+    }
+
+    @Test
+    fun test_VLT10_cancellingTheDebounceTimer_doesNotCancelAPushAlreadyInFlight() = runTest {
+        // The timer job used to wrap the flush, so any later cancelDebounce()
+        // killed an in-flight push. A server that had already accepted the
+        // write then disagreed with the local version on every later push.
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val pending = object : PendingSync {
+            var completed = 0
+                private set
+
+            override suspend fun flush() {
+                if (!started.isCompleted) started.complete(Unit)
+                release.await()
+                completed++
+            }
+        }
+        val scheduler = SyncScheduler(pending, backgroundScope, debounceMillis = 30_000L)
+
+        scheduler.onWrite()
+        advanceTimeBy(30_000)
+        runCurrent()
+        assertTrue("the debounced push must have started", started.isCompleted)
+
+        // A new write arrives mid-push and re-arms the timer, cancelling the old one.
+        scheduler.onWrite()
+        runCurrent()
+
+        release.complete(Unit)
+        runCurrent()
+
+        assertEquals("the in-flight push must run to completion, not be cancelled", 1, pending.completed)
+    }
+
+    // ------------------------------------------------ issue #127 (not fixed here)
+
+    @Test
+    fun test_VLT10_againstTheRealServerResponseShape_thePushStillFails_issue127() = runTest {
+        // NOT a specification of desired behaviour — a pin on a known, open
+        // defect (#127) so it cannot be forgotten, and so the doubles in this
+        // file can never drift back to a response no server sends.
+        //
+        // `POST /vault` answers `{"version":N}`; `ApiClient.pushVault` decodes
+        // it as `EncryptedVaultBlobDto`, whose `blob` is required, so even a
+        // 200 throws. Fixing #127 will turn this red — at which point the
+        // assertions below flip to "the push succeeded and nothing is queued".
+        val kv = InMemoryKeyValueStore()
+        val transport = RecordingTransport()
+        lateinit var scheduler: SyncScheduler
+        val vault = Vault(kv, InMemoryVaultKeyStore(), onPersist = { scheduler.onWrite() })
+        val vaultSync = VaultSync(vault, ApiClient(transport, baseUrl = "http://test"))
+        scheduler = SyncScheduler(vaultSync, backgroundScope, nowMillis = { testScheduler.currentTime })
+
+        vault.addContact("Nadia")
+        scheduler.syncNow()
+        runCurrent()
+
+        assertTrue("the request is made", transport.requests.isNotEmpty())
+        assertTrue("but it cannot succeed today, so the work stays queued", scheduler.hasPendingWork)
     }
 }

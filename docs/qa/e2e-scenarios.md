@@ -234,12 +234,18 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 ### VLT-03 — Server never decodes the blob
 - Privacy invariant at the wire/server level — `api-integration` (the wire-level privacy test), re-verified on every schema change.
 
-### VLT-04 — Sync triggers, offline between syncs
-- **Given** vault writes,
-- **When** the app backgrounds / finishes onboarding / bursts writes,
-- **Then** sync fires (debounced ≥ 30 s) and the app remains fully functional offline between syncs.
-- **And given** a push that failed with no connectivity, **when** the app is brought back to the foreground, **then** the queued write is retried — nothing is surfaced to the user either way.
-- Verification note: trigger scheduling is unit-covered (Android `SyncSchedulerTest`, on virtual time — a 30 s debounce is not driveable in an on-device suite); the offline-functionality half is exercised by the map/fiche E2E flows against local state.
+### VLT-04 — Local cache for offline reads, queued writes
+- **Given** zero connectivity,
+- **When** the user opens the map, a fiche or sous-groupes,
+- **Then** everything renders from the local cache and writes are queued rather than lost.
+- Verification note: the offline-read half is exercised by the map/fiche E2E flows against local state. *When* the queue is replayed is VLT-10 below — this row no longer names triggers, and neither does the requirement since the 2026-08-16 ADR-001 rewrite (`ab3f241`).
+
+### VLT-10 — Queued writes replay on reconnect
+- **Given** writes made offline (including a whole onboarding completed in airplane mode),
+- **When** connectivity returns,
+- **Then** they reach the server with no data loss and no duplicate application.
+- **And given** a push that keeps failing the same way, **when** triggers keep arriving, **then** attempts back off rather than repeating on every one — failures stay silent in the UI.
+- Verification note: replay scheduling is unit-covered on virtual time (a 30 s debounce and a 1 h backoff cap are not driveable in an on-device suite) — iOS `SyncSchedulerTests`, Android `SyncSchedulerTest`. Android additionally pins on-device, in `SyncAcrossRecreationE2ETest`, that an edit made after an Activity recreation still reaches the scheduler the lifecycle triggers drive. The triggers themselves (post-onboarding, background, foreground, debounced write burst) are engineering choices, not spec text.
 
 ### VLT-05 — Device loss honesty
 - **Given** the surface where vault backup is explained,

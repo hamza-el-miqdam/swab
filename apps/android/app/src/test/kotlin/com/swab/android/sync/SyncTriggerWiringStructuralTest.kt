@@ -1,6 +1,7 @@
 package com.swab.android.sync
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -71,6 +72,26 @@ class SyncTriggerWiringStructuralTest {
         assertTrue(
             "sync must be triggered through SyncScheduler, never called directly: $offenders",
             offenders.isEmpty(),
+        )
+    }
+
+    @Test
+    fun test_VLT10_exactlyOneAppContainerIsEverConstructed_andNotByTheActivity() {
+        // Review finding F3. A container per `MainActivity.onCreate` meant a
+        // rotation left the surviving ViewModels (whose `viewModel { }`
+        // initializers do not re-run — SUG-AND-003) writing to a dead vault
+        // and scheduler while the lifecycle triggers drove a fresh, always
+        // empty one. Behaviour is pinned on-device by
+        // `SyncAcrossRecreationE2ETest`; this is the cheap guard that stops
+        // the wiring drifting back.
+        val constructors = mainSources().filter { file ->
+            Regex("""(?<!class )\bAppContainer\(""").containsMatchIn(file.readText())
+        }.map { it.name }.sorted()
+
+        assertEquals(
+            "AppContainer must be constructed exactly once, by SwabApplication: found $constructors",
+            listOf("SwabApplication.kt"),
+            constructors,
         )
     }
 
