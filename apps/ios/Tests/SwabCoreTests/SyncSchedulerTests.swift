@@ -1,5 +1,5 @@
-/// FS-07 VLT-04 sync triggers (SUG-IOS-002): post-onboarding, app
-/// background, and a write burst debounced ≥ 30 s — plus the ONB-05 gate
+/// FS-07 VLT-04/VLT-10 write replay (SUG-IOS-002): post-onboarding, app
+/// background, and a write burst debounced 30 s — plus the ONB-05 gate
 /// that keeps every one of them silent until onboarding closes.
 ///
 /// Everything here runs on injected `now`/`sleep` seams (`ManualClock`), so
@@ -97,11 +97,20 @@ private final class ManualClock: @unchecked Sendable {
 private actor SpyPendingSyncWork: PendingSyncWork {
     enum Outcome: Sendable {
         case succeed
-        case fail
+        case failing(code: String)
+
+        /// The common case: a failure that always reports the same code, so
+        /// repeats count as "the same failure" for backoff purposes.
+        static var fail: Outcome { .failing(code: "spyFailure") }
     }
 
     private var outcomes: [Outcome]
     private(set) var flushCount = 0
+    /// True while a flush is parked inside the hold gate.
+    private(set) var isFlushInFlight = false
+
+    private var holdRemaining = 0
+    private var holdGate: CheckedContinuation<Void, Never>?
 
     /// `outcomes` is consumed one per flush; once exhausted every further
     /// flush succeeds.
@@ -109,17 +118,38 @@ private actor SpyPendingSyncWork: PendingSyncWork {
         self.outcomes = outcomes
     }
 
+    /// Park the next `count` flushes inside `flushPendingWork()` until
+    /// `releaseHeldFlush()` — lets a test land a write while a push is
+    /// genuinely in flight (F4).
+    func holdNextFlushes(_ count: Int) {
+        holdRemaining = count
+    }
+
+    func releaseHeldFlush() {
+        let gate = holdGate
+        holdGate = nil
+        gate?.resume()
+    }
+
     func flushPendingWork() async throws {
         flushCount += 1
+        isFlushInFlight = true
+        defer { isFlushInFlight = false }
+        if holdRemaining > 0 {
+            holdRemaining -= 1
+            await withCheckedContinuation { holdGate = $0 }
+        }
         let outcome = outcomes.isEmpty ? Outcome.succeed : outcomes.removeFirst()
-        if case .fail = outcome {
-            throw SpyError.flushFailed
+        if case .failing(let code) = outcome {
+            throw SpyError(code: code)
         }
     }
 
-    nonisolated func reportCode(for error: Error) -> String { "spyFailure" }
+    nonisolated func reportCode(for error: Error) -> String {
+        (error as? SpyError)?.code ?? "unknown"
+    }
 
-    enum SpyError: Error { case flushFailed }
+    struct SpyError: Error { let code: String }
 }
 
 private final class RecordingReporter: ErrorReporter, @unchecked Sendable {
@@ -227,7 +257,7 @@ final class SyncSchedulerTests: XCTestCase {
         XCTAssertTrue(clock.requestedSleeps.isEmpty, "and nothing ever slept on a debounce window")
     }
 
-    // MARK: VLT-04 trigger 1 — post-onboarding
+    // MARK: Trigger 1 — post-onboarding
 
     func test_VLT04_onboardingCompletion_syncsImmediately() async throws {
         let work = SpyPendingSyncWork()
@@ -237,7 +267,7 @@ final class SyncSchedulerTests: XCTestCase {
         await scheduler.onboardingDidComplete()
 
         let count = await work.flushCount
-        XCTAssertEqual(count, 1, "finishing onboarding is a VLT-04 trigger and pushes straight away")
+        XCTAssertEqual(count, 1, "finishing onboarding pushes straight away")
         let needsSync = await scheduler.needsSync
         XCTAssertFalse(needsSync, "a successful push leaves nothing pending")
     }
@@ -264,7 +294,7 @@ final class SyncSchedulerTests: XCTestCase {
         XCTAssertEqual(afterBackground, 1, "the first background of a resumed session flushes what was never confirmed")
     }
 
-    // MARK: VLT-04 trigger 2 — write burst, debounced ≥ 30 s
+    // MARK: Trigger 2 — write burst, debounced
 
     func test_VLT04_writeBurst_debouncedToSingleSyncAfterThirtySeconds() async throws {
         let work = SpyPendingSyncWork()
@@ -295,13 +325,17 @@ final class SyncSchedulerTests: XCTestCase {
         await scheduler.drainDebounceForTests()
 
         let total = await work.flushCount
-        XCTAssertEqual(total, 1, "a write burst coalesces into exactly one push (VLT-04)")
+        XCTAssertEqual(total, 1, "a write burst coalesces into exactly one push")
         XCTAssertEqual(
             clock.requestedSleeps.first,
             SyncScheduler.debounceInterval,
             "the first debounce sleep is the full window"
         )
-        XCTAssertGreaterThanOrEqual(SyncScheduler.debounceInterval, 30, "VLT-04 requires ≥ 30 s")
+        XCTAssertGreaterThanOrEqual(
+            SyncScheduler.debounceInterval,
+            30,
+            "chosen window: long enough that a burst of edits is one push, not a spec constant"
+        )
     }
 
     /// Guards the plan's own gotcha: "the debounce task must be
@@ -328,7 +362,7 @@ final class SyncSchedulerTests: XCTestCase {
         XCTAssertEqual(total, 1)
     }
 
-    // MARK: VLT-04 trigger 3 — app background
+    // MARK: Trigger 3 — app background
 
     func test_VLT04_backgroundTrigger_syncsImmediately() async throws {
         let work = SpyPendingSyncWork()
@@ -416,22 +450,176 @@ final class SyncSchedulerTests: XCTestCase {
 
     /// A Keychain read can fail while the device is locked
     /// (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, `SecureStore.swift`),
-    /// which is exactly when a background sync runs. Repeated failures stay
-    /// retryable and must never spin.
-    func test_VLT04_repeatedFailures_stayRetryableAndDoNotHotLoop() async throws {
+    /// which is exactly when a background sync runs. One attempt per trigger,
+    /// never an internal retry storm.
+    func test_VLT10_eachTriggerCostsAtMostOneAttempt() async throws {
+        let work = SpyPendingSyncWork(outcomes: [.fail, .fail])
+        let clock = ManualClock()
+        let scheduler = makeScheduler(work: work, clock: clock)
+        await scheduler.activate()
+
+        await scheduler.syncNow()
+        await scheduler.syncNow()
+
+        let total = await work.flushCount
+        XCTAssertEqual(total, 2, "one attempt per trigger — no internal retry storm")
+        let needsSync = await scheduler.needsSync
+        XCTAssertTrue(needsSync)
+    }
+
+    /// Issue #127: the first vault push can never succeed today (the server
+    /// only creates a row when `baseVersion === 0`, which this client never
+    /// sends). Without backoff, every debounce and every backgrounding would
+    /// retry it — ~45 doomed requests over an evening, for 100% of new
+    /// accounts, indefinitely. One free retry, then cool off.
+    func test_VLT10_aPushThatKeepsFailingTheSameWay_backsOffInsteadOfRetryingEveryTrigger() async throws {
+        let work = SpyPendingSyncWork(outcomes: [.fail, .fail, .fail, .fail])
+        let clock = ManualClock()
+        let scheduler = makeScheduler(work: work, clock: clock)
+        await scheduler.activate()
+
+        await scheduler.syncNow()
+        let afterFirst = await work.flushCount
+        XCTAssertEqual(afterFirst, 1)
+        let backingOffAfterFirst = await scheduler.isBackingOff
+        XCTAssertFalse(backingOffAfterFirst, "the first failure gets one free retry — it is usually transient")
+
+        // Second identical failure arms the backoff.
+        await scheduler.syncNow()
+        let afterSecond = await work.flushCount
+        XCTAssertEqual(afterSecond, 2)
+        let backingOff = await scheduler.isBackingOff
+        XCTAssertTrue(backingOff)
+
+        // Every further trigger inside the window is free — no HTTP at all.
+        await scheduler.syncNow()
+        await scheduler.appDidEnterBackground()
+        await scheduler.noteLocalWrite()
+        clock.advance(by: SyncScheduler.debounceInterval)
+        await scheduler.drainDebounceForTests()
+
+        let duringBackoff = await work.flushCount
+        XCTAssertEqual(duringBackoff, 2, "no trigger may re-attempt a push that is cooling off")
+        let stillPending = await scheduler.needsSync
+        XCTAssertTrue(stillPending, "backing off is not giving up — the work is still owed")
+
+        // Once the window elapses, the next trigger tries again.
+        clock.advance(by: SyncScheduler.backoffBase)
+        await scheduler.syncNow()
+
+        let afterBackoff = await work.flushCount
+        XCTAssertEqual(afterBackoff, 3, "backoff delays the retry, it does not cancel it")
+    }
+
+    func test_VLT10_backoffGrows_andIsCapped() {
+        XCTAssertEqual(SyncScheduler.backoffDelay(afterConsecutiveFailures: 1), 0, "one free retry")
+        XCTAssertEqual(SyncScheduler.backoffDelay(afterConsecutiveFailures: 2), SyncScheduler.backoffBase)
+        XCTAssertEqual(SyncScheduler.backoffDelay(afterConsecutiveFailures: 3), SyncScheduler.backoffBase * 2)
+        XCTAssertEqual(SyncScheduler.backoffDelay(afterConsecutiveFailures: 4), SyncScheduler.backoffBase * 4)
+        XCTAssertEqual(
+            SyncScheduler.backoffDelay(afterConsecutiveFailures: 99),
+            SyncScheduler.backoffCap,
+            "an unbounded delay would strand the data forever"
+        )
+    }
+
+    /// A *different* failure is new information, not more of the same — it
+    /// resets the escalation so a genuinely transient error after a run of
+    /// permanent ones is not stuck behind an hour-long window.
+    func test_VLT10_aDifferentFailureCode_resetsTheBackoff() async throws {
+        let work = SpyPendingSyncWork(outcomes: [
+            .failing(code: "conflictPersisted"),
+            .failing(code: "conflictPersisted"),
+            .failing(code: "syncFailed"),
+        ])
+        let clock = ManualClock()
+        let scheduler = makeScheduler(work: work, clock: clock)
+        await scheduler.activate()
+
+        await scheduler.syncNow()
+        await scheduler.syncNow()
+        let backingOff = await scheduler.isBackingOff
+        XCTAssertTrue(backingOff, "two identical failures arm the backoff")
+
+        clock.advance(by: SyncScheduler.backoffBase)
+        await scheduler.syncNow()  // third attempt fails with a NEW code
+
+        let code = await scheduler.lastError
+        XCTAssertEqual(code, "syncFailed")
+        let backingOffAfterNewCode = await scheduler.isBackingOff
+        XCTAssertFalse(backingOffAfterNewCode, "a new failure mode starts its own free retry")
+    }
+
+    // MARK: A write landing during an in-flight flush
+
+    /// Reviewer's repro (PR #125 F4): write A → debounce fires → flush blocks
+    /// on a slow network → write B lands → B's trigger hits the `isFlushing`
+    /// guard → the debounce task has already nil'd itself → flush A returns
+    /// and B is pending with *nothing scheduled to push it*. `needsSync`
+    /// is in-memory, so a foreground kill loses that edit.
+    func test_VLT10_writeLandingDuringAnInFlightFlush_isNotStranded() async throws {
+        let work = SpyPendingSyncWork()
+        let clock = ManualClock()
+        let scheduler = makeScheduler(work: work, clock: clock)
+        await scheduler.activate()
+        await work.holdNextFlushes(1)
+
+        await scheduler.noteLocalWrite()
+        let inFlight = Task { await scheduler.syncNow() }
+        try await waitUntil("the first flush to be in flight") { await work.isFlushInFlight }
+
+        // Write B, then the trigger that would carry it — which is skipped
+        // because a flush is already running.
+        await scheduler.noteLocalWrite()
+        await scheduler.syncNow()
+        let duringFlush = await work.flushCount
+        XCTAssertEqual(duringFlush, 1, "sanity: the mid-flush trigger did not start a second push")
+
+        await work.releaseHeldFlush()
+        await inFlight.value
+
+        let total = await work.flushCount
+        XCTAssertEqual(total, 2, "the write that landed mid-flush is pushed, not stranded")
+        let needsSync = await scheduler.needsSync
+        XCTAssertFalse(needsSync, "nothing is left owed once the re-run completes")
+
+        // Tidy up the debounce armed by those writes.
+        clock.advance(by: SyncScheduler.debounceInterval)
+        await scheduler.drainDebounceForTests()
+    }
+
+    /// The re-run must not become a spin when the flush keeps failing:
+    /// backoff still applies to it.
+    func test_VLT10_reRunAfterAnInFlightTrigger_respectsBackoff() async throws {
         let work = SpyPendingSyncWork(outcomes: [.fail, .fail, .fail])
         let clock = ManualClock()
         let scheduler = makeScheduler(work: work, clock: clock)
         await scheduler.activate()
 
-        for _ in 0..<3 {
-            await scheduler.syncNow()
-        }
+        // Arm the backoff first (two identical failures).
+        await scheduler.syncNow()
+        await scheduler.syncNow()
+        let backingOff = await scheduler.isBackingOff
+        XCTAssertTrue(backingOff)
 
+        await work.holdNextFlushes(1)
+        clock.advance(by: SyncScheduler.backoffBase)
+        await scheduler.noteLocalWrite()
+        let inFlight = Task { await scheduler.syncNow() }
+        try await waitUntil("the retry flush to be in flight") { await work.isFlushInFlight }
+
+        await scheduler.noteLocalWrite()
+        await scheduler.syncNow()  // skipped: a flush is running
+        await work.releaseHeldFlush()
+        await inFlight.value
+
+        // That flush failed again, re-arming the backoff — so the pending
+        // re-run must NOT fire immediately.
         let total = await work.flushCount
-        XCTAssertEqual(total, 3, "one attempt per trigger — no internal retry storm")
-        let needsSync = await scheduler.needsSync
-        XCTAssertTrue(needsSync)
+        XCTAssertEqual(total, 3, "the mid-flush re-run is suppressed while cooling off")
+
+        clock.advance(by: SyncScheduler.debounceInterval)
+        await scheduler.drainDebounceForTests()
     }
 
     // MARK: Idle

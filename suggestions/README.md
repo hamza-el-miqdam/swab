@@ -144,7 +144,7 @@ flowchart TD
 These findings surfaced independently in several areas and should be coordinated as single initiatives rather than per-area patches:
 
 - **Refresh-token flow is missing end-to-end.** The API issues refresh tokens but has no `/auth/refresh` endpoint ([SUG-API-002](backend/SUG-API-002-refresh-token-rotation.md), needs an `area:db` proposal), and both apps store the token but never use it, so expired sessions silently die ([SUG-IOS-003](ios/SUG-IOS-003-no-token-refresh-or-401-handling.md), [SUG-AND-007](android/SUG-AND-007-refresh-token-never-used.md)). Implement server-side first, then both clients.
-- **VLT-04 vault sync triggers unimplemented on Android.** Vault is pushed exactly once at end of onboarding ([SUG-AND-001](android/SUG-AND-001-vault-sync-triggers-missing.md)). Fixed on iOS 2026-08-22 ([SUG-IOS-002](done/ios/SUG-IOS-002-vlt04-sync-triggers-missing.md)).
+- **Vault writes made after onboarding never reached the server** — the vault was pushed exactly once, at the end of onboarding, with no replay. Fixed on iOS 2026-08-24 ([SUG-IOS-002](done/ios/SUG-IOS-002-vlt04-sync-triggers-missing.md)); Android tracked separately ([SUG-AND-001](android/SUG-AND-001-vault-sync-triggers-missing.md)). Requirement re-cited to VLT-10 per ADR-001 — the pre-ADR VLT-04 trigger text no longer exists.
 - **Vault blob shape diverges between iOS and Android** — the same blob is not round-trippable across platforms ([SUG-IOS-001](ios/SUG-IOS-001-vault-shape-cross-platform-divergence.md)). Agree the canonical shape before touching either client.
 - **Undecryptable vault = silent data loss (iOS) or crash loop (Android)** ([SUG-IOS-004](done/ios/SUG-IOS-004-undecryptable-vault-silently-empty.md), [SUG-AND-004](done/android/SUG-AND-004-vault-decrypt-failure-crashes-app.md)).
 - **Vault history grows unbounded vs the 1 MB quota** on both platforms ([SUG-IOS-007](done/ios/SUG-IOS-007-history-grows-unbounded-vs-quota.md), [SUG-AND-013](done/android/SUG-AND-013-history-unbounded-growth.md)).
@@ -159,7 +159,7 @@ These findings surfaced independently in several areas and should be coordinated
 | # | Suggestion | Topic | Impact |
 |---|---|---|---|
 | 001 | [Vault shape diverges from Android — blob not round-trippable](ios/SUG-IOS-001-vault-shape-cross-platform-divergence.md) | correctness | high |
-| 002 | [VLT-04 sync triggers missing — vault syncs once at onboarding](done/ios/SUG-IOS-002-vlt04-sync-triggers-missing.md) | offline | high |
+| 002 | [Vault writes after onboarding never reach the server (no replay triggers)](done/ios/SUG-IOS-002-vlt04-sync-triggers-missing.md) | offline | high |
 | 003 | [No token refresh or 401 handling — expired session kills sync silently](ios/SUG-IOS-003-no-token-refresh-or-401-handling.md) | correctness | high |
 | 004 | [Undecryptable vault renders as calm empty map — silent data loss](done/ios/SUG-IOS-004-undecryptable-vault-silently-empty.md) | correctness | high |
 | 005 | [No error reporter or structured logging (G3)](done/ios/SUG-IOS-005-no-error-reporter-or-structured-logging.md) | architecture | medium |

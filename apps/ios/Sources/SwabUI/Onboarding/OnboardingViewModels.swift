@@ -313,21 +313,26 @@ public final class DoneViewModel {
         self.syncScheduler = syncScheduler
     }
 
-    /// VLT-04's post-onboarding trigger. Also the moment ONB-05's
-    /// onboarding-local window closes, so this is where the scheduler is
-    /// armed — before it, no trigger may put anything on the wire.
+    /// Completes onboarding, then fires the first push.
+    ///
+    /// **`.complete` is persisted BEFORE the push (ONB-08), never after.**
+    /// The push can block for up to `URLSession.shared`'s 60 s request
+    /// timeout, and a force-quit inside that window must not drop the user
+    /// back onto the completion screen they already passed. Nothing writes
+    /// to the vault between the two statements, so ONB-05 is unaffected —
+    /// the scheduler is still armed only as onboarding closes. Android does
+    /// the same in `OnboardingViewModel.complete()` (SUG-AND-001).
     ///
     /// Best-effort: offline completion is a first-class path (FS-01
-    /// acceptance 1). On failure the scheduler keeps `needsSync` set and the
-    /// next trigger (write burst / background) retries — which is the whole
-    /// point of routing through it instead of calling `VaultSync` directly.
-    /// G3: still wrapped in a signpost interval (duration only, no payload);
-    /// failure reporting now lives in the scheduler, where every trigger's
-    /// failures converge.
+    /// acceptance 1). On failure the scheduler keeps `needsSync` set and a
+    /// later trigger retries under backoff — the point of routing through it
+    /// rather than calling `VaultSync` directly. G3: still wrapped in a
+    /// signpost interval (duration only, no payload); failure reporting
+    /// lives in the scheduler, where every trigger's failures converge.
     public func finish() async {
+        await onboarding.setStep(.complete)
         let state = Self.signposter.beginInterval("sync")
         await syncScheduler.onboardingDidComplete()
         Self.signposter.endInterval("sync", state)
-        await onboarding.setStep(.complete)
     }
 }

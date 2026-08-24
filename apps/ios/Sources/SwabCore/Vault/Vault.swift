@@ -183,7 +183,7 @@ public actor Vault {
     private let keyStore: VaultKeyStore
     private var cache: VaultData?
     private var version = 1
-    /// VLT-04: fired after every persist that changes user data, so a sync
+    /// VLT-10: fired after every persist that changes user data, so a sync
     /// scheduler can debounce the write burst. Deliberately a bare closure
     /// and not a `VaultSync`/`SyncScheduler` reference — this module must
     /// stay ignorant of the network (the same MAP-05 layering that
@@ -408,7 +408,7 @@ public actor Vault {
         if blob == nil {
             // `notify: false` — materialising the blob so a push has
             // something to send is not a user write. Announcing it would
-            // re-arm the very debounce that triggered this sync (VLT-04).
+            // re-arm the very debounce that triggered this sync (VLT-10).
             try await persist(data, notify: false)
             blob = await kv.get(Self.blobKey)
         }

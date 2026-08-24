@@ -1,13 +1,28 @@
-/// FS-07 VLT-04 — *when* pending local work is pushed, decoupled from *what*
-/// that work is.
+/// FS-07 VLT-10 — *when* pending local work is replayed, decoupled from
+/// *what* that work is.
 ///
-/// VLT-04 names three triggers: post-onboarding, app background, and after
-/// any write burst (debounced ≥ 30 s). Before this type existed the iOS app
-/// pushed from exactly one place — `DoneViewModel.finish()` — so every fiche
-/// edit made after onboarding stayed on the device forever, and a single
-/// failed onboarding push was never retried. Offline onboarding completion
-/// is a first-class path (FS-01 acceptance 1), which made that one push the
-/// one most likely to fail.
+/// **What the spec actually requires.** VLT-10: "Offline writes queue in a
+/// durable local outbox and replay **in order** on reconnect." FS-01
+/// acceptance 1: placements made in airplane mode "sync to the server when
+/// connectivity returns (VLT-04), with no data loss". Before this type
+/// existed the iOS app pushed from exactly one place —
+/// `DoneViewModel.finish()` — so every fiche edit made after onboarding
+/// stayed on the device forever, and a single failed onboarding push was
+/// never retried. Offline onboarding completion is a first-class path, which
+/// made that one push the one most likely to fail.
+///
+/// **The specific triggers below are engineering choices, not requirements.**
+/// FS-07's VLT-04 named "app background, post-onboarding, after any write
+/// burst (debounced ≥30s)" until commit `ab3f241` (2026-08-16, ADR-001)
+/// replaced it with the local-cache wording it carries now. Nothing in the
+/// current spec names a trigger or an interval. Post-onboarding, background,
+/// and a 30 s debounce are this client's approximation of "on reconnect"
+/// while it has no reachability callback — change them freely if a better
+/// approximation appears; only the VLT-10 guarantee is binding.
+///
+/// **This is not the durable outbox VLT-10 asks for.** `needsSync` lives in
+/// memory, so a session killed between a failed push and the next trigger
+/// loses the retry. Durability arrives with ADR-001 stage 4.
 ///
 /// **Deliberately not coupled to `VaultSync`.** ADR-001 stage 4 replaces the
 /// vault blob with a local cache plus a durable offline outbox (VLT-10). The
@@ -37,7 +52,8 @@ extension PendingSyncWork {
 }
 
 public actor SyncScheduler {
-    /// VLT-04: "debounced ≥ 30 s".
+    /// Debounce window. An engineering choice, not a spec constant — see the
+    /// header: the current FS-07 names no interval.
     public static let debounceInterval: TimeInterval = 30
 
     public typealias Clock = @Sendable () -> Date
@@ -48,6 +64,24 @@ public actor SyncScheduler {
     public static let systemSleep: Sleeper = { interval in
         guard interval > 0 else { return }
         try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+    }
+
+    /// Backoff for a push that keeps failing the same way.
+    ///
+    /// One free retry (the first failure is very often transient — a tunnel,
+    /// a locked Keychain), then doubling from a minute up to an hour. Without
+    /// this a permanently-failing push retries on *every* trigger: while
+    /// issue #127 stands, the first push of every new account can never
+    /// succeed, so an evening of five edits and ten backgroundings would be
+    /// ~45 doomed requests. Failures are still reported (G3) — they are just
+    /// not re-attempted on a hair trigger.
+    public static let backoffBase: TimeInterval = 60
+    public static let backoffCap: TimeInterval = 3600
+
+    static func backoffDelay(afterConsecutiveFailures count: Int) -> TimeInterval {
+        guard count >= 2 else { return 0 }
+        let doublings = min(count - 2, 16)
+        return min(backoffBase * pow(2, Double(doublings)), backoffCap)
     }
 
     private let work: PendingSyncWork
@@ -69,6 +103,17 @@ public actor SyncScheduler {
     private var flushedGeneration = 0
     private var lastFlushFailed = false
 
+    /// A trigger that arrived while a flush was already running. The
+    /// in-flight flush re-runs for it rather than dropping it (see
+    /// `syncNow()`).
+    private var flushRequestedDuringFlush = false
+
+    /// Consecutive failures with the *same* report code, and the instant
+    /// before which no further attempt is made. A different code resets the
+    /// count — a changed failure is new information, not more of the same.
+    private var consecutiveIdenticalFailures = 0
+    private var retryNotBefore: Date?
+
     /// Fixed privacy-safe code of the last failure (G3), or nil after a
     /// confirmed push. Never a raw error string.
     public private(set) var lastError: String?
@@ -76,6 +121,12 @@ public actor SyncScheduler {
     /// True while the server has not confirmed the current local state.
     public var needsSync: Bool {
         writeGeneration != flushedGeneration || lastFlushFailed
+    }
+
+    /// True while a repeatedly-failing push is cooling off.
+    public var isBackingOff: Bool {
+        guard let retryNotBefore else { return false }
+        return now() < retryNotBefore
     }
 
     public init(
@@ -106,13 +157,13 @@ public actor SyncScheduler {
         writeGeneration += 1
     }
 
-    /// VLT-04 trigger 1 — post-onboarding.
+    /// Trigger 1 — post-onboarding.
     public func onboardingDidComplete() async {
         activate()
         await syncNow()
     }
 
-    /// VLT-04 trigger 2 — a local write. Debounced: a burst of edits
+    /// Trigger 2 — a local write. Debounced: a burst of edits
     /// coalesces into one push, `debounceInterval` after the last of them.
     public func noteLocalWrite() {
         guard isActive else { return }
@@ -121,7 +172,7 @@ public actor SyncScheduler {
         startDebounceIfNeeded()
     }
 
-    /// VLT-04 trigger 3 — the app went to the background. Cancels the
+    /// Trigger 3 — the app went to the background. Cancels the
     /// pending debounce (waiting it out in the background is exactly what
     /// there is no time for) and pushes immediately, if anything is pending.
     public func appDidEnterBackground() async {
@@ -131,32 +182,52 @@ public actor SyncScheduler {
         await syncNow()
     }
 
-    /// One flush attempt. Never throws: a failed sync is a normal state, not
-    /// an error the caller has to handle.
+    /// Flush whatever is pending. Never throws: a failed sync is a normal
+    /// state, not an error the caller has to handle.
     public func syncNow() async {
         guard isActive else { return }
-        // Actors are reentrant: a background trigger can land while a
-        // debounce-fired push is mid-flight. Skip rather than push twice —
-        // `attempted` below means the in-flight push cannot claim writes it
-        // did not carry, so anything newer stays pending for the next trigger.
-        guard !isFlushing else { return }
+        guard !isBackingOff else { return }
+        // Actors are reentrant: a trigger can land while a flush is already
+        // in flight. Record it rather than dropping it — the running flush
+        // re-runs below, so a write that arrives mid-push is never stranded
+        // with nothing scheduled to carry it.
+        guard !isFlushing else {
+            flushRequestedDuringFlush = true
+            return
+        }
         isFlushing = true
+        repeat {
+            flushRequestedDuringFlush = false
+            await performFlush()
+        } while flushRequestedDuringFlush && needsSync && !isBackingOff
+        isFlushing = false
+    }
+
+    private func performFlush() async {
+        // Captured BEFORE the await: a write landing mid-flush bumps
+        // `writeGeneration` past `attempted`, so this flush cannot claim
+        // work it did not carry.
         let attempted = writeGeneration
         do {
             try await work.flushPendingWork()
             flushedGeneration = attempted
             lastFlushFailed = false
             lastError = nil
+            consecutiveIdenticalFailures = 0
+            retryNotBefore = nil
         } catch {
             // Retryable by construction. The Keychain that holds the session
             // token is `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`
             // (`Identity/SecureStore.swift`), so a background sync running
             // after the device locks legitimately fails to read it; a
             // backgrounded push can also be cut short by suspension. Neither
-            // is fatal — `needsSync` stays true and the next trigger retries.
+            // is fatal — `needsSync` stays true and a later trigger retries.
             lastFlushFailed = true
             let code = work.reportCode(for: error)
+            consecutiveIdenticalFailures = (code == lastError) ? consecutiveIdenticalFailures + 1 : 1
             lastError = code
+            let delay = Self.backoffDelay(afterConsecutiveFailures: consecutiveIdenticalFailures)
+            retryNotBefore = delay > 0 ? now().addingTimeInterval(delay) : nil
             // `domain` stays "vault.sync": it is the established Console.app
             // category for this failure (see `OSLogErrorReporter`), inherited
             // from `DoneViewModel`. A stable log category, not a coupling —
@@ -165,7 +236,6 @@ public actor SyncScheduler {
                 ReportedError(domain: "vault.sync", operation: "sync", errorDescription: code)
             )
         }
-        isFlushing = false
     }
 
     // MARK: - Debounce
@@ -205,6 +275,10 @@ public actor SyncScheduler {
 
     private func debounceDidFire() async {
         debounceTask = nil
+        // Same guard as the background trigger: if a push already carried
+        // these writes (a backgrounding beat the debounce), there is nothing
+        // to send.
+        guard needsSync else { return }
         await syncNow()
     }
 
