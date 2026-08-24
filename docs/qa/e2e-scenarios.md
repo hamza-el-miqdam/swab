@@ -238,7 +238,7 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Given** vault writes,
 - **When** the app backgrounds / finishes onboarding / bursts writes,
 - **Then** sync fires (debounced ≥ 30 s) and the app remains fully functional offline between syncs.
-- Verification note: trigger scheduling is unit-covered; the offline-functionality half is exercised by the map/fiche E2E flows against local state.
+- Verification note: the offline-functionality half is exercised by the map/fiche E2E flows against local state. Trigger scheduling is unit-covered **on iOS only** (`SwabCore.SyncScheduler`, `SwabCoreTests.SyncSchedulerTests`, injected `now`/`sleep` seams — a 30 s debounce is not observable from XCUITest without making the suite time-dependent). **Android has no trigger implementation yet** (SUG-AND-001 open): its vault is pushed once, at the end of onboarding.
 
 ### VLT-05 — Device loss honesty
 - **Given** the surface where vault backup is explained,

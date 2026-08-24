@@ -5,6 +5,18 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md](../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
 
+## 2026-08-22 — [VLT-04, ONB-05, SUG-IOS-002] All three sync triggers, behind a scheduler that survives the outbox swap
+
+- **What changed:** new `Sources/SwabCore/Sync/SyncScheduler.swift` — a `PendingSyncWork` protocol plus an actor implementing VLT-04's three triggers: post-onboarding (`onboardingDidComplete()`), app background (`appDidEnterBackground()`, cancels the debounce and pushes now), and write burst (`noteLocalWrite()`, debounced 30 s from the *last* write). `Vault` gained a `setOnPersist` closure so it announces writes without importing anything network-shaped; `DoneViewModel` routes through the scheduler; `RootView` wires `scenePhase` and installs the hook.
+- **Why:** `VaultSync.sync()` had exactly one call site — `DoneViewModel.finish()`, `try?`, no retry. Every fiche edit after onboarding stayed on the device forever, and the one push that existed was the one most likely to fail, since offline onboarding completion is a first-class path (FS-01 acceptance 1). That made FS-01's first acceptance criterion false.
+- **Not coupled to `VaultSync`** — ADR-001 stage 4 replaces the blob with a durable outbox (VLT-10). The scheduler drives a `PendingSyncWork`; `VaultSync` conforms today, the outbox conforms later, and the triggers are untouched by the swap. Partial-throwaway risk accepted knowingly by the founder; this limits it.
+- **ONB-05 gate:** every trigger is inert until `activate()`. The persist hook is installed at launch but fires into a no-op during onboarding, so nothing goes on the wire while the local-only window is open.
+- **`activate()` marks work pending without pushing.** Resuming an onboarded install therefore flushes on its first background. Deliberate: nothing durable records an unconfirmed write yet (that is VLT-10), so the alternative to one redundant push per session is silently losing a session that died before its push landed.
+- **Gotcha — `getEncryptedVault()` persists with `notify: false`.** Materialising the blob for a push is not a user write; announcing it would re-arm the debounce that triggered the sync.
+- **Gotcha — a debounce test that never parks hangs instead of failing.** Both `ManualClock` barriers are now bounded (`waitUntil` XCTFails at 5 s), and `test_VLT04_backgroundTrigger_cancelsThePendingDebounce` advances the clock *before* draining. Found by mutation testing: an unbounded wait turned two of four mutations into a stalled suite rather than a red test.
+- **Follow-ups:** `needsSync` is in-memory, so a session killed between a failed push and the next trigger still loses the retry — the durable fix is VLT-10. Android is unchanged and still has no triggers (SUG-AND-001).
+- Verified: `xcrun swift test` 170/170; mutation-tested (ONB-05 gate, debounce deadline, background cancel, failure→`needsSync` — each reverts to a specific red test); `scripts/e2e-ios.sh` PASS, 17/17 XCUITests, zero drift.
+
 ## 2026-08-21 — [VLT-01, VLT-02, ONB-08, SUG-IOS-009] `FileKeyValueStore` writes the vault blob+version pair atomically, gains file protection
 
 - **What changed:** `KeyValueStore` gains `setMany(_:)` (default: loops over `set`, fine for `InMemoryKeyValueStore`); `FileKeyValueStore` overrides it to mutate every entry in the cache and persist once. `Vault.persist(_:)` now calls `kv.setMany([blobKey: blob, versionKey: version])` instead of two sequential `set` calls. `FileKeyValueStore`'s writes also add `.completeFileProtectionUnlessOpen` alongside the existing `.atomic`.

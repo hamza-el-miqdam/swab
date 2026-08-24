@@ -562,7 +562,7 @@
       "android": {
         "status": "unit-covered"
       },
-      "notes": "Trigger scheduling unit-covered; offline operation implicitly exercised by all map/fiche E2E flows running off local state."
+      "notes": "Two halves, verified differently. Offline reads: exercised on both platforms by every map/fiche E2E flow, which runs off local state. Sync triggers: iOS implements all three (post-onboarding, app background, ≥30s-debounced write burst) in SwabCore.SyncScheduler, unit-covered by SwabCoreTests.SyncSchedulerTests (test_VLT04_* / test_ONB05_beforeActivation_*) through injected now/sleep seams — not E2E-automated, because a 30s debounce and a real background push are not observable from XCUITest without making the suite time-dependent. Android has NO trigger implementation yet (SUG-AND-001 open): its vault is still pushed exactly once, at the end of onboarding, so `unit-covered` there covers the offline-read half only. Corrected 2026-08-22 (SUG-IOS-002) — the previous note claimed trigger scheduling was unit-covered on both platforms when neither had a single trigger test."
     },
     "VLT-05": {
       "fs": "FS-07",

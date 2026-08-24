@@ -305,33 +305,28 @@ public final class CalibrateViewModel {
 @Observable
 public final class DoneViewModel {
     private let onboarding: OnboardingStateStore
-    private let vaultSync: VaultSync
-    private let reporter: ErrorReporter
+    private let syncScheduler: SyncScheduler
     private static let signposter = OSSignposter(subsystem: "com.swab.ios", category: "vault.sync")
 
-    public init(
-        onboarding: OnboardingStateStore,
-        vaultSync: VaultSync,
-        reporter: ErrorReporter = NoopErrorReporter()
-    ) {
+    public init(onboarding: OnboardingStateStore, syncScheduler: SyncScheduler) {
         self.onboarding = onboarding
-        self.vaultSync = vaultSync
-        self.reporter = reporter
+        self.syncScheduler = syncScheduler
     }
 
-    /// Vault sync is attempted best-effort — offline completion is a
-    /// first-class path (FS-01 acceptance 1); sync retries later (VLT-04).
-    /// G3: wrapped in a signpost interval (duration only, no payload) and
-    /// reports a failure once instead of silently dropping it.
+    /// VLT-04's post-onboarding trigger. Also the moment ONB-05's
+    /// onboarding-local window closes, so this is where the scheduler is
+    /// armed — before it, no trigger may put anything on the wire.
+    ///
+    /// Best-effort: offline completion is a first-class path (FS-01
+    /// acceptance 1). On failure the scheduler keeps `needsSync` set and the
+    /// next trigger (write burst / background) retries — which is the whole
+    /// point of routing through it instead of calling `VaultSync` directly.
+    /// G3: still wrapped in a signpost interval (duration only, no payload);
+    /// failure reporting now lives in the scheduler, where every trigger's
+    /// failures converge.
     public func finish() async {
         let state = Self.signposter.beginInterval("sync")
-        do {
-            try await vaultSync.sync()
-        } catch {
-            reporter.report(
-                ReportedError(domain: "vault.sync", operation: "finish", errorDescription: VaultSyncError.reportCode(for: error))
-            )
-        }
+        await syncScheduler.onboardingDidComplete()
         Self.signposter.endInterval("sync", state)
         await onboarding.setStep(.complete)
     }

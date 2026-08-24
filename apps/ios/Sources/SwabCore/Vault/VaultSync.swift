@@ -47,3 +47,16 @@ public struct VaultSync: Sendable {
         }
     }
 }
+
+/// VLT-04: what `SyncScheduler` pushes today. ADR-001 stage 4 replaces the
+/// blob with a durable outbox (VLT-10) — that type conforms here instead and
+/// the triggers above it do not change.
+extension VaultSync: PendingSyncWork {
+    public func flushPendingWork() async throws {
+        try await sync()
+    }
+
+    public func reportCode(for error: Error) -> String {
+        VaultSyncError.reportCode(for: error)
+    }
+}

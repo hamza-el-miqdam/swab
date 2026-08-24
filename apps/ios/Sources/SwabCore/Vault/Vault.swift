@@ -183,10 +183,21 @@ public actor Vault {
     private let keyStore: VaultKeyStore
     private var cache: VaultData?
     private var version = 1
+    /// VLT-04: fired after every persist that changes user data, so a sync
+    /// scheduler can debounce the write burst. Deliberately a bare closure
+    /// and not a `VaultSync`/`SyncScheduler` reference — this module must
+    /// stay ignorant of the network (the same MAP-05 layering that
+    /// `CarteOfflineInvariantTests` polices from the other side).
+    private var onPersist: (@Sendable () -> Void)?
 
     public init(kv: KeyValueStore, secureStore: SecureStore) {
         self.kv = kv
         self.keyStore = VaultKeyStore(store: secureStore)
+    }
+
+    /// Installed once by the composition root (`App/SwabApp.swift`).
+    public func setOnPersist(_ handler: (@Sendable () -> Void)?) {
+        onPersist = handler
     }
 
     private func hydrate() async throws -> VaultData {
@@ -217,7 +228,9 @@ public actor Vault {
         return data
     }
 
-    private func persist(_ data: VaultData) async throws {
+    /// `notify: false` is for persists that are not user writes — see
+    /// `getEncryptedVault()`.
+    private func persist(_ data: VaultData, notify: Bool = true) async throws {
         let key = try keyStore.getOrCreateKey()
         version += 1
         let json = try JSONEncoder().encode(data)
@@ -227,6 +240,9 @@ public actor Vault {
         // leave a crash between them with the new blob but the old version.
         await kv.setMany([Self.blobKey: blob, Self.versionKey: String(version)])
         cache = data
+        if notify {
+            onPersist?()
+        }
     }
 
     public func getContacts() async throws -> [VaultContact] {
@@ -390,7 +406,10 @@ public actor Vault {
         let data = try await hydrate()
         var blob = await kv.get(Self.blobKey)
         if blob == nil {
-            try await persist(data)
+            // `notify: false` — materialising the blob so a push has
+            // something to send is not a user write. Announcing it would
+            // re-arm the very debounce that triggered this sync (VLT-04).
+            try await persist(data, notify: false)
             blob = await kv.get(Self.blobKey)
         }
         guard let blob else {
