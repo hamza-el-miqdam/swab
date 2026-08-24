@@ -323,4 +323,56 @@ class VaultTest {
         assertNull(vault.getContacts().first().targetId)
         assertEquals(contact.id, vault.getContacts().first().id) // sanity
     }
+
+    // ------------------------------------------------------------ VLT-04
+    // The write-notification seam SUG-AND-001 added: the vault tells whoever
+    // is listening that something changed, and knows nothing about them (no
+    // network or scheduler import in this package — SyncTriggerWiringStructuralTest).
+
+    @Test
+    fun test_VLT04_everyPersistedWriteInvokesTheOnPersistCallback() = runTest {
+        var notifications = 0
+        val vault = Vault(InMemoryKeyValueStore(), InMemoryVaultKeyStore(), onPersist = { notifications++ })
+
+        val contact = vault.addContact("Nadia")
+        assertEquals(1, notifications)
+
+        vault.setRing(contact.id, 2)
+        vault.setEtat(contact.id, Etat.BUSY)
+        vault.setRoles(contact.id, listOf(RoleContexte.COLLEAGUE))
+        vault.recordAxisEdit(contact.id, axis = "intimite", summary = "x", at = 1L)
+        vault.snoozeStaleness(contact.id, at = 2L)
+
+        assertEquals("one notification per persisted write", 6, notifications)
+    }
+
+    @Test
+    fun test_VLT04_readsDoNotInvokeTheOnPersistCallback() = runTest {
+        var notifications = 0
+        val vault = Vault(InMemoryKeyValueStore(), InMemoryVaultKeyStore(), onPersist = { notifications++ })
+        vault.addContact("Nadia")
+        notifications = 0
+
+        vault.getContacts()
+        vault.getHistory("nobody")
+        vault.loadState()
+        vault.setVaultVersion(7)
+
+        // setVaultVersion is sync bookkeeping written BY the sync itself —
+        // notifying on it would make every successful push schedule another.
+        assertEquals(0, notifications)
+    }
+
+    @Test
+    fun test_VLT04_anUnreadableVaultNeverNotifies_soNothingPushesOverGoodServerData() = runTest {
+        val kv = InMemoryKeyValueStore()
+        kv.set("vault.blob.v1", "AAAA") // truncated — Unreadable (SUG-AND-004)
+        var notifications = 0
+        val vault = Vault(kv, InMemoryVaultKeyStore(), onPersist = { notifications++ })
+
+        vault.addContact("Nadia")
+
+        assertEquals(VaultLoadState.Unreadable, vault.loadState())
+        assertEquals(0, notifications)
+    }
 }

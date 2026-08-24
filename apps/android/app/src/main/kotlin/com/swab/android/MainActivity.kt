@@ -17,7 +17,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,7 +33,6 @@ import com.swab.android.fiche.FicheViewModel
 import com.swab.android.onboarding.CalibrateViewModel
 import com.swab.android.onboarding.ContactsViewModel
 import com.swab.android.onboarding.DeviceContactReader
-import com.swab.android.observability.SwabLogger
 import com.swab.android.onboarding.OnboardingStep
 import com.swab.android.onboarding.OnboardingViewModel
 import com.swab.android.onboarding.SignupViewModel
@@ -51,7 +49,6 @@ import com.swab.android.ui.onboarding.PhoneScreen
 import com.swab.android.ui.onboarding.WelcomeScreen
 import com.swab.android.ui.sousgroupes.SousGroupesScreen
 import com.swab.android.ui.theme.SwabTheme
-import kotlinx.coroutines.launch
 
 private object Routes {
     const val WELCOME = "onboarding/welcome"
@@ -85,6 +82,8 @@ private object Routes {
  * onboarding flow, sharing one bottom nav bar via [MainScaffold].
  */
 class MainActivity : ComponentActivity() {
+    private var container: AppContainer? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -99,6 +98,7 @@ class MainActivity : ComponentActivity() {
         E2ESeedHooks.apply(intent, applicationContext)
 
         val container = AppContainer(applicationContext)
+        this.container = container
 
         setContent {
             SwabTheme {
@@ -107,6 +107,30 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * VLT-04 "app background" trigger (SUG-AND-001). `onStop` rather than a
+     * `ProcessLifecycleOwner` observer: that needs
+     * `androidx.lifecycle:lifecycle-process`, and a new dependency for one
+     * callback isn't justifiable (G4). The cost of the simpler choice is that
+     * a config change also fires it — harmless, since the scheduler no-ops
+     * when nothing is queued.
+     */
+    override fun onStop() {
+        super.onStop()
+        container?.syncScheduler?.onAppBackground()
+    }
+
+    /**
+     * Retry latch for the FS-03 offline acceptance: a push that failed with
+     * no connectivity stays queued and goes out the next time the app is
+     * brought back. A real `ConnectivityManager` callback would fire sooner —
+     * deliberately deferred, see apps/android/CHANGELOG.md.
+     */
+    override fun onStart() {
+        super.onStart()
+        container?.syncScheduler?.onAppForeground()
     }
 }
 
@@ -119,10 +143,14 @@ private fun SwabNavHost(container: AppContainer) {
     // recreation (rotation/dark-mode/config change) and rebuilds the same
     // instances instead of losing in-memory state (SUG-AND-003 #2).
     val onboardingViewModel: OnboardingViewModel = viewModel {
-        OnboardingViewModel(container.onboardingStateStore)
+        OnboardingViewModel(
+            container.onboardingStateStore,
+            // VLT-04 post-onboarding trigger. Runs only after the step is
+            // persisted — see OnboardingViewModel.complete.
+            onCompleted = { container.syncScheduler.syncNow() },
+        )
     }
     val step by onboardingViewModel.step.collectAsState()
-    val scope = rememberCoroutineScope()
 
     // Hoisted above NavHost (not scoped per-`composable {}`): the phone
     // and OTP screens are separate NavBackStackEntry compositions, so a
@@ -220,18 +248,11 @@ private fun SwabNavHost(container: AppContainer) {
         }
         composable(Routes.DONE) {
             DoneScreen(onFinish = {
-                scope.launch {
-                    // offline is fine (VLT-04) — a failure here is logged, not surfaced.
-                    runCatching { container.vaultSync.syncVault() }
-                        .onFailure {
-                            container.logger.event(
-                                SwabLogger.Level.WARN,
-                                "vault.sync.initial.failed",
-                                mapOf("type" to it.javaClass.simpleName),
-                            )
-                        }
-                    onboardingViewModel.advanceTo(OnboardingStep.COMPLETE)
-                }
+                // ONB-08 + VLT-04, in that order and not the other one:
+                // `complete()` persists COMPLETE first, then fires the
+                // post-onboarding sync (offline is fine — the scheduler keeps
+                // it queued and retries, silently).
+                onboardingViewModel.complete()
                 navController.navigate(Routes.CARTE)
             })
         }

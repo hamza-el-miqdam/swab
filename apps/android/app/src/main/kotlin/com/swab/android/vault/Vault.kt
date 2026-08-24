@@ -101,6 +101,14 @@ class Vault(
     private val kv: KeyValueStore,
     private val keyStore: VaultKeyStore,
     private val idGenerator: () -> String = { java.util.UUID.randomUUID().toString() },
+    /**
+     * VLT-04 (SUG-AND-001) — fired after every write that actually reached
+     * disk, so a scheduler can debounce a burst into one sync. A callback,
+     * not a collaborator: this package must never import the network or sync
+     * layers (SyncTriggerWiringStructuralTest / FicheOfflineStructuralTest),
+     * and the vault stays usable with no listener at all.
+     */
+    private val onPersist: () -> Unit = {},
 ) {
     companion object {
         private const val BLOB_KEY = "vault.blob.v1"
@@ -175,17 +183,25 @@ class Vault(
         // fresh empty vault must never silently clobber a corrupt-but-maybe-
         // recoverable blob, nor push garbage over the server's good copy.
         if (loadState == VaultLoadState.Unreadable) return
-        try {
+        val written = try {
             val key = keyStore.getOrCreateVaultKey()
             version += 1
             kv.set(BLOB_KEY, VaultCrypto.encrypt(json.encodeToString(VaultData.serializer(), data), key))
             kv.set(VERSION_KEY, version.toString())
+            true
         } catch (e: Exception) {
             // A previously-healthy vault whose Keystore key just became
             // unusable (OS upgrade, keystore reset) — same honest state,
             // never a crash.
             loadState = VaultLoadState.Unreadable
+            false
         }
+        // VLT-04: only once the bytes are actually down, never on the
+        // Unreadable early-return above (an unreadable vault must not push
+        // its empty in-memory state over the server's good copy —
+        // SUG-AND-004), and outside the try so a listener that throws is not
+        // mistaken for a failed write.
+        if (written) onPersist()
     }
 
     /**

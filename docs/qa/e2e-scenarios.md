@@ -238,7 +238,8 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Given** vault writes,
 - **When** the app backgrounds / finishes onboarding / bursts writes,
 - **Then** sync fires (debounced ≥ 30 s) and the app remains fully functional offline between syncs.
-- Verification note: trigger scheduling is unit-covered; the offline-functionality half is exercised by the map/fiche E2E flows against local state.
+- **And given** a push that failed with no connectivity, **when** the app is brought back to the foreground, **then** the queued write is retried — nothing is surfaced to the user either way.
+- Verification note: trigger scheduling is unit-covered (Android `SyncSchedulerTest`, on virtual time — a 30 s debounce is not driveable in an on-device suite); the offline-functionality half is exercised by the map/fiche E2E flows against local state.
 
 ### VLT-05 — Device loss honesty
 - **Given** the surface where vault backup is explained,
@@ -256,3 +257,5 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 | « Ouvrir la fiche » must be enabled in the peek sheet | Wave 2→3 regression | both platforms' MAP-04 tests |
 | Pre-FS-03 vault blob must load without crash | Wave 3 vault shape change | both platforms' legacy-vault backward-compat tests |
 | Corrupt/undecryptable vault must show the honest "unreadable" state, never the calm empty-map copy | SUG-IOS-004 (silent data loss) | iOS `test_VLT05_corruptVault_showsHonestUnreadableState` |
+| Onboarding completion must persist the step BEFORE the post-onboarding sync, so a kill mid-push resumes on the map, not on the completion screen | SUG-AND-001 (ONB-08 window, up to ~20 s of transport timeouts) | Android `test_ONB08_completingOnboarding_persistsCompleteBeforeAnyNetworkCall` |
+| A vault write landing during an in-flight push must not be swallowed by that push's success | SUG-AND-001 (found in review of its own scheduler) | Android `test_VLT04_aWriteLandingDuringAnInFlightPush_isNotSwallowedByItsSuccess` |

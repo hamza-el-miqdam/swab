@@ -5,6 +5,7 @@ import com.swab.android.network.EncryptedVaultBlobDto
 import com.swab.android.network.VaultPushResult
 import com.swab.android.observability.NoopLogger
 import com.swab.android.observability.SwabLogger
+import com.swab.android.sync.PendingSync
 
 /**
  * Vault sync (FS-07 VLT-02/VLT-04): pushes the opaque encrypted blob. On 409
@@ -15,8 +16,16 @@ class VaultSync(
     private val vault: Vault,
     private val apiClient: ApiClient,
     private val logger: SwabLogger = NoopLogger(),
-) {
+) : PendingSync {
     class ConflictPersistedException : Exception("vault sync: conflict persisted after retry")
+
+    /**
+     * The scheduler's view of this class (SUG-AND-001). It schedules
+     * [PendingSync], not a vault: ADR-001 stage 4 replaces the whole-blob push
+     * with a durable per-record outbox (VLT-10), and when it does, the outbox
+     * becomes the [PendingSync] and every trigger keeps working untouched.
+     */
+    override suspend fun flush() = syncVault()
 
     suspend fun syncVault() {
         val local = vault.getEncryptedVault()

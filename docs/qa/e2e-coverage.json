@@ -135,7 +135,7 @@
           "ActivityRecreationSmokeTest.test_recreateAtCarte_noCrash_contactsSurvive"
         ]
       },
-      "notes": "Android covers full activity destroy/recreate; iOS covers background/foreground (XCUITest cannot SIGKILL-and-relaunch preserving state) — cold-kill resume on iOS stays a manual smoke check."
+      "notes": "Android covers full activity destroy/recreate; iOS covers background/foreground (XCUITest cannot SIGKILL-and-relaunch preserving state) — cold-kill resume on iOS stays a manual smoke check. The kill-DURING-the-post-onboarding-sync window (SUG-AND-001) is not driveable on device: it is guarded on Android by the JVM regression test `OnboardingCompletionOrderingTest.test_ONB08_completingOnboarding_persistsCompleteBeforeAnyNetworkCall`, which asserts at the wire that COMPLETE is already persisted before any request goes out."
     },
     "ONB-09": {
       "fs": "FS-01",
@@ -562,7 +562,7 @@
       "android": {
         "status": "unit-covered"
       },
-      "notes": "Trigger scheduling unit-covered; offline operation implicitly exercised by all map/fiche E2E flows running off local state."
+      "notes": "Trigger scheduling unit-covered — Android `SyncSchedulerTest` (SUG-AND-001) exercises all four triggers on virtual time: write-burst debounce, app background, post-onboarding, foreground retry, plus the ONB-05 gate that keeps everything queued until onboarding completes. Offline operation implicitly exercised by all map/fiche E2E flows running off local state."
     },
     "VLT-05": {
       "fs": "FS-07",
