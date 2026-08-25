@@ -5,32 +5,15 @@ import type { Repository } from "../repo.js";
 import { OTP_TTL_SECONDS, type OtpStore } from "../otp-store.js";
 import { signJwt } from "../lib/jwt.js";
 import { sendProblem, zodDetail } from "../lib/problem.js";
+import { displayNameSchema, phoneHashSchema } from "../lib/validation.js";
 
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 30 * 24 * 3600;
 
-// Client-side salted hash of the E.164 number (IDT-01) — hex/base64url shaped.
-// The raw number must never reach the API.
-const phoneHashSchema = z
-  .string()
-  .min(32)
-  .max(128)
-  .regex(/^[A-Za-z0-9_-]+$/, "must be a hash, not a phone number");
-
+// phoneHashSchema / displayNameSchema moved to ../lib/validation.js when the
+// contacts routes needed the same rules (ADR-001 stage 3) — one definition, so
+// a hardening fix cannot land on half the surface.
 const otpRequestSchema = z.object({ phoneHash: phoneHashSchema });
-
-// Printable content only: no control (Cc) or format (Cf — includes bidi
-// overrides like U+202E) characters. Letters, marks, numbers, punctuation,
-// symbols, and plain spaces are all fine (emoji included). The ZWJ (U+200D)
-// and variation-selector-16 (U+FE0F) allowance is required for composite
-// emoji sequences (e.g. family/skin-tone emoji), which \p{Cf} would
-// otherwise reject (SUG-API-015, IDT-01/IDT-09).
-const displayNameSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(50)
-  .regex(/^(?:[^\p{Cc}\p{Cf}]|‍|️)+$/u, "contains unsupported characters");
 
 const otpVerifySchema = z.object({
   phoneHash: phoneHashSchema,

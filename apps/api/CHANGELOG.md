@@ -6,6 +6,17 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-22 — [VLT-02, VLT-03, VLT-07, VLT-08, VLT-09, IDT-08] ADR-001 stage 3, slice 1: typed contact endpoints
+
+- Adds `POST/PATCH/DELETE /contacts` + the `GET /contacts?since=` delta pull, replacing the `/vault` blob for contact links. `routes/vault.ts` is untouched and still served — clients cut over at stage 4.
+- **Conventions set here for the rest of the series and the FS-05 OpenAPI seam:** mutation id in an `Idempotency-Key` **header** (DELETE needs one and a DELETE body is unreliable); one write envelope `{ outcome: applied|no_op|already_applied, contact, staleFields? }`; `contact` is null on a replay because the ledger caches no body (VLT-03); RFC 7807 errors that never echo a submitted value; a tombstone serialises to `{ id, deleted, updatedAt, deletedAt }` only.
+- LWW is a per-field compare-and-swap: the client echoes the server timestamp it last saw for that field and the base goes in the `updateMany` WHERE, so check and write are one atomic statement. A mismatch is reported in `staleFields`, never silently dropped.
+- The ledger insert is the FIRST statement of the same transaction as the data write; Postgres aborts the whole transaction on a duplicate id, so a replay can never half-apply. `not_found` throws a rollback sentinel so it does not burn the client's id.
+- **Cursor is inclusive of its own millisecond by default.** `Timestamptz(3)` plus a write landing in the millisecond a cursor names makes a strict `updatedAt >` keyset skip that row forever; an id-bearing exclusive cursor is emitted only while paging, to guarantee progress. Re-sending beats skipping. Exact fix needs a monotonic `bigserial` sync column — `area:db` follow-up, filed below.
+- Both `ContactsRepository` implementations run ONE contract suite (`tests/contacts-contract.ts`) — the in-memory double and real Postgres — so the double route tests rely on cannot drift.
+- **Follow-ups:** (a) `area:db` request for a monotonic sync sequence + `@@index([ownerId, updatedAt, id])`; (b) the global 100/min rate limit will throttle a large offline-outbox replay (VLT-10) — needs a per-route budget before stage 4; (c) roles, filter rules, subgroups and history are later slices; role writes must bump the parent link's `updatedAt` so this cursor keeps covering the whole aggregate.
+- **Gotcha:** `tests/prisma-repo.test.ts` and the new `tests/contacts-repo.postgres.test.ts` fail locally with no Postgres in this dev environment (pre-existing pattern, green in CI's `postgres:17` service). 110/110 other tests pass; lint/typecheck/build green; coverage 84.24% lines without the Postgres suites.
+
 ## 2026-08-19 — [SUG-API-014] Shutdown now has a deadline, handles a rejected close, and disconnects Prisma
 
 - `SIGINT`/`SIGTERM` used to call `app.close().then(() => process.exit(0))` with no timeout: a stuck in-flight request (slow client, wedged DB call) meant the process never exited, and a rejected `close()` hung silently with no exit at all. A second signal also re-entered the handler and called `close()` again.

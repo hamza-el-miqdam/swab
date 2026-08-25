@@ -1,11 +1,13 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import { randomUUID } from "node:crypto";
+import type { DestinationStream } from "pino";
 import type { Env } from "./env.js";
 import type { DbHealthCheck, Repository } from "./repo.js";
 import { OtpStore } from "./otp-store.js";
 import { sendProblem } from "./lib/problem.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerContactRoutes } from "./routes/contacts.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerVaultRoutes } from "./routes/vault.js";
 
@@ -47,8 +49,12 @@ export interface AppDeps {
   repo: Repository;
   dbHealth: DbHealthCheck;
   otpStore?: OtpStore;
-  /** Set false in tests to silence logs. */
-  logger?: boolean;
+  /**
+   * `false` silences logs (most tests). An object is merged over the default
+   * pino config — `{ stream }` is how the VLT-03/G3 log audit captures every
+   * line a full lifecycle emits and asserts no classification value is in it.
+   */
+  logger?: boolean | { stream?: DestinationStream; level?: string };
 }
 
 /** Testable factory (exercised via app.inject() — backend rule 7). */
@@ -63,6 +69,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         : {
             level: deps.env.NODE_ENV === "production" ? "info" : "debug",
             redact: { paths: ["req.headers.authorization"], censor: "[redacted]" },
+            ...(typeof deps.logger === "object" ? deps.logger : {}),
           },
     genReqId: (req) => {
       const incoming = req.headers["x-request-id"];
@@ -133,7 +140,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   registerHealthRoutes(app, { dbHealth: deps.dbHealth });
   registerAuthRoutes(app, { env: deps.env, repo: deps.repo, otpStore });
+  // Deprecated (ADR-001) but still served — both clients depend on it until
+  // stage 4. The typed contacts routes below are its replacement.
   registerVaultRoutes(app, { env: deps.env, repo: deps.repo });
+  registerContactRoutes(app, { env: deps.env, repo: deps.repo });
 
   return app;
 }
