@@ -1,6 +1,6 @@
 /// ONB-07: completion. The promise, restated at the exact moment it became
 /// true. Vault sync is attempted best-effort — offline completion is a
-/// first-class path (FS-01 acceptance 1); sync retries later (VLT-04).
+/// first-class path (FS-01 acceptance 1); sync retries later (VLT-10).
 import SwabCore
 import SwiftUI
 

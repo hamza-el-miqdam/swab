@@ -10,6 +10,7 @@ import SwabCore
 import SwabUI
 import Security
 import SwiftUI
+import UIKit
 
 #if DEBUG
 /// Test-only hooks for the `SwabAppUITests` XCUITest target (never compiled
@@ -105,6 +106,28 @@ private enum UITestHooks {
 }
 #endif
 
+/// Keeps the process alive for one background sync (VLT-10 replay). `endBackgroundTask`
+/// must run exactly once — from the expiration handler if the OS runs out of
+/// patience, otherwise when the push returns — so both paths share one
+/// main-actor-owned token. Failing to end an assertion terminates the app,
+/// which is why this is a type rather than an inline closure pair.
+@MainActor
+private final class BackgroundSyncAssertion {
+    private var token: UIBackgroundTaskIdentifier = .invalid
+
+    func begin() {
+        token = UIApplication.shared.beginBackgroundTask(withName: "vault.sync") { [weak self] in
+            Task { @MainActor in self?.end() }
+        }
+    }
+
+    func end() {
+        guard token != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(token)
+        token = .invalid
+    }
+}
+
 @main
 struct SwabApp: App {
     var body: some Scene {
@@ -116,6 +139,7 @@ struct SwabApp: App {
 
 @MainActor
 struct RootView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var step: OnboardingStep = .welcome
     @State private var hasLoadedInitialStep = false
     /// `OnboardingStep` has no dedicated `.otp` case (the persisted step
@@ -131,7 +155,11 @@ struct RootView: View {
     private let vaultKeyStore: VaultKeyStore
     private let vault: Vault
     private let apiClient: ApiClient
-    private let vaultSync: VaultSync
+    /// VLT-10: the single owner of *when* the vault is pushed, and now the
+    /// only holder of the `VaultSync` it drives — one instance for the whole
+    /// app, since the debounce and the pending-work flag are only meaningful
+    /// if every trigger shares them.
+    private let syncScheduler: SyncScheduler
     private let config: AppConfig
     /// G3 — the single error-boundary reporter, threaded into every view
     /// model from here (`OSLogErrorReporter` in production).
@@ -168,7 +196,10 @@ struct RootView: View {
             session: session
         )
         self.apiClient = apiClient
-        self.vaultSync = VaultSync(vault: vault, api: apiClient)
+        self.syncScheduler = SyncScheduler(
+            work: VaultSync(vault: vault, api: apiClient),
+            reporter: reporter
+        )
     }
 
     private static func storeURL() -> URL {
@@ -184,7 +215,38 @@ struct RootView: View {
         .task {
             guard !hasLoadedInitialStep else { return }
             hasLoadedInitialStep = true
-            step = await onboarding.getStep()
+            let loaded = await onboarding.getStep()
+            step = loaded
+            // VLT-10: the vault announces its own writes and the scheduler
+            // debounces them. Installed unconditionally, but every trigger
+            // is inert until `activate()` — ONB-05's onboarding-local window
+            // has to close first, which `DoneViewModel.finish()` does.
+            await vault.setOnPersist { [syncScheduler] in
+                Task { await syncScheduler.noteLocalWrite() }
+            }
+            if loaded == .complete {
+                // Resuming an already-onboarded install: arm the triggers so
+                // an edit made in this session (or a push a previous session
+                // never landed) reaches the server.
+                await syncScheduler.activate()
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .background else { return }
+            syncOnBackground()
+        }
+    }
+
+    /// Background trigger (VLT-10 replay). `beginBackgroundTask` buys the push enough
+    /// runtime to finish instead of being suspended mid-request; if the OS
+    /// expires it anyway the scheduler keeps `needsSync` set and the next
+    /// trigger retries, so an expired assertion is never data loss.
+    private func syncOnBackground() {
+        let assertion = BackgroundSyncAssertion()
+        assertion.begin()
+        Task { @MainActor in
+            await syncScheduler.appDidEnterBackground()
+            assertion.end()
         }
     }
 
@@ -238,7 +300,7 @@ struct RootView: View {
             }
         case .done:
             DoneView(
-                viewModel: DoneViewModel(onboarding: onboarding, vaultSync: vaultSync, reporter: reporter)
+                viewModel: DoneViewModel(onboarding: onboarding, syncScheduler: syncScheduler)
             ) {
                 step = .complete
             }

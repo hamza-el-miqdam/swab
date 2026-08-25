@@ -1,4 +1,5 @@
 import { Prisma, prisma, type PrismaClient } from "@repo/db";
+import { prismaContactsRepository } from "./prisma-contacts-repo.js";
 import type { Repository, VaultWriteResult } from "./repo.js";
 
 /**
@@ -12,6 +13,12 @@ import type { Repository, VaultWriteResult } from "./repo.js";
  */
 export function prismaRepository(client: PrismaClient = prisma): Repository {
   return {
+    // ADR-001 stage 3 — contact links + classification. Kept in its own module:
+    // it is the only part of the repository that runs transactions, and mixing
+    // it in here would have buried the VLT-07/08/09 reasoning under the
+    // deprecated vault code below.
+    ...prismaContactsRepository(client),
+
     async findUserByPhoneHash(phoneHash) {
       const user = await client.user.findUnique({
         where: { phoneHash },

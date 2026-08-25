@@ -5,6 +5,18 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md](../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
 
+## 2026-08-24 — [VLT-10, ONB-08, ONB-05, SUG-IOS-002] Queued vault writes are replayed, not pushed once and forgotten
+
+- **What changed:** new `Sources/SwabCore/Sync/SyncScheduler.swift` — an actor driving a `PendingSyncWork` protocol, with three replay triggers (post-onboarding, app background, 30 s-debounced write burst), all inert until ONB-05's onboarding-local window closes. `Vault` announces writes via a bare `setOnPersist` closure; `DoneViewModel` routes through the scheduler; `RootView` wires `scenePhase`.
+- **Why:** `VaultSync.sync()` had one call site and no retry, so every fiche edit after onboarding stayed on the device forever (VLT-10: offline writes must "queue … and replay on reconnect"; FS-01 acceptance 1).
+- **Citation correction:** the triggers and the 30 s window are **engineering choices, not spec text**. FS-07's VLT-04 named them until `ab3f241` (ADR-001, 2026-08-16) replaced that wording; the current spec names no trigger and no interval. Per ADR-001's "changed in meaning, not deleted", `suggestions/done/ios/SUG-IOS-002-*.md` was rewritten rather than filed verbatim.
+- **Not coupled to `VaultSync`** — the scheduler depends only on `PendingSyncWork`, so ADR-001 stage 4's outbox conforms in its place with the trigger logic untouched.
+- **ONB-08:** `finish()` now persists `.complete` **before** the push (the push can block for `URLSession.shared`'s 60 s timeout; a force-quit inside it must not replay the completion screen). Matches Android's `OnboardingViewModel.complete()`.
+- **Backoff:** a push failing repeatedly with the same code cools off (one free retry, then 60 s doubling to 1 h). Issue #127 makes the first push of every new account impossible; without this, every debounce and backgrounding retried it.
+- **Gotchas:** `getEncryptedVault()` persists with `notify: false` — materialising the blob for a push is not a user write and must not re-arm the debounce that triggered it. A trigger arriving mid-flush is recorded and re-run, not dropped (it was silently stranded — reviewer's repro on PR #125).
+- **Follow-ups:** `needsSync` is in-memory, so this is *not* VLT-10's durable outbox — a session killed between a failed push and the next trigger loses the retry (stage 4). No reconnect/foreground trigger; Android has one (SUG-AND-001).
+- Verified: `xcrun swift test` 177/177; mutation-tested (ONB-05 gate, debounce deadline, background cancel, `needsSync`-on-failure, backoff guard, mid-flush reschedule — each reverts to a specific red test). E2E gate: see PR #125 discussion — the local run is blocked by an unrelated `/auth/otp/*` 429 (10/min per IP, `apps/api/src/routes/auth.ts:56`) that the fast onboarding suite trips.
+
 ## 2026-08-21 — [VLT-01, VLT-02, ONB-08, SUG-IOS-009] `FileKeyValueStore` writes the vault blob+version pair atomically, gains file protection
 
 - **What changed:** `KeyValueStore` gains `setMany(_:)` (default: loops over `set`, fine for `InMemoryKeyValueStore`); `FileKeyValueStore` overrides it to mutate every entry in the cache and persist once. `Vault.persist(_:)` now calls `kv.setMany([blobKey: blob, versionKey: version])` instead of two sequential `set` calls. `FileKeyValueStore`'s writes also add `.completeFileProtectionUnlessOpen` alongside the existing `.atomic`.
