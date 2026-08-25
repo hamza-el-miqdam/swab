@@ -305,34 +305,34 @@ public final class CalibrateViewModel {
 @Observable
 public final class DoneViewModel {
     private let onboarding: OnboardingStateStore
-    private let vaultSync: VaultSync
-    private let reporter: ErrorReporter
+    private let syncScheduler: SyncScheduler
     private static let signposter = OSSignposter(subsystem: "com.swab.ios", category: "vault.sync")
 
-    public init(
-        onboarding: OnboardingStateStore,
-        vaultSync: VaultSync,
-        reporter: ErrorReporter = NoopErrorReporter()
-    ) {
+    public init(onboarding: OnboardingStateStore, syncScheduler: SyncScheduler) {
         self.onboarding = onboarding
-        self.vaultSync = vaultSync
-        self.reporter = reporter
+        self.syncScheduler = syncScheduler
     }
 
-    /// Vault sync is attempted best-effort — offline completion is a
-    /// first-class path (FS-01 acceptance 1); sync retries later (VLT-04).
-    /// G3: wrapped in a signpost interval (duration only, no payload) and
-    /// reports a failure once instead of silently dropping it.
+    /// Completes onboarding, then fires the first push.
+    ///
+    /// **`.complete` is persisted BEFORE the push (ONB-08), never after.**
+    /// The push can block for up to `URLSession.shared`'s 60 s request
+    /// timeout, and a force-quit inside that window must not drop the user
+    /// back onto the completion screen they already passed. Nothing writes
+    /// to the vault between the two statements, so ONB-05 is unaffected —
+    /// the scheduler is still armed only as onboarding closes. Android does
+    /// the same in `OnboardingViewModel.complete()` (SUG-AND-001).
+    ///
+    /// Best-effort: offline completion is a first-class path (FS-01
+    /// acceptance 1). On failure the scheduler keeps `needsSync` set and a
+    /// later trigger retries under backoff — the point of routing through it
+    /// rather than calling `VaultSync` directly. G3: still wrapped in a
+    /// signpost interval (duration only, no payload); failure reporting
+    /// lives in the scheduler, where every trigger's failures converge.
     public func finish() async {
-        let state = Self.signposter.beginInterval("sync")
-        do {
-            try await vaultSync.sync()
-        } catch {
-            reporter.report(
-                ReportedError(domain: "vault.sync", operation: "finish", errorDescription: VaultSyncError.reportCode(for: error))
-            )
-        }
-        Self.signposter.endInterval("sync", state)
         await onboarding.setStep(.complete)
+        let state = Self.signposter.beginInterval("sync")
+        await syncScheduler.onboardingDidComplete()
+        Self.signposter.endInterval("sync", state)
     }
 }

@@ -234,11 +234,13 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 ### VLT-03 — Server never decodes the blob
 - Privacy invariant at the wire/server level — `api-integration` (the wire-level privacy test), re-verified on every schema change.
 
-### VLT-04 — Sync triggers, offline between syncs
+### VLT-04 — Queued write replay, offline between syncs
 - **Given** vault writes,
 - **When** the app backgrounds / finishes onboarding / bursts writes,
-- **Then** sync fires (debounced ≥ 30 s) and the app remains fully functional offline between syncs.
-- Verification note: trigger scheduling is unit-covered; the offline-functionality half is exercised by the map/fiche E2E flows against local state.
+- **Then** the queued writes are replayed and the app remains fully functional offline between syncs.
+- **And given** a push that keeps failing the same way, **when** further triggers fire, **then** it backs off rather than retrying on every one — nothing is surfaced to the user either way.
+- Spec note: the current FS-07 VLT-04 names **no triggers and no interval** — that wording was removed by `ab3f241` (ADR-001, 2026-08-16). The triggers implement **VLT-10** ("offline writes queue in a durable local outbox and replay in order on reconnect") plus FS-01 acceptance 1. The particular triggers and the 30 s window are engineering choices.
+- Verification note: the offline-functionality half is exercised by the map/fiche E2E flows against local state. Trigger scheduling is unit-covered per platform (iOS `SwabCoreTests.SyncSchedulerTests` on injected `now`/`sleep` seams) — a 30 s debounce is not driveable in an on-device suite without making it time-dependent.
 
 ### VLT-05 — Device loss honesty
 - **Given** the surface where vault backup is explained,
@@ -256,3 +258,6 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 | « Ouvrir la fiche » must be enabled in the peek sheet | Wave 2→3 regression | both platforms' MAP-04 tests |
 | Pre-FS-03 vault blob must load without crash | Wave 3 vault shape change | both platforms' legacy-vault backward-compat tests |
 | Corrupt/undecryptable vault must show the honest "unreadable" state, never the calm empty-map copy | SUG-IOS-004 (silent data loss) | iOS `test_VLT05_corruptVault_showsHonestUnreadableState` |
+| Onboarding completion must persist the step BEFORE the post-onboarding push, so a kill mid-push resumes on the map, not on the completion screen | SUG-IOS-002 / SUG-AND-001 (ONB-08 window, up to 60 s of transport timeout) | iOS `test_ONB08_completingOnboarding_persistsCompleteBeforeAnyNetworkCall` |
+| A vault write landing during an in-flight push must be replayed, not left pending with nothing scheduled | SUG-IOS-002 (found in review of PR #125) | iOS `test_VLT10_writeLandingDuringAnInFlightFlush_isNotStranded` |
+| A push that cannot succeed must back off, not retry on every trigger | SUG-IOS-002 / issue #127 | iOS `test_VLT10_aPushThatKeepsFailingTheSameWay_backsOffInsteadOfRetryingEveryTrigger` |

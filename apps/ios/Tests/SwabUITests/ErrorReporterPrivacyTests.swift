@@ -98,7 +98,10 @@ final class ErrorReporterPrivacyTests: XCTestCase {
         _ = try await syncVault.addContact(displayName: "SecretDisplayName")
         let vaultSync = VaultSync(vault: syncVault, api: AlwaysConflictVaultSyncApi())
         let onboarding = OnboardingStateStore(kv: InMemoryKeyValueStore())
-        let doneVM = DoneViewModel(onboarding: onboarding, vaultSync: vaultSync, reporter: reporter)
+        let doneVM = DoneViewModel(
+            onboarding: onboarding,
+            syncScheduler: SyncScheduler(work: vaultSync, reporter: reporter)
+        )
         await doneVM.finish()
 
         let events = reporter.events
@@ -113,7 +116,10 @@ final class ErrorReporterPrivacyTests: XCTestCase {
         let vaultSync = VaultSync(vault: vault, api: AlwaysConflictVaultSyncApi())
         let onboarding = OnboardingStateStore(kv: InMemoryKeyValueStore())
 
-        let doneVM = DoneViewModel(onboarding: onboarding, vaultSync: vaultSync, reporter: reporter)
+        let doneVM = DoneViewModel(
+            onboarding: onboarding,
+            syncScheduler: SyncScheduler(work: vaultSync, reporter: reporter)
+        )
         await doneVM.finish()
 
         let events = reporter.events
