@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-25 — Repo hygiene: prune stale worktrees, split `suggestions/README.md`
+
+- **What changed:** (1) removed 3 stale `.claude/worktrees/*` subagent worktrees whose branches had already merged to `main` (`android/sug-and-001-vlt04-sync-triggers` #126, `feat/api-vlt-07-09-typed-contact-classification-api` #124, `ios/sug-ios-002-vlt04-sync-triggers` #125) — reclaimed 1.5GB, verified each was clean (`git status --short`) before `git worktree remove --force`. (2) Extracted the one-time "Execution order — dependency graph & model assignments" section (mermaid wave/track plan from the 2026-07-20 audit triage) out of `suggestions/README.md` into a new `suggestions/execution-order.md`, byte-identical content, replaced with a 1-line pointer.
+- **Why:** both were pure context/token-hygiene cost reduction — the worktrees were dead weight on every repo-root `find`/`grep`; the execution-order section was read-whole on every `suggestions/README.md` load (5× in one session) despite being one-time planning narrative, not the day-to-day per-area lookup tables.
+- **Result:** `suggestions/README.md` drops from 38,151 → 24,477 chars. Open/done counts (30/86) unchanged since 2026-08-21 — verified, not re-derived.
+- **Gotcha:** worktree branch names looked like they matched `git branch --merged main` only because they were currently checked out there (`+` prefix); recent merge commits (`aad1380`, `09bae9f`, `9f086e2`) confirmed all three landed before removal.
+
 ## 2026-08-22 — [OQ-FLT-2] Filter evaluation site is settled: on-device, two implementations
 
 - **What changed:** `docs/specs/FS-06-filtering.md` records **OQ-FLT-2 as RESOLVED — on-device**. Also drops the two now-dead conditionals it left behind: FLT-06's "and mirrored server-side if resolution runs there (ENV-05)", and the header's Backend scope "evaluation if resolution runs server-side" (Backend is rule storage only). `docs/STATUS.md`'s FS-06 note updated to match.
