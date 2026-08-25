@@ -170,7 +170,7 @@
           "RelationshipMapE2ETest.test_densityRegression_placedNodeSizeIsNotCollapsed"
         ]
       },
-      "notes": "Android also guards the Wave-2 Float.toDp() density-collapse regression. Reclassified from automated to manual 2026-08-25 (issue #128): both tests intermittently threw ComposeTimeoutException under ANDROIDX_TEST_ORCHESTRATOR, root-caused to IDT-03's per-IP OTP rate limit (10/60s, shared by /auth/otp/request and /auth/otp/verify) combined with an in-memory OtpRateGate call-pacer that the orchestrator's per-test-method process reset silently wiped. A file-persisted OtpRateGate (apps/android/app/src/androidTest/kotlin/com/swab/android/e2e/OtpRateGate.kt) replaces it, but full determinism across many repeated runs was not confirmed this session — kept `tests` listed for when this promotes back to automated, not as a currently-enforced drift guard."
+      "notes": "Android also guards the Wave-2 Float.toDp() density-collapse regression. Reclassified from automated to manual 2026-08-25 (issue #128): both tests intermittently threw ComposeTimeoutException under ANDROIDX_TEST_ORCHESTRATOR, root-caused to IDT-03's per-IP OTP rate limit (10/60s, shared by /auth/otp/request and /auth/otp/verify) combined with an in-memory OtpRateGate call-pacer that the orchestrator's per-test-method process reset silently wiped. A file-persisted OtpRateGate (apps/android/app/src/androidTest/kotlin/com/swab/android/e2e/OtpRateGate.kt) was written to replace it, but PR #138's own review (2026-08-25) ran it live on a clean checkout and found it does NOT work — `OtpRateGateTest.test_ISSUE128_writtenTimestampsRoundTripThroughReadAcrossCalls` itself fails (`expected:<[100, 200, 300]> but was:<[]>`), and these two tests still fail live (18/46 suite failures). Status is confirmed-broken, not merely unconfirmed. Re-diagnosis in progress; also worth re-testing once PR #139's relaxed local/E2E rate limit lands, since that may remove the need for client-side pacing entirely. Kept `tests` listed for when this promotes back to automated, not as a currently-enforced drift guard."
     },
     "MAP-02": {
       "fs": "FS-02",
@@ -283,7 +283,7 @@
           "RelationshipMapE2ETest.test_MAP01_09_mapRendersMoiAndPlacedContactNodes"
         ]
       },
-      "notes": "iOS has no dedicated absence assertion yet — candidate for the next iOS E2E increment. Reclassified from automated to manual 2026-08-25 (issue #128) — same test as MAP-01, same OtpRateGate flakiness; see that entry's note."
+      "notes": "iOS has no dedicated absence assertion yet — candidate for the next iOS E2E increment. Reclassified from automated to manual 2026-08-25 (issue #128) — same test as MAP-01, same OtpRateGate flakiness, confirmed-broken not merely unconfirmed; see that entry's note."
     },
     "FCH-01": {
       "fs": "FS-03",
@@ -405,6 +405,22 @@
         "status": "unit-covered"
       },
       "notes": "ADR-001 stage 0b. Storage representation, not user-visible behaviour — the UI renders the same French labels before and after, which is why both E2E suites are unchanged and this is unit-covered rather than automated. iOS: ClassificationValuesTests. Android: ClassificationValuesTest, which adds the NFC-normalisation case Swift gets for free (Kotlin compares UTF-16 code units, so an NFD-encoded legacy token would not migrate)."
+    },
+    "SUG-DES-011": {
+      "fs": "FS-03",
+      "title": "Interactive chip/switch controls accept touches in a >=48dp region even when drawn smaller",
+      "ios": {
+        "status": "not-e2e-verifiable"
+      },
+      "android": {
+        "status": "manual",
+        "tests": [
+          "FicheTouchTargetsTest.test_SUGDES011_etatTagRow_touchBoundsAtLeast48dp",
+          "FicheTouchTargetsTest.test_SUGDES011_intimiteSegmentedCell_touchBoundsAtLeast48dp",
+          "FicheTouchTargetsTest.test_SUGDES011_listModeSwitch_touchBoundsAtLeast48dp"
+        ]
+      },
+      "notes": "Design-system suggestion ID, not an FS-* requirement — filed here (not FCH-*) since no FS acceptance criterion names it yet. Was never tracked in this manifest at all until PR #138's review (2026-08-25/26) caught the gap: apps/android/CHANGELOG.md and docs/STATUS.md named FicheTouchTargetsTest as known-flaky alongside MAP-01/MAP-09 (issue #128, same OtpRateGate root cause), but this file had no corresponding row. Marked manual (confirmed-flaky live, not automated) to match that finding, pending the same OtpRateGate re-diagnosis / PR #139 relaxed-limit retest as MAP-01. iOS has no port of SUG-DES-011 — not-e2e-verifiable until one exists, not silently assumed fine."
     },
     "IDT-01": {
       "fs": "FS-07",
