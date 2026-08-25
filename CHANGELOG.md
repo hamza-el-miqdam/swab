@@ -6,6 +6,12 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-25 — [docs-hygiene] Trim `docs/STATUS.md` CI and Design system rows
+
+- **What changed:** trimmed the CI row (448/450 chars) and Design system row (434/450 chars) in `docs/STATUS.md` — dropped prose/mechanism detail already recorded elsewhere, kept the outcome facts.
+- **Why:** both were within single-digit chars of `docs-hygiene-lint.mjs`'s 450-char row cap; any future PR appending even a short clause would trip CI. Pre-emptive, not a fix for a live break.
+- **Result:** CI row 448→270 chars, Design system row 434→329 chars. `node scripts/docs-hygiene-lint.mjs` → PASS.
+
 ## 2026-08-25 — Repo hygiene: prune stale worktrees, split `suggestions/README.md`
 
 - **What changed:** (1) removed 3 stale `.claude/worktrees/*` subagent worktrees whose branches had already merged to `main` (`android/sug-and-001-vlt04-sync-triggers` #126, `feat/api-vlt-07-09-typed-contact-classification-api` #124, `ios/sug-ios-002-vlt04-sync-triggers` #125) — reclaimed 1.5GB, verified each was clean (`git status --short`) before `git worktree remove --force`. (2) Extracted the one-time "Execution order — dependency graph & model assignments" section (mermaid wave/track plan from the 2026-07-20 audit triage) out of `suggestions/README.md` into a new `suggestions/execution-order.md`, byte-identical content, replaced with a 1-line pointer.
