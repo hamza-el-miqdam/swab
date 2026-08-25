@@ -135,7 +135,7 @@
           "ActivityRecreationSmokeTest.test_recreateAtCarte_noCrash_contactsSurvive"
         ]
       },
-      "notes": "Android covers full activity destroy/recreate; iOS covers background/foreground (XCUITest cannot SIGKILL-and-relaunch preserving state) — cold-kill resume on iOS stays a manual smoke check."
+      "notes": "Android covers full activity destroy/recreate; iOS covers background/foreground (XCUITest cannot SIGKILL-and-relaunch preserving state) — cold-kill resume on iOS stays a manual smoke check. The kill-DURING-the-post-onboarding-sync window (SUG-AND-001) is not driveable on device: it is guarded on Android by the JVM regression test `OnboardingCompletionOrderingTest.test_ONB08_completingOnboarding_persistsCompleteBeforeAnyNetworkCall`, which asserts at the wire that COMPLETE is already persisted before any request goes out."
     },
     "ONB-09": {
       "fs": "FS-01",
@@ -584,7 +584,7 @@
       "android": {
         "status": "not-e2e-verifiable"
       },
-      "notes": "Added by ADR-001 (2026-08-16). Not yet implemented — the sync model lands in the migration's client stage. Reclassify to automated/unit-covered in that PR; honest 'not-e2e-verifiable' until the behaviour exists (G2: never silently dropped)."
+      "notes": "Added by ADR-001 (2026-08-16). PARTIAL: replay *scheduling* now exists on both platforms (iOS SUG-IOS-002, Android SUG-AND-001) — post-onboarding, app background, foreground retry and a debounced write burst, with backoff on repeated identical failures, unit-covered as described under VLT-04. The DURABLE outbox this requirement actually asks for does not exist: the queues are in memory, so a process death between a failed push and the next trigger still loses the cue (Android mitigates by assuming pending work at launch when onboarding is already complete). Status stays not-e2e-verifiable until the ADR-001 stage-4 outbox lands; reclassify in that PR (G2: never silently dropped). Android additionally pins on-device, in SyncAcrossRecreationE2ETest, that an edit made after an Activity recreation still reaches the scheduler the lifecycle triggers drive."
     },
     "VLT-08": {
       "fs": "FS-07",
