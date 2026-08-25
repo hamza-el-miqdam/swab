@@ -164,13 +164,13 @@
         ]
       },
       "android": {
-        "status": "automated",
+        "status": "manual",
         "tests": [
           "RelationshipMapE2ETest.test_MAP01_09_mapRendersMoiAndPlacedContactNodes",
           "RelationshipMapE2ETest.test_densityRegression_placedNodeSizeIsNotCollapsed"
         ]
       },
-      "notes": "Android also guards the Wave-2 Float.toDp() density-collapse regression."
+      "notes": "Android also guards the Wave-2 Float.toDp() density-collapse regression. Reclassified from automated to manual 2026-08-25 (issue #128): both tests intermittently threw ComposeTimeoutException under ANDROIDX_TEST_ORCHESTRATOR, root-caused to IDT-03's per-IP OTP rate limit (10/60s, shared by /auth/otp/request and /auth/otp/verify) combined with an in-memory OtpRateGate call-pacer that the orchestrator's per-test-method process reset silently wiped. A file-persisted OtpRateGate (apps/android/app/src/androidTest/kotlin/com/swab/android/e2e/OtpRateGate.kt) replaces it, but full determinism across many repeated runs was not confirmed this session — kept `tests` listed for when this promotes back to automated, not as a currently-enforced drift guard."
     },
     "MAP-02": {
       "fs": "FS-02",
@@ -278,12 +278,12 @@
         "status": "manual"
       },
       "android": {
-        "status": "automated",
+        "status": "manual",
         "tests": [
           "RelationshipMapE2ETest.test_MAP01_09_mapRendersMoiAndPlacedContactNodes"
         ]
       },
-      "notes": "iOS has no dedicated absence assertion yet — candidate for the next iOS E2E increment."
+      "notes": "iOS has no dedicated absence assertion yet — candidate for the next iOS E2E increment. Reclassified from automated to manual 2026-08-25 (issue #128) — same test as MAP-01, same OtpRateGate flakiness; see that entry's note."
     },
     "FCH-01": {
       "fs": "FS-03",

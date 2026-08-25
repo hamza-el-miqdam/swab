@@ -229,6 +229,12 @@ fun ComposeTestRule.signUpThroughOtp(
     waitUntilContentDescriptionExists(Fr.PHONE_PLACEHOLDER)
     onScreen("phone")
     onNodeWithContentDescription(Fr.PHONE_PLACEHOLDER).performTextInput(phone)
+    // Issue #128: pace this call against IDT-03's real per-IP OTP rate limit
+    // (10/60s, shared by /auth/otp/request and /auth/otp/verify) — every full
+    // signUpThroughOtp costs 3 calls against that one bucket, and several
+    // back-to-back test methods exceed it well within a suite run. See
+    // OtpRateGate's kdoc for the full, curl-verified root cause.
+    OtpRateGate.awaitSlot()
     onNodeWithText(Fr.PHONE_CTA).performClick()
 
     // --- OTP (ONB-02, second half) ---
@@ -246,10 +252,12 @@ fun ComposeTestRule.signUpThroughOtp(
         ?: error("dev OTP code not found in on-screen text: ${devCodeNode.readText()}")
 
     onNodeWithContentDescription(Fr.OTP_PLACEHOLDER).performTextInput(code)
+    OtpRateGate.awaitSlot() // issue #128 — see the note on the Phone step above
     onNodeWithText(Fr.OTP_CTA).performClick() // first attempt: no displayName yet -> API 422
 
     waitUntilContentDescriptionExists(Fr.OTP_NAME_PROMPT)
     onNodeWithContentDescription(Fr.OTP_NAME_PROMPT).performTextInput(displayName)
+    OtpRateGate.awaitSlot() // issue #128 — see the note on the Phone step above
     onNodeWithText(Fr.OTP_CTA).performClick() // second attempt: includes displayName -> succeeds
 
     return phone

@@ -5,6 +5,8 @@ import com.swab.android.identity.InMemorySecureTokenStore
 import com.swab.android.network.ApiClient
 import com.swab.android.network.HttpResponse
 import com.swab.android.network.HttpTransport
+import com.swab.android.observability.RecordingLogger
+import com.swab.android.observability.SwabLogger
 import com.swab.android.storage.InMemoryKeyValueStore
 import com.swab.android.vault.InMemoryVaultKeyStore
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -25,13 +27,18 @@ class SignupViewModelTest {
             if (responses.isNotEmpty()) responses.removeAt(0) else HttpResponse(500, "")
     }
 
-    private fun newViewModel(transport: HttpTransport, kv: InMemoryKeyValueStore = InMemoryKeyValueStore()): SignupViewModel {
+    private fun newViewModel(
+        transport: HttpTransport,
+        kv: InMemoryKeyValueStore = InMemoryKeyValueStore(),
+        logger: SwabLogger = RecordingLogger(),
+    ): SignupViewModel {
         val apiClient = ApiClient(transport, baseUrl = "http://x")
         return SignupViewModel(
             apiClient = apiClient,
             tokenStore = InMemorySecureTokenStore(),
             vaultKeyStore = InMemoryVaultKeyStore(),
             onboardingStateStore = OnboardingStateStore(kv),
+            logger = logger,
         )
     }
 
@@ -101,5 +108,33 @@ class SignupViewModelTest {
 
         assertTrue(vm.uiState.value.needsName)
         assertTrue(!vm.uiState.value.otpError)
+    }
+
+    @Test
+    fun `issue-128 429 from verifyOtp surfaces otpError and logs the status instead of failing silently`() = runTest {
+        val logger = RecordingLogger()
+        val transport = ScriptedTransport(
+            mutableListOf(
+                HttpResponse(200, """{"devCode":"111111"}"""),
+                HttpResponse(429, ""),
+            ),
+        )
+        val vm = newViewModel(transport, logger = logger)
+        vm.submitPhone("+33612345678") { }
+        advanceUntilIdle()
+
+        vm.verifyOtp("111111", null) { }
+        advanceUntilIdle()
+
+        // Before this fix, a non-422 ApiError (429 = IDT-03's per-IP OTP rate
+        // limit) was swallowed with no log line at all, which is what made
+        // issue #128's E2E flakiness look like an unexplained Compose
+        // timeout instead of a rate limit.
+        assertTrue(vm.uiState.value.otpError)
+        assertTrue(!vm.uiState.value.needsName)
+        assertTrue(
+            "expected a WARN otp.verify.failed event carrying status=429, got: ${logger.events}",
+            logger.events.any { it.level == SwabLogger.Level.WARN && it.name == "otp.verify.failed" && it.fields["status"] == 429 },
+        )
     }
 }

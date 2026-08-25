@@ -89,6 +89,16 @@ class SignupViewModel(
                 if (err.status == 422) {
                     _uiState.value = _uiState.value.copy(busy = false, needsName = true)
                 } else {
+                    // Issue #128: this branch used to be completely silent —
+                    // a 429 (IDT-03's per-IP OTP rate limit) landed here
+                    // indistinguishable from any other failure, with zero log
+                    // output. That silence is what made the E2E flakiness
+                    // look like an unexplained Compose timeout instead of a
+                    // rate limit: `otpError` is still the right UI state (no
+                    // spec copy exists yet for a distinct rate-limited
+                    // message — G4, French copy comes from specs verbatim),
+                    // but the status code is now observable (G3).
+                    logger.event(SwabLogger.Level.WARN, "otp.verify.failed", mapOf("status" to err.status))
                     _uiState.value = _uiState.value.copy(busy = false, otpError = true)
                 }
             } catch (e: Exception) {
