@@ -6,6 +6,14 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-25 — [IDT-03] Configurable OTP rate limit: strict in production, relaxed for local/E2E
+
+- Issue #128 (Android E2E flakiness, PR #138): the per-IP OTP throttle (10/min) trips during scripted local/on-device E2E runs where many requests share one IP in a short window.
+- New `OTP_RATE_LIMIT` env var (`strict` default / `relaxed`), fail-closed exactly like `OTP_DEV_CODE`: `env.ts`'s `.refine()` throws at boot if `relaxed` is requested with `NODE_ENV=production` — an explicit opt-in flag, not an implicit `NODE_ENV` branch, so a devops misconfiguration (flag set + wrong `NODE_ENV`) is still caught.
+- `relaxed` = `max: 100, timeWindow: "20 minutes"`; `strict` = the existing `max: 10, timeWindow: "1 minute"` (IDT-03, unchanged in production). Resolved via `OTP_RATE_LIMITS` (exported from `routes/auth.ts`) into the existing per-route `config.rateLimit` — the child-store/replace-not-stack mechanics comment there is extended, not replaced.
+- Wired to `relaxed` in `docker-compose.yml`'s `api` service and in `tests/dev-local-server.ts` (the no-DB entrypoint `scripts/e2e-{ios,android}.sh` actually boot) so local/E2E gets the relaxed tier with no manual step.
+- `.env.example` documents the new var. Tests: env.ts fail-closed + default + accepted-outside-production; auth.ts's resolved tier values and an end-to-end check that `relaxed` lifts the ceiling past 10 requests. Full suite green (116/116 non-DB tests; DB-backed suites need Docker per usual local gap).
+
 ## 2026-08-22 — [VLT-02, VLT-03, VLT-07, VLT-08, VLT-09, IDT-08] ADR-001 stage 3, slice 1: typed contact endpoints
 
 - Adds `POST/PATCH/DELETE /contacts` + the `GET /contacts?since=` delta pull, replacing the `/vault` blob for contact links. `routes/vault.ts` is untouched and still served — clients cut over at stage 4.

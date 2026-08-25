@@ -13,10 +13,20 @@ const envSchema = z
     // unspoofable) until an operator explicitly names how many hops to trust
     // (IDT-03 — per-IP throttling is meaningless without this behind an ALB).
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
+    // IDT-03's strict per-IP OTP throttle (10/min) trips constantly in local
+    // dev and on-device/E2E runs (issue #128, PR #138) where many scripted
+    // requests share one IP in a short window. "relaxed" lifts it to a
+    // 100-per-20-minutes ceiling for exactly those environments. Fail-closed
+    // like OTP_DEV_CODE: refused below if requested in production.
+    OTP_RATE_LIMIT: z.enum(["strict", "relaxed"]).default("strict"),
   })
   .refine((e) => !(e.NODE_ENV === "production" && e.OTP_DEV_CODE === "enabled"), {
     path: ["OTP_DEV_CODE"],
     message: "must not be enabled in production",
+  })
+  .refine((e) => !(e.NODE_ENV === "production" && e.OTP_RATE_LIMIT === "relaxed"), {
+    path: ["OTP_RATE_LIMIT"],
+    message: "must not be relaxed in production (IDT-03)",
   });
 
 export type Env = z.infer<typeof envSchema>;

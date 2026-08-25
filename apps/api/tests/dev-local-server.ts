@@ -36,6 +36,10 @@ const env = loadEnv({
   // The mobile E2E flows read the OTP straight off the screen, so the dev
   // code must be echoed. The env schema already refuses this in production.
   OTP_DEV_CODE: "enabled",
+  // On-device E2E runs (issue #128) fire many scripted OTP requests from one
+  // machine and trip IDT-03's strict 10/min per-IP tier. The env schema
+  // already refuses "relaxed" in production (env.ts).
+  OTP_RATE_LIMIT: "relaxed",
 });
 
 const app = await buildApp({

@@ -39,6 +39,10 @@ services:
       PORT: "3001"
       # Fail-closed (G1): local dev only — must never be "enabled" in production.
       OTP_DEV_CODE: enabled
+      # Fail-closed (G1, issue #128): local dev/E2E only — must never be
+      # "relaxed" in production. Lifts the OTP per-IP throttle to 100/20min so
+      # scripted local/E2E runs don't trip IDT-03's strict 10/min tier.
+      OTP_RATE_LIMIT: relaxed
     ports:
       # Exposed on the LAN deliberately (not loopback-only) so a physical
       # phone can reach the API during on-device testing; simulator/emulator
