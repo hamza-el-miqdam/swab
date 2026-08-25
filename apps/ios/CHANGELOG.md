@@ -5,6 +5,15 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md](../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
 
+## 2026-08-25 — [FCH-04] History pruning gains a clock-skew guard (issue #113)
+
+- **What changed:** `Vault.prunedHistory` no longer trusts `now` blindly. It now takes `newestBeforeThisWrite: Date?` — the newest event this contact already had, captured **before** the new event is inserted — and skips the prune (append without deleting) whenever `now` sits more than the 12-month retention window ahead of it. The cutoff itself is still always computed from `now`, never from that anchor, so a previously-stored bogus future event can't become the basis a later ordinary write prunes against. `recordAxisEdit`/`reconfirmFicheStaleness` compute the anchor and pass it through; both gained a `now: Date = Date()` parameter plus internal `@testable`-only seams (`testRecordAxisEdit`, `testReconfirmFicheStaleness`) to inject `now` deterministically.
+- **Why:** a device with a fast/wrong clock made `Date()` at the call site compute a future cutoff, so one edit deleted ALL stored history — and `persist` pushes immediately (`VaultSync` resends unmerged on a 409), so the deletion reached the server, the VLT-05 restore source. Real data loss, not cosmetic. Ports Android's SUG-AND-013 guard.
+- **Anchor choice: per-contact, not vault-wide.** iOS nests history per contact (Android keeps one flat list), so the natural anchor is the edited contact's own newest event — it's also stricter: a chatty contact elsewhere in the vault can't mask a bad clock affecting a dormant one.
+- **Gotcha:** the guard makes a lone very-old event + one ordinary write ambiguous with a genuine clock jump (can't tell "13 months dormant" from "clock broke") — it now skips pruning in that exact case, same trade-off Android already accepts. `FicheVaultTests`'s existing 12-month prune test was updated to seed a corroborating recent event so it still exercises an unambiguous prune.
+- **Follow-up (minor, not fixed here):** iOS's cutoff still uses `Calendar` month math (`-12` months) vs. Android's fixed `365*24*60*60*1000` ms — they can disagree by a day across leap years. Per ADR-001 (#110) this whole write-time prune is a stopgap removed once server-side retention lands.
+- Verified: `xcrun swift test` 179/179; mutation-tested — hardcoding the guard to never trigger (always corroborated) fails the fast-clock regression test; computing the cutoff from the anchor instead of `now` fails the poisoned-future-event test.
+
 ## 2026-08-24 — [VLT-10, ONB-08, ONB-05, SUG-IOS-002] Queued vault writes are replayed, not pushed once and forgotten
 
 - **What changed:** new `Sources/SwabCore/Sync/SyncScheduler.swift` — an actor driving a `PendingSyncWork` protocol, with three replay triggers (post-onboarding, app background, 30 s-debounced write burst), all inert until ONB-05's onboarding-local window closes. `Vault` announces writes via a bare `setOnPersist` closure; `DoneViewModel` routes through the scheduler; `RootView` wires `scenePhase`.

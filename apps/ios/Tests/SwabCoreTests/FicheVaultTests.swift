@@ -228,21 +228,34 @@ final class FicheVaultTests: XCTestCase {
     /// pruned from storage on the next write, not just filtered at read
     /// time — otherwise the blob grows unbounded against the server's 1 MB
     /// quota (SUG-IOS-007).
+    ///
+    /// Seeds a corroborating six-month-old event alongside the stale one so
+    /// the issue #113 clock-skew guard below sees a recent enough anchor and
+    /// lets this ordinary prune proceed — a lone 13-month-old event with no
+    /// other anchor is deliberately ambiguous (see
+    /// `test_FCH04_fastDeviceClock_doesNotDeleteRealHistory`) and is not what
+    /// this test is about.
     func test_FCH04_historyOlderThanTwelveMonths_isPrunedOnNextWrite() async throws {
         let vault = makeVault()
         let contact = try await vault.addContact(displayName: "Léa")
         let thirteenMonthsAgo = Calendar.current.date(byAdding: .month, value: -13, to: Date())!
-        let stale = FicheHistoryEvent(date: thirteenMonthsAgo, kind: .reconfirmed)
-        try await vault.setTestHistory(id: contact.id, history: [stale])
+        let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date())!
+        try await vault.setTestHistory(id: contact.id, history: [
+            FicheHistoryEvent(date: sixMonthsAgo, kind: .reconfirmed),
+            FicheHistoryEvent(date: thirteenMonthsAgo, kind: .reconfirmed),
+        ])
 
         try await vault.setFicheEtat(id: contact.id, etat: .available)
 
         let updated = try await vault.getContact(id: contact.id)
-        XCTAssertEqual(updated?.history.count, 1, "the 13-month-old event must be pruned")
+        XCTAssertEqual(
+            updated?.history.count, 2,
+            "the 13-month-old event must be pruned; the 6-month one and the new edit remain"
+        )
         if case .axisChanged = updated?.history.first?.kind {
-            // expected — only the fresh edit remains
+            // expected — the fresh edit is newest-first
         } else {
-            XCTFail("expected the surviving event to be the new axisChanged entry")
+            XCTFail("expected the surviving newest event to be the new axisChanged entry")
         }
     }
 
@@ -259,6 +272,69 @@ final class FicheVaultTests: XCTestCase {
 
         let updated = try await vault.getContact(id: contact.id)
         XCTAssertEqual(updated?.history.count, 2, "the 11-month-old event must survive the prune")
+    }
+
+    // ---- issue #113 / FCH-04: clock-skew guard on the write-time prune ----
+    //
+    // `prunedHistory` used to compute its cutoff straight off the caller's
+    // `now` (`Date()` at the call site), so a device clock running years
+    // fast made one ordinary edit compute a cutoff in the FUTURE and delete
+    // every stored event for that contact. `persist` writes that
+    // immediately and `VaultSync` pushes the whole blob (re-pushed unmerged
+    // on a 409 conflict), so the deletion reached the server — the VLT-05
+    // restore source. Real data loss, not a display glitch.
+    //
+    // The fix corroborates `now` against the newest event already stored
+    // for THIS contact (per-contact, not vault-wide — see
+    // `apps/ios/CHANGELOG.md` for why): if `now` is further ahead of that
+    // than the whole retention window, a clock jump and a year-long dormant
+    // contact are indistinguishable, and in that doubt the write skips the
+    // prune (appends without deleting) rather than trust a possibly-wrong
+    // clock. `testRecordAxisEdit`/`testReconfirmFicheStaleness` are
+    // test-only seams (`@testable`) that inject `now` directly — production
+    // call sites always derive it from `Date()`.
+
+    func test_FCH04_fastDeviceClock_doesNotDeleteRealHistory() async throws {
+        let vault = makeVault()
+        let a = try await vault.addContact(displayName: "A")
+        let b = try await vault.addContact(displayName: "B")
+        let realNow = Date()
+        try await vault.setTestHistory(id: a.id, history: [FicheHistoryEvent(date: realNow, kind: .reconfirmed)])
+        try await vault.setTestHistory(id: b.id, history: [FicheHistoryEvent(date: realNow, kind: .reconfirmed)])
+
+        // Clock jumps four years forward, then one chip tap on A only.
+        let skewed = Calendar.current.date(byAdding: .year, value: 4, to: realNow)!
+        try await vault.testRecordAxisEdit(id: a.id, now: skewed)
+
+        let updatedA = try await vault.getContact(id: a.id)
+        XCTAssertEqual(updatedA?.history.count, 2, "A's real event must survive a skewed write")
+        let updatedB = try await vault.getContact(id: b.id)
+        XCTAssertEqual(updatedB?.history.count, 1, "an untouched contact must not lose history either")
+    }
+
+    func test_FCH04_storedFutureDatedEvent_doesNotPoisonLaterPruning() async throws {
+        // The mirror: once a skewed event IS stored, a later ORDINARY write
+        // (sane clock) must still use ITS OWN `now` as the cutoff basis, not
+        // the bogus future timestamp already sitting in history — otherwise
+        // the poisoned value becomes the new anchor and wipes everything on
+        // the very next normal edit.
+        let vault = makeVault()
+        let contact = try await vault.addContact(displayName: "Nadia")
+        let realNow = Date()
+        let bogusFuture = Calendar.current.date(byAdding: .year, value: 4, to: realNow)!
+        try await vault.setTestHistory(id: contact.id, history: [
+            FicheHistoryEvent(date: bogusFuture, kind: .reconfirmed),
+            FicheHistoryEvent(date: realNow, kind: .reconfirmed),
+        ])
+
+        let ordinaryNow = realNow.addingTimeInterval(1_000)
+        try await vault.testRecordAxisEdit(id: contact.id, now: ordinaryNow)
+
+        let updated = try await vault.getContact(id: contact.id)
+        XCTAssertEqual(
+            updated?.history.count, 3,
+            "the real event must survive alongside the bogus future one and the new edit"
+        )
     }
 
     /// VLT-03: pruning keeps the blob bounded under sustained editing. The
