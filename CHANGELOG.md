@@ -13,6 +13,12 @@
 - **Why:** PRs #145/#146 — both closing `area:specs`-labeled issues (#116, #115/#132) the founder filed — were failing scope-guard for touching exactly the first set of paths; fixing that then failed scope-guard on this very PR for touching `agents/spec-specialist.md`.
 - **Gotcha:** `"agents/"` under sre/devops covers *mapping-sync* edits (keeping `AREA_PREFIXES` and a Scope section in agreement), not persona/behavior authorship — that judgment call stays with each area in review. `docs/decisions/ADR-001-*` stays append-only (dated correction notes, never a silent rewrite) per `agents/review-specialist.md`'s founder-attention flag.
 
+## 2026-08-26 — [ENV-05, OQ-SGR-2, OQ-FLT-2] ADR-001 Enabling section corrected — FS-04/05/06 stay on-device
+
+- **What changed:** `docs/decisions/ADR-001-server-side-classification-data.md`'s "Enabling" bullet claiming matching/filtering/subgroups "can be computed server-side instead of on-device" gets a dated correction note (kept, not rewritten, per the issue's instruction — an ADR is a record of what was believed at decision time). The note retracts the claim and points at the three resolutions that supersede it: `FS-04` `OQ-SGR-2`, `FS-05` `ENV-05`, `FS-06` `OQ-FLT-2` (all on-device).
+- **Why:** #115 — this bullet over-generalised from *filter rules* (server-stored) to *subgroup membership and match/filter resolution* (derived on-device, never persisted per `SGR-07`/`VLT-01`). It is exactly the stale premise `OQ-FLT-2` (#114) had to correct, and ADR-001 is cited as live guidance from `CLAUDE.md` and three specs — leaving it uncorrected would keep misleading the next reader on all three specs, not just FS-06.
+- **Reviewed but unchanged:** the rest of the ADR for similar drift (per the issue's suggestion) — no other statement was found stale; stage 3's "server-side matching on `category` only" bullet is unaffected (it describes match-pair computation, not scope→recipients resolution, which `ENV-05` already correctly scopes on-device).
+
 ## 2026-08-26 — [#65] scope-guard: fix stale-PR false positives from the merge-ref checkout
 
 - **What changed:** `.github/workflows/scope-guard.yml` now checks out `github.event.pull_request.head.sha` directly (falls back to `github.ref` for `workflow_dispatch`), instead of `actions/checkout`'s default `refs/pull/N/merge`.
