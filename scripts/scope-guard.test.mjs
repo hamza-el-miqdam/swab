@@ -2,7 +2,11 @@
 // function. Run with: node --test scripts/scope-guard.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeViolations, describeResult, AREA_PREFIXES } from "./scope-guard.mjs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { computeViolations, describeResult, getChangedFiles, AREA_PREFIXES } from "./scope-guard.mjs";
 
 const cases = [
   {
@@ -221,4 +225,81 @@ test("describeResult: a properly labeled, in-scope PR passes with exit code 0", 
   assert.equal(result.exitCode, 0);
   assert.equal(result.level, "log");
   assert.match(result.message, /PASS/);
+});
+
+// --- issue #65: getChangedFiles was untested, which is exactly where the
+// "base branch advanced after the PR opened" bug lived. These build a real
+// temp git repo to exercise the actual `git diff` call rather than a
+// hand-supplied file list, so they can reproduce the bug and lock in the fix.
+//
+// Scenario: base.sha is the commit main was at when the PR opened. The PR
+// branch adds pr-file.txt. Main then advances with an unrelated commit
+// (main-only.txt) — simulating another PR merging while this one stays open.
+
+function git(cwd, ...args) {
+  return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+}
+
+function makeStaleBaseRepo() {
+  const dir = mkdtempSync(join(tmpdir(), "scope-guard-test-"));
+  git(dir, "init", "-q", "-b", "main");
+  git(dir, "config", "user.email", "test@example.com");
+  git(dir, "config", "user.name", "Test");
+
+  writeFileSync(join(dir, "base.txt"), "base\n");
+  git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "base");
+  const baseSha = git(dir, "rev-parse", "HEAD");
+
+  git(dir, "checkout", "-q", "-b", "pr-branch");
+  writeFileSync(join(dir, "pr-file.txt"), "pr change\n");
+  git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "pr change");
+  const prHeadSha = git(dir, "rev-parse", "HEAD");
+
+  // Main advances after the PR branched — e.g. an unrelated PR merges.
+  git(dir, "checkout", "-q", "main");
+  writeFileSync(join(dir, "main-only.txt"), "merged to main after the PR opened\n");
+  git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "unrelated commit merged to main after the PR opened");
+
+  return { dir, baseSha, prHeadSha };
+}
+
+test("getChangedFiles: merge-ref-style HEAD (PR head merged with current main tip) wrongly includes files merged to main after the PR opened — reproduces issue #65", () => {
+  const { dir, baseSha, prHeadSha } = makeStaleBaseRepo();
+  try {
+    // Simulates what actions/checkout does by default for a pull_request
+    // event: it checks out refs/pull/N/merge, i.e. the PR head merged with
+    // whatever the base branch's CURRENT tip is — not what it was when the
+    // PR opened (which base.sha is pinned to).
+    git(dir, "checkout", "-q", prHeadSha);
+    git(dir, "merge", "-q", "--no-edit", "main");
+
+    const changed = getChangedFiles(baseSha, { cwd: dir });
+
+    assert.ok(
+      changed.includes("main-only.txt"),
+      "expected the merge-ref-style HEAD to leak main-only.txt into the diff (that's the bug)",
+    );
+    assert.ok(changed.includes("pr-file.txt"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("getChangedFiles: checking out the PR head SHA directly excludes commits merged to main after the PR opened — fix for issue #65", () => {
+  const { dir, baseSha, prHeadSha } = makeStaleBaseRepo();
+  try {
+    // The fix: check out the PR's own head commit, not a merge ref. Now
+    // base.sha...HEAD means what the script has always assumed it means.
+    git(dir, "checkout", "-q", prHeadSha);
+
+    const changed = getChangedFiles(baseSha, { cwd: dir });
+
+    assert.deepEqual(changed, ["pr-file.txt"]);
+    assert.ok(!changed.includes("main-only.txt"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

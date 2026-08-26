@@ -7,6 +7,13 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 
+## 2026-08-26 — [#65] scope-guard: fix stale-PR false positives from the merge-ref checkout
+
+- **What changed:** `.github/workflows/scope-guard.yml` now checks out `github.event.pull_request.head.sha` directly (falls back to `github.ref` for `workflow_dispatch`), instead of `actions/checkout`'s default `refs/pull/N/merge`.
+- **Why:** the merge ref is the PR head merged with main's *current* tip, but `BASE` (`pull_request.base.sha`) stays pinned to main as it was when the PR last synced. `base...HEAD` then included every commit merged to main since, wrongly blaming an open PR for files it never touched — the `schema.prisma` hard gate failed loudly; the escaping check failed the same way and could also wrongly *allow* a PR whose apparent scope widened.
+- **How:** `scripts/scope-guard.mjs`'s `getChangedFiles` was untested — the bug lived entirely in what HEAD the workflow handed it, not its diff logic. Exported it with an optional `{ cwd }` for testing and added two `scope-guard.test.mjs` cases against a throwaway temp git repo: one reproduces the merge-ref leak, one confirms a plain head-SHA checkout excludes it.
+- **Gotcha:** `ci.yml`'s `changes` job has the same shape of staleness in its two-dot path-filter diff, but a false positive there only triggers an extra native test suite — left as a follow-up, out of scope for #65.
+
 ## 2026-08-26 — [#141] scope-guard: shared docker-compose.yml + fail-closed unlabeled PRs
 
 - **What changed:** (1) `docker-compose.yml` added to `SHARED_ALLOWED_PREFIXES` — a backend-owned change (e.g. an env var) can now touch it without also carrying an `area:sre`/`area:devops` label. (2) Removed the SUG-OPS-002 step 3 warn-and-pass grace period: an unlabeled PR now fails closed (`process.exitCode = 1`), with a message naming every valid `area:*` label.
