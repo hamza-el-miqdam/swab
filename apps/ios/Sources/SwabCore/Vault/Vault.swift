@@ -339,6 +339,7 @@ public actor Vault {
         id: String,
         axis: FicheAxis,
         value: String?,
+        now: Date = Date(),
         mutate: (inout VaultContact) -> Void
     ) async throws {
         var data = try await hydrate()
@@ -346,14 +347,22 @@ public actor Vault {
             return
         }
         mutate(&data.contacts[index])
-        let now = Date()
+        // Captured BEFORE the insert below — the clock-skew guard's anchor
+        // must be the newest event this contact already had, never the
+        // event this very write is about to append (which would trivially
+        // "corroborate" any `now`, however wrong).
+        let newestBeforeThisWrite = data.contacts[index].history.map(\.date).max()
         data.contacts[index].lastAxisChangeAt = now
         data.contacts[index].stalenessSnoozedUntil = nil
         data.contacts[index].history.insert(
             FicheHistoryEvent(date: now, kind: .axisChanged(axis: axis.rawValue, value: value)),
             at: 0
         )
-        data.contacts[index].history = prunedHistory(data.contacts[index].history, now: now)
+        data.contacts[index].history = prunedHistory(
+            data.contacts[index].history,
+            now: now,
+            newestBeforeThisWrite: newestBeforeThisWrite
+        )
         try await persist(data)
     }
 
@@ -364,10 +373,43 @@ public actor Vault {
     /// mutate-then-persist transaction as the write that triggered it,
     /// keeps the two in sync without a separate read-modify-write pass.
     /// Read-time filtering in `FicheViewModel` stays as-is — it remains the
-    /// display source of truth for legacy blobs and clock-skew edge cases.
-    private func prunedHistory(_ history: [FicheHistoryEvent], now: Date) -> [FicheHistoryEvent] {
+    /// display source of truth for legacy blobs.
+    ///
+    /// Issue #113 clock-skew guard (ports Android's SUG-AND-013): `now`
+    /// comes from `Date()` at the call site, so a device with a wrong clock
+    /// can compute a cutoff in the future and delete every real event —
+    /// `persist` writes that immediately and `VaultSync` pushes the whole
+    /// blob (re-pushed unmerged on a 409 conflict), so the deletion reaches
+    /// the server, the VLT-05 restore source. `newestBeforeThisWrite`
+    /// (the newest event this SAME contact already had, per-contact — see
+    /// CHANGELOG.md for that choice) corroborates `now`: if it sits further
+    /// in the past than the whole retention window, a clock jump and a
+    /// year-long-dormant contact are indistinguishable, and in that doubt
+    /// this skips the prune (appends without deleting) rather than trust a
+    /// possibly-wrong clock. The cutoff itself is always derived from `now`,
+    /// never from `newestBeforeThisWrite` — so even a previously-stored
+    /// bogus future event (which trivially "corroborates" any later `now`)
+    /// cannot become the basis a later ordinary write prunes against.
+    private func prunedHistory(
+        _ history: [FicheHistoryEvent],
+        now: Date,
+        newestBeforeThisWrite: Date?
+    ) -> [FicheHistoryEvent] {
         let cutoff = Calendar.current.date(byAdding: .month, value: -12, to: now) ?? .distantPast
+        if let newestBeforeThisWrite, newestBeforeThisWrite < cutoff {
+            return history
+        }
         return history.filter { $0.date >= cutoff }
+    }
+
+    /// Test-only seam (issue #113): production call sites always derive
+    /// `now` from `Date()`; this lets tests inject a specific instant to
+    /// exercise the clock-skew guard deterministically. Runs the real
+    /// `recordAxisEdit` write path (append + prune), so it covers the exact
+    /// code the public fiche setters run. Not `public` — reachable only via
+    /// `@testable import`.
+    func testRecordAxisEdit(id: String, now: Date) async throws {
+        try await recordAxisEdit(id: id, axis: .etat, value: "test-value", now: now) { _ in }
     }
 
     /// FCH-05 "C'est toujours ça": re-confirms without changing any axis
@@ -375,16 +417,31 @@ public actor Vault {
     /// (not a counter — a single qualitative feed entry, same as an axis
     /// change).
     public func reconfirmFicheStaleness(id: String) async throws {
+        try await reconfirmFicheStaleness(id: id, now: Date())
+    }
+
+    private func reconfirmFicheStaleness(id: String, now: Date) async throws {
         var data = try await hydrate()
         guard let index = data.contacts.firstIndex(where: { $0.id == id }) else {
             return
         }
-        let now = Date()
+        // See `recordAxisEdit`'s matching comment — captured before the
+        // insert below, so it never anchors on the event this write adds.
+        let newestBeforeThisWrite = data.contacts[index].history.map(\.date).max()
         data.contacts[index].lastAxisChangeAt = now
         data.contacts[index].stalenessSnoozedUntil = nil
         data.contacts[index].history.insert(FicheHistoryEvent(date: now, kind: .reconfirmed), at: 0)
-        data.contacts[index].history = prunedHistory(data.contacts[index].history, now: now)
+        data.contacts[index].history = prunedHistory(
+            data.contacts[index].history,
+            now: now,
+            newestBeforeThisWrite: newestBeforeThisWrite
+        )
         try await persist(data)
+    }
+
+    /// Test-only seam (issue #113) — same rationale as `testRecordAxisEdit`.
+    func testReconfirmFicheStaleness(id: String, now: Date) async throws {
+        try await reconfirmFicheStaleness(id: id, now: now)
     }
 
     /// FCH-05 "À revoir plus tard": dismisses quietly for 30 days. Per the
