@@ -164,13 +164,13 @@
         ]
       },
       "android": {
-        "status": "manual",
+        "status": "automated",
         "tests": [
           "RelationshipMapE2ETest.test_MAP01_09_mapRendersMoiAndPlacedContactNodes",
           "RelationshipMapE2ETest.test_densityRegression_placedNodeSizeIsNotCollapsed"
         ]
       },
-      "notes": "Android also guards the Wave-2 Float.toDp() density-collapse regression. Reclassified from automated to manual 2026-08-25 (issue #128): both tests intermittently threw ComposeTimeoutException under ANDROIDX_TEST_ORCHESTRATOR, root-caused to IDT-03's per-IP OTP rate limit (10/60s, shared by /auth/otp/request and /auth/otp/verify) combined with an in-memory OtpRateGate call-pacer that the orchestrator's per-test-method process reset silently wiped. A file-persisted OtpRateGate (apps/android/app/src/androidTest/kotlin/com/swab/android/e2e/OtpRateGate.kt) was written to replace it, but PR #138's own review (2026-08-25) ran it live on a clean checkout and found it does NOT work — `OtpRateGateTest.test_ISSUE128_writtenTimestampsRoundTripThroughReadAcrossCalls` itself fails (`expected:<[100, 200, 300]> but was:<[]>`), and these two tests still fail live (18/46 suite failures). Status is confirmed-broken, not merely unconfirmed. Re-diagnosis in progress; also worth re-testing once PR #139's relaxed local/E2E rate limit lands, since that may remove the need for client-side pacing entirely. Kept `tests` listed for when this promotes back to automated, not as a currently-enforced drift guard."
+      "notes": "Android also guards the Wave-2 Float.toDp() density-collapse regression. Briefly reclassified to manual 2026-08-25 (issue #128) when both tests threw ComposeTimeoutException under ANDROIDX_TEST_ORCHESTRATOR; root cause was IDT-03's per-IP OTP rate limit (10/60s, shared by /auth/otp/request and /auth/otp/verify) exhausting part-way through a full suite run. Fixed server-side by PR #139's OTP_RATE_LIMIT tiers: the local/E2E entrypoint (apps/api/tests/dev-local-server.ts, what scripts/e2e-android.sh requires) now boots relaxed at 100 requests / 20 min, so a ~48-call suite no longer hits the ceiling. No client-side pacing is involved — the OtpRateGate helper PR #138 first attempted never worked and was deleted. Promoted back to automated 2026-08-26 on a full on-device run: 39/39 passed, zero drift-guard failures."
     },
     "MAP-02": {
       "fs": "FS-02",
@@ -278,12 +278,12 @@
         "status": "manual"
       },
       "android": {
-        "status": "manual",
+        "status": "automated",
         "tests": [
           "RelationshipMapE2ETest.test_MAP01_09_mapRendersMoiAndPlacedContactNodes"
         ]
       },
-      "notes": "iOS has no dedicated absence assertion yet — candidate for the next iOS E2E increment. Reclassified from automated to manual 2026-08-25 (issue #128) — same test as MAP-01, same OtpRateGate flakiness, confirmed-broken not merely unconfirmed; see that entry's note."
+      "notes": "iOS has no dedicated absence assertion yet — candidate for the next iOS E2E increment. Promoted back to automated on Android 2026-08-26 — same test as MAP-01, same IDT-03 rate-limit root cause, fixed server-side by PR #139's relaxed local/E2E tier; see that entry's note."
     },
     "FCH-01": {
       "fs": "FS-03",
@@ -413,14 +413,14 @@
         "status": "not-e2e-verifiable"
       },
       "android": {
-        "status": "manual",
+        "status": "automated",
         "tests": [
           "FicheTouchTargetsTest.test_SUGDES011_etatTagRow_touchBoundsAtLeast48dp",
           "FicheTouchTargetsTest.test_SUGDES011_intimiteSegmentedCell_touchBoundsAtLeast48dp",
           "FicheTouchTargetsTest.test_SUGDES011_listModeSwitch_touchBoundsAtLeast48dp"
         ]
       },
-      "notes": "Design-system suggestion ID, not an FS-* requirement — filed here (not FCH-*) since no FS acceptance criterion names it yet. Was never tracked in this manifest at all until PR #138's review (2026-08-25/26) caught the gap: apps/android/CHANGELOG.md and docs/STATUS.md named FicheTouchTargetsTest as known-flaky alongside MAP-01/MAP-09 (issue #128, same OtpRateGate root cause), but this file had no corresponding row. Marked manual (confirmed-flaky live, not automated) to match that finding, pending the same OtpRateGate re-diagnosis / PR #139 relaxed-limit retest as MAP-01. iOS has no port of SUG-DES-011 — not-e2e-verifiable until one exists, not silently assumed fine."
+      "notes": "Design-system suggestion ID, not an FS-* requirement — filed here (not FCH-*) since no FS acceptance criterion names it yet. Was never tracked in this manifest at all until PR #138's review (2026-08-25/26) caught the gap: apps/android/CHANGELOG.md and docs/STATUS.md named FicheTouchTargetsTest as known-flaky alongside MAP-01/MAP-09 (issue #128) but this file had no corresponding row. Same IDT-03 per-IP OTP rate-limit root cause, fixed server-side by PR #139's relaxed local/E2E tier; automated as of the 2026-08-26 full-suite run (39/39, zero drift). iOS has no port of SUG-DES-011 — not-e2e-verifiable until one exists, not silently assumed fine."
     },
     "IDT-01": {
       "fs": "FS-07",
