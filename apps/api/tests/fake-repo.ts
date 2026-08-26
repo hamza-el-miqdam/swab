@@ -10,10 +10,14 @@
  * `contacts-repo.fake.test.ts` and `contacts-repo.postgres.test.ts`. If this
  * double's idempotency / LWW / tombstone semantics drift, that suite goes red
  * before any route test can quietly start lying.
+ *
+ * The roles half (ADR-001 stage 3 slice 2) is held to the same discipline via
+ * `contact-roles-contract.ts`.
  */
-import { AXES, STALENESS_AXES, type Axis } from "../src/contacts/vocabulary.js";
+import { AXES, STALENESS_AXES, type Axis, type RoleContexteValue } from "../src/contacts/vocabulary.js";
 import { pageFrom } from "../src/contacts/page.js";
 import type {
+  AddRoleResult,
   ContactPage,
   ContactRecord,
   CreateContactInput,
@@ -21,6 +25,7 @@ import type {
   DeleteContactResult,
   PatchContactInput,
   PatchContactResult,
+  RemoveRoleResult,
   Repository,
   UserRecord,
   VaultRecord,
@@ -41,9 +46,17 @@ export function fakeRepository(): FakeRepository {
   const contacts = new Map<string, ContactRecord>();
   /** VLT-07 ledger, keyed `${userId}|${mutationId}` — scoped per user like the real PK. */
   const mutations = new Set<string>();
+  /** Mirrors the composite PK `@@id([contactLinkId, role])`, keyed `${contactId}|${role}`. */
+  interface RoleRow {
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date | null;
+  }
+  const roles = new Map<string, RoleRow>();
   let seq = 0;
 
   const ledgerKey = (userId: string, mutationId: string): string => `${userId}|${mutationId}`;
+  const roleKey = (contactId: string, role: RoleContexteValue): string => `${contactId}|${role}`;
 
   const clone = (contact: ContactRecord): ContactRecord => ({
     ...contact,
@@ -216,6 +229,68 @@ export function fakeRepository(): FakeRepository {
       // Same `limit + 1` probe as Prisma, then the SHARED paging tail — the two
       // must agree on when an id-bearing cursor is emitted.
       return pageFrom(matches.slice(0, limit + 1).map(clone), cursor, limit);
+    },
+
+    // --- Rôles·contexte (ADR-001 stage 3 slice 2) -----------------------------
+
+    async addRole(
+      userId: string,
+      mutationId: string,
+      contactId: string,
+      role: RoleContexteValue,
+    ): Promise<AddRoleResult> {
+      if (mutations.has(ledgerKey(userId, mutationId))) return { outcome: "already_applied" };
+      const existing = own(userId, contactId);
+      // Checked BEFORE the ledger write: a not_found never burns the id. A
+      // tombstoned parent contact is treated the same as a missing one — a
+      // role can never outlive the contact it hangs off.
+      if (existing === null || existing.deletedAt !== null) return { outcome: "not_found" };
+      mutations.add(ledgerKey(userId, mutationId));
+
+      const key = roleKey(contactId, role);
+      const row = roles.get(key);
+      const stamp = new Date();
+      if (row !== undefined && row.deletedAt === null) {
+        // Already live — no-op at the domain level, distinct from the
+        // mutation-id idempotency above (VLT-07 vs. a genuinely repeated intent).
+        return { outcome: "no_op", contact: clone(existing), role };
+      }
+      if (row !== undefined) {
+        // Previously tombstoned: revive rather than insert (mirrors the
+        // partial-unique "re-add after delete" shape on ContactLink itself).
+        row.deletedAt = null;
+        row.updatedAt = stamp;
+      } else {
+        roles.set(key, { createdAt: stamp, updatedAt: stamp, deletedAt: null });
+      }
+      // Bump the parent so the cursor pull covers this change too.
+      existing.updatedAt = stamp;
+      return { outcome: "applied", contact: clone(existing), role };
+    },
+
+    async removeRole(
+      userId: string,
+      mutationId: string,
+      contactId: string,
+      role: RoleContexteValue,
+    ): Promise<RemoveRoleResult> {
+      if (mutations.has(ledgerKey(userId, mutationId))) return { outcome: "already_applied" };
+      const existing = own(userId, contactId);
+      if (existing === null || existing.deletedAt !== null) return { outcome: "not_found" };
+      mutations.add(ledgerKey(userId, mutationId));
+
+      const key = roleKey(contactId, role);
+      const row = roles.get(key);
+      if (row === undefined || row.deletedAt !== null) {
+        // Never lived, or already tombstoned — recorded, nothing to write
+        // (mirrors deleteContact's tombstone-of-a-tombstone no_op).
+        return { outcome: "no_op", contact: clone(existing) };
+      }
+      const stamp = new Date();
+      row.deletedAt = stamp;
+      row.updatedAt = stamp;
+      existing.updatedAt = stamp;
+      return { outcome: "applied", contact: clone(existing) };
     },
   };
 }

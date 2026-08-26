@@ -15,7 +15,7 @@
  * The double cannot drift from Prisma without a red test.
  */
 import type { SyncCursor } from "./contacts/cursor.js";
-import type { Axis, EtatValue, RessentiValue } from "./contacts/vocabulary.js";
+import type { Axis, EtatValue, RessentiValue, RoleContexteValue } from "./contacts/vocabulary.js";
 
 export interface UserRecord {
   id: string;
@@ -156,7 +156,56 @@ export interface ContactsRepository {
   listContactsSince(userId: string, cursor: SyncCursor | null, limit: number): Promise<ContactPage>;
 }
 
-export interface Repository extends IdentityRepository, VaultRepository, ContactsRepository {}
+// ---------------------------------------------------------------------------
+// Rôles·contexte (ADR-001 stage 3 slice 2 — VLT-02/07/09)
+// ---------------------------------------------------------------------------
+
+export type AddRoleResult =
+  | { outcome: "applied" | "no_op"; contact: ContactRecord; role: RoleContexteValue }
+  | { outcome: "already_applied" }
+  | { outcome: "not_found" };
+
+export type RemoveRoleResult =
+  | { outcome: "applied" | "no_op"; contact: ContactRecord }
+  | { outcome: "already_applied" }
+  | { outcome: "not_found" };
+
+/**
+ * Every method is scoped to `userId` — there is deliberately no "by id" read
+ * that does not also filter on the owner (IDT-08). Restated from
+ * {@link ContactsRepository}'s own doc comment so this interface stands on
+ * its own for the next reader.
+ *
+ * `mutationId` is the client-generated idempotency key (VLT-07). Implementations
+ * MUST record it in the SAME transaction as the data write, so "applied" and
+ * "recorded" can never disagree, and MUST answer a replay with `already_applied`
+ * rather than re-executing. A `not_found` does NOT burn the id.
+ *
+ * A role write MUST also bump the parent `ContactLink.updatedAt` in the same
+ * transaction, so a client polling `listContactsSince` keeps seeing every
+ * mutation to a contact it owns — including role-only changes — without a
+ * separate roles-sync endpoint.
+ */
+export interface ContactRolesRepository {
+  addRole(
+    userId: string,
+    mutationId: string,
+    contactId: string,
+    role: RoleContexteValue,
+  ): Promise<AddRoleResult>;
+  removeRole(
+    userId: string,
+    mutationId: string,
+    contactId: string,
+    role: RoleContexteValue,
+  ): Promise<RemoveRoleResult>;
+}
+
+export interface Repository
+  extends IdentityRepository,
+    VaultRepository,
+    ContactsRepository,
+    ContactRolesRepository {}
 
 export interface DbHealthResult {
   ok: boolean;

@@ -20,6 +20,22 @@ export type EtatValue = (typeof ETAT_VALUES)[number];
 export const RESSENTI_VALUES = ["positive", "ambivalent", "negative"] as const;
 export type RessentiValue = (typeof RESSENTI_VALUES)[number];
 
+/**
+ * Rôles·contexte (ADR-001 stage 3 slice 2) — a set of atomic tags on a
+ * contact, not a single-valued axis like `etat`/`ressenti`. There is
+ * deliberately no `ROLE_AXES`/staleness entry: adding or removing a tag is
+ * its own event, not a field write subject to LWW — see `ContactRolesRepository`.
+ */
+export const ROLE_VALUES = [
+  "family",
+  "partner",
+  "colleague",
+  "cohort",
+  "community",
+  "neighbor",
+] as const;
+export type RoleContexteValue = (typeof ROLE_VALUES)[number];
+
 /** Intimité is exempt from FCH-09: a language-neutral ring integer (ONB-04). */
 export const RING_MIN = 1;
 export const RING_MAX = 4;

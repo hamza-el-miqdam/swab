@@ -7,13 +7,16 @@ import {
   type PrismaClient,
 } from "@repo/db";
 import type {
+  AddRoleResult,
   ContactPage,
   ContactRecord,
+  ContactRolesRepository,
   ContactsRepository,
   CreateContactInput,
   CreateContactResult,
   DeleteContactResult,
   PatchContactResult,
+  RemoveRoleResult,
 } from "./repo.js";
 import type { SyncCursor } from "./contacts/cursor.js";
 import { pageFrom } from "./contacts/page.js";
@@ -23,6 +26,7 @@ import {
   type Axis,
   type EtatValue,
   type RessentiValue,
+  type RoleContexteValue,
 } from "./contacts/vocabulary.js";
 
 /** Prisma's transaction-scoped client — no `$transaction`/`$connect` on it. */
@@ -44,6 +48,20 @@ const RESSENTI_TO_DB: Record<RessentiValue, $Enums.Ressenti> = {
   positive: $Enums.Ressenti.POSITIVE,
   ambivalent: $Enums.Ressenti.AMBIVALENT,
   negative: $Enums.Ressenti.NEGATIVE,
+};
+/**
+ * Rôles·contexte (ADR-001 stage 3 slice 2) — same wire/DB translation pattern
+ * as `ETAT_TO_DB`/`RESSENTI_TO_DB` above, deliberately kept separate rather
+ * than folded into `toDbValue`: roles are a set of tags on `ContactRole`, not
+ * an axis column on `ContactLink` (see `ContactRolesRepository`'s doc comment).
+ */
+const ROLE_TO_DB: Record<RoleContexteValue, $Enums.RoleContexte> = {
+  family: $Enums.RoleContexte.FAMILY,
+  partner: $Enums.RoleContexte.PARTNER,
+  colleague: $Enums.RoleContexte.COLLEAGUE,
+  cohort: $Enums.RoleContexte.COHORT,
+  community: $Enums.RoleContexte.COMMUNITY,
+  neighbor: $Enums.RoleContexte.NEIGHBOR,
 };
 const ETAT_FROM_DB = invert(ETAT_TO_DB);
 const RESSENTI_FROM_DB = invert(RESSENTI_TO_DB);
@@ -145,14 +163,17 @@ async function runMutation<T>(
 }
 
 /**
- * Prisma-backed `ContactsRepository` (ADR-001 stage 3). Read-only consumer of
- * `@repo/db` — schema changes go through an `area:db` issue.
+ * Prisma-backed `ContactsRepository` + `ContactRolesRepository` (ADR-001
+ * stage 3, slice 2 adds roles). Read-only consumer of `@repo/db` — schema
+ * changes go through an `area:db` issue.
  *
  * Every query filters on `ownerId`; there is deliberately no lookup by contact
  * id alone, so no code path can serve one user another user's classification
  * (VLT-02, IDT-08). Nothing here logs — the routes log ids and counts only.
  */
-export function prismaContactsRepository(client: PrismaClient = prisma): ContactsRepository {
+export function prismaContactsRepository(
+  client: PrismaClient = prisma,
+): ContactsRepository & ContactRolesRepository {
   return {
     async createContact(userId, mutationId, input): Promise<CreateContactResult> {
       try {
@@ -288,6 +309,95 @@ export function prismaContactsRepository(client: PrismaClient = prisma): Contact
         take: limit + 1, // one extra row is the hasMore probe
       });
       return pageFrom(rows.map(toRecord), cursor, limit);
+    },
+
+    // --- Rôles·contexte (ADR-001 stage 3 slice 2) ----------------------------
+
+    async addRole(userId, mutationId, contactId, role): Promise<AddRoleResult> {
+      const result = await runMutation(client, userId, mutationId, async (tx) => {
+        const existing = await tx.contactLink.findFirst({
+          where: { id: contactId, ownerId: userId },
+        });
+        // A tombstoned parent is treated the same as a missing one — a role
+        // can never outlive the contact it hangs off (VLT-09).
+        if (existing === null || existing.deletedAt !== null) throw new MutationAbort("not_found");
+
+        const dbRole = ROLE_TO_DB[role];
+        // Check-first, NOT create-then-catch-P2002: Postgres aborts the WHOLE
+        // transaction on any statement error (25P02, "current transaction is
+        // aborted"), unlike `createContact`, which lets its unique violation
+        // escape the transaction (and `runMutation`) entirely rather than
+        // catching it and issuing more queries on the same `tx`. Reading the
+        // row first keeps every statement in this transaction error-free.
+        const roleRow = await tx.contactRole.findUnique({
+          where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
+        });
+        if (roleRow !== null && roleRow.deletedAt === null) {
+          // Already live — domain-level no-op, distinct from the mutation-id
+          // idempotency `runMutation` already handled (VLT-07 vs. a genuinely
+          // repeated intent).
+          return { outcome: "no_op" as const, contact: toRecord(existing), role };
+        }
+        if (roleRow !== null) {
+          // Previously tombstoned — revive rather than insert (mirrors the
+          // partial-unique "re-add after delete" shape on ContactLink itself).
+          await tx.contactRole.update({
+            where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
+            data: { deletedAt: null },
+          });
+        } else {
+          await tx.contactRole.create({ data: { contactLinkId: contactId, role: dbRole } });
+        }
+        // Bump the parent so the cursor pull covers this change too — see
+        // `ContactRolesRepository`'s doc comment in repo.ts.
+        const stamp = new Date();
+        await tx.contactLink.updateMany({
+          where: { id: contactId, ownerId: userId },
+          data: { updatedAt: stamp },
+        });
+        const after = await tx.contactLink.findFirstOrThrow({
+          where: { id: contactId, ownerId: userId },
+        });
+        return { outcome: "applied" as const, contact: toRecord(after), role };
+      });
+      if (result === "already_applied") return { outcome: "already_applied" };
+      if (result === "not_found") return { outcome: "not_found" };
+      return result;
+    },
+
+    async removeRole(userId, mutationId, contactId, role): Promise<RemoveRoleResult> {
+      const result = await runMutation(client, userId, mutationId, async (tx) => {
+        const existing = await tx.contactLink.findFirst({
+          where: { id: contactId, ownerId: userId },
+        });
+        if (existing === null || existing.deletedAt !== null) throw new MutationAbort("not_found");
+
+        const dbRole = ROLE_TO_DB[role];
+        const roleRow = await tx.contactRole.findUnique({
+          where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
+        });
+        if (roleRow === null || roleRow.deletedAt !== null) {
+          // Never lived, or already tombstoned — recorded, nothing to write
+          // (mirrors deleteContact's tombstone-of-a-tombstone no_op).
+          return { outcome: "no_op" as const, contact: toRecord(existing) };
+        }
+        const stamp = new Date();
+        await tx.contactRole.update({
+          where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
+          data: { deletedAt: stamp },
+        });
+        await tx.contactLink.updateMany({
+          where: { id: contactId, ownerId: userId },
+          data: { updatedAt: stamp },
+        });
+        const after = await tx.contactLink.findFirstOrThrow({
+          where: { id: contactId, ownerId: userId },
+        });
+        return { outcome: "applied" as const, contact: toRecord(after) };
+      });
+      if (result === "already_applied") return { outcome: "already_applied" };
+      if (result === "not_found") return { outcome: "not_found" };
+      return result;
     },
   };
 }
