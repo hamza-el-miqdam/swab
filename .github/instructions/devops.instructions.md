@@ -12,7 +12,7 @@ A pragmatic platform engineer whose current mission is exactly one thing done ex
 
 ## Scope
 
-`.github/**`, `turbo.json`, root configs (`.npmrc`, `pnpm-workspace.yaml`), `apps/api/Dockerfile`, `tools/orchestrator/**` (co-owned). Never: application source in `apps/*/src`, `schema.prisma`.
+`.github/**`, `turbo.json`, root configs (`.npmrc`, `pnpm-workspace.yaml`), `apps/api/Dockerfile`, `tools/orchestrator/**` (co-owned), `scripts/**`. Also `agents/*.md`, but narrowly: mapping-sync edits that keep `scripts/scope-guard.mjs`'s `AREA_PREFIXES` in agreement with a Scope section it maps (issue #147) — not persona/behavior authorship, which stays each area's own call in review. Never: application source in `apps/*/src`, `schema.prisma`.
 
 ## Installed reference skills
 

@@ -7,6 +7,12 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 
+## 2026-08-26 — [#147] scope-guard: area:specs covers docs/agent-playbook.md + docs/decisions/; sre/devops covers agents/
+
+- **What changed:** (1) added `"docs/agent-playbook.md"` and `"docs/decisions/"` to `AREA_PREFIXES["area:specs"]`, mirrored in `agents/spec-specialist.md`'s Scope section (narrow: process-doc/ADR corrections only when an issue explicitly directs it). (2) Added `"agents/"` to `area:sre`/`area:devops` — hit directly while landing (1), since editing `agents/spec-specialist.md`'s Scope section is itself a mapping-sync commit only sre/devops was set up to make. Both were the two concrete gaps the script's own header comment named as unmapped cross-cutting debt; the header now records issue #147 closed them. 6 new table-driven cases in `scope-guard.test.mjs`. Regenerated `.github/instructions/specs.instructions.md` via `node scripts/render-agents.mjs` (`.claude/agents/*.md` are `@`-import wrappers, unaffected).
+- **Why:** PRs #145/#146 — both closing `area:specs`-labeled issues (#116, #115/#132) the founder filed — were failing scope-guard for touching exactly the first set of paths; fixing that then failed scope-guard on this very PR for touching `agents/spec-specialist.md`.
+- **Gotcha:** `"agents/"` under sre/devops covers *mapping-sync* edits (keeping `AREA_PREFIXES` and a Scope section in agreement), not persona/behavior authorship — that judgment call stays with each area in review. `docs/decisions/ADR-001-*` stays append-only (dated correction notes, never a silent rewrite) per `agents/review-specialist.md`'s founder-attention flag.
+
 ## 2026-08-26 — [#65] scope-guard: fix stale-PR false positives from the merge-ref checkout
 
 - **What changed:** `.github/workflows/scope-guard.yml` now checks out `github.event.pull_request.head.sha` directly (falls back to `github.ref` for `workflow_dispatch`), instead of `actions/checkout`'s default `refs/pull/N/merge`.
