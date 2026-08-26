@@ -82,7 +82,7 @@ rather than surfacing as data that only one client can read.
 ## Acceptance criteria (key)
 
 - ⚠️ **Transitional (ADR-001).** *Current:* any axis edit produces only `POST /vault` (opaque blob) — this is what the shipped tests assert. *After the migration:* an axis edit produces a typed per-record write to the user's own account over TLS, and the classification values it carries appear in no log and in no other user's API response (VLT-03, IDT-08). Update this criterion, the platform tests, and `docs/qa/e2e-coverage.json` together in the migration PR.
-- **Given** an axis edit offline, **when** connectivity returns, **then** it replays exactly once and reconciles without data loss (VLT-07 idempotency, VLT-09 field-level last-write-wins).
+- **Given** an axis edit offline, **when** connectivity returns, **then** it replays exactly once and reconciles without data loss (VLT-07 idempotency, VLT-09 field-level CAS).
 - **Given** the same contact edited on two devices — device A changes the ring, device B changes the ressenti — **when** both sync, **then** both changes survive (VLT-09 is field-level, not record-level).
 - **Given** a stale relation, **when** « À revoir plus tard » is tapped, **then** no prompt reappears for 30 days, and the dismissal appears in no log (VLT-03/G3) — note it IS now stored server-side as ordinary state, which is what makes the 30-day timer survive a device change.
 - **Given** a record written before 2026-08-16 with `etat = "occupé"`, **when** it is read, **then** it resolves to `busy`, renders « occupé » unchanged, and the next write persists `busy` (FCH-09 dual-read).
