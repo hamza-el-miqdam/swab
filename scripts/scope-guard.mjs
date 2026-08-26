@@ -18,7 +18,9 @@
  * Usage (as invoked by .github/workflows/scope-guard.yml):
  *   LABELS="area:ios" BASE=<sha> node scripts/scope-guard.mjs
  *
- * Exit codes: 0 = pass (including warn-and-pass for unlabeled PRs), 1 = fail.
+ * Exit codes: 0 = pass, 1 = fail — including an unlabeled PR (fail-closed
+ * since issue #141; the prior warn-and-pass grace period from SUG-OPS-002
+ * step 3 ended after its one-week bake-in and has been removed).
  */
 import { execFileSync } from "node:child_process";
 
@@ -106,11 +108,19 @@ export const AREA_PREFIXES = {
 //   owns. Without this the duty was literally unsatisfiable: a PR closing out
 //   its own suggestion failed this guard, so the moves silently never happened
 //   and the counts drifted. Same category as CHANGELOG.md and pnpm-lock.yaml.
+// - docker-compose.yml (issue #141): listed only under area:sre/area:devops
+//   above, but a backend-owned change legitimately needs a line in it (e.g.
+//   #139 adding OTP_RATE_LIMIT to the api service's env) — same shape as
+//   pnpm-lock.yaml: a file more than one area must touch, owned by none in
+//   particular. Chose option (a) from #141/#140 (add here) over formalizing
+//   a mandatory 2-PR split; this permits the file, not its contents — the
+//   change is still argued for in review, same caveat as pnpm-lock.yaml.
 export const SHARED_ALLOWED_PREFIXES = [
   "docs/STATUS.md",
   "docs/qa/",
   "pnpm-lock.yaml",
   "suggestions/",
+  "docker-compose.yml",
 ];
 
 // Cross-cutting areas with no dedicated package share the root CHANGELOG.md
@@ -164,39 +174,66 @@ function getChangedFiles(base) {
   return out.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
-function main() {
-  const labels = parseLabels(process.env.LABELS);
-  const changedFiles = getChangedFiles(process.env.BASE);
+/**
+ * Pure decision layer: given the PR's area labels and changed files, decide
+ * the outcome and its message. All side effects (console output, process
+ * exit code) live only in main() below, which just applies what this
+ * returns — keeping the decision testable without shelling out to git.
+ */
+export function describeResult(labels, changedFiles) {
   const { escaping, schemaViolation, unlabeled } = computeViolations(labels, changedFiles);
 
   if (schemaViolation) {
-    console.error(
-      `scope-guard: FAIL — this PR touches ${SCHEMA_PATH} but is not labeled area:db.\n` +
+    return {
+      exitCode: 1,
+      level: "error",
+      message:
+        `scope-guard: FAIL — this PR touches ${SCHEMA_PATH} but is not labeled area:db.\n` +
         `Schema has exactly one writer (G4/data-specialist.md). File an area:db issue with a proposed diff instead.`,
-    );
-    process.exitCode = 1;
-    return;
+    };
   }
 
   if (unlabeled) {
-    console.warn(
-      "scope-guard: WARN — no recognized area:* label on this PR; skipping scope check " +
-        "(warn-and-pass mode, see SUG-OPS-002 step 3 — will flip to fail after a bake-in week).",
-    );
-    return;
+    // Fail-closed since issue #141: the SUG-OPS-002 step 3 bake-in week
+    // (tuned ~2026-08-17) is long over. An unlabeled PR used to warn and
+    // silently skip the scope check entirely (see PR #138) — that gap is
+    // closed as of here.
+    return {
+      exitCode: 1,
+      level: "error",
+      message:
+        "scope-guard: FAIL — no recognized area:* label on this PR; scope cannot be checked.\n" +
+        `Add one (or more, for cross-cutting PRs) of: ${Object.keys(AREA_PREFIXES).join(", ")}.`,
+    };
   }
 
   if (escaping.length > 0) {
-    console.error(
-      `scope-guard: FAIL — diff touches paths outside the declared area(s) (${labels.join(", ")}):\n` +
+    return {
+      exitCode: 1,
+      level: "error",
+      message:
+        `scope-guard: FAIL — diff touches paths outside the declared area(s) (${labels.join(", ")}):\n` +
         escaping.map((path) => `  - ${path}`).join("\n") +
         `\n\nEither narrow the PR to its declared scope, or add the area:* label(s) that cover these paths.`,
-    );
-    process.exitCode = 1;
-    return;
+    };
   }
 
-  console.log(`scope-guard: PASS — all ${changedFiles.length} changed file(s) within declared area(s) (${labels.join(", ")}).`);
+  return {
+    exitCode: 0,
+    level: "log",
+    message: `scope-guard: PASS — all ${changedFiles.length} changed file(s) within declared area(s) (${labels.join(", ")}).`,
+  };
+}
+
+const CONSOLE_BY_LEVEL = { error: console.error, warn: console.warn, log: console.log };
+
+function main() {
+  const labels = parseLabels(process.env.LABELS);
+  const changedFiles = getChangedFiles(process.env.BASE);
+  const { exitCode, level, message } = describeResult(labels, changedFiles);
+
+  CONSOLE_BY_LEVEL[level](message);
+  process.exitCode = exitCode;
 }
 
 // Only run when executed directly (not when imported by the test file).
