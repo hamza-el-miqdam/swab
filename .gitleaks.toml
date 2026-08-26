@@ -32,4 +32,10 @@ paths = [
   # Retired Expo/RN app (removed 2026-07-19) — same vault key-store constant
   # as the iOS entry above, present only in git history now.
   '''apps/mobile/src/vault/crypto\.ts''',
+  # swift-security skill reference docs (added 2026-08-25): fabricated example
+  # secrets (sk_live_..., fake Firebase keys) illustrating anti-patterns for
+  # an installed Claude Code skill, not real key material.
+  '''\.claude/skills/swift-security/references/credential-storage-patterns\.md''',
+  '''\.claude/skills/swift-security/references/common-anti-patterns\.md''',
+  '''\.claude/skills/swift-security/references/compliance-owasp-mapping\.md''',
 ]

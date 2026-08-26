@@ -7,6 +7,12 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 
+## 2026-08-26 — gitleaks: allowlist swift-security skill's fabricated example secrets
+
+- **What changed:** added the three `.claude/skills/swift-security/references/*.md` doc paths (`credential-storage-patterns.md`, `common-anti-patterns.md`, `compliance-owasp-mapping.md`) to `.gitleaks.toml`'s allowlist, same pattern as the existing `vault-test-vectors.json` entries.
+- **Why:** those docs (added 2026-08-25) intentionally show fabricated secrets (`sk_live_51ABC...`, fake Firebase keys) as anti-pattern examples for an installed Claude Code skill. Push/PR gitleaks runs scan incrementally and never re-touch that commit's diff, so this looked green everywhere — but a full-history scan (fresh clone, `workflow_dispatch`, security audit) fails on them indefinitely without an explicit waiver. Found during the item-6 GitHub Actions scheduling investigation in `.claude/plans/pr-144-146-148-fixes.md`.
+- **Gotcha:** this is a waiver for *verified* non-secrets per the file's own rule — re-verify with `gitleaks detect --redact -v` before adding further paths, never widen this into a blanket rule disable.
+
 ## 2026-08-26 — [#147] scope-guard: area:specs covers docs/agent-playbook.md + docs/decisions/; sre/devops covers agents/
 
 - **What changed:** (1) added `"docs/agent-playbook.md"` and `"docs/decisions/"` to `AREA_PREFIXES["area:specs"]`, mirrored in `agents/spec-specialist.md`'s Scope section (narrow: process-doc/ADR corrections only when an issue explicitly directs it). (2) Added `"agents/"` to `area:sre`/`area:devops` — hit directly while landing (1), since editing `agents/spec-specialist.md`'s Scope section is itself a mapping-sync commit only sre/devops was set up to make. Both were the two concrete gaps the script's own header comment named as unmapped cross-cutting debt; the header now records issue #147 closed them. 6 new table-driven cases in `scope-guard.test.mjs`. Regenerated `.github/instructions/specs.instructions.md` via `node scripts/render-agents.mjs` (`.claude/agents/*.md` are `@`-import wrappers, unaffected).
