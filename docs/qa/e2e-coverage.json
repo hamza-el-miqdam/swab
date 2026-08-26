@@ -615,7 +615,7 @@
     },
     "VLT-09": {
       "fs": "FS-07",
-      "title": "Field-level last-write-wins by server updatedAt; deletions tombstoned",
+      "title": "Field-level compare-and-swap against client's last-observed baseUpdatedAt; deletions tombstoned",
       "ios": {
         "status": "not-e2e-verifiable"
       },
