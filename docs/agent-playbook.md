@@ -51,8 +51,8 @@ Every issue carries: title `[FS-05][ENV-09] Race-safe match creation`, labels `a
 
 Before any external tester touches a build, and after every schema or API change, run the standing audit — it operationalizes product law 4:
 
-1. **DB audit:** dump a seeded database; verify no table/column reveals rings, tags, rules, subgroup names, or scope names (FS-07 acceptance 2).
-2. **Wire audit:** record all app traffic through a full user journey; verify classification data appears only inside `POST /vault` opaque bytes (ONB-05, FCH-01, SGR-07, FLT-06).
+1. **DB audit (revised 2026-08-26, #116 — ADR-001):** dump a seeded database with ≥2 users; classification columns (rings, tags, rules, subgroup names) are *expected* to exist and hold plaintext now — that is no longer the failure mode. Instead verify every row is scoped to its owner and no query in the codebase can return one user's classification data under another user's request context (IDT-08, VLT-02, FS-07 acceptance 2).
+2. **Wire audit (revised 2026-08-26, #116 — ADR-001):** `POST /vault` and the opaque blob it checked for are retired; classification data now travels as ordinary typed fields on the typed `/contacts` endpoints (and any other live routes touching it). Record all app traffic through a full user journey and verify: (a) classification data is only ever sent to/returned from the authenticated owner's own endpoints, never in a response addressed to another user (IDT-08 — links stay directional); (b) a reveal never appears in a response unless both sides' envies matched — no one-sided envie leaks (ENV-11); (c) the G3 forbidden list holds on the wire too — no verbs, recipient lists, phone hashes, or push tokens outside their intended single-owner response; (d) phone numbers appear only as client-side salted hashes, never raw (IDT-01).
 3. **Log audit:** grep structured logs for verbs, recipient lists, phone hashes, tokens (G3 forbidden list) — zero hits.
 4. **Non-observability audit:** the ENV-11 and ENV-15 tests (non-match invisibility, silent pass) pass with response-shape equality.
 

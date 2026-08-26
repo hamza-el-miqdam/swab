@@ -13,6 +13,12 @@
 - **Why:** PRs #145/#146 — both closing `area:specs`-labeled issues (#116, #115/#132) the founder filed — were failing scope-guard for touching exactly the first set of paths; fixing that then failed scope-guard on this very PR for touching `agents/spec-specialist.md`.
 - **Gotcha:** `"agents/"` under sre/devops covers *mapping-sync* edits (keeping `AREA_PREFIXES` and a Scope section in agreement), not persona/behavior authorship — that judgment call stays with each area in review. `docs/decisions/ADR-001-*` stays append-only (dated correction notes, never a silent rewrite) per `agents/review-specialist.md`'s founder-attention flag.
 
+## 2026-08-26 — [ONB-05, IDT-08, IDT-01] Privacy-audit wire-audit step rewritten for post-ADR-001 reality
+
+- **What changed:** `docs/agent-playbook.md` §6 steps 1–2. Step 2 (wire audit) no longer requires classification data to appear only inside `POST /vault` opaque bytes — that route and behavior are retired. It now checks: data goes only to/from the authenticated owner's own endpoints, never to another user (IDT-08); reveal stays strictly mutual (ENV-11); the G3 forbidden list still holds on the wire; phone numbers stay salted hashes (IDT-01). Step 1 (DB audit) similarly flips — classification columns holding plaintext are now expected, the check is ownership scoping, not absence.
+- **Why:** #116 — ADR-001 (2026-08-16) retired E2EE and the opaque vault blob; the playbook's Definition-of-Done privacy-audit gate (still ⚪ in `docs/STATUS.md`) would have failed every run as literally written, right as ADR-001 stage 3 (typed endpoints) lands.
+- **Gotcha:** the audit is still not wired as CI (`privacy-audit.yml` not yet built) — this PR only fixes what the procedure says to check, not automation.
+
 ## 2026-08-26 — [#65] scope-guard: fix stale-PR false positives from the merge-ref checkout
 
 - **What changed:** `.github/workflows/scope-guard.yml` now checks out `github.event.pull_request.head.sha` directly (falls back to `github.ref` for `workflow_dispatch`), instead of `actions/checkout`'s default `refs/pull/N/merge`.
