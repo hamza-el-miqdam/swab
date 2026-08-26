@@ -2,7 +2,7 @@
 // function. Run with: node --test scripts/scope-guard.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeViolations } from "./scope-guard.mjs";
+import { computeViolations, describeResult, AREA_PREFIXES } from "./scope-guard.mjs";
 
 const cases = [
   {
@@ -154,6 +154,21 @@ const cases = [
     changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "package.json"],
     expect: { escaping: ["package.json"], schemaViolation: false, unlabeled: false },
   },
+  {
+    // Issue #141 gap 1: a backend-owned change legitimately touches
+    // docker-compose.yml (e.g. wiring a new env var into the api service)
+    // even though the file itself lives under area:sre's prefixes.
+    name: "docker-compose.yml is shared — an area:backend PR may touch it without also carrying area:sre",
+    labels: ["area:backend"],
+    changedFiles: ["apps/api/src/routes/auth.ts", "docker-compose.yml"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "the docker-compose.yml allowance is shared, not area:sre/area:devops-specific",
+    labels: ["area:web"],
+    changedFiles: ["apps/web/next.config.js", "docker-compose.yml"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
 ];
 
 for (const { name, labels, changedFiles, expect } of cases) {
@@ -164,3 +179,46 @@ for (const { name, labels, changedFiles, expect } of cases) {
     assert.equal(result.unlabeled, expect.unlabeled);
   });
 }
+
+// describeResult() is the pure decision layer main() delegates to (side
+// effects — console + process.exitCode — live only in main()). Covers
+// issue #141 gap 2: an unlabeled PR must now fail closed, not warn-and-pass.
+test("describeResult: unlabeled PR fails closed (issue #141 gap 2 — grace period is over)", () => {
+  const result = describeResult([], ["apps/ios/Sources/SwabCore/App.swift", "apps/api/src/routes/auth.ts"]);
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.level, "error");
+  // Message must name the valid area:* labels so an agent can self-correct.
+  for (const label of Object.keys(AREA_PREFIXES)) {
+    assert.ok(result.message.includes(label), `expected message to name ${label}`);
+  }
+  // The old warn-and-pass / bake-in-week language must be gone.
+  assert.ok(!/warn-and-pass/i.test(result.message));
+  assert.ok(!/bake-in/i.test(result.message));
+});
+
+test("describeResult: unlabeled PR with zero changed files still fails closed", () => {
+  const result = describeResult([], []);
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.level, "error");
+});
+
+test("describeResult: schema violation still takes priority and fails", () => {
+  const result = describeResult(["area:backend"], ["packages/db/prisma/schema.prisma"]);
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.level, "error");
+  assert.match(result.message, /schema/i);
+});
+
+test("describeResult: escaping paths fail with a labeled PR", () => {
+  const result = describeResult(["area:ios"], ["apps/api/src/routes/auth.ts"]);
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.level, "error");
+  assert.match(result.message, /apps\/api\/src\/routes\/auth\.ts/);
+});
+
+test("describeResult: a properly labeled, in-scope PR passes with exit code 0", () => {
+  const result = describeResult(["area:ios"], ["apps/ios/Sources/SwabCore/App.swift"]);
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.level, "log");
+  assert.match(result.message, /PASS/);
+});

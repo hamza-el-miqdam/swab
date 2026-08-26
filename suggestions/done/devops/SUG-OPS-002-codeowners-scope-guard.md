@@ -67,3 +67,8 @@ Reality: there is **no CODEOWNERS file anywhere** (checked repo root, `.github/`
 - Cross-cutting PRs (e.g. spec + code) will need multiple `area:*` labels — the script should union the allowed prefixes of all labels present.
 - Don't make it required in branch protection until the label taxonomy is stable, or every existing open PR goes red.
 - `labeled`/`unlabeled` trigger types are required or fixing a wrong label won't re-run the check.
+
+## Status update — 2026-08-26 (issue #141)
+
+- **Step 3's warn-and-pass bake-in is complete.** Tuned ~2026-08-17, meant to flip to fail-closed after one week; it didn't, and PR #138 merged fully unlabeled with scope-guard silently reporting SUCCESS. `scripts/scope-guard.mjs` now fails closed (`process.exitCode = 1`) on an unlabeled PR, naming the valid `area:*` labels in the message. The bake-in period is over — do not reopen it without a new decision recorded here.
+- Also closed the `docker-compose.yml` gap noted informally during #139's review: it's now in `SHARED_ALLOWED_PREFIXES` (option (a) from #141/#140) so a legitimately backend-owned change touching it doesn't need a second `area:sre` label.

@@ -7,6 +7,13 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 
+## 2026-08-26 — [#141] scope-guard: shared docker-compose.yml + fail-closed unlabeled PRs
+
+- **What changed:** (1) `docker-compose.yml` added to `SHARED_ALLOWED_PREFIXES` — a backend-owned change (e.g. an env var) can now touch it without also carrying an `area:sre`/`area:devops` label. (2) Removed the SUG-OPS-002 step 3 warn-and-pass grace period: an unlabeled PR now fails closed (`process.exitCode = 1`), with a message naming every valid `area:*` label.
+- **Why:** #139's backend-owned `OTP_RATE_LIMIT` change only passed scope-guard by carrying two labels, discovered by trial (#140/#141). Separately, the ~2026-08-17 bake-in week for the grace period lapsed unflipped — PR #138 merged fully unlabeled with scope-guard silently reporting SUCCESS.
+- **How:** extracted `describeResult(labels, changedFiles)` as a pure decision function (exit code + message) out of `main()`, so both new behaviours are unit-testable without shelling out to git. `suggestions/done/devops/SUG-OPS-002-codeowners-scope-guard.md` records step 3 as complete.
+- **Closes:** #141; #140 closed as a duplicate.
+
 ## 2026-08-25 — [docs-hygiene] Archive 2026-08-15/16 entries out of root `CHANGELOG.md`
 
 - **What changed:** moved the 11 entries dated 2026-08-15 and 2026-08-16 (contiguous block at the bottom of the file) verbatim into a new `docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md`, same pattern as the existing pre-2026-08-15 archive. Live file's header gets a second pointer line.
