@@ -314,55 +314,83 @@ export function prismaContactsRepository(
     // --- Rôles·contexte (ADR-001 stage 3 slice 2) ----------------------------
 
     async addRole(userId, mutationId, contactId, role): Promise<AddRoleResult> {
-      const result = await runMutation(client, userId, mutationId, async (tx) => {
-        const existing = await tx.contactLink.findFirst({
-          where: { id: contactId, ownerId: userId },
-        });
-        // A tombstoned parent is treated the same as a missing one — a role
-        // can never outlive the contact it hangs off (VLT-09).
-        if (existing === null || existing.deletedAt !== null) throw new MutationAbort("not_found");
-
-        const dbRole = ROLE_TO_DB[role];
-        // Check-first, NOT create-then-catch-P2002: Postgres aborts the WHOLE
-        // transaction on any statement error (25P02, "current transaction is
-        // aborted"), unlike `createContact`, which lets its unique violation
-        // escape the transaction (and `runMutation`) entirely rather than
-        // catching it and issuing more queries on the same `tx`. Reading the
-        // row first keeps every statement in this transaction error-free.
-        const roleRow = await tx.contactRole.findUnique({
-          where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
-        });
-        if (roleRow !== null && roleRow.deletedAt === null) {
-          // Already live — domain-level no-op, distinct from the mutation-id
-          // idempotency `runMutation` already handled (VLT-07 vs. a genuinely
-          // repeated intent).
-          return { outcome: "no_op" as const, contact: toRecord(existing), role };
-        }
-        if (roleRow !== null) {
-          // Previously tombstoned — revive rather than insert (mirrors the
-          // partial-unique "re-add after delete" shape on ContactLink itself).
-          await tx.contactRole.update({
-            where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
-            data: { deletedAt: null },
+      try {
+        const result = await runMutation(client, userId, mutationId, async (tx) => {
+          const existing = await tx.contactLink.findFirst({
+            where: { id: contactId, ownerId: userId },
           });
-        } else {
-          await tx.contactRole.create({ data: { contactLinkId: contactId, role: dbRole } });
-        }
-        // Bump the parent so the cursor pull covers this change too — see
-        // `ContactRolesRepository`'s doc comment in repo.ts.
-        const stamp = new Date();
-        await tx.contactLink.updateMany({
-          where: { id: contactId, ownerId: userId },
-          data: { updatedAt: stamp },
+          // A tombstoned parent is treated the same as a missing one — a role
+          // can never outlive the contact it hangs off (VLT-09).
+          if (existing === null || existing.deletedAt !== null) {
+            throw new MutationAbort("not_found");
+          }
+
+          const dbRole = ROLE_TO_DB[role];
+          // Check-first, NOT create-then-catch-P2002-and-continue: Postgres
+          // aborts the WHOLE transaction on any statement error (25P02,
+          // "current transaction is aborted"), unlike `createContact`, which
+          // lets its unique violation escape the transaction (and
+          // `runMutation`) entirely rather than catching it and issuing more
+          // queries on the same `tx`. Reading the row first keeps every
+          // statement in THIS transaction error-free — but two concurrent
+          // "add this role" mutations (different mutationIds, e.g. two
+          // devices racing from the offline outbox) can both pass this check
+          // before either commits its `create`; the loser still hits the
+          // composite PK (`@@id([contactLinkId, role])`) and that P2002 is
+          // handled by the outer catch below, not here.
+          const roleRow = await tx.contactRole.findUnique({
+            where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
+          });
+          if (roleRow !== null && roleRow.deletedAt === null) {
+            // Already live — domain-level no-op, distinct from the mutation-id
+            // idempotency `runMutation` already handled (VLT-07 vs. a genuinely
+            // repeated intent).
+            return { outcome: "no_op" as const, contact: toRecord(existing), role };
+          }
+          if (roleRow !== null) {
+            // Previously tombstoned — revive rather than insert (mirrors the
+            // partial-unique "re-add after delete" shape on ContactLink itself).
+            await tx.contactRole.update({
+              where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
+              data: { deletedAt: null },
+            });
+          } else {
+            await tx.contactRole.create({ data: { contactLinkId: contactId, role: dbRole } });
+          }
+          // Bump the parent so the cursor pull covers this change too — see
+          // `ContactRolesRepository`'s doc comment in repo.ts.
+          const stamp = new Date();
+          await tx.contactLink.updateMany({
+            where: { id: contactId, ownerId: userId },
+            data: { updatedAt: stamp },
+          });
+          const after = await tx.contactLink.findFirstOrThrow({
+            where: { id: contactId, ownerId: userId },
+          });
+          return { outcome: "applied" as const, contact: toRecord(after), role };
         });
-        const after = await tx.contactLink.findFirstOrThrow({
+        if (result === "already_applied") return { outcome: "already_applied" };
+        if (result === "not_found") return { outcome: "not_found" };
+        return result;
+      } catch (err) {
+        if (!isUniqueViolation(err)) throw err;
+        // Reaching here means `runMutation` ruled out "this is OUR mutationId
+        // replaying" (it re-checks the ledger for our own id and only rethrows
+        // if that comes up empty) — so the P2002 is the composite-PK race
+        // above: another mutation's `contactRole.create` committed the same
+        // role first. That write already satisfies this caller's intent, so
+        // report it as a no-op rather than leaking a raw Prisma error. The
+        // transaction rolled back, so re-read the contact fresh rather than
+        // reusing anything captured inside `work`.
+        const after = await client.contactLink.findFirst({
           where: { id: contactId, ownerId: userId },
         });
-        return { outcome: "applied" as const, contact: toRecord(after), role };
-      });
-      if (result === "already_applied") return { outcome: "already_applied" };
-      if (result === "not_found") return { outcome: "not_found" };
-      return result;
+        // Should be unreachable (the parent existed a moment ago, and a role
+        // can't outlive it), but surface the original error rather than a
+        // confusing null-derived one if it ever is.
+        if (after === null) throw err;
+        return { outcome: "no_op", contact: toRecord(after), role };
+      }
     },
 
     async removeRole(userId, mutationId, contactId, role): Promise<RemoveRoleResult> {
