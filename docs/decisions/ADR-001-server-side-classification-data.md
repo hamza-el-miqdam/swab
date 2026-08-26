@@ -114,6 +114,15 @@ So that encrypting the most sensitive field later does not require a schema or A
 - Device change, loss, and theft are ordinary re-login flows. `VLT-05`'s data-loss trade-off disappears.
 - Matching (`FS-05`), filtering rules (`FS-06`), and subgroups (`FS-04`) can be computed server-side
   instead of on-device — a substantial simplification of the three unbuilt specs.
+  > **Correction, 2026-08-26 (#115):** retracted. This over-generalised from *filter rules*, which are
+  > server-stored, to *matching resolution* and *subgroup membership*, which are not. The server never
+  > persists the subgroup lattice — it is derived on-device from cached tags and never stored (`SGR-07`,
+  > `OQ-SGR-2`) — so it cannot resolve a portée on its own, and the same reasoning extends to match/filter
+  > resolution. All three specs have since settled on-device: `FS-04` `OQ-SGR-2` (resolved 2026-08-16, FCA
+  > stays on-device), `FS-05` `ENV-05` (corrected 2026-08-16, resolution runs on-device), `FS-06` `OQ-FLT-2`
+  > (resolved 2026-08-22, evaluation stays on-device). Read those three as the current rule, not this bullet
+  > — kept here verbatim as a record of what was believed at decision time, per this ADR's own transitional-
+  > state convention.
 - Multi-device becomes near-free; `IDT-05`'s "new device = re-import via backup phrase" assumption is void.
 - A web client (`apps/web`) becomes possible.
 - User-reported problems become debuggable.
