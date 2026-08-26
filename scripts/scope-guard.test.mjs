@@ -79,6 +79,25 @@ const cases = [
     expect: { escaping: [], schemaViolation: false, unlabeled: false },
   },
   {
+    // Issues #115/#116/#147: area:specs-labeled PRs #145/#146 legitimately
+    // touch these two cross-cutting governance paths (process docs, ADR
+    // corrections) even though neither lives under docs/specs/.
+    name: "area:specs PR touching docs/agent-playbook.md + docs/decisions/ stays in scope",
+    labels: ["area:specs"],
+    changedFiles: [
+      "docs/agent-playbook.md",
+      "docs/decisions/ADR-001-server-side-classification-data.md",
+      "CHANGELOG.md",
+    ],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "area:specs touching an unrelated docs/ path (not agent-playbook.md or docs/decisions/) still escapes scope",
+    labels: ["area:specs"],
+    changedFiles: ["docs/design/foo.md"],
+    expect: { escaping: ["docs/design/foo.md"], schemaViolation: false, unlabeled: false },
+  },
+  {
     name: "cross-cutting PR unions prefixes across multiple area labels",
     labels: ["area:ios", "area:specs"],
     changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "docs/specs/FS-01-onboarding.md"],
@@ -172,6 +191,28 @@ const cases = [
     labels: ["area:web"],
     changedFiles: ["apps/web/next.config.js", "docker-compose.yml"],
     expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    // Issue #147: a scope-guard mapping fix routinely needs a matching edit
+    // to the Scope section of whichever specialist file it's about (here,
+    // agents/spec-specialist.md) — the other named gap from the header
+    // comment ("agents/*.md itself"), hit directly while fixing the first.
+    name: "area:sre PR editing another area's agents/*.md Scope section (a mapping-sync commit) stays in scope",
+    labels: ["area:sre"],
+    changedFiles: ["scripts/scope-guard.mjs", "agents/spec-specialist.md", "CHANGELOG.md"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "area:devops PR editing agents/*.md stays in scope (alias of area:sre)",
+    labels: ["area:devops"],
+    changedFiles: ["agents/_global-directives.md"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "agents/*.md is not silently granted to unrelated areas (area:ios)",
+    labels: ["area:ios"],
+    changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "agents/ios-specialist.md"],
+    expect: { escaping: ["agents/ios-specialist.md"], schemaViolation: false, unlabeled: false },
   },
 ];
 

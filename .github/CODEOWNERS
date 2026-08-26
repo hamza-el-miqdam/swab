@@ -35,6 +35,8 @@
 # area:specs
 /docs/specs/                        @hamza-el-miqdam
 /specs/                             @hamza-el-miqdam
+/docs/agent-playbook.md             @hamza-el-miqdam
+/docs/decisions/                    @hamza-el-miqdam
 
 # area:sre (this agent's own scope)
 /.github/                           @hamza-el-miqdam
@@ -42,3 +44,4 @@
 /apps/api/Dockerfile                @hamza-el-miqdam
 /docker-compose.yml                 @hamza-el-miqdam
 /scripts/                           @hamza-el-miqdam
+/agents/                            @hamza-el-miqdam

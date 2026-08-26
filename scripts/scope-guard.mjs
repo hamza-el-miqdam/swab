@@ -12,8 +12,11 @@
  *
  * Some areas don't map to a single agents/*-specialist.md Scope section
  * (they're cross-cutting: repo-root governance docs, agents/*.md itself).
- * Those paths are intentionally NOT covered here yet — see the note above
- * SHARED_ALLOWED_PREFIXES.
+ * Issue #147 closed the two concrete gaps this used to name here (docs/
+ * agent-playbook.md + docs/decisions/ under area:specs; agents/ itself
+ * under area:sre/area:devops) — see those entries below for the rationale.
+ * Other repo-root governance docs not yet claimed by any area's prefixes
+ * remain unmapped; see the note above SHARED_ALLOWED_PREFIXES.
  *
  * Usage (as invoked by .github/workflows/scope-guard.yml):
  *   LABELS="area:ios" BASE=<sha> node scripts/scope-guard.mjs
@@ -51,7 +54,21 @@ export const AREA_PREFIXES = {
     "apps/ios/Sources/SwabCore/Generated/DesignTokens.swift",
     "apps/android/app/src/main/kotlin/com/swab/android/ui/theme/DesignTokens.kt",
   ],
-  "area:specs": ["docs/specs/", "specs/", ".specify/memory/constitution.md"],
+  "area:specs": [
+    "docs/specs/",
+    "specs/",
+    ".specify/memory/constitution.md",
+    // Issues #115/#116/#147: both were filed and labeled area:specs by the
+    // founder, and PRs #145/#146 closing them legitimately touch these two
+    // paths — process docs (the privacy-audit steps in the playbook) and
+    // ADR corrections (kept append-only per agents/review-specialist.md's
+    // founder-attention flag on ADR-001, never a silent rewrite). This is
+    // cross-cutting repo-root governance debt the header comment above
+    // already called out as unmapped; agents/spec-specialist.md's Scope
+    // section documents the same two paths.
+    "docs/agent-playbook.md",
+    "docs/decisions/",
+  ],
   "area:notion-liaison": ["docs/specs/"],
   "area:sre": [
     ".github/",
@@ -69,6 +86,17 @@ export const AREA_PREFIXES = {
     // covered here; they live under their own area's prefix (e.g. apps/api/).
     "package.json",
     "pnpm-lock.yaml",
+    // Issue #147: found while fixing area:specs' own gap above — this is the
+    // header comment's OTHER named example of unmapped cross-cutting debt
+    // ("agents/*.md itself"), not a new one. sre/devops is the agent that
+    // maintains scope-guard.mjs's AREA_PREFIXES <-> agents/*-specialist.md
+    // Scope-section mapping and runs scripts/render-agents.mjs — a mapping
+    // fix routinely needs a matching edit to the Scope section of whichever
+    // specialist file the mapping is about (here, agents/spec-specialist.md
+    // for area:specs). This does not make persona/behavior content itself
+    // sre-owned — that stays each area's own call — it only lets sre/devops
+    // land the structural sync commit an issue like this one directs.
+    "agents/",
   ],
   "area:devops": [
     ".github/",
@@ -86,6 +114,9 @@ export const AREA_PREFIXES = {
     // covered here; they live under their own area's prefix (e.g. apps/api/).
     "package.json",
     "pnpm-lock.yaml",
+    // Issue #147 — see the identical entry + rationale under area:sre above
+    // (the two arrays are kept as aliases of the same scope).
+    "agents/",
   ],
 };
 
