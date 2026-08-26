@@ -71,4 +71,33 @@ describe("loadEnv", () => {
       }),
     ).toThrowError(/TRUST_PROXY_HOPS/);
   });
+
+  it("IDT-03: OTP_RATE_LIMIT defaults to strict", () => {
+    const env = loadEnv({
+      DATABASE_URL: "postgresql://u:p@h:5432/db",
+      JWT_SECRET: "a".repeat(32),
+    });
+    expect(env.OTP_RATE_LIMIT).toBe("strict");
+  });
+
+  it("IDT-03: OTP_RATE_LIMIT=relaxed in production fails boot (fail-closed, mirrors OTP_DEV_CODE)", () => {
+    expect(() =>
+      loadEnv({
+        DATABASE_URL: "postgresql://u:p@h:5432/db",
+        JWT_SECRET: "a".repeat(32),
+        NODE_ENV: "production",
+        OTP_RATE_LIMIT: "relaxed",
+      }),
+    ).toThrowError(/OTP_RATE_LIMIT/);
+  });
+
+  it("IDT-03: OTP_RATE_LIMIT=relaxed is accepted outside production", () => {
+    const env = loadEnv({
+      DATABASE_URL: "postgresql://u:p@h:5432/db",
+      JWT_SECRET: "a".repeat(32),
+      NODE_ENV: "development",
+      OTP_RATE_LIMIT: "relaxed",
+    });
+    expect(env.OTP_RATE_LIMIT).toBe("relaxed");
+  });
 });

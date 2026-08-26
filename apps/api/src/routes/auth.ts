@@ -36,10 +36,20 @@ export interface AuthRouteDeps {
 // rather than stacking with it: @fastify/rate-limit's onRoute hook gives a
 // route with its own `config.rateLimit` a private child store and skips the
 // global hook entirely. Each route also counts separately from the other.
-const otpRateLimit = { rateLimit: { max: 10, timeWindow: "1 minute" } };
+//
+// The tier itself is resolved from env.OTP_RATE_LIMIT (env.ts, issue #128):
+// "strict" is this 10/min and is the only value production can boot with
+// (fail-closed refine in env.ts); "relaxed" is a 100-per-20-minutes ceiling
+// for local dev / on-device / E2E runs where scripted requests from one IP
+// otherwise trip the strict tier constantly.
+export const OTP_RATE_LIMITS = {
+  strict: { max: 10, timeWindow: "1 minute" },
+  relaxed: { max: 100, timeWindow: "20 minutes" },
+} as const;
 
 export function registerAuthRoutes(app: FastifyInstance, deps: AuthRouteDeps): void {
   const { env, repo, otpStore } = deps;
+  const otpRateLimit = { rateLimit: OTP_RATE_LIMITS[env.OTP_RATE_LIMIT] };
 
   app.post("/auth/otp/request", { config: otpRateLimit }, async (req, reply) => {
     const parsed = otpRequestSchema.safeParse(req.body);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeApp, PHONE_HASH_A, PHONE_HASH_B, signup, testEnv, type TokenPair } from "./helpers.js";
+import { OTP_RATE_LIMITS } from "../src/routes/auth.js";
 
 describe("POST /auth/otp/request + POST /auth/otp/verify", () => {
   it("IDT-01: signup happy path — OTP request then verify creates the user and returns a token pair", async () => {
@@ -247,6 +248,47 @@ describe("POST /auth/otp/* — per-IP rate limit tier (SUG-API-005, IDT-03)", ()
         });
         expect(res.statusCode).toBe(200);
       }
+    }
+  });
+});
+
+describe("POST /auth/otp/* — OTP_RATE_LIMIT config (issue #128, IDT-03)", () => {
+  it("OTP_RATE_LIMITS resolves the strict/relaxed tiers to the required max/timeWindow", () => {
+    expect(OTP_RATE_LIMITS.strict).toEqual({ max: 10, timeWindow: "1 minute" });
+    expect(OTP_RATE_LIMITS.relaxed).toEqual({ max: 100, timeWindow: "20 minutes" });
+  });
+
+  it("OTP_RATE_LIMIT unset (default 'strict') still throttles at the 11th request regardless of NODE_ENV", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, NODE_ENV: "development" } });
+
+    for (let i = 0; i < 10; i += 1) {
+      const res = await app.inject({
+        method: "POST",
+        url: "/auth/otp/request",
+        payload: { phoneHash: phoneHash(i) },
+      });
+      expect(res.statusCode).toBe(200);
+    }
+
+    const eleventh = await app.inject({
+      method: "POST",
+      url: "/auth/otp/request",
+      payload: { phoneHash: phoneHash(10) },
+    });
+    expect(eleventh.statusCode).toBe(429);
+  });
+
+  it("OTP_RATE_LIMIT=relaxed lifts the ceiling past the strict 10/min cap (for local dev / E2E runs, issue #128)", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, OTP_RATE_LIMIT: "relaxed" } });
+
+    // Well past the strict 10-request ceiling; still far under the relaxed 100.
+    for (let i = 0; i < 15; i += 1) {
+      const res = await app.inject({
+        method: "POST",
+        url: "/auth/otp/request",
+        payload: { phoneHash: phoneHash(i) },
+      });
+      expect(res.statusCode).toBe(200);
     }
   });
 });
