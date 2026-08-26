@@ -89,6 +89,25 @@ class SignupViewModel(
                 if (err.status == 422) {
                     _uiState.value = _uiState.value.copy(busy = false, needsName = true)
                 } else {
+                    // Issue #128: this branch used to be completely silent —
+                    // a 429 (IDT-03's per-IP OTP rate limit) landed here
+                    // indistinguishable from any other failure, with zero log
+                    // output. That silence is what made the E2E flakiness
+                    // look like an unexplained Compose timeout instead of a
+                    // rate limit: `otpError` is still the right UI state (no
+                    // spec copy exists yet for a distinct rate-limited
+                    // message — G4, French copy comes from specs verbatim),
+                    // but the status code is now observable (G3).
+                    //
+                    // 401 (invalid/expired code, apps/api/src/routes/auth.ts)
+                    // is an ordinary mistyped-code user error, not a degraded
+                    // system state — G3 reserves WARN for the latter. Logging
+                    // it at WARN would bury the 429s this event exists to
+                    // surface under routine typo volume (review finding,
+                    // PR #138), so only 401 gets INFO; everything else
+                    // (429, and any other unexpected status) stays WARN.
+                    val level = if (err.status == 401) SwabLogger.Level.INFO else SwabLogger.Level.WARN
+                    logger.event(level, "otp.verify.failed", mapOf("status" to err.status))
                     _uiState.value = _uiState.value.copy(busy = false, otpError = true)
                 }
             } catch (e: Exception) {

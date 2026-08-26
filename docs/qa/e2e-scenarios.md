@@ -184,6 +184,15 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **And Given** a legacy token stored in NFD form, **when** it is read on Android, **then** it still resolves — Kotlin compares UTF-16 code units, unlike Swift's canonically-equivalent `==`, so the lookup normalises to NFC first.
 - Verification note: `unit-covered` on purpose. Nothing user-visible changes — the same French labels render before and after — so there is no on-device behaviour for either E2E suite to observe; the whole requirement is about the persisted representation. Covered by `ClassificationValuesTests` (iOS) and `ClassificationValuesTest` (Android).
 
+### SUG-DES-011 — Touch targets stay >=48dp even when drawn smaller
+- **Given** the fiche's État axis, an interactive `FilterChip` row drawn at ~34dp visual height per the charter,
+- **When** its tappable region is measured,
+- **Then** it is >=48dp regardless of the smaller drawn size (`Modifier.minimumInteractiveComponentSize()` pads the touch target without enlarging the visual chip).
+- **And Given** the fiche's Intimité axis, a segmented/intimacy cell drawn at ~36dp,
+- **And Given** the Carte list-mode Switch, a track drawn at 38x21dp,
+- **Then** both also measure >=48dp tappable.
+- Verification note: Android-only — `FicheTouchTargetsTest.test_SUGDES011_{etatTagRow,intimiteSegmentedCell,listModeSwitch}_touchBoundsAtLeast48dp`. iOS has no port yet and is `not-e2e-verifiable` until one exists, not silently assumed fine. Design-system suggestion ID, not an FS-* acceptance criterion — grouped here under FS-03 since it constrains the fiche's controls.
+
 ## FS-07 — Identity, Contacts & Vault Sync
 
 ### IDT-01 — Phone-OTP identity, phoneHash only
