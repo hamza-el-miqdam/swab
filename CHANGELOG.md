@@ -13,6 +13,12 @@
 - **Why:** PRs #145/#146 — both closing `area:specs`-labeled issues (#116, #115/#132) the founder filed — were failing scope-guard for touching exactly the first set of paths; fixing that then failed scope-guard on this very PR for touching `agents/spec-specialist.md`.
 - **Gotcha:** `"agents/"` under sre/devops covers *mapping-sync* edits (keeping `AREA_PREFIXES` and a Scope section in agreement), not persona/behavior authorship — that judgment call stays with each area in review. `docs/decisions/ADR-001-*` stays append-only (dated correction notes, never a silent rewrite) per `agents/review-specialist.md`'s founder-attention flag.
 
+## 2026-08-26 — [VLT-09] FS-07: amend conflict resolution to compare-and-swap, specify stale-edit UX
+
+- **What changed:** `docs/specs/FS-07-identity-vault.md` VLT-09 no longer says "field-level LWW by server `updatedAt`" — it now describes the shipped compare-and-swap semantics: wire shape `{ value, baseUpdatedAt }`, applied iff the stored field timestamp equals the client's base (`null` == `null`), otherwise the stored value wins and the field returns in `staleFields`. VLT-08's cursor wording gained a clarifying sentence (opaque, inclusive-of-millisecond, re-send-not-skip). Added a "Stale-edit UX" section (⚠️ ASSUMPTION default: surface the winning value inline, keep the user's rejected edit available to knowingly re-apply, never auto-retry/auto-overwrite) plus a new acceptance criterion and `OQ-VLT-3` tracking founder/design sign-off on the actual copy.
+- **Why:** #132 — the API (#124, `apps/api/src/prisma-contacts-repo.ts:209-230`) never implemented wall-clock LWW because VLT-08 forbids trusting client clocks, so there was no second timestamp to compare against. The spec text was unbuildable as written and, per the issue, would have led a Stage-4 client implementer to send the wrong wire shape or misuse `baseUpdatedAt`.
+- **Gotcha:** the stale-edit UX mechanism is a buildable default, not frozen French copy — do not ship it as final microcopy; `OQ-VLT-3` needs an explicit founder/design answer before FS-01/FS-03 Stage 4 work locks it in.
+
 ## 2026-08-26 — [#65] scope-guard: fix stale-PR false positives from the merge-ref checkout
 
 - **What changed:** `.github/workflows/scope-guard.yml` now checks out `github.event.pull_request.head.sha` directly (falls back to `github.ref` for `workflow_dispatch`), instead of `actions/checkout`'s default `refs/pull/N/merge`.
