@@ -168,9 +168,20 @@ function parseLabels(raw) {
     .filter(Boolean);
 }
 
-function getChangedFiles(base) {
+// `cwd` is exposed only so scope-guard.test.mjs can exercise this against a
+// throwaway temp repo instead of the real one — main() never passes it.
+//
+// Correctness of the three-dot range here depends on HEAD being the PR's own
+// head commit, NOT a merge of it with the base branch's current tip (see
+// issue #65: actions/checkout's default pull_request behavior checks out
+// refs/pull/N/merge, which makes HEAD include every commit merged to main
+// since the PR opened — base...HEAD then wrongly reports those too). Fixed
+// at the workflow level (.github/workflows/scope-guard.yml checks out
+// `github.event.pull_request.head.sha` directly) rather than here, so this
+// stays a plain three-dot diff.
+export function getChangedFiles(base, { cwd } = {}) {
   const range = base ? `${base}...HEAD` : "HEAD~1...HEAD";
-  const out = execFileSync("git", ["diff", "--name-only", range], { encoding: "utf8" });
+  const out = execFileSync("git", ["diff", "--name-only", range], { encoding: "utf8", cwd });
   return out.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
