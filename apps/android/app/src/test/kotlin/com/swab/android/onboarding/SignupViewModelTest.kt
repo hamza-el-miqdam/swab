@@ -137,4 +137,35 @@ class SignupViewModelTest {
             logger.events.any { it.level == SwabLogger.Level.WARN && it.name == "otp.verify.failed" && it.fields["status"] == 429 },
         )
     }
+
+    @Test
+    fun `401 from verifyOtp (an ordinary mistyped code) logs at INFO, not WARN`() = runTest {
+        val logger = RecordingLogger()
+        val transport = ScriptedTransport(
+            mutableListOf(
+                HttpResponse(200, """{"devCode":"111111"}"""),
+                HttpResponse(401, ""),
+            ),
+        )
+        val vm = newViewModel(transport, logger = logger)
+        vm.submitPhone("+33612345678") { }
+        advanceUntilIdle()
+
+        vm.verifyOtp("000000", null) { }
+        advanceUntilIdle()
+
+        // 401 (invalid/expired code) is a routine user mistake, not a
+        // degraded system state — G3 reserves WARN for the latter. Logging
+        // it at WARN would bury the 429s this PR exists to surface under
+        // ordinary typo volume (review finding, PR #138).
+        assertTrue(vm.uiState.value.otpError)
+        assertTrue(
+            "expected an INFO otp.verify.failed event carrying status=401, got: ${logger.events}",
+            logger.events.any { it.level == SwabLogger.Level.INFO && it.name == "otp.verify.failed" && it.fields["status"] == 401 },
+        )
+        assertTrue(
+            "401 must not log at WARN, got: ${logger.events}",
+            logger.events.none { it.level == SwabLogger.Level.WARN && it.name == "otp.verify.failed" },
+        )
+    }
 }

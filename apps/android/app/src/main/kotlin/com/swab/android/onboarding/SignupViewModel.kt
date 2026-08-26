@@ -98,7 +98,16 @@ class SignupViewModel(
                     // spec copy exists yet for a distinct rate-limited
                     // message — G4, French copy comes from specs verbatim),
                     // but the status code is now observable (G3).
-                    logger.event(SwabLogger.Level.WARN, "otp.verify.failed", mapOf("status" to err.status))
+                    //
+                    // 401 (invalid/expired code, apps/api/src/routes/auth.ts)
+                    // is an ordinary mistyped-code user error, not a degraded
+                    // system state — G3 reserves WARN for the latter. Logging
+                    // it at WARN would bury the 429s this event exists to
+                    // surface under routine typo volume (review finding,
+                    // PR #138), so only 401 gets INFO; everything else
+                    // (429, and any other unexpected status) stays WARN.
+                    val level = if (err.status == 401) SwabLogger.Level.INFO else SwabLogger.Level.WARN
+                    logger.event(level, "otp.verify.failed", mapOf("status" to err.status))
                     _uiState.value = _uiState.value.copy(busy = false, otpError = true)
                 }
             } catch (e: Exception) {
