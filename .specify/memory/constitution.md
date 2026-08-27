@@ -1,32 +1,27 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.0 → 2.0.0
-- Rationale: MAJOR — Principle I's privacy invariant is REDEFINED
-  incompatibly. Per ADR-001 (2026-08-16), relationship classification data
-  moves server-side into queryable Postgres columns; end-to-end encryption
-  and the opaque Vault blob are retired, and the database becomes the single
-  source of truth. Prior guidance forbidding server-side reads of this data
-  is void. The inter-user privacy rules (IDT-08 directionality, mutual-only
-  reveal, log exclusions, phone hashing) are retained and restated.
+- Version change: 2.0.0 → 3.0.0
+- Rationale: MAJOR — Principle I clause (d), the reveal invariant, is
+  REDEFINED incompatibly. Per ADR-002 (2026-08-27, "envie becomes a
+  proposition"), mutual reveal is retired: an envie is now a proposition,
+  directed and visible to its recipients, with its proposer always named.
+  The matching engine is not built. What survives, restated as the new (d):
+  silence is never explained (no read receipts, no delivery status, no "vu",
+  no signal to the proposer), there is no decline action anywhere (expiry is
+  the only exit and looks identical regardless of reason), and a recipient's
+  identity is disclosed to other recipients only by that recipient's own
+  explicit choice. Clauses (a), (b), (c) are UNCHANGED — group privacy
+  (ADR-002 commitment 3) and directional-link non-disclosure (IDT-08) already
+  satisfy them; re-verified, not re-derived. This is the single clause the
+  amendment touches; no other principle changed.
 - Modified principles:
-  - II. Test-Driven Development (G2) — added the E2E gate paragraph (mobile
-    Definition of Done: docs/qa/e2e-scenarios.md scenarios, e2e-coverage.json
-    manifest with five verification classes, scripts/e2e-{ios,android}.sh
-    PASS with zero drift-guard failures pasted into the PR, requirement IDs
-    in E2E test names).
-  - V. Documentation & Changelogs (G5) — changelog area list corrected:
-    removed the retired Expo/React Native app's changelog entry
-    (area:mobile, that app was retired 2026-07-19), added the two native
-    apps' changelog paths (area:ios, area:android), and added design/specs
-    to the root CHANGELOG area list; added the "summaries not session logs,
-    ≤15 lines" rule; added "also flip the spec's Status: header to
-    Implemented" to the STATUS.md bullet.
-- Added sections: none (existing I–V Principles, Additional Constraints,
-  Development Workflow, Governance sections retained)
+  - I. Zero-Trust Security (G1) — clause (d) redefined per above; the
+    "## Project" one-line app description this constitution's preamble
+    implicitly assumes (mirrored from `agents/_global-directives.md`) is also
+    now the proposition model, not the mutual-match model.
+- Added sections: none
 - Removed sections: none
-- Resolved: the ratification-date placeholder — set to 2026-07-04, the date
-  of the first commit touching agents/_global-directives.md
-  (`git log --follow --format=%ad --date=short -- agents/_global-directives.md | tail -1`).
+- Resolved: n/a
 - Templates requiring updates:
   ✅ .specify/templates/plan-template.md — Constitution Check gate is generic
      ("Gates determined based on constitution file"), no edit needed.
@@ -34,7 +29,15 @@ Sync Impact Report
   ✅ .specify/templates/tasks-template.md — no constitution-specific references found.
   ✅ .specify/templates/commands/*.md — not present in this install (skills-based
      integration instead); no stale agent-name references found.
-- Follow-up TODOs: none
+  ⚠ `docs/specs/FS-05-*.md` (and any spec-kit `specs/**` artifacts derived from
+     it) still assert mutual reveal — out of scope for this resync (tracked as
+     ROADMAP Phase 0c / SUG-SPEC-016); this constitution now leads, they lag
+     until rewritten.
+- Follow-up TODOs: OQ-PRO-10 (does "no decline action anywhere" survive FS-05's
+  planned « Passer cette fois »?) is open — tracked in
+  `docs/decisions/ADR-002-envie-becomes-a-proposition.md` and
+  `suggestions/specs/SUG-SPEC-014-adr002-amend-binding-directives.md`, not
+  resolved by this resync.
 -->
 
 # Swab Constitution
@@ -68,8 +71,17 @@ user; links stay directional and private (IDT-08), with no "X added you"
 notifications, ever; (b) classification data, envie verbs, recipient lists,
 phone hashes and push tokens MUST NOT appear in logs (III), wherever stored;
 (c) phone numbers are stored only as client-side salted hashes (IDT-01);
-(d) reveal stays strictly mutual — the server MAY compute a match but MUST NOT
-disclose a one-sided envie to anyone.
+(d) a proposition is directed and visible to its recipients
+(`docs/decisions/ADR-002-envie-becomes-a-proposition.md`), and its proposer is
+always named — but **silence is never explained**: ignoring a proposition
+MUST be indistinguishable from never having seen it, with no read receipts,
+no delivery status, no "vu", and no signal of any kind back to the proposer.
+There is no decline action anywhere; expiry is the only exit, and it looks
+identical whether the recipient was uninterested, busy, or absent. A
+recipient's identity is disclosed to the *other* recipients only by that
+recipient's own explicit choice, and a group is private to its owner —
+creating one, or adding someone to it, notifies nobody and is visible to
+nobody.
 
 Rationale: recoverability won over operator-blindness. Device loss previously
 meant permanent loss of the user's entire relationship map, with no recovery
@@ -225,4 +237,4 @@ move together. All specs and plans produced by spec-kit are expected to
 comply with the current version of this file; violations must be justified
 in the plan's Complexity Tracking section or rejected.
 
-**Version**: 2.0.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-08-16
+**Version**: 3.0.0 | **Ratified**: 2026-07-04 | **Last Amended**: 2026-08-27

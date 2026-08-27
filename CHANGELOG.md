@@ -7,6 +7,14 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 
+## 2026-08-27 — [ADR-002] Phase 0b — amend G1(d) to legalize the proposition pivot (SUG-SPEC-014)
+
+- **What changed:** `agents/_global-directives.md` G1(d) rewritten from "reveal stays strictly mutual" to the proposition-model wording (directed + visible to recipients, proposer always named, silence never explained, no decline action, per-recipient identity reveal by choice, owner-private groups). The "## Project" one-liner rewritten to the proposition model too. Re-rendered via `node scripts/render-agents.mjs` (`.github/copilot-instructions.md` updated). `.specify/memory/constitution.md` resynced — Principle I clause (d) matches, version bumped **2.0.0 → 3.0.0** (MAJOR — a redefinition, matching the ADR-001 precedent). `CLAUDE.md`'s app description + a new Hard Boundaries line on group privacy. `README.md:15` gets a superseded-marker only (full law-1 rewrite is SUG-SPEC-015).
+- **Why:** this file is prepended to every agent prompt; until (d) was amended, any agent (including a review-specialist pass) was *required* to reject ADR-002 work as a privacy violation. ROADMAP Phase 0b — blocks all downstream ADR-002 work.
+- **Verified needing no change:** G1(a)/(b)/(c) — satisfied by ADR-002 commitments 3–5 already; not touched.
+- **Known tension flagged, not resolved:** OQ-PRO-10 — the new (d) says "no decline action anywhere", but FS-05's planned « Passer cette fois » is a decline with zero signal. Left as-is per the plan; founder decides during the FS-05 rewrite.
+- **Gotcha for the next reader:** `agents/backend-systems-specialist.md`, `agents/review-specialist.md`, `agents/spec-specialist.md`, and their rendered `.github/instructions/*.md` copies still contain their own independent "reveal stays strictly mutual" / "reveal is strictly mutual" prose — these are *not* sourced from `_global-directives.md` G1(d) and were out of scope for this PR (SUG-SPEC-014's 8 steps don't cover them). They still need updating; tracked as a follow-up, not silently missed.
+
 ## 2026-08-27 — [ADR-002] Phase 0b/0c execution plans (SUG-SPEC-014..018)
 
 - **What changed:** five sequenced plan files under `suggestions/specs/`, one per roadmap step, each in the standard SUG template (`file:line` evidence, numbered plan executable without re-investigating, acceptance greps, risks). 014 amend G1(d) + re-render + constitution resync → 015 product laws + glossary → 016 FS-05 rewrite → 017 FS-04 amendment → 018 FS-06 survival. `docs/ROADMAP.md` Phase 0b/0c link them; `suggestions/README.md` counts updated (35 open / 121 total).

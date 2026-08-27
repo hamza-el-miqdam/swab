@@ -13,6 +13,7 @@ This project is developed using an **AI-Driven Development (AIDD)** methodology,
 These principles are non-negotiable and enforced in code review:
 
 1. **Mutual reveal only** — A desire is invisible to its recipients until reciprocated. A non-match leaves zero observable trace on either side.
+   > ⚠️ Superseded by ADR-002 — rewrite pending
 2. **Nothing hidden silently** — Every filter applied at send time is shown to the sender and revocable in place.
 3. **You declare, Swab never guesses** — Relationship classification is user-declared, asymmetric, and private. No inference, no suggestions.
 4. **Privacy is structural, not a setting — from other users, not from us.** Revised 2026-08-16 (`docs/decisions/ADR-001-server-side-classification-data.md`): your relationship map belongs to your account, so a new or second phone restores it consistently. Classification data is stored server-side and the service can technically read it; no other user ever sees your classement, links are one-directional, and reveal is strictly mutual. We never claim end-to-end encryption.
