@@ -77,6 +77,44 @@ export function runContactRolesRepositoryContract(
       expect(readded.outcome).toBe("applied");
     });
 
+    it("VLT05 VLT08 a device restoration pull carries every live role, not just the last one touched", async () => {
+      // Regression for issue #153: adding two roles via two separate calls
+      // silently vanished from a fresh device's initial sync, because
+      // `listContactsSince` never surfaced role membership at all.
+      const { repo, owner, contactId } = await setup();
+
+      const first = await repo.addRole(owner, mutationId(), contactId, "family");
+      expect(first.outcome).toBe("applied");
+      if (first.outcome !== "applied") throw new Error("unreachable");
+      // Each write's own response carries the FULL current set, not just the
+      // role that call touched.
+      expect(first.contact.roles).toEqual(["family"]);
+
+      const second = await repo.addRole(owner, mutationId(), contactId, "colleague");
+      expect(second.outcome).toBe("applied");
+      if (second.outcome !== "applied") throw new Error("unreachable");
+      expect(second.contact.roles).toEqual(["colleague", "family"]); // alphabetical
+
+      // A new device's fresh pull (no cursor — full restoration) must see both.
+      const page = await repo.listContactsSince(owner, null, 50);
+      expect(page.contacts[0]?.roles).toEqual(["colleague", "family"]);
+    });
+
+    it("VLT05 a role removed then re-added reflects correctly in both the write response and a delta pull", async () => {
+      const { repo, owner, contactId } = await setup();
+      await repo.addRole(owner, mutationId(), contactId, "neighbor");
+      await repo.addRole(owner, mutationId(), contactId, "partner");
+      await repo.removeRole(owner, mutationId(), contactId, "neighbor");
+
+      const readded = await repo.addRole(owner, mutationId(), contactId, "neighbor");
+      expect(readded.outcome).toBe("applied");
+      if (readded.outcome !== "applied") throw new Error("unreachable");
+      expect(readded.contact.roles).toEqual(["neighbor", "partner"]);
+
+      const page = await repo.listContactsSince(owner, null, 50);
+      expect(page.contacts[0]?.roles).toEqual(["neighbor", "partner"]);
+    });
+
     it("VLT02 IDT08 another user cannot add or remove a role on someone else's contact", async () => {
       const harness = await makeHarness();
       const owner = await harness.createUser();

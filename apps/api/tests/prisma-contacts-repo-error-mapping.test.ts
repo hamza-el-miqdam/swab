@@ -140,6 +140,10 @@ function contactRow(overrides: Record<string, unknown> = {}) {
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     deletedAt: null,
+    // toRecord() reads this straight off the row (issue #153) — every stub
+    // row that reaches it needs the shape `include: LIVE_ROLES_INCLUDE`
+    // produces, even though this suite never exercises a live role itself.
+    roles: [],
     ...overrides,
   };
 }
@@ -193,6 +197,7 @@ describe("prismaContactsRepository().addRole — concurrent-add race (VLT-07)", 
     // directly, not anything captured inside the rolled-back transaction.
     expect(client.contactLink.findFirst).toHaveBeenCalledWith({
       where: { id: "contact-1", ownerId: "user-1" },
+      include: { roles: { where: { deletedAt: null } } },
     });
   });
 

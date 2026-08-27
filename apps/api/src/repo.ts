@@ -76,6 +76,17 @@ export interface ContactRecord {
   ring: number | null;
   etat: EtatValue | null;
   ressenti: RessentiValue | null;
+  /**
+   * Current LIVE role tags (issue #153 — the VLT-05 device-restoration gap
+   * left by ADR-001 stage 3 slice 2's route-only PR). Sorted alphabetically
+   * by value, not insertion order: role writes have no per-tag timestamp a
+   * client could use to re-derive an insertion order after a fresh pull, so
+   * alphabetical is the only ordering both server and client can compute
+   * identically without extra state — which is what makes it safe for a
+   * client to diff/compare two pulls by simple array equality. Empty array,
+   * never `null`/`undefined`, when a contact has no roles.
+   */
+  roles: RoleContexteValue[];
   /** Per-axis server timestamps — the LWW base a client echoes back on its next write. */
   fieldUpdatedAt: Record<Axis, Date | null>;
   lastAxisChangeAt: Date | null;

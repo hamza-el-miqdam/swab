@@ -142,6 +142,10 @@ export function serializeContact(contact: ContactRecord): WireContact {
     ring: contact.ring,
     etat: contact.etat,
     ressenti: contact.ressenti,
+    // Current live role tags (issue #153 — the VLT-05 device-restoration gap).
+    // Not part of `fieldUpdatedAt`: roles are a set of tags, not an LWW axis
+    // column, so there is no single "base" timestamp to echo back for them.
+    roles: contact.roles,
     // Echoed back on the client's next write to this contact — the LWW bases.
     fieldUpdatedAt: {
       displayName: iso(contact.fieldUpdatedAt.displayName),

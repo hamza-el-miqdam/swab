@@ -6,6 +6,15 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-27 — [VLT-03,VLT-05,VLT-08,IDT-08] Roles read-path gap: device restoration was silently dropping role assignments (#153)
+
+- Review of merged PR #152 flagged a gap: nothing surfaced a contact's current role set. Two `addRole` calls (e.g. `family` then `colleague`), then a fresh device's initial `GET /contacts` pull — both roles vanished, no error, no signal. Closes #117.
+- Added `roles: RoleContexteValue[]` to `ContactRecord` (`src/repo.ts`), populated in `prisma-contacts-repo.ts` (new `LIVE_ROLES_INCLUDE` on every read/write path, including `listContactsSince`) and the fake repo; wired into `serializeContact`'s live branch (`routes/contacts.ts`) so `GET /contacts`, its delta pull, and both role-write responses (`contact-roles.ts`, via shared `serializeContact`) all carry it. Empty array, never null.
+- **Sort order:** alphabetical, not insertion order — role writes carry no per-tag timestamp, so alphabetical is the only order both server and client can compute identically without extra state.
+- **Tombstone wire shape unchanged:** a deleted contact still serializes to exactly `{ id, deleted: true, updatedAt, deletedAt }` — no `roles` key there, matching the existing convention.
+- Hardened `removeRole` (`prisma-contacts-repo.ts`) from `findUnique`-then-`update` to a CAS `updateMany` guard (mirrors `patchContact`), closing a TOCTOU window between two concurrent removes of the same role.
+- New/extended tests: `contacts-contract.ts`, `contact-roles-contract.ts` (VLT-05 device-restoration + remove-then-readd cases, both fake and Postgres tiers), `contacts.test.ts`, `contact-roles.test.ts` (HTTP-level). 187/187 local tests green.
+
 ## 2026-08-27 — [VLT-02,VLT-07,VLT-09,IDT-08] ContactRole HTTP routes (ADR-001 stage 3 slice 2, part 2/2)
 
 - New `apps/api/src/routes/contact-roles.ts` (kept out of `contacts.ts` — 337 lines already, and roles are a tag set, not an axis column): `POST /contacts/:id/roles` (add) and `POST /contacts/:id/roles/remove` (remove). Both take `{ role }` in the JSON body plus `Idempotency-Key` header + `requireAuth`; outcomes map to HTTP exactly like `contacts.ts`'s PATCH/DELETE (`already_applied`→200/`contact:null`, `not_found`→404 identically for missing-vs-not-yours (IDT-08), `applied`/`no_op`→200 with the current contact).

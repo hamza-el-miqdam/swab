@@ -66,6 +66,15 @@ export function runContactsRepositoryContract(
       expect(page.hasMore).toBe(false);
     });
 
+    it("VLT05 a freshly created contact has an empty roles array, never null/undefined", async () => {
+      const { repo, owner } = await setup();
+      const created = await seedContact(repo, owner);
+      expect(created.roles).toEqual([]);
+
+      const page = await repo.listContactsSince(owner, null, 50);
+      expect(page.contacts[0]?.roles).toEqual([]);
+    });
+
     it("VLT02 IDT08 another user's pull never sees it, and cannot patch or delete it", async () => {
       const harness = await makeHarness();
       const owner = await harness.createUser();

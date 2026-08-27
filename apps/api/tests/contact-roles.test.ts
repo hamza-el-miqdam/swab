@@ -126,6 +126,34 @@ describe("POST /contacts/:id/roles (VLT-02, VLT-07)", () => {
     expect(body.outcome).toBe("applied");
     expect(body.role).toBe("colleague");
     expect(body.contact.id).toBe(contact.id);
+    // VLT-05 (issue #153): the response carries the contact's current live
+    // role set, not just the single role this call touched.
+    expect(body.contact.roles).toEqual(["colleague"]);
+  });
+
+  it("VLT05 adding two roles across two calls surfaces BOTH on the contact, and a device-restoration GET /contacts sees them too (issue #153)", async () => {
+    const s = await signedIn();
+    const contact = await seed(s);
+
+    const first = await addRole(s, contact.id, "family");
+    expect(first.json<{ contact: { roles: string[] } }>().contact.roles).toEqual(["family"]);
+
+    const second = await addRole(s, contact.id, "colleague");
+    // Alphabetical (see repo.ts's `ContactRecord.roles` doc comment).
+    expect(second.json<{ contact: { roles: string[] } }>().contact.roles).toEqual([
+      "colleague",
+      "family",
+    ]);
+
+    // A new device's initial full pull (no cursor) must restore both — this is
+    // the exact scenario a missing `roles` field silently lost.
+    const list = await s.app.inject({
+      method: "GET",
+      url: "/contacts",
+      headers: { authorization: `Bearer ${s.token}` },
+    });
+    const listed = list.json<{ contacts: { id: string; roles: string[] }[] }>().contacts;
+    expect(listed.find((c) => c.id === contact.id)?.roles).toEqual(["colleague", "family"]);
   });
 
   it("VLT02 adding the same role twice is a no_op the second time", async () => {
@@ -201,6 +229,22 @@ describe("POST /contacts/:id/roles/remove (VLT-09)", () => {
     const contact = await seed(s);
     const res = await removeRole(s, contact.id, "not-a-role");
     expect(res.statusCode).toBe(400);
+  });
+
+  it("VLT05 a role removed then re-added reflects correctly on the contact (not stuck stale)", async () => {
+    const s = await signedIn();
+    const contact = await seed(s);
+    await addRole(s, contact.id, "neighbor");
+    await addRole(s, contact.id, "partner");
+
+    const removed = await removeRole(s, contact.id, "neighbor");
+    expect(removed.json<{ contact: { roles: string[] } }>().contact.roles).toEqual(["partner"]);
+
+    const readded = await addRole(s, contact.id, "neighbor");
+    expect(readded.json<{ contact: { roles: string[] } }>().contact.roles).toEqual([
+      "neighbor",
+      "partner",
+    ]);
   });
 });
 
