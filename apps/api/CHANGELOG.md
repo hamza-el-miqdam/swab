@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-27 — [#101] adopt isUniqueViolation in prisma-repo.ts
+
+- Swapped both inline `err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002"` checks in `src/prisma-repo.ts` (`createUser`'s race-to-signup path, `upsertVault`'s race-to-create path) for `@repo/db`'s `isUniqueViolation(err)` helper (added by SUG-DB-011 / #98). Pure dedup, no behavior change — the helper's semantics are identical to the inline check it replaces.
+- Dropped the now-unused `Prisma` import from `@repo/db` in that file.
+- No P2003/foreign-key check exists in this file, so `isForeignKeyViolation` wasn't needed here.
+- Verified: `pnpm --filter @repo/db db:generate`, `pnpm --filter @repo/api typecheck`, `lint`, and `test` all green, including the real-Postgres P2002 integration tests in `tests/prisma-repo.test.ts` and the error-mapping unit tests in `tests/prisma-repo-error-mapping.test.ts` (both rethrow-on-non-P2002 and map-on-P2002 branches still pass unmodified).
+
 ## 2026-08-27 — [VLT-03,VLT-05,VLT-08,IDT-08] Roles read-path gap: device restoration was silently dropping role assignments (#153)
 
 - Review of merged PR #152 flagged a gap: nothing surfaced a contact's current role set. Two `addRole` calls (e.g. `family` then `colleague`), then a fresh device's initial `GET /contacts` pull — both roles vanished, no error, no signal. Closes #117.
