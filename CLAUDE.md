@@ -1,6 +1,6 @@
 # Swab (صواب)
 
-App that connects people with friends: you express an "envie" to a scope; it's revealed only if mutual. Turborepo + pnpm monorepo, strict TypeScript on the JS side: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Compose, native) — the Expo RN app was removed 2026-07-19 (knowledge preserved in `docs/migration/rn-native-handoff.md`) — plus `apps/api` (Fastify), `packages/db` (Prisma/Postgres) and `packages/ui` (design tokens). Planned, not yet created: `apps/web` (Next.js), `packages/api-client`, `tools/orchestrator` (see `docs/STATUS.md`).
+App that connects people with friends: you propose seeing them — a directed "envie" naming what, when and where, answered by accept / counter-propose / ignore, and never by a visible refusal. Turborepo + pnpm monorepo, strict TypeScript on the JS side: `apps/ios` (Swift/SwiftUI, native) and `apps/android` (Kotlin/Compose, native) — the Expo RN app was removed 2026-07-19 (knowledge preserved in `docs/migration/rn-native-handoff.md`) — plus `apps/api` (Fastify), `packages/db` (Prisma/Postgres) and `packages/ui` (design tokens). Planned, not yet created: `apps/web` (Next.js), `packages/api-client`, `tools/orchestrator` (see `docs/STATUS.md`).
 
 ## Binding rules (single source of truth — imported, do not duplicate)
 
@@ -38,3 +38,4 @@ Swab uses [github/spec-kit](https://github.com/github/spec-kit) to turn specs in
 - Classification data (rings/rôles/état/ressenti, filter rules, subgroup names) lives server-side in Postgres as queryable columns — E2EE and the opaque vault blob were retired 2026-08-16 (`docs/decisions/ADR-001-server-side-classification-data.md`). Still hard rules: it never appears in logs, and one user's classification is never exposed to another user (links stay directional — IDT-08).
 - No Vercel-proprietary APIs, no Neon-specific SQL (AWS portability). No new deps without justification in the PR.
 - French UI copy comes from specs verbatim. No counters, celebrations, or urgency anywhere.
+- A group is private to its creator; a recipient learns only that a proposition arrived and that a few others were invited — never who, never how many.

@@ -22,7 +22,7 @@ FS-01/02/03 are implemented but flagged 🟢⚠️ — green against the **retir
 
 The three unstarted specs (FS-04, FS-05, FS-06) are the actual product. Nothing shipped so far lets a user express an envie or receive a match — the core loop does not exist yet.
 
-**The bottleneck is no longer technical — it is [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md).** On 2026-08-27 the product pivoted: an envie is now a *proposition*, directed and visible, answered by a group. FS-05 must be rewritten, FS-04 amended, FS-06's survival decided — and none of it may be implemented until `agents/_global-directives.md` G1(d) is amended, because it currently forbids exactly this. See Phase 0b.
+**The bottleneck is no longer technical — it is [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md).** On 2026-08-27 the product pivoted: an envie is now a *proposition*, directed and visible, answered by a group. FS-05 must be rewritten, FS-04 amended, FS-06's survival decided. Phase 0b — amending `agents/_global-directives.md` G1(d) so this is legal — is **done** (issue [#160](https://github.com/hamza-el-miqdam/swab/issues/160)); Phase 0c, the spec rewrites, is next and unblocked.
 
 Everything **outside** the product surface — the IDT-03 security fix (Phase 1), the dependency queue (Phase 2), the infra work (Phase 4) — is untouched by the pivot and is where to spend time while the specs are rewritten.
 
@@ -42,7 +42,7 @@ graph LR
   style Q fill:#b45309,color:#fff
 ```
 
-The new path is **provisional** — it firms up only once FS-05 is rewritten. What is certain: nothing product-side starts before Phase 0b, because the binding directives still forbid it.
+The new path is **provisional** — it firms up only once FS-05 is rewritten. Phase 0b is done: the binding directives now permit this work. Phase 0c (the spec rewrites) is next.
 
 ---
 
@@ -52,17 +52,17 @@ The five parked FS-05 questions (OQ-ENV-1/2/3, ENV-17, ENV-19) are **dissolved, 
 
 **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — an envie is now a proposition.** It is directed at people who see it, names what/when/where, and is answered by accept / counter-propose / ignore. Mutual reveal is gone. Groups stay **private to their owner**; a recipient learns only that the proposer wants to see them and that a few others are invited — never who, never how many — and reveals their own identity to the others only by choosing to. Swab shows responses but never decides. Read the ADR before touching FS-04, FS-05, FS-06, or `product-overview.md`. *(The ADR was revised the same day it was written — commitments 3–5 are the corrected group model; anything you remember about "shared groups" is void.)*
 
-### Phase 0b — make the pivot legal 🚫 BLOCKING EVERYTHING DOWNSTREAM
+### Phase 0b — make the pivot legal ✅ DONE 2026-08-27
 
-**Do this before any spec rewrite.** [`agents/_global-directives.md`](../agents/_global-directives.md) G1(d) still says *"reveal stays strictly mutual — the server may compute a match but must not disclose a one-sided envie to anyone."* That file is prepended to every agent prompt, so until it is amended **every agent is required to reject this work as a privacy violation.**
+**Landed** via [SUG-SPEC-014](../suggestions/specs/SUG-SPEC-014-adr002-amend-binding-directives.md) and its Phase 2 propagation follow-up (issue [#160](https://github.com/hamza-el-miqdam/swab/issues/160)), branch `docs/adr002-phase0b-amend-directives`. [`agents/_global-directives.md`](../agents/_global-directives.md) G1(d) no longer says *"reveal stays strictly mutual"*; it now states the proposition model (directed, visible to recipients, silence never explained, no decline action anywhere). The same wording was propagated to the three agent files that carried their own independent copy of the old clause (`agents/backend-systems-specialist.md`, `agents/review-specialist.md`, `agents/spec-specialist.md`) and re-rendered to their `.github/instructions/*.md` and `.claude/agents/*.md` copies. Every agent can now do this work without rejecting it as a privacy violation.
 
-**Plan card — Phase 0b**
-- **Order matters:** amend `agents/_global-directives.md` G1(d) → `node scripts/render-agents.mjs` (propagates to `.github/` + `.claude/agents/`) → `/speckit-constitution` to resync `.specify/memory/constitution.md` → update `CLAUDE.md`'s app description + "Hard boundaries".
-- **Exactly one clause changes — G1(d).** The replacement wording is written out in the ADR's "Binding directives" section; copy it from there. **G1(a) is confirmed to need no amendment:** groups notify nobody, so « X t'a ajouté » never happens and links stay directional. Do not widen (a), (b) or (c) while you are in the file.
-- **Keep, do not delete:** the rules that never depended on mutual reveal — IDT-08 one-directional classification, IDT-01 hashed phones, G3's never-log list, and the new *"silence is never explained"* rule that replaces ENV-11's purpose.
-- **Acceptance:** `node scripts/render-agents.mjs --check` clean; no file on `main` still asserts mutual reveal.
-- **Agent:** spec-specialist (+ a `--check` run in CI already exists).
-- 📋 **Executable plan: [SUG-SPEC-014](../suggestions/specs/SUG-SPEC-014-adr002-amend-binding-directives.md)** — hand it to the agent verbatim; it carries the exact replacement string, the propagation order, and the greps that prove it landed.
+**Plan card — Phase 0b (for reference / precedent)**
+- **Order followed:** amended `agents/_global-directives.md` G1(d) → `node scripts/render-agents.mjs` (propagated to `.github/` + `.claude/agents/`) → `/speckit-constitution` resync (`.specify/memory/constitution.md` bumped 2.0.0 → 3.0.0, MAJOR) → updated `CLAUDE.md`'s app description + "Hard boundaries" → second pass amended the three independently-written agent files still asserting mutual reveal.
+- **Exactly one clause changed — G1(d).** G1(a)/(b)/(c) were confirmed to need no amendment and were left untouched.
+- **Kept, not deleted:** the rules that never depended on mutual reveal — IDT-08 one-directional classification, IDT-01 hashed phones, G3's never-log list, and the new *"silence is never explained"* rule that replaces ENV-11's purpose.
+- **Acceptance:** `node scripts/render-agents.mjs --check` clean; `grep -rn "strictly mutual" --include="*.md" .` returns only allowed historical references (CHANGELOG.md, `docs/decisions/ADR-002-*.md`, `docs/archive/`, SUG-SPEC-014, and this file's own past-tense narrative).
+- **Agent:** spec-specialist.
+- 📋 **Executable plan: [SUG-SPEC-014](../suggestions/specs/SUG-SPEC-014-adr002-amend-binding-directives.md)** — carries the exact replacement string, the propagation order, and the greps that prove it landed.
 
 ### Phase 0c — rewrite the specs (`area:specs`)
 

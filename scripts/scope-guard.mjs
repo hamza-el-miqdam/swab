@@ -12,11 +12,18 @@
  *
  * Some areas don't map to a single agents/*-specialist.md Scope section
  * (they're cross-cutting: repo-root governance docs, agents/*.md itself).
- * Issue #147 closed the two concrete gaps this used to name here (docs/
+ * Issue #147 closed two concrete gaps this used to name here (docs/
  * agent-playbook.md + docs/decisions/ under area:specs; agents/ itself
- * under area:sre/area:devops) — see those entries below for the rationale.
- * Other repo-root governance docs not yet claimed by any area's prefixes
- * remain unmapped; see the note above SHARED_ALLOWED_PREFIXES.
+ * under area:sre/area:devops); PR #161 closed the remaining three
+ * (CLAUDE.md, README.md, docs/ROADMAP.md, added to area:specs/area:devops
+ * — see those entries below for the rationale). If a new repo-root
+ * governance doc shows up unmapped, follow that pattern: scope it into
+ * the specific area(s) that legitimately author it, in AREA_PREFIXES —
+ * NOT into SHARED_ALLOWED_PREFIXES, which grants every area at once and
+ * is reserved for files that are structurally owned by none (a lockfile,
+ * a status board) rather than governance text that defines authority
+ * itself (PR #161 review: widening the shared bucket let an unrelated
+ * area silently edit CLAUDE.md's own Hard Boundaries).
  *
  * Usage (as invoked by .github/workflows/scope-guard.yml):
  *   LABELS="area:ios" BASE=<sha> node scripts/scope-guard.mjs
@@ -68,6 +75,16 @@ export const AREA_PREFIXES = {
     // section documents the same two paths.
     "docs/agent-playbook.md",
     "docs/decisions/",
+    // PR #161 review: a binding-directives amendment (SUG-SPEC-014)
+    // legitimately rewrites CLAUDE.md's project description and
+    // README.md's law text and docs/ROADMAP.md's own sequencing notes in
+    // the same PR that amends agents/_global-directives.md. Scoped to
+    // area:specs/area:devops ONLY (not SHARED_ALLOWED_PREFIXES) — an
+    // unrelated area (e.g. area:db) must not be able to silently edit
+    // CLAUDE.md's Hard Boundaries just by carrying its own label.
+    "CLAUDE.md",
+    "README.md",
+    "docs/ROADMAP.md",
   ],
   "area:notion-liaison": ["docs/specs/"],
   "area:sre": [
@@ -117,6 +134,12 @@ export const AREA_PREFIXES = {
     // Issue #147 — see the identical entry + rationale under area:sre above
     // (the two arrays are kept as aliases of the same scope).
     "agents/",
+    // PR #161 review — see the identical entry + rationale under
+    // area:specs above (kept as an alias of the same scope; this PR
+    // carries both labels).
+    "CLAUDE.md",
+    "README.md",
+    "docs/ROADMAP.md",
   ],
 };
 
