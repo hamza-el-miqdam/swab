@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-27 — [#93] bump vitest + @vitest/coverage-v8 to 4.1.10/4.1.11 (apps/api half)
+
+- Dependabot PRs #83/#84 each bumped only one of the version-locked pair and broke CI: #83 (`coverage-v8` alone → 4.1.10) crashed with `SyntaxError: vitest/node does not provide an export named 'BaseCoverageProvider'`; #84 (`vitest` alone → 4.1.10) crashed with `TypeError: Cannot read properties of undefined (reading 'fetchCache')` inside `V8CoverageProvider.convertCoverage`. Both are pure loader/version-skew crashes — confirmed via `gh run view --log-failed` on the original runs, not the issue's own unconfirmed test-isolation theory.
+- **The `vaults_pkey` text quoted in the issue is Postgres server-log noise**, not a live bug: it's the intentional "two concurrent baseVersion 0 upserts settle to one winner" race in `tests/prisma-repo.test.ts`, which passes (`✓`) before and after the bump. No test-isolation defect exists; no fixture code changed.
+- Fix (this PR, `apps/api` only): `apps/api/package.json`'s `vitest`/`@vitest/coverage-v8` `^3.2.0` → `^4.1.10` (resolves 4.1.11), lockfile refreshed. `packages/db/package.json` is out of `area:api` scope (whole `packages/db/` tree is Data Steward's per scope-guard) — its half of the lockstep bump is tracked separately for the Data Steward; `packages/db` stays on vitest 3.2.7 here, still green.
+- Verified: `pnpm --filter @repo/api test` 3x clean (17/17, 187/187, Lines 99.22%, above the G2 80% floor); `pnpm --filter @repo/db test` unaffected (3/3, 89/89); typecheck/lint clean both packages.
+
 ## 2026-08-27 — [#101] adopt isUniqueViolation in prisma-repo.ts
 
 - Swapped both inline `err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002"` checks in `src/prisma-repo.ts` (`createUser`'s race-to-signup path, `upsertVault`'s race-to-create path) for `@repo/db`'s `isUniqueViolation(err)` helper (added by SUG-DB-011 / #98). Pure dedup, no behavior change — the helper's semantics are identical to the inline check it replaces.
