@@ -1,8 +1,8 @@
 # Swab — Codebase Audit Suggestions (2026-07-20)
 
-114 improvement suggestions produced by a read-only audit of the whole monorepo (2026-07-20), run by the seven area specialist agents. 2 later additions (`review/`) bring the total to 116 — the audit set is closed, but the folder stays the home for improvement work that is planned rather than done.
+114 improvement suggestions produced by a read-only audit of the whole monorepo (2026-07-20), run by the seven area specialist agents. 2 later additions (`review/`) and 5 ADR-002 pivot plans (`specs/SUG-SPEC-014..018`, 2026-08-27) bring the total to 121 — the audit set is closed, but the folder stays the home for improvement work that is planned rather than done.
 
-**Layout (reorganised 2026-08-16):** implemented suggestions move to `done/<area>/`; `<area>/` holds only what is still open. Nothing is ever deleted — a completed suggestion stays as the audit record of why the change was made. **86 done, 30 open.** Links throughout this file point at wherever the file now lives.
+**Layout (reorganised 2026-08-16):** implemented suggestions move to `done/<area>/`; `<area>/` holds only what is still open. Nothing is ever deleted — a completed suggestion stays as the audit record of why the change was made. **86 done, 35 open.** Links throughout this file point at wherever the file now lives.
 
 > Counts reconciled 2026-08-21: `SUG-IOS-004/005/007/009/012` and `SUG-AND-010/012` had all shipped but were still filed as open. Moving the file is each PR's own bookkeeping and the scope guard explicitly permits it on any area's PR (`SHARED_ALLOWED_PREFIXES` includes `suggestions/`) — do it in the implementing PR so these counts stay honest.
 
@@ -22,9 +22,11 @@ Each suggestion is one self-contained markdown file with a fixed template: probl
 | Database (packages/db) | [13](db/) | [2](done/db/) | data-steward |
 | DevOps / CI | — | [19](done/devops/) | devops-specialist |
 | Design system | — | [15](done/design/) | design-specialist (+ platform agents where noted) |
-| Specs / QA docs | — | [13](done/specs/) | spec-specialist |
+| Specs / QA docs | [5](specs/) | [13](done/specs/) | spec-specialist |
 | Review agent | [2](review/) | — | review-specialist |
-| **Total** | **30** | **86** | |
+| **Total** | **35** | **86** | |
+
+> **`specs/SUG-SPEC-014..018` are the ADR-002 pivot plans (2026-08-27)** — they are sequenced, not independent: 014 (amend G1(d), **blocking** — nothing else may start first) → 015 (product laws) → 016 (FS-05 rewrite, gated on OQ-PRO-6 + OQ-PRO-1) → 017 (FS-04 amendment) → 018 (FS-06 survival decision). See [ROADMAP.md](../docs/ROADMAP.md) Phase 0b/0c.
 
 Original wave/dependency plan and model assignments (Haiku/Sonnet/Opus split): see [execution-order.md](execution-order.md).
 

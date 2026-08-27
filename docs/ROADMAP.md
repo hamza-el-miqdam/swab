@@ -62,10 +62,24 @@ The five parked FS-05 questions (OQ-ENV-1/2/3, ENV-17, ENV-19) are **dissolved, 
 - **Keep, do not delete:** the rules that never depended on mutual reveal — IDT-08 one-directional classification, IDT-01 hashed phones, G3's never-log list, and the new *"silence is never explained"* rule that replaces ENV-11's purpose.
 - **Acceptance:** `node scripts/render-agents.mjs --check` clean; no file on `main` still asserts mutual reveal.
 - **Agent:** spec-specialist (+ a `--check` run in CI already exists).
+- 📋 **Executable plan: [SUG-SPEC-014](../suggestions/specs/SUG-SPEC-014-adr002-amend-binding-directives.md)** — hand it to the agent verbatim; it carries the exact replacement string, the propagation order, and the greps that prove it landed.
 
 ### Phase 0c — rewrite the specs (`area:specs`)
 
 In order: `product-overview.md` law 1 (law 4 loses only the four words « reveal is strictly mutual »; laws 2, 3, 5 are untouched) → **FS-05** (full rewrite, new requirement IDs) → **FS-04** (*amend*, don't rewrite — groups stay owner-private, so only manual creation + the FCA demotion change) → decide **FS-06**'s fate (OQ-PRO-7).
+
+📋 **Executable plans, one per step — each is its own issue/branch/PR (G4):**
+
+| # | Plan | Scope | Gate |
+|---|---|---|---|
+| 0c.1 | [SUG-SPEC-015](../suggestions/specs/SUG-SPEC-015-adr002-product-overview-laws.md) | Law 1 rewrite, law 4's four words, §1/§3/§6, glossary (`envie`/`portée`/`match`), root `README.md` | needs 014 |
+| 0c.2 | [SUG-SPEC-016](../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md) | FS-05 full rewrite, `ENV-* → PRO-*` disposition table, seam sketch, `area:db` + spec-kit handoffs | 🚦 **OQ-PRO-6 + OQ-PRO-1 must be answered first** |
+| 0c.3 | [SUG-SPEC-017](../suggestions/specs/SUG-SPEC-017-adr002-fs04-amendment.md) | FS-04 amendment — manual CRUD, FCA→suggestion, the server-vs-device persistence split | needs 014 |
+| 0c.4 | [SUG-SPEC-018](../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md) | FS-06 survive/narrow/retire — three options, recommendation (B), founder decides | 🚦 **OQ-PRO-7** |
+
+Two findings surfaced while writing the plans, both recorded in them:
+- **OQ-PRO-10 (new)** — the amended G1(d) says *"no decline action anywhere"*, but FS-05's **« Passer cette fois »** is a decline that emits zero signal. Reconcilable, but the founder must say so; if it survives, G1(d) needs *"no decline action **that the proposer can observe**"*.
+- **The FS-04 persistence split** — `OQ-SGR-2` says the FCA lattice is never persisted; ADR-002 says `Group`/`GroupMember` are server rows. Both are true, of *different objects*. If FS-04 doesn't say so explicitly, the next implementer will contradict one of them.
 
 Nine open questions (OQ-PRO-1..9) are listed in the ADR. Two are load-bearing and should be answered with the founder *before* FS-05 is authored, not during:
 - **OQ-PRO-6** — with no per-slot counters (law 5) and anonymous accepters allowed, what does a recipient actually see that lets the group converge on a time and place? If there is no good answer, group propositions need a narrower shape.

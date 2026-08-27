@@ -7,6 +7,14 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 
+## 2026-08-27 — [ADR-002] Phase 0b/0c execution plans (SUG-SPEC-014..018)
+
+- **What changed:** five sequenced plan files under `suggestions/specs/`, one per roadmap step, each in the standard SUG template (`file:line` evidence, numbered plan executable without re-investigating, acceptance greps, risks). 014 amend G1(d) + re-render + constitution resync → 015 product laws + glossary → 016 FS-05 rewrite → 017 FS-04 amendment → 018 FS-06 survival. `docs/ROADMAP.md` Phase 0b/0c link them; `suggestions/README.md` counts updated (35 open / 121 total).
+- **Why:** ADR-002 named *what* changes but not *how*, and the pivot's blast radius spans specs, agent prompts, spec-kit artifacts, seed data and two void `SUG-DB-*` files — too much to hold in a head or a roadmap bullet.
+- **016 carries the load-bearing artifact:** an `ENV-* → PRO-*` disposition table for all 20 requirements. **Six survive** (ENV-06, 11, 15, 16, 18, 20) — they are about calm and silence, not matching, and ENV-11 is the direct ancestor of the amended G1(d). A clean-slate rewrite would drop them by omission.
+- **Two collisions found while planning, both unresolved and flagged, not guessed:** (1) **OQ-PRO-10** — G1(d)'s *"no decline action anywhere"* vs FS-05's « Passer cette fois », a decline that emits zero signal; if it survives the clause needs *"…that the proposer can observe"*. (2) **FS-04 persistence split** — `OQ-SGR-2` (FCA lattice never persisted) and ADR-002 (`Group`/`GroupMember` are server rows) are both true, of different objects; FS-04 must say so or an implementer will contradict one.
+- **Gotchas:** 014 is blocking — no other plan may start first. 016 is gated on OQ-PRO-6 + OQ-PRO-1 (founder). Schema work stays a handoff to `area:db` in every plan (G4, one writer). `docs/qa/e2e-coverage.json` verified to hold **zero** `ENV-` references — no manifest work needed, don't re-check.
+
 ## 2026-08-27 — [ADR-002] an envie becomes a proposition; mutual reveal is retired
 
 - **What changed:** added [docs/decisions/ADR-002-envie-becomes-a-proposition.md](docs/decisions/ADR-002-envie-becomes-a-proposition.md) — founder decision. An envie is now a directed, visible **proposition** (what/when/where) answered by accept / counter-propose / ignore; Swab shows the group's responses but never ranks, tallies, or decides. The matching engine will not be built. `docs/ROADMAP.md` Phase 0 re-cut and its Phase 3 marked superseded.
