@@ -7,6 +7,12 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 
+## 2026-08-27 — [FCH-04] FS-03 reconciled with the device-side history trim actually shipped
+
+- **What changed:** `docs/specs/FS-03-contact-card.md` FCH-04 rewritten with the file's existing ⚠️ Transitional (ADR-001) Current/After convention (matches FCH-01, FCH-09). It now acknowledges the device-side 12-month history trim (`Vault.recordAxisEdit`, Android PR #108/SUG-AND-013, iOS PR #107) as a deliberate interim stopgap — founder decision 2026-08-21 — driven by the live 1MB vault cap (`MAX_VAULT_BYTES`, `apps/api/src/routes/vault.ts:13` + DB `CHECK`), records the clock-skew corroboration guard both platforms now carry (Android from the start, iOS via #137/issue #113), and states the removal condition: deleted once server-side retention ships as part of ADR-001 Stage 3 (history slice), tracked in issue #110.
+- **Why:** the spec previously read as though server-side retention already existed; it did not, and code-reality (device-side trim, live on both platforms) had diverged from spec text since #107/#108 landed.
+- **Not in this PR:** #110's code-removal sub-tasks (deleting the trims from `Vault.kt`/`Vault.swift`, fixing the stale `VLT-03` label in `apps/api/src/routes/vault.ts:13`) — blocked on ADR-001 Stage 3 history landing, tracked separately in #110. `docs/specs/.notion-sync.json`'s FS-03 mirror is now further behind current English; resync is notion-liaison-specialist's job, not done here.
+
 ## 2026-08-26 — gitleaks: allowlist swift-security skill's fabricated example secrets
 
 - **What changed:** added the three `.claude/skills/swift-security/references/*.md` doc paths (`credential-storage-patterns.md`, `common-anti-patterns.md`, `compliance-owasp-mapping.md`) to `.gitleaks.toml`'s allowlist, same pattern as the existing `vault-test-vectors.json` entries.
