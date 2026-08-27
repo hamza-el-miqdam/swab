@@ -1,4 +1,4 @@
-import { Prisma, prisma, type PrismaClient } from "@repo/db";
+import { isUniqueViolation, prisma, type PrismaClient } from "@repo/db";
 import { prismaContactsRepository } from "./prisma-contacts-repo.js";
 import type { Repository, VaultWriteResult } from "./repo.js";
 
@@ -39,7 +39,7 @@ export function prismaRepository(client: PrismaClient = prisma): Repository {
         // client retry, two devices) both pass findUserByPhoneHash → null,
         // then race here; anything else must not be swallowed into a false
         // "existing user", so it rethrows to the global error handler (500).
-        if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== "P2002") {
+        if (!isUniqueViolation(err)) {
           throw err;
         }
         const existing = await client.user.findUnique({
@@ -78,7 +78,7 @@ export function prismaRepository(client: PrismaClient = prisma): Repository {
           // swallowed into a false 409, or the client loops retrying forever
           // against a transient infra failure. Rethrow → global error handler
           // logs it and returns 500 (app.ts).
-          if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== "P2002") {
+          if (!isUniqueViolation(err)) {
             throw err;
           }
           const current = await client.vault.findUnique({
