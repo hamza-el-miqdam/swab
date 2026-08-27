@@ -116,9 +116,14 @@ export interface ContactRouteDeps {
   repo: ContactsRepository;
 }
 
-type WireContact = Record<string, unknown>;
+export type WireContact = Record<string, unknown>;
 
-function serializeContact(contact: ContactRecord): WireContact {
+/**
+ * Exported so `routes/contact-roles.ts` (ADR-001 stage 3 slice 2, part 2/2)
+ * can serialize the parent contact its write envelope returns, rather than
+ * re-implementing the tombstone-vs-live shape (convention 5 above).
+ */
+export function serializeContact(contact: ContactRecord): WireContact {
   if (contact.deletedAt !== null) {
     // Convention 5: a tombstone is an instruction to forget, not a record.
     return {
@@ -153,8 +158,11 @@ function serializeContact(contact: ContactRecord): WireContact {
 
 const iso = (value: Date | null): string | null => value?.toISOString() ?? null;
 
-/** `null` + a 400 already sent when the header is missing or malformed. */
-function readMutationId(req: FastifyRequest, reply: FastifyReply): string | null {
+/**
+ * `null` + a 400 already sent when the header is missing or malformed.
+ * Exported for `routes/contact-roles.ts` — same VLT-07 header, same rules.
+ */
+export function readMutationId(req: FastifyRequest, reply: FastifyReply): string | null {
   const parsed = mutationIdSchema.safeParse(req.headers["idempotency-key"]);
   if (parsed.success) return parsed.data;
   sendProblem(

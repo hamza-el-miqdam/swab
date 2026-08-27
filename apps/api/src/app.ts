@@ -8,6 +8,7 @@ import { OtpStore } from "./otp-store.js";
 import { sendProblem } from "./lib/problem.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerContactRoutes } from "./routes/contacts.js";
+import { registerContactRoleRoutes } from "./routes/contact-roles.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerVaultRoutes } from "./routes/vault.js";
 
@@ -144,6 +145,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // stage 4. The typed contacts routes below are its replacement.
   registerVaultRoutes(app, { env: deps.env, repo: deps.repo });
   registerContactRoutes(app, { env: deps.env, repo: deps.repo });
+  registerContactRoleRoutes(app, { env: deps.env, repo: deps.repo });
 
   return app;
 }
