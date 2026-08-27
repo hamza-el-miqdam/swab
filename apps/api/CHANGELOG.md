@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-27 — [#93] bump vitest + @vitest/coverage-v8 to 4.1.10/4.1.11 in lockstep
+
+- Dependabot PRs #83/#84 each bumped only one of the version-locked pair and broke CI: #83 (`coverage-v8` alone → 4.1.10) crashed with `SyntaxError: vitest/node does not provide an export named 'BaseCoverageProvider'`; #84 (`vitest` alone → 4.1.10) crashed with `TypeError: Cannot read properties of undefined (reading 'fetchCache')` inside `V8CoverageProvider.convertCoverage`. Both are pure loader/version-skew crashes from mixing a v4 package with a v3 package — confirmed via `gh run view --log-failed` on both original runs.
+- **The `vaults_pkey` duplicate-key text quoted in the issue is a red herring, not a live bug.** It's Postgres's own server-log echo (`docker logs`, printed post-job) of the intentional "two concurrent baseVersion 0 upserts settle to exactly one winner" race in `tests/prisma-repo.test.ts` — both `INSERT INTO vaults` target the same `user_id` on purpose; the repo's P2002 mapping already resolves the loser cleanly. Every test in that same PR #84 log, including that one, shows `✓` — it was passing before and after the bump. No test-isolation defect exists in the current fixtures (already hardened to `randomUUID()`-suffixed ids per test, scoped `afterEach`/`afterAll` cleanup).
+- Fix: bumped `apps/api/package.json` and `packages/db/package.json`'s `vitest`/`@vitest/coverage-v8` to `^4.1.10` together (resolves to `4.1.11`), `pnpm install` to refresh the lockfile. No test/fixture code changed — none was needed. No pool/parallelism config added (would have masked, not fixed, a problem that doesn't exist).
+- Verified: `pnpm --filter @repo/api test` 3x clean (17/17 files, 187/187 tests, Lines 99.22%, well above the G2 80% floor — `thresholds: { lines: 80 }` still honored under coverage-v8 4.x); `pnpm --filter @repo/db test` (3/3, 89/89); `typecheck`/`lint` clean on both packages.
+
 ## 2026-08-27 — [#101] adopt isUniqueViolation in prisma-repo.ts
 
 - Swapped both inline `err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002"` checks in `src/prisma-repo.ts` (`createUser`'s race-to-signup path, `upsertVault`'s race-to-create path) for `@repo/db`'s `isUniqueViolation(err)` helper (added by SUG-DB-011 / #98). Pure dedup, no behavior change — the helper's semantics are identical to the inline check it replaces.
