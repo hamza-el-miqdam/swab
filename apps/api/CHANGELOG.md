@@ -6,6 +6,15 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-27 — [VLT-02,VLT-07,VLT-09,IDT-08] ContactRole repository layer (ADR-001 stage 3 slice 2, part 1/2)
+
+- Repository layer only (routes follow in PR 2): `ContactRolesRepository.addRole`/`removeRole` on both implementations (Prisma + in-memory fake), plus `ROLE_VALUES`/`RoleContexteValue` in `contacts/vocabulary.ts`. `ContactRole` model already existed in schema — no `area:db` change needed.
+- Same idempotency/tombstone shape as `patchContact`/`deleteContact`: `runMutation()` reused verbatim, `not_found` for a missing/tombstoned parent contact never burns the mutation id, re-adding after a tombstone revives the row.
+- **Gotcha:** a role write bumps the parent `ContactLink.updatedAt` in the same transaction, so `GET /contacts?since=` keeps surfacing role-only changes without a separate roles-sync endpoint.
+- **Discrepancy from the brief's sketch:** the brief's `addRole` illustration catches a P2002 unique-violation *inside* the transaction and continues querying the same `tx`. Verified empirically against local Postgres that this is unsafe — Postgres aborts the whole transaction on any statement error (`25P02`) until rollback, so any later query on that `tx` fails too. Implemented instead as check-first (`findUnique` then branch to no_op/revive/create), never needing to catch-and-continue inside a transaction. Full detail in PR description.
+- One shared contract suite (`contact-roles-contract.ts`) run against the fake repo now; the Postgres tier and `docs/STATUS.md` update are deferred to PR 2.
+- **Review follow-up:** `addRole` now also wraps its `runMutation()` call in a `try/catch` (mirroring `createContact`'s) that resolves a genuine composite-PK P2002 — two concurrent "add this role" mutations racing from the offline outbox — to `no_op` instead of leaking the raw Prisma error; `removeRole` needs no equivalent, its writes are lock-serializing `update`s, never a racing `create`. Pinned by a stubbed-Prisma unit test (`prisma-contacts-repo-error-mapping.test.ts`); the true concurrent race stays Postgres-tier, PR 2.
+
 ## 2026-08-25 — [IDT-03] Configurable OTP rate limit: strict in production, relaxed for local/E2E
 
 - Issue #128 (Android E2E flakiness, PR #138): the per-IP OTP throttle (10/min) trips during scripted local/on-device E2E runs where many requests share one IP in a short window.

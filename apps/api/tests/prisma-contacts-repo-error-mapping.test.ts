@@ -116,3 +116,94 @@ describe("prismaContactsRepository().createContact — P2002 disambiguation (VLT
     expect(client.contactLink.create).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * A minimal `ContactLink` row for `toRecord()` — every field it reads, no
+ * more. Reused across the `addRole` race tests below.
+ */
+function contactRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "contact-1",
+    ownerId: "user-1",
+    targetId: null,
+    invitedPhoneHash: "hash",
+    displayName: null,
+    ring: null,
+    etat: null,
+    ressenti: null,
+    displayNameUpdatedAt: null,
+    ringUpdatedAt: null,
+    etatUpdatedAt: null,
+    ressentiUpdatedAt: null,
+    lastAxisChangeAt: null,
+    stalenessSnoozedUntil: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    deletedAt: null,
+    ...overrides,
+  };
+}
+
+/**
+ * `contactRole.create` rejects by default — that is the race this stub
+ * exists to model: two concurrent "add this same role" mutations (different
+ * mutationIds — two devices from the offline outbox) both pass the
+ * check-first read before either commits, and the loser hits the composite
+ * PK (`@@id([contactLinkId, role])`). `$transaction` just runs the callback —
+ * it cannot model a real rollback, which is exactly why the true race can
+ * only be provoked against real Postgres (deferred to the PR 2 Postgres
+ * suite); this stub exists solely to pin `addRole`'s P2002-handling branch.
+ */
+function stubAddRoleClient(options: { createThrows?: () => unknown } = {}) {
+  const row = contactRow();
+  const client = {
+    clientMutation: {
+      // Never a replay in this scenario: both the fast-path check and
+      // `runMutation`'s post-failure disambiguation read miss, which is what
+      // routes the P2002 out to `addRole`'s own catch in the first place.
+      findUnique: vi.fn(() => Promise.resolve(null)),
+      create: vi.fn(() => Promise.resolve({})),
+    },
+    contactLink: {
+      findFirst: vi.fn(() => Promise.resolve(row)),
+      findFirstOrThrow: vi.fn(() => Promise.resolve(row)),
+      updateMany: vi.fn(() => Promise.resolve({ count: 1 })),
+    },
+    contactRole: {
+      findUnique: vi.fn(() => Promise.resolve(null)),
+      create: vi.fn(options.createThrows ?? (() => Promise.reject(uniqueViolation()))),
+      update: vi.fn(() => Promise.resolve({})),
+    },
+    $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(client)),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test double, not a real PrismaClient
+  } as any;
+  return client;
+}
+
+describe("prismaContactsRepository().addRole — concurrent-add race (VLT-07)", () => {
+  it("VLT07 resolves a composite-PK P2002 from a concurrent add to no_op instead of leaking the raw Prisma error", async () => {
+    const client = stubAddRoleClient();
+    const repo = prismaContactsRepository(client);
+
+    const result = await repo.addRole("user-1", "mutation-0001", "contact-1", "colleague");
+
+    expect(result).toMatchObject({ outcome: "no_op", role: "colleague" });
+    if (result.outcome === "no_op") expect(result.contact.id).toBe("contact-1");
+    // The re-read that builds the no_op response must go through the client
+    // directly, not anything captured inside the rolled-back transaction.
+    expect(client.contactLink.findFirst).toHaveBeenCalledWith({
+      where: { id: "contact-1", ownerId: "user-1" },
+    });
+  });
+
+  it("VLT07 still rethrows an infrastructure failure rather than treating it as a role race", async () => {
+    const client = stubAddRoleClient({
+      createThrows: () => Promise.reject(new Error("connection refused")),
+    });
+    const repo = prismaContactsRepository(client);
+
+    await expect(
+      repo.addRole("user-1", "mutation-0002", "contact-1", "colleague"),
+    ).rejects.toThrow("connection refused");
+  });
+});
