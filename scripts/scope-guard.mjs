@@ -12,11 +12,13 @@
  *
  * Some areas don't map to a single agents/*-specialist.md Scope section
  * (they're cross-cutting: repo-root governance docs, agents/*.md itself).
- * Issue #147 closed the two concrete gaps this used to name here (docs/
+ * Issue #147 closed two concrete gaps this used to name here (docs/
  * agent-playbook.md + docs/decisions/ under area:specs; agents/ itself
- * under area:sre/area:devops) — see those entries below for the rationale.
- * Other repo-root governance docs not yet claimed by any area's prefixes
- * remain unmapped; see the note above SHARED_ALLOWED_PREFIXES.
+ * under area:sre/area:devops); PR #161 closed the remaining three
+ * (CLAUDE.md, README.md, docs/ROADMAP.md) — see those entries below for
+ * the rationale. If a new repo-root governance doc shows up unmapped,
+ * that's the pattern to repeat: extend SHARED_ALLOWED_PREFIXES with a
+ * comment explaining which cross-cutting PR needed it and why.
  *
  * Usage (as invoked by .github/workflows/scope-guard.yml):
  *   LABELS="area:ios" BASE=<sha> node scripts/scope-guard.mjs
@@ -146,12 +148,24 @@ export const AREA_PREFIXES = {
 //   particular. Chose option (a) from #141/#140 (add here) over formalizing
 //   a mandatory 2-PR split; this permits the file, not its contents — the
 //   change is still argued for in review, same caveat as pnpm-lock.yaml.
+// - CLAUDE.md, README.md, docs/ROADMAP.md (PR #161, following the #147
+//   pattern the header comment above pointed at): the last three repo-root
+//   governance docs the header comment flagged as "not yet claimed by any
+//   area's prefixes". A binding-directives amendment (area:specs, per
+//   agents/spec-specialist.md) legitimately rewrites CLAUDE.md's own project
+//   description and README.md's law text in the same PR that amends
+//   agents/_global-directives.md, and ROADMAP.md tracks the same
+//   cross-cutting sequencing work docs/STATUS.md already covers above —
+//   same shape, same fix: permit the file, not its contents.
 export const SHARED_ALLOWED_PREFIXES = [
   "docs/STATUS.md",
   "docs/qa/",
   "pnpm-lock.yaml",
   "suggestions/",
   "docker-compose.yml",
+  "CLAUDE.md",
+  "README.md",
+  "docs/ROADMAP.md",
 ];
 
 // Cross-cutting areas with no dedicated package share the root CHANGELOG.md
