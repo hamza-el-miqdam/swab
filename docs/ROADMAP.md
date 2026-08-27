@@ -22,7 +22,7 @@ FS-01/02/03 are implemented but flagged 🟢⚠️ — green against the **retir
 
 The three unstarted specs (FS-04, FS-05, FS-06) are the actual product. Nothing shipped so far lets a user express an envie or receive a match — the core loop does not exist yet.
 
-**The bottleneck is no longer technical — it is [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md).** On 2026-08-27 the product pivoted: an envie is now a *proposition*, directed and visible, answered by a group. FS-05 must be rewritten, FS-04 reshaped, FS-06's survival decided — and none of it may be implemented until `agents/_global-directives.md` G1(d) is amended, because it currently forbids exactly this. See Phase 0b.
+**The bottleneck is no longer technical — it is [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md).** On 2026-08-27 the product pivoted: an envie is now a *proposition*, directed and visible, answered by a group. FS-05 must be rewritten, FS-04 amended, FS-06's survival decided — and none of it may be implemented until `agents/_global-directives.md` G1(d) is amended, because it currently forbids exactly this. See Phase 0b.
 
 Everything **outside** the product surface — the IDT-03 security fix (Phase 1), the dependency queue (Phase 2), the infra work (Phase 4) — is untouched by the pivot and is where to spend time while the specs are rewritten.
 
@@ -50,7 +50,7 @@ The new path is **provisional** — it firms up only once FS-05 is rewritten. Wh
 
 The five parked FS-05 questions (OQ-ENV-1/2/3, ENV-17, ENV-19) are **dissolved, not answered**: all five presupposed a matching engine that will not be built.
 
-**[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — an envie is now a proposition.** It is directed at people who see it, names what/when/where, and is answered by accept / counter-propose / ignore. Mutual reveal is gone; groups are explicit shared objects; Swab shows responses but never decides. Read the ADR before touching FS-04, FS-05, FS-06, or `product-overview.md`.
+**[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — an envie is now a proposition.** It is directed at people who see it, names what/when/where, and is answered by accept / counter-propose / ignore. Mutual reveal is gone. Groups stay **private to their owner**; a recipient learns only that the proposer wants to see them and that a few others are invited — never who, never how many — and reveals their own identity to the others only by choosing to. Swab shows responses but never decides. Read the ADR before touching FS-04, FS-05, FS-06, or `product-overview.md`. *(The ADR was revised the same day it was written — commitments 3–5 are the corrected group model; anything you remember about "shared groups" is void.)*
 
 ### Phase 0b — make the pivot legal 🚫 BLOCKING EVERYTHING DOWNSTREAM
 
@@ -58,13 +58,18 @@ The five parked FS-05 questions (OQ-ENV-1/2/3, ENV-17, ENV-19) are **dissolved, 
 
 **Plan card — Phase 0b**
 - **Order matters:** amend `agents/_global-directives.md` G1(d) → `node scripts/render-agents.mjs` (propagates to `.github/` + `.claude/agents/`) → `/speckit-constitution` to resync `.specify/memory/constitution.md` → update `CLAUDE.md`'s app description + "Hard boundaries".
+- **Exactly one clause changes — G1(d).** The replacement wording is written out in the ADR's "Binding directives" section; copy it from there. **G1(a) is confirmed to need no amendment:** groups notify nobody, so « X t'a ajouté » never happens and links stay directional. Do not widen (a), (b) or (c) while you are in the file.
 - **Keep, do not delete:** the rules that never depended on mutual reveal — IDT-08 one-directional classification, IDT-01 hashed phones, G3's never-log list, and the new *"silence is never explained"* rule that replaces ENV-11's purpose.
 - **Acceptance:** `node scripts/render-agents.mjs --check` clean; no file on `main` still asserts mutual reveal.
 - **Agent:** spec-specialist (+ a `--check` run in CI already exists).
 
 ### Phase 0c — rewrite the specs (`area:specs`)
 
-In order: `product-overview.md` laws 1 + 4 → **FS-05** (full rewrite, new requirement IDs) → **FS-04** (FCA becomes an opt-in suggestion) → decide **FS-06**'s fate (OQ-PRO-7 — silent filtering is incoherent when you propose to a named group). Seven new open questions (OQ-PRO-1..7) are listed in the ADR; **OQ-PRO-1 is the sharp one** — refusing a proposition to a non-mutual contact leaks that they haven't added you, which is exactly what IDT-08 exists to prevent.
+In order: `product-overview.md` law 1 (law 4 loses only the four words « reveal is strictly mutual »; laws 2, 3, 5 are untouched) → **FS-05** (full rewrite, new requirement IDs) → **FS-04** (*amend*, don't rewrite — groups stay owner-private, so only manual creation + the FCA demotion change) → decide **FS-06**'s fate (OQ-PRO-7).
+
+Nine open questions (OQ-PRO-1..9) are listed in the ADR. Two are load-bearing and should be answered with the founder *before* FS-05 is authored, not during:
+- **OQ-PRO-6** — with no per-slot counters (law 5) and anonymous accepters allowed, what does a recipient actually see that lets the group converge on a time and place? If there is no good answer, group propositions need a narrower shape.
+- **OQ-PRO-1** — refusing a proposition to a non-mutual contact leaks that they haven't added you, which is exactly what IDT-08 exists to prevent.
 
 ---
 
@@ -168,9 +173,9 @@ Clear after Phase 1 lands, since #158 depends on the trust-proxy fix.
 ### 3d. FS-04 — subgroups (after 3a) ∥ with 3c
 
 **Plan card**
-- **Goal:** automatic subgroup detection (FCA) on-device over the local cache; user curates only pin/rename/hide/re-show.
-- **Product law:** « tu ne définis jamais un groupe à la main » — no manual group creation, ever.
-- **Feeds:** ENV-02's scope picker, which lists FS-04 subgroups **only** — no individual selection, no ad-hoc multi-select.
+- **Goal:** ~~automatic subgroup detection (FCA) on-device~~ → **ADR-002:** manual group CRUD is the base case; FCA is demoted to an opt-in suggestion. Groups remain **private to their owner** — that part is unchanged.
+- ~~**Product law:** « tu ne définis jamais un groupe à la main » — no manual group creation, ever.~~ **Void (ADR-002).** Do not cite this line.
+- **Feeds:** ~~ENV-02's scope picker, which lists FS-04 subgroups **only** — no individual selection~~ → proposing to a single person is now the base case.
 - **Agents:** ios-specialist ∥ android-specialist (sole — no backend beyond FS-07's name/pin/hidden storage).
 
 ### 3e. FS-05 mobile — emission + reception UI (last)
