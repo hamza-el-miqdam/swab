@@ -6,6 +6,15 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-08-27 — [VLT-02,VLT-07,VLT-09,IDT-08] ContactRole HTTP routes (ADR-001 stage 3 slice 2, part 2/2)
+
+- New `apps/api/src/routes/contact-roles.ts` (kept out of `contacts.ts` — 337 lines already, and roles are a tag set, not an axis column): `POST /contacts/:id/roles` (add) and `POST /contacts/:id/roles/remove` (remove). Both take `{ role }` in the JSON body plus `Idempotency-Key` header + `requireAuth`; outcomes map to HTTP exactly like `contacts.ts`'s PATCH/DELETE (`already_applied`→200/`contact:null`, `not_found`→404 identically for missing-vs-not-yours (IDT-08), `applied`/`no_op`→200 with the current contact).
+- **Route-shape decision, not the naive `DELETE /contacts/:id/roles/:role`:** empirically confirmed (throwaway test against `buildApp`) that Fastify's own default request logger logs the full `req.url`, path AND query string, at info level — independent of any explicit `req.log` call. A role value is classification data (VLT-03) exactly like `etat`/`ressenti`, so it can't sit in a URL at all, path segment or query param. A `DELETE` body was rejected too, for the same cross-HTTP-stack reliability reason `contacts.ts` already moved `mutationId` to a header. Net: role stays in a body on both routes; removal is a `POST .../roles/remove` action route rather than a true `DELETE`. Full reasoning inline in the new file's header comment.
+- Logging: ids + `outcome` only, same as `contacts.ts` — no role value, and (deliberately, unlike `patchContact`'s `stale: count`) not even a boolean, since exactly one role changes per call so a count adds no signal beyond `outcome` itself.
+- `serializeContact`/`readMutationId` exported from `contacts.ts` and reused rather than duplicated.
+- New tests: `tests/contact-roles.test.ts` (route-level: auth, idempotency-key, invalid-role 400, outcome/status mapping, IDT-08 identical-404, VLT-03 log audit including the role value never leaking via Fastify's own URL logging) and `tests/contact-roles-repo.postgres.test.ts` (closes PR 1's deferred Postgres tier + the true concurrent-race `Promise.all` test for `addRole`'s composite-PK P2002 path, mirroring `prisma-repo.test.ts`'s "two concurrent upserts" pattern — this one against a real transaction abort, not a stub).
+- All local tiers green: 179/179 tests (Docker Postgres up), lint/typecheck/build clean.
+
 ## 2026-08-27 — [VLT-02,VLT-07,VLT-09,IDT-08] ContactRole repository layer (ADR-001 stage 3 slice 2, part 1/2)
 
 - Repository layer only (routes follow in PR 2): `ContactRolesRepository.addRole`/`removeRole` on both implementations (Prisma + in-memory fake), plus `ROLE_VALUES`/`RoleContexteValue` in `contacts/vocabulary.ts`. `ContactRole` model already existed in schema — no `area:db` change needed.
