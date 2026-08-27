@@ -4,7 +4,7 @@
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 
-_Last updated: 2026-08-22_
+_Last updated: 2026-08-27_
 
 > **Native migration complete.** Mobile is native `apps/ios` + `apps/android`; RN knowledge in `docs/migration/` (see its README for what is still binding). Both E2E suites are a hard DoD gate (`scripts/e2e-{ios,android}.sh`). Open: FS-03 on-device walkthrough, E2E not in CI.
 
@@ -12,7 +12,7 @@ _Last updated: 2026-08-22_
 
 | Spec | Module | Status | Lead | Notes |
 |---|---|---|---|---|
-| FS-07 | Identity & Vault | 🟡 In progress | Backend | Auth (phone-OTP, JWT sessions), `/health` + `/ready`. **ADR-001 stage 3:** slice 1 (2026-08-22) typed `/contacts` CRUD + cursor delta pull; slice 2 (2026-08-27) role routes (`POST /contacts/:id/roles[/remove]`, VLT-02/07/09, IDT-08). `Vault` deprecated, still served. Next: filter rules, subgroups, history. Missing: refresh rotation, deletion, discovery, invites. |
+| FS-07 | Identity & Vault | 🟡 In progress | Backend | Auth (phone-OTP, JWT sessions), `/health` + `/ready`. **ADR-001 stage 3:** slice 1 (2026-08-22) typed `/contacts` CRUD + cursor delta pull; slice 2 (2026-08-27) role routes (`POST /contacts/:id/roles[/remove]`, VLT-02/07/09, IDT-08); slice 2 follow-up (2026-08-27, #153) closes the roles read-path gap — `ContactRecord.roles` now flows through `GET /contacts`, its delta pull, and both role-write responses, so device restoration (VLT-05) no longer silently drops role assignments. Closes #117. `Vault` deprecated, still served. Next: filter rules, subgroups, history. Missing: refresh rotation, deletion, discovery, invites. |
 | FS-01 | Onboarding | 🟢⚠️ | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). **ADR-001:** built on the retired vault; ONB-02/05 change in the client-stage migration. |
 | FS-02 | Relationship Map | 🟢⚠️ | Mobile | Radial map + list fallback from the local cache, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). **ADR-001:** reads move vault→cache; behaviour unchanged, lowest-impact spec. |
 | FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04); FCH-09 stored identifiers done both platforms — stage-2 unblocked. |

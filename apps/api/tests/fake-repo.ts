@@ -58,9 +58,22 @@ export function fakeRepository(): FakeRepository {
   const ledgerKey = (userId: string, mutationId: string): string => `${userId}|${mutationId}`;
   const roleKey = (contactId: string, role: RoleContexteValue): string => `${contactId}|${role}`;
 
+  /**
+   * Live role tags for one contact, alphabetical (issue #153 — see
+   * `ContactRecord.roles`'s doc comment in repo.ts for why alphabetical).
+   * Computed fresh from the `roles` map rather than stored on the contact
+   * itself, so `addRole`/`removeRole` never have to keep two copies in sync.
+   */
+  const liveRolesFor = (contactId: string): RoleContexteValue[] =>
+    [...roles.entries()]
+      .filter(([key, row]) => key.startsWith(`${contactId}|`) && row.deletedAt === null)
+      .map(([key]) => key.slice(contactId.length + 1) as RoleContexteValue)
+      .sort();
+
   const clone = (contact: ContactRecord): ContactRecord => ({
     ...contact,
     fieldUpdatedAt: { ...contact.fieldUpdatedAt },
+    roles: liveRolesFor(contact.id),
   });
 
   const own = (userId: string, contactId: string): ContactRecord | null => {
@@ -136,6 +149,7 @@ export function fakeRepository(): FakeRepository {
         ring: input.ring ?? null,
         etat: input.etat ?? null,
         ressenti: input.ressenti ?? null,
+        roles: [], // overridden by `clone`'s `liveRolesFor` on every return anyway
         fieldUpdatedAt: {
           displayName: input.displayName === undefined ? null : stamp,
           ring: input.ring === undefined ? null : stamp,

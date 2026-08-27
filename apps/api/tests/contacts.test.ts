@@ -144,7 +144,15 @@ describe("POST /contacts (VLT-02, VLT-07)", () => {
     const body = res.json<{ outcome: string; contact: Record<string, unknown> }>();
     expect(body.outcome).toBe("applied");
     expect(res.headers.location).toBe(`/contacts/${body.contact.id as string}`);
-    expect(body.contact).toMatchObject({ deleted: false, ring: 2, etat: "paused", ressenti: null });
+    expect(body.contact).toMatchObject({
+      deleted: false,
+      ring: 2,
+      etat: "paused",
+      ressenti: null,
+      // VLT-05 (issue #153): always present, never null/undefined, even with
+      // no roles yet.
+      roles: [],
+    });
     // Server-assigned, and handed back so the client can use them as LWW bases.
     expect((body.contact.fieldUpdatedAt as Record<string, string>).ring).toEqual(
       expect.any(String),

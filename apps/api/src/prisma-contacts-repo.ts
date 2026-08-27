@@ -65,6 +65,7 @@ const ROLE_TO_DB: Record<RoleContexteValue, $Enums.RoleContexte> = {
 };
 const ETAT_FROM_DB = invert(ETAT_TO_DB);
 const RESSENTI_FROM_DB = invert(RESSENTI_TO_DB);
+const ROLE_FROM_DB = invert(ROLE_TO_DB);
 
 function invert<K extends string, V extends string>(map: Record<K, V>): Record<V, K> {
   return Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k])) as Record<V, K>;
@@ -78,7 +79,15 @@ const FIELD_TS = {
   ressenti: "ressentiUpdatedAt",
 } as const satisfies Record<Axis, string>;
 
-type ContactRow = Prisma.ContactLinkGetPayload<Record<string, never>>;
+/**
+ * Every read that becomes a `ContactRecord` needs the contact's live role
+ * tags (issue #153) — a tombstoned `ContactRole` (removed via `removeRole`)
+ * is excluded here, not filtered client-side, so `toRecord` never has to
+ * re-derive liveness from a second field.
+ */
+const LIVE_ROLES_INCLUDE = { roles: { where: { deletedAt: null } } } as const;
+
+type ContactRow = Prisma.ContactLinkGetPayload<{ include: typeof LIVE_ROLES_INCLUDE }>;
 
 function toRecord(row: ContactRow): ContactRecord {
   return {
@@ -90,6 +99,9 @@ function toRecord(row: ContactRow): ContactRecord {
     ring: row.ring,
     etat: row.etat === null ? null : ETAT_FROM_DB[row.etat],
     ressenti: row.ressenti === null ? null : RESSENTI_FROM_DB[row.ressenti],
+    // Alphabetical, not insertion order — see `ContactRecord.roles`'s doc
+    // comment in repo.ts for why.
+    roles: row.roles.map((r) => ROLE_FROM_DB[r.role]).sort(),
     fieldUpdatedAt: {
       displayName: row.displayNameUpdatedAt,
       ring: row.ringUpdatedAt,
@@ -190,6 +202,7 @@ export function prismaContactsRepository(
                 : null,
               updatedAt: stamp,
             },
+            include: LIVE_ROLES_INCLUDE,
           });
           return { outcome: "created" as const, contact: toRecord(row) };
         });
@@ -211,6 +224,7 @@ export function prismaContactsRepository(
       const result = await runMutation(client, userId, mutationId, async (tx) => {
         const existing = await tx.contactLink.findFirst({
           where: { id: contactId, ownerId: userId },
+          include: LIVE_ROLES_INCLUDE,
         });
         if (existing === null) throw new MutationAbort("not_found");
         if (existing.deletedAt !== null) {
@@ -260,6 +274,7 @@ export function prismaContactsRepository(
         }
         const after = await tx.contactLink.findFirstOrThrow({
           where: { id: contactId, ownerId: userId },
+          include: LIVE_ROLES_INCLUDE,
         });
         return {
           outcome: applied ? ("applied" as const) : ("no_op" as const),
@@ -276,6 +291,7 @@ export function prismaContactsRepository(
       const result = await runMutation(client, userId, mutationId, async (tx) => {
         const existing = await tx.contactLink.findFirst({
           where: { id: contactId, ownerId: userId },
+          include: LIVE_ROLES_INCLUDE,
         });
         if (existing === null) throw new MutationAbort("not_found");
         if (existing.deletedAt !== null) {
@@ -291,6 +307,7 @@ export function prismaContactsRepository(
         });
         const after = await tx.contactLink.findFirstOrThrow({
           where: { id: contactId, ownerId: userId },
+          include: LIVE_ROLES_INCLUDE,
         });
         return { outcome: "applied" as const, contact: toRecord(after) };
       });
@@ -307,6 +324,7 @@ export function prismaContactsRepository(
         where: { ownerId: userId, ...contactCursorFilter(cursor) },
         orderBy: [{ updatedAt: "asc" }, { id: "asc" }],
         take: limit + 1, // one extra row is the hasMore probe
+        include: LIVE_ROLES_INCLUDE,
       });
       return pageFrom(rows.map(toRecord), cursor, limit);
     },
@@ -318,6 +336,7 @@ export function prismaContactsRepository(
         const result = await runMutation(client, userId, mutationId, async (tx) => {
           const existing = await tx.contactLink.findFirst({
             where: { id: contactId, ownerId: userId },
+            include: LIVE_ROLES_INCLUDE,
           });
           // A tombstoned parent is treated the same as a missing one — a role
           // can never outlive the contact it hangs off (VLT-09).
@@ -366,6 +385,7 @@ export function prismaContactsRepository(
           });
           const after = await tx.contactLink.findFirstOrThrow({
             where: { id: contactId, ownerId: userId },
+            include: LIVE_ROLES_INCLUDE,
           });
           return { outcome: "applied" as const, contact: toRecord(after), role };
         });
@@ -384,6 +404,7 @@ export function prismaContactsRepository(
         // reusing anything captured inside `work`.
         const after = await client.contactLink.findFirst({
           where: { id: contactId, ownerId: userId },
+          include: LIVE_ROLES_INCLUDE,
         });
         // Should be unreachable (the parent existed a moment ago, and a role
         // can't outlive it), but surface the original error rather than a
@@ -397,29 +418,35 @@ export function prismaContactsRepository(
       const result = await runMutation(client, userId, mutationId, async (tx) => {
         const existing = await tx.contactLink.findFirst({
           where: { id: contactId, ownerId: userId },
+          include: LIVE_ROLES_INCLUDE,
         });
         if (existing === null || existing.deletedAt !== null) throw new MutationAbort("not_found");
 
         const dbRole = ROLE_TO_DB[role];
-        const roleRow = await tx.contactRole.findUnique({
-          where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
-        });
-        if (roleRow === null || roleRow.deletedAt !== null) {
-          // Never lived, or already tombstoned — recorded, nothing to write
-          // (mirrors deleteContact's tombstone-of-a-tombstone no_op).
-          return { outcome: "no_op" as const, contact: toRecord(existing) };
-        }
         const stamp = new Date();
-        await tx.contactRole.update({
-          where: { contactLinkId_role: { contactLinkId: contactId, role: dbRole } },
+        // CAS guard (issue #153 hardening — mirrors patchContact's updateMany
+        // pattern) instead of the earlier findUnique-then-update pair: the
+        // liveness check and the tombstone write are now one atomic statement,
+        // so two concurrent removes of the same role can never both read "live"
+        // and both report `applied` — the loser's WHERE matches zero rows and
+        // it falls through to `no_op` below.
+        const { count } = await tx.contactRole.updateMany({
+          where: { contactLinkId: contactId, role: dbRole, deletedAt: null },
           data: { deletedAt: stamp },
         });
+        if (count === 0) {
+          // Never lived, or already tombstoned (by this call or a concurrent
+          // one) — recorded, nothing to write (mirrors deleteContact's
+          // tombstone-of-a-tombstone no_op).
+          return { outcome: "no_op" as const, contact: toRecord(existing) };
+        }
         await tx.contactLink.updateMany({
           where: { id: contactId, ownerId: userId },
           data: { updatedAt: stamp },
         });
         const after = await tx.contactLink.findFirstOrThrow({
           where: { id: contactId, ownerId: userId },
+          include: LIVE_ROLES_INCLUDE,
         });
         return { outcome: "applied" as const, contact: toRecord(after) };
       });
