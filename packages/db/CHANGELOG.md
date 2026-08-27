@@ -7,6 +7,13 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-18 are archived in [../../docs/archive/db-CHANGELOG-2026-08-15-to-2026-08-18.md](../../docs/archive/db-CHANGELOG-2026-08-15-to-2026-08-18.md) — moved, not deleted.
 
+## 2026-08-27 — [#157] Bump vitest to 4.1.10 (resolves 4.1.11) in lockstep with apps/api
+
+- **Why:** PR #156 (#93) bumped `apps/api`'s `vitest`/`@vitest/coverage-v8` from `^3.2.0` to `^4.1.10` but could not touch `packages/db/package.json` — that file is Data Steward-exclusive per `scope-guard.mjs`. This is the leftover half so both packages track the same vitest major.
+- **What:** `packages/db/package.json` devDependency `vitest` bumped `^3.2.0` → `^4.1.10`, matching `apps/api`'s specifier exactly (both resolve to `4.1.11` via pnpm's lockfile, per the caret range). No `@vitest/coverage-v8` here — `packages/db`'s `test` script doesn't run `--coverage` (tracked separately, see the 2026-08-21 entry above). `pnpm install` refreshed `pnpm-lock.yaml`; the 3.2.7-only transitive deps (`@vitest/expect@3.2.7`, `chai@5.3.3`, `loupe`, `pathval`, etc.) dropped out entirely since `packages/db` was their last consumer.
+- **Verified:** all 89 tests green under vitest 4.x (PGlite-backed, no live Postgres/Docker needed); `typecheck` and `lint` clean; `prisma generate` re-run.
+- **Follow-up flagged, not actioned here:** Dependabot PR #129 (vitest `3.2.6` → `3.2.7` in this same file) will conflict/go stale once this merges — leave it for whoever triages Dependabot next, don't close it from this PR.
+
 ## 2026-08-25 — [docs-hygiene] Archive 2026-08-15/18 entries out of packages/db/CHANGELOG.md
 
 - **Why:** this file sat at 29,201 / 40,000 chars (73%) of `scripts/docs-hygiene-lint.mjs`'s `MAX_CHANGELOG_CHARS` cap — second-closest changelog to tripping it after root `CHANGELOG.md` (already archived separately). Pre-emptive, not a CI break yet.
