@@ -3,6 +3,7 @@
 > **The single answer to "what is done in this project?"**
 > Update this file in the same PR as any change that starts, advances, or completes a module.
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
+> **What is *next*, in what order, and how — see [ROADMAP.md](ROADMAP.md).**
 
 _Last updated: 2026-08-27_
 
@@ -16,9 +17,9 @@ _Last updated: 2026-08-27_
 | FS-01 | Onboarding | 🟢⚠️ | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). **ADR-001:** built on the retired vault; ONB-02/05 change in the client-stage migration. |
 | FS-02 | Relationship Map | 🟢⚠️ | Mobile | Radial map + list fallback from the local cache, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). **ADR-001:** reads move vault→cache; behaviour unchanged, lowest-impact spec. |
 | FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04); FCH-09 stored identifiers done both platforms — stage-2 unblocked. |
-| FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | FCA stays on-device over the cache (OQ-SGR-2); names/pins/hidden are server-stored. |
-| FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | The only two-agent spec; OpenAPI seam not yet drafted. |
-| FS-06 | Filtering rules | ⚪ Not started | Mobile + Backend | Rules stored server-side; evaluation stays on-device (OQ-FLT-2 resolved 2026-08-22, per ENV-05) — Swift + Kotlin only, no TS evaluator. |
+| FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — needs rewrite.** Groups become explicit, manual, shared server-side objects visible to their members; FCA survives only as an opt-in suggestion. « Tu ne définis jamais un groupe à la main » is void. |
+| FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — full rewrite required, new requirement IDs.** An envie is now a directed, visible proposition answered by accept / counter-propose / ignore; the matching engine will not be built. Blocked until `agents/_global-directives.md` G1(d) is amended — see [ROADMAP.md](ROADMAP.md) Phase 0b. |
+| FS-06 | Filtering rules | ⚪ Not started | Mobile + Backend | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — survival undecided (OQ-PRO-7).** Silent filtering is incoherent when you propose to a named group; may survive only to feed FS-04 suggestions. Prior notes (rules server-side, on-device evaluation per OQ-FLT-2) assume the retired broadcast model. |
 
 Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance tests green) · 🟢⚠️ Implemented against a superseded design (green, but needs rework — see the note) · 🔵 Hardened (privacy audit passed)
 
@@ -27,7 +28,7 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 | Item | Status | Notes |
 |---|---|---|
 | Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/api`, `packages/db`, `packages/ui` (design tokens only — see below). `apps/ios` + `apps/android` are deliberately outside the turbo/pnpm pipeline (`xcrun swift test` / `./gradlew test` directly). `apps/web`, `packages/api-client`, `tools/orchestrator` not created yet. |
-| Database schema v0.1 | 🟡 | `users`, `envies` + seed, plus the ADR-001 classification columns on `contact_links`, `contact_roles` and the `client_mutations` ledger (2026-08-17). `vaults` deprecated, not dropped. Open `area:db` request: a monotonic sync sequence (`bigserial`) so the delta-pull cursor can be a strict keyset — see `apps/api/CHANGELOG.md` 2026-08-22. |
+| Database schema v0.1 | 🟡 | `users`, the FS-05 envie/match models (`envies`, `envie_recipients`, `matches` with the canonical-order CHECK + per-side pass markers, `proposals`) + seed, plus the ADR-001 classification columns on `contact_links`, `contact_roles` and the `client_mutations` ledger (2026-08-17). `vaults` deprecated, not dropped. Open `area:db` request: a monotonic sync sequence (`bigserial`) so the delta-pull cursor can be a strict keyset — see `apps/api/CHANGELOG.md` 2026-08-22. |
 | DB migrations | 🟢 | Baseline migration exists; both `docker-compose.yml` and CI run `prisma migrate deploy` — no `db push` anywhere in the pipeline. Postgres integration tests: `apps/api/tests/prisma-repo.test.ts` + `apps/api/tests/contacts-repo.postgres.test.ts` (both require a reachable Postgres and fail loudly without one). |
 | Local dev stack | 🟢 | `docker compose up --build` → Postgres :5432, API :3001, Adminer :8080. API boot now runs `prisma migrate deploy` (was `db push`). |
 | CI | 🟡 | `ci.yml`: scope-guard, Postgres + `prisma migrate deploy`, native unit tests (path-filtered). `security.yml`: gitleaks + Trivy on `prod` image — green (zero HIGH/CRITICAL). Missing: E2E in CI, privacy-audit job, coverage enforcement, OpenAPI diff gate. |
