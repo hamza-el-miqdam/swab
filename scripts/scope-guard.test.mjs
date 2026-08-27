@@ -214,6 +214,33 @@ const cases = [
     changedFiles: ["apps/ios/Sources/SwabCore/App.swift", "agents/ios-specialist.md"],
     expect: { escaping: ["agents/ios-specialist.md"], schemaViolation: false, unlabeled: false },
   },
+  {
+    // PR #161 review: CLAUDE.md/README.md/docs/ROADMAP.md must be scoped
+    // into area:specs/area:devops only, NOT SHARED_ALLOWED_PREFIXES — an
+    // unrelated area must not be able to silently edit repo-root
+    // governance docs (e.g. weaken CLAUDE.md's own Hard Boundaries) just
+    // by carrying its own label.
+    name: "CLAUDE.md/README.md/docs/ROADMAP.md are not silently granted to unrelated areas (area:db)",
+    labels: ["area:db"],
+    changedFiles: ["packages/db/prisma/schema.prisma", "CLAUDE.md", "README.md", "docs/ROADMAP.md"],
+    expect: {
+      escaping: ["CLAUDE.md", "README.md", "docs/ROADMAP.md"],
+      schemaViolation: false,
+      unlabeled: false,
+    },
+  },
+  {
+    name: "area:specs PR touching CLAUDE.md/README.md/docs/ROADMAP.md stays in scope",
+    labels: ["area:specs"],
+    changedFiles: ["docs/specs/FS-05-envie-match.md", "CLAUDE.md", "README.md", "docs/ROADMAP.md"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "area:devops PR touching CLAUDE.md/README.md/docs/ROADMAP.md stays in scope (alias of area:sre)",
+    labels: ["area:devops"],
+    changedFiles: ["CLAUDE.md", "README.md", "docs/ROADMAP.md"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
 ];
 
 for (const { name, labels, changedFiles, expect } of cases) {
