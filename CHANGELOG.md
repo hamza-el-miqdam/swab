@@ -6,6 +6,13 @@
 
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
+> Entries from 2026-08-17 are archived in [docs/archive/CHANGELOG-2026-08-17.md](docs/archive/CHANGELOG-2026-08-17.md) — moved, not deleted.
+## 2026-08-28 — [ADR-002] Phase 0c.1 — rewrite product law 1, sync README + docs/README (SUG-SPEC-015)
+- **What changed:** docs/product-overview.md law 1 rewritten (mutual-reveal → directed proposition), law 4's "reveal is strictly mutual" clause removed, §1/§3/glossary synced to the proposition model (envie/portée/match). README.md brought into sync: same law 1 wording, law 4's matching clause removed, MVP scope line, glossary rows for envie/portée/match. docs/README.md's "current global assumptions" line trimmed to the one still-open assumption (phone-OTP identity) now that ADR-001 and ADR-002 resolved the other two.
+- **Why:** ADR-002 retired mutual reveal/matching on 2026-08-27; these were the last repo-root docs still asserting it as current behavior. Executes SUG-SPEC-015.
+- **Verified:** laws 2/3/5 unchanged in both files; grep for stale mutual/révéle language clean outside historical references (see acceptance checks in SUG-SPEC-015).
+- **Not in scope (flagged, not fixed):** README.md's "Core Concepts" section still describes a retired matching engine — separate follow-up.
+
 
 ## 2026-08-27 — [ADR-002] Phase 0b follow-up — narrow the CLAUDE.md/README.md/ROADMAP.md scope-guard fix (review on PR #161)
 
@@ -164,15 +171,4 @@
 - Chose deletion over a `pnpm.overrides` bump to 8.0.0: the override would push a major on the prisma CLI's own dependency to fix code the deployable image shouldn't carry at all. Same reasoning already documented for the bundled `npm`/`corepack` removal — fix at the root, don't suppress.
 - **Not verified locally** — no Docker in the dev environment; the lockfile edge analysis above is what the change rests on, with CI's build + scan as the check.
 
-## 2026-08-17 — [scope-guard] `suggestions/**` is allowed from any area
 
-- `suggestions/README.md` requires an implemented suggestion to move to `done/<area>/` and the open/done counts to be updated — bookkeeping every area owes on its own PR, on a tree no area prefix owns. The guard rejected exactly that diff, so the duty was unsatisfiable and the moves silently never happened: PRs #76/#77/#78 all left their suggestion sitting in the open folder.
-- Moved `suggestions/` into `SHARED_ALLOWED_PREFIXES`, next to `pnpm-lock.yaml` and `docs/STATUS.md` — same category: files every area must touch, owned by none.
-- Only the *path* is shared; a PR still has to be reviewed on its contents. 2 new cases (one `area:db`, one `area:backend`, to pin that the allowance isn't area-specific), 22/22 pass — verified red before green.
-
-## 2026-08-17 — [scope-guard] `pnpm-lock.yaml` is allowed from any area
-
-- Adding a dependency to **any** package rewrites the workspace lockfile, and no area prefix owns it — so every dependency-adding PR failed the scope check unless it also carried `area:sre`. G4 allows new dependencies with justification; the guard was rejecting the diff that justification necessarily produces.
-- Moved `pnpm-lock.yaml` into `SHARED_ALLOWED_PREFIXES`, next to `docs/STATUS.md` and `docs/qa/` — the same category: files every area must touch, owned by none.
-- **The root `package.json` deliberately stays `area:sre`.** Workspace-level `pnpm.overrides` and shared devDependencies are still an infra decision; only the lockfile is shared. Pinned by a test.
-- Found by #74 (`area:db`), which adds a dev-only test runner. 2 new cases, 20/20 pass.

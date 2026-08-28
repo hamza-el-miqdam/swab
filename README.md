@@ -4,7 +4,7 @@
 > 
 > "Say what you want, to whom you want, without ever having to ask."
 
-Swab connects people with their friends and loved ones by removing the social cost of asking. Express a desire (*envie*), choose *who could receive it* — a scope, never a person — and the other side learns about it **only if the desire is mutual**. No rejection is ever visible; no silence is ever explained.
+Swab connects people with their friends and loved ones by removing the social cost of asking. Propose something to people you choose — a group or individuals — and they learn about it **only if they choose to reveal themselves**. No rejection is ever visible; no silence is ever explained.
 
 This project is developed using an **AI-Driven Development (AIDD)** methodology, where AI agents, guided by strict directives and architectural blueprints, perform a significant portion of the coding and maintenance tasks. All development follows documented specifications (`FS-*` requirements) with traceability enforced through tests, commits, and PRs.
 
@@ -12,11 +12,10 @@ This project is developed using an **AI-Driven Development (AIDD)** methodology,
 
 These principles are non-negotiable and enforced in code review:
 
-1. **Mutual reveal only** — A desire is invisible to its recipients until reciprocated. A non-match leaves zero observable trace on either side.
-   > ⚠️ Superseded by ADR-002 — rewrite pending
+1. **A proposition is directed, never broadcast** — You propose to people you chose, and they know it is you. No one receives a proposition « de quelqu'un ».
 2. **Nothing hidden silently** — Every filter applied at send time is shown to the sender and revocable in place.
 3. **You declare, Swab never guesses** — Relationship classification is user-declared, asymmetric, and private. No inference, no suggestions.
-4. **Privacy is structural, not a setting — from other users, not from us.** Revised 2026-08-16 (`docs/decisions/ADR-001-server-side-classification-data.md`): your relationship map belongs to your account, so a new or second phone restores it consistently. Classification data is stored server-side and the service can technically read it; no other user ever sees your classement, links are one-directional, and reveal is strictly mutual. We never claim end-to-end encryption.
+4. **Privacy is structural, not a setting — from other users, not from us.** Revised 2026-08-16 (`docs/decisions/ADR-001-server-side-classification-data.md`): your relationship map belongs to your account, so a new or second phone restores it consistently. Classification data is stored server-side and the service can technically read it; no other user ever sees your classement, links are one-directional. We never claim end-to-end encryption.
 5. **Calm by design** — No counters, badges, streaks, celebrations, urgency, or gamification. Soft language everywhere.
 
 ## ✨ Core Concepts
@@ -27,20 +26,20 @@ These principles are non-negotiable and enforced in code review:
 
 ## 📋 MVP Scope & Glossary
 
-**In:** phone-OTP signup, contact import + invite, relationship map with radial visualization, contact card with 4 axes (Intimité / Rôles·contexte / État / Ressenti), on-device FCA subgroups, 3-level filter rules, envie emission with transparent filtering, mutual matching, simultaneous notifications, place/time proposals, silent pass, encrypted vault sync.
+**In:** phone-OTP signup, contact import + invite, relationship map with radial visualization, contact card with 4 axes (Intimité / Rôles·contexte / État / Ressenti), on-device FCA subgroups, 3-level filter rules, proposition emission with transparent filtering, silent pass, encrypted vault sync.
 
 **Out (POC):** group envies (>2-person), chat/messaging, semantic verb matching, media, web relationship map, social graph suggestions.
 
 | Term (FR) | English | Meaning |
 |---|---|---|
-| **envie** | desire | A present-tense want, sent to a scope, matched mutually |
-| **portée** | scope | A set of potential recipients — always a subgroup, never an individual |
+| **envie** | proposition | A directed invitation you send to people you chose, naming what/when/where; answered by accept / counter-propose / silence |
+| **portée** | scope | A set of potential recipients — a group or individuals; the proposer chooses |
 | **carte des relations** | relationship map | Radial view: me at center, contacts on intimacy rings |
 | **fiche contact** | contact card | Per-relation detail: 4 axes + history feed |
 | **les quatre axes** | the four axes | Intimité / Rôles·contexte / État / Ressenti — declared, private, asymmetric |
 | **sous-groupe** | subgroup | FCA-detected cluster usable as a scope; pin/rename/hide only |
 | **filtrage** | filtering | Send-time exclusion by rules: absolute veto / excluded by default / low priority |
-| **match** | match | Mutual envie compatibility; both sides notified simultaneously |
+| ~~**match**~~ | ~~match~~ | **RETIRE** — see [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md). No matching engine; mutual reveal is gone. |
 | **vault** | vault | On-device encrypted store of all classification data; server holds opaque blob |
 
 ## 🏗️ Architecture & Development Model
