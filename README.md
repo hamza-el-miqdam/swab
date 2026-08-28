@@ -20,8 +20,8 @@ These principles are non-negotiable and enforced in code review:
 
 ## ✨ Core Concepts
 
-*   **Privacy First**: The user's relationship classification data (intimacy, roles, feelings, etc.) is encrypted and stored only on the user's device in a "vault." The server stores this vault as an opaque, unreadable blob. No one—not even Swab—can see how a user classifies their relationships.
-*   **Transparent Matching**: When a user expresses a desire (*envie*), the scope of recipients is resolved on the client using local rules and filters. The server only sees the final list of recipient IDs, never the rules. A match is only revealed to both parties simultaneously when their desires are compatible.
+*   **Privacy First**: Relationship classification data (intimacy, roles, feelings, etc.) is stored server-side in Postgres — the account, not the device, is the source of truth. No other user can ever see how you classify your relationships; that boundary is enforced by product rules, not by encryption (see [ADR-001](docs/decisions/ADR-001-server-side-classification-data.md)).
+*   **Directed, Not Matched**: When a user sends a proposition (*envie*) to a chosen scope of recipients, there is no matching engine and no mutual reveal — recipients see who proposed and can accept, counter-propose, or stay silent; a recipient's own identity is disclosed to others only by their own explicit choice (see [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md)).
 *   **AI-Driven Workflow**: Development follows a stage-gated pipeline (`Spec` → `Schema` → `Implement` → `Verify` → `Deploy`) with strict requirement traceability. AI agents own specific scopes (e.g., `area:api`, `area:mobile`) and work in parallel with git as the event bus.
 
 ## 📋 MVP Scope & Glossary

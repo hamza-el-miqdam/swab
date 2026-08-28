@@ -7,12 +7,11 @@
 > Entries before 2026-08-15 are archived in [docs/archive/CHANGELOG-pre-2026-08-15.md](docs/archive/CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 > Entries from 2026-08-17 are archived in [docs/archive/CHANGELOG-2026-08-17.md](docs/archive/CHANGELOG-2026-08-17.md) — moved, not deleted.
-## 2026-08-28 — [ADR-002] Phase 0c.1 — rewrite product law 1, sync README + docs/README (SUG-SPEC-015)
-- **What changed:** docs/product-overview.md law 1 rewritten (mutual-reveal → directed proposition), law 4's "reveal is strictly mutual" clause removed, §1/§3/glossary synced to the proposition model (envie/portée/match). README.md brought into sync: same law 1 wording, law 4's matching clause removed, MVP scope line, glossary rows for envie/portée/match. docs/README.md's "current global assumptions" line trimmed to the one still-open assumption (phone-OTP identity) now that ADR-001 and ADR-002 resolved the other two.
-- **Why:** ADR-002 retired mutual reveal/matching on 2026-08-27; these were the last repo-root docs still asserting it as current behavior. Executes SUG-SPEC-015.
-- **Verified:** laws 2/3/5 unchanged in both files; grep for stale mutual/révéle language clean outside historical references (see acceptance checks in SUG-SPEC-015).
-- **Not in scope (flagged, not fixed):** README.md's "Core Concepts" section still describes a retired matching engine — separate follow-up.
 
+## 2026-08-28 — [ADR-002] Phase 0c.1 — rewrite product law 1, sync README + docs/README (SUG-SPEC-015)
+- **What changed:** docs/product-overview.md law 1 rewritten (mutual-reveal → directed proposition), law 4's "reveal is strictly mutual" clause removed, §1/§3/glossary synced to the proposition model (envie/portée/match). README.md brought into sync: same law 1 wording, law 4's matching clause removed, MVP scope line, glossary rows for envie/portée/match, and the "Core Concepts" bullets (still describing the retired vault/matching engine) rewritten to match ADR-001/ADR-002. docs/README.md's "current global assumptions" line trimmed to the one still-open assumption (phone-OTP identity) now that ADR-001 and ADR-002 resolved the other two. scripts/scope-guard.mjs gained the three paths this PR needed (docs/product-overview.md, docs/README.md, docs/archive/) under area:specs/area:devops, same pattern as PR #161's CLAUDE.md/README.md/docs/ROADMAP.md fix.
+- **Why:** ADR-002 retired mutual reveal/matching on 2026-08-27; these were the last repo-root docs still asserting it as current behavior. Executes SUG-SPEC-015. The scope-guard gap was found by review: SUG-SPEC-015 directs edits scope-guard didn't yet allow.
+- **Verified:** laws 2/3/5 unchanged in both files; grep for stale mutual/révéle language now clean including README.md's Core Concepts section (see acceptance checks in SUG-SPEC-015); `node scripts/scope-guard.mjs` passes locally with `LABELS="area:specs area:devops"`.
 
 ## 2026-08-27 — [ADR-002] Phase 0b follow-up — narrow the CLAUDE.md/README.md/ROADMAP.md scope-guard fix (review on PR #161)
 
