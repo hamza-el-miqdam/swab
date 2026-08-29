@@ -4,7 +4,7 @@
 > 
 > "Say what you want, to whom you want, without ever having to ask."
 
-Swab connects people with their friends and loved ones by removing the social cost of asking. Propose something to people you choose — a group or individuals — and they learn about it **only if they choose to reveal themselves**. No rejection is ever visible; no silence is ever explained.
+Swab connects people with their friends and loved ones by removing the social cost of asking. Propose something to people you choose — a group or individuals — and they always see it, and that it is you asking. What's optional is on their side: they can accept while revealing their own identity to the other people you invited, or without — never a choice about whether they see the proposition at all. No rejection is ever visible; no silence is ever explained.
 
 This project is developed using an **AI-Driven Development (AIDD)** methodology, where AI agents, guided by strict directives and architectural blueprints, perform a significant portion of the coding and maintenance tasks. All development follows documented specifications (`FS-*` requirements) with traceability enforced through tests, commits, and PRs.
 

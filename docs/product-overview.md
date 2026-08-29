@@ -4,7 +4,7 @@
 
 ## 1. Vision
 
-Swab connects people with their friends and loved ones by removing the social cost of asking. You propose something to people you choose — a group or individuals — and they learn about it **only if they choose to reveal themselves**. No rejection is ever visible; no silence is ever explained. Tagline from the onboarding: **« صواب — jouer franc jeu. Dis ce dont tu as envie. À qui tu veux. Sans jamais avoir à demander. »**
+Swab connects people with their friends and loved ones by removing the social cost of asking. You propose something to people you choose — a group or individuals — and they always see it, and that it is you asking. What's optional is on their side: they can accept while revealing their own identity to the other people you invited, or without — never a choice about whether they see the proposition at all. No rejection is ever visible; no silence is ever explained. Tagline from the onboarding: **« صواب — jouer franc jeu. Dis ce dont tu as envie. À qui tu veux. Sans jamais avoir à demander. »**
 
 **Where your data lives** (decided 2026-08-16 — `docs/decisions/ADR-001-server-side-classification-data.md`). Your relationship map belongs to your *account*, not to your phone. Change phone, lose it, or use two — sign in and everything is there, consistent, because the server holds the record and your devices hold a cache. We chose recoverability over operator-blindness deliberately: the previous design encrypted everything to a key that never left the handset, which meant a lost phone was a permanently lost map, and two phones could silently overwrite each other's edits.
 
@@ -21,7 +21,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 ## 3. Personas
 
 - **The initiator** — has a free evening, wants company without imposing: emits an envie to a scope, forgets about it unless it matches.
-- **The receiver** — learns of a proposition only when the proposer chooses to reveal themselves; can accept (revealing their own identity to the proposer and other recipients), counter-propose, or stay silent. Acceptance can be given without revealing identity to the proposer — the proposer always sees *who* accepted, but the receiver chooses *to whom* their identity is revealed.
+- **The receiver** — always sees the proposition and knows who is proposing (Law 1: the proposer is never hidden); can accept, counter-propose, or stay silent. Accepting is where a choice exists: the receiver reveals their own identity to the *other* recipients, or doesn't — the proposer always sees *who* accepted regardless, since the proposer already knows who they invited.
 - **The curator** — the same user in a quiet moment: places contacts on intimacy rings, tags roles/state/feeling, pins or renames detected subgroups, tunes filter levels.
 
 ## 4. MVP scope
@@ -49,7 +49,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 
 1. ~~**Privacy:** hybrid local-first~~ — **RESOLVED 2026-08-16 (ADR-001).** Classification data (axes, filters, subgroups, history) is server-side in Postgres; the database is the single source of truth and devices cache. Sync is per-record with server-assigned timestamps and field-level last-write-wins, not whole-state push. `Envie.verb` is kept opaque to the schema and excluded from matching so it can be encrypted later without a rewrite.
 2. **Identity:** phone-number OTP; contact discovery via client-side-hashed numbers.
-3. ~~**Match compatibility:** normalized client-suggested `category` equality (not semantic verb matching) for v0.~~ — **RESOLVED 2026-08-27 (ADR-002).** No matching engine is being built. Propositions are directed; recipients choose whether to reveal themselves. Categories may survive as a browsing/suggestion affordance, but that is a future decision, not a current assumption.
+3. ~~**Match compatibility:** normalized client-suggested `category` equality (not semantic verb matching) for v0.~~ — **RESOLVED 2026-08-27 (ADR-002).** No matching engine is being built. Propositions are directed and always visible to their recipients; what a recipient chooses is whether to reveal their own identity to the *other* recipients, never whether the proposer sees the proposition or its response. Categories may survive as a browsing/suggestion affordance, but that is a future decision, not a current assumption.
 
 ## 7. Success signals for the POC
 
