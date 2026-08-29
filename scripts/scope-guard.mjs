@@ -85,6 +85,20 @@ export const AREA_PREFIXES = {
     "CLAUDE.md",
     "README.md",
     "docs/ROADMAP.md",
+    // PR #162 review: SUG-SPEC-015 (ADR-002 Phase 0c.1) directs the
+    // spec-specialist to rewrite the product laws in docs/product-overview.md,
+    // sync the assumptions line in docs/README.md, and — as a consequence of
+    // the root CHANGELOG.md budget cap (docs/docs-hygiene-lint.mjs's
+    // MAX_CHANGELOG_CHARS, already allowed above via ROOT_CHANGELOG_AREAS) —
+    // archive old entries under docs/archive/. None of the three were listed
+    // here, so a suggestion this area is directed to execute could not pass
+    // scope-guard through its own label. Same rationale as the CLAUDE.md/
+    // README.md/docs/ROADMAP.md trio above: scoped to area:specs/area:devops
+    // ONLY, not SHARED_ALLOWED_PREFIXES, for the identical authority-boundary
+    // reason given there.
+    "docs/product-overview.md",
+    "docs/README.md",
+    "docs/archive/",
   ],
   "area:notion-liaison": ["docs/specs/"],
   "area:sre": [
@@ -140,6 +154,12 @@ export const AREA_PREFIXES = {
     "CLAUDE.md",
     "README.md",
     "docs/ROADMAP.md",
+    // PR #162 review — see the identical entry + rationale under
+    // area:specs above (kept as an alias of the same scope; this PR
+    // carries both labels).
+    "docs/product-overview.md",
+    "docs/README.md",
+    "docs/archive/",
   ],
 };
 

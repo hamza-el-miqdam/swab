@@ -14,7 +14,7 @@
 
 - **Requirement IDs are law.** Every functional requirement has a stable ID (`ONB-03`, `ENV-11`…). Issues, PRs, commits, and tests reference these IDs — that's the traceability chain: `FS requirement → GitHub issue → PR → test name`. A requirement without a referencing test is unimplemented, whatever the code says.
 - **Specs are versioned by PR.** Changing behavior means changing the spec in the same PR (or a preceding one) — code and spec never disagree on `main`. Specs carry a `Status` header: `Draft` → `Approved` (human sign-off) → `Implemented`.
-- **Assumptions are explicit.** Anything not yet decided by Hamza is marked `⚠️ ASSUMPTION` with the fallback noted. Current global assumptions: hybrid local-first privacy model, phone-OTP identity, category-based match compatibility (see product-overview §6).
+- **Assumptions are explicit.** Anything not yet decided by Hamza is marked `⚠️ ASSUMPTION` with the fallback noted. Current global assumption: phone-OTP identity (see product-overview §6 — the privacy-model and match-compatibility assumptions were resolved by ADR-001 and ADR-002).
 - Language: docs in English, UI copy in French (source strings in `fr`, keys in English). UI copy quoted from the blueprints is normative — don't paraphrase it.
 
 ## MVP module map

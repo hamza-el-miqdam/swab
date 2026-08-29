@@ -241,6 +241,42 @@ const cases = [
     changedFiles: ["CLAUDE.md", "README.md", "docs/ROADMAP.md"],
     expect: { escaping: [], schemaViolation: false, unlabeled: false },
   },
+  {
+    // PR #162 review: docs/product-overview.md/docs/README.md/docs/archive/
+    // must be scoped into area:specs/area:devops only, NOT
+    // SHARED_ALLOWED_PREFIXES — same authority-boundary reasoning as the
+    // CLAUDE.md/README.md/docs/ROADMAP.md case above.
+    name: "docs/product-overview.md/docs/README.md/docs/archive/ are not silently granted to unrelated areas (area:db)",
+    labels: ["area:db"],
+    changedFiles: [
+      "packages/db/prisma/schema.prisma",
+      "docs/product-overview.md",
+      "docs/README.md",
+      "docs/archive/CHANGELOG-2026-08-17.md",
+    ],
+    expect: {
+      escaping: ["docs/product-overview.md", "docs/README.md", "docs/archive/CHANGELOG-2026-08-17.md"],
+      schemaViolation: false,
+      unlabeled: false,
+    },
+  },
+  {
+    name: "area:specs PR touching docs/product-overview.md/docs/README.md/docs/archive/ stays in scope",
+    labels: ["area:specs"],
+    changedFiles: [
+      "docs/specs/FS-05-envie-match.md",
+      "docs/product-overview.md",
+      "docs/README.md",
+      "docs/archive/CHANGELOG-2026-08-17.md",
+    ],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
+  {
+    name: "area:devops PR touching docs/product-overview.md/docs/README.md/docs/archive/ stays in scope (alias of area:specs)",
+    labels: ["area:devops"],
+    changedFiles: ["docs/product-overview.md", "docs/README.md", "docs/archive/CHANGELOG-2026-08-17.md"],
+    expect: { escaping: [], schemaViolation: false, unlabeled: false },
+  },
 ];
 
 for (const { name, labels, changedFiles, expect } of cases) {
