@@ -74,7 +74,7 @@ In order: `product-overview.md` law 1 (law 4 loses only the four words « reveal
 |---|---|---|---|
 | 0c.1 | [SUG-SPEC-015](../suggestions/specs/SUG-SPEC-015-adr002-product-overview-laws.md) | Law 1 rewrite, law 4's four words, §1/§3/§6, glossary (`envie`/`portée`/`match`), root `README.md` | ✅ done (#162) |
 | 0c.2 | [SUG-SPEC-016](../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md) | FS-05 full rewrite, `ENV-* → PRO-*` disposition table, seam sketch, `area:db` + spec-kit handoffs | 🚦 **OQ-PRO-6 + OQ-PRO-1 must be answered first** |
-| 0c.3 | [SUG-SPEC-017](../suggestions/specs/SUG-SPEC-017-adr002-fs04-amendment.md) | FS-04 amendment — manual CRUD, FCA→suggestion, the server-vs-device persistence split | ✅ done (PR pending — branch `docs/adr002-phase0c3-fs04-amendment`) |
+| 0c.3 | [SUG-SPEC-017](../suggestions/specs/SUG-SPEC-017-adr002-fs04-amendment.md) | FS-04 amendment — manual CRUD, FCA→suggestion, the server-vs-device persistence split | ✅ done (#167) |
 | 0c.4 | [SUG-SPEC-018](../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md) | FS-06 survive/narrow/retire — three options, recommendation (B), founder decides | 🚦 **OQ-PRO-7** |
 
 Two findings surfaced while writing the plans, both recorded in them:
