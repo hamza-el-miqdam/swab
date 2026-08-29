@@ -80,10 +80,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     },
     // Vault blob is ≤1 MB raw; base64 adds ~33%, plus JSON envelope headroom.
     bodyLimit: 2 * 1024 * 1024,
-    // IDT-03: trust exactly N `X-Forwarded-For` hops so `req.ip` (the rate-limit
-    // key) is the real client, not the proxy — `false` when directly exposed
-    // (default) so a spoofed header can't buy a client a fresh bucket.
-    trustProxy: deps.env.TRUST_PROXY_HOPS > 0 ? deps.env.TRUST_PROXY_HOPS : false,
+    // IDT-03: trust `X-Forwarded-For` only from peers inside this CIDR/IP
+    // allowlist, so `req.ip` (the rate-limit key) is the real client, not
+    // whatever a spoofed header claims. `false` (unset, the default) means a
+    // directly exposed API ignores the header outright. `?? false` (rather
+    // than passing `undefined` through) also keeps this assignable under
+    // `exactOptionalPropertyTypes` — Fastify's `trustProxy` type has no
+    // `undefined` member. See env.ts / issue #163 for why this replaced a
+    // hop-count value: hop counts can't validate the immediate peer.
+    trustProxy: deps.env.TRUST_PROXY ?? false,
   });
 
   // Per-IP limit on all public endpoints (IDT-03). The stricter per-phoneHash

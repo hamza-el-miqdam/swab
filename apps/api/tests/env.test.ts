@@ -54,22 +54,80 @@ describe("loadEnv", () => {
     expect(env.OTP_DEV_CODE).toBe("disabled");
   });
 
-  it("IDT-03: TRUST_PROXY_HOPS defaults to 0 (directly exposed, no forwarded headers trusted)", () => {
+  it("IDT-03: TRUST_PROXY defaults to unset (directly exposed, no forwarded headers trusted)", () => {
     const env = loadEnv({
       DATABASE_URL: "postgresql://u:p@h:5432/db",
       JWT_SECRET: "a".repeat(32),
     });
-    expect(env.TRUST_PROXY_HOPS).toBe(0);
+    expect(env.TRUST_PROXY).toBeUndefined();
   });
 
-  it("IDT-03: rejects a negative or non-integer TRUST_PROXY_HOPS", () => {
+  it("IDT-03: accepts a comma-separated CIDR/IP allowlist for TRUST_PROXY", () => {
+    const env = loadEnv({
+      DATABASE_URL: "postgresql://u:p@h:5432/db",
+      JWT_SECRET: "a".repeat(32),
+      TRUST_PROXY: "10.0.0.0/8, 172.16.0.0/12",
+    });
+    expect(env.TRUST_PROXY).toBe("10.0.0.0/8, 172.16.0.0/12");
+  });
+
+  it("issue #163: rejects an empty TRUST_PROXY value (omit the var instead of setting it blank)", () => {
     expect(() =>
       loadEnv({
         DATABASE_URL: "postgresql://u:p@h:5432/db",
         JWT_SECRET: "a".repeat(32),
-        TRUST_PROXY_HOPS: "-1",
+        TRUST_PROXY: "",
       }),
-    ).toThrowError(/TRUST_PROXY_HOPS/);
+    ).toThrowError(/TRUST_PROXY/);
+  });
+
+  it("issue #163 (review): accepts a bare IP, an IPv6 CIDR, and the @fastify/proxy-addr preset names", () => {
+    const env = loadEnv({
+      DATABASE_URL: "postgresql://u:p@h:5432/db",
+      JWT_SECRET: "a".repeat(32),
+      TRUST_PROXY: "203.0.113.7, fc00::/7, loopback, linklocal, uniquelocal",
+    });
+    expect(env.TRUST_PROXY).toBe("203.0.113.7, fc00::/7, loopback, linklocal, uniquelocal");
+  });
+
+  it("issue #163 (review): rejects a syntactically malformed TRUST_PROXY entry in env.ts, not two layers down in @fastify/proxy-addr", () => {
+    expect(() =>
+      loadEnv({
+        DATABASE_URL: "postgresql://u:p@h:5432/db",
+        JWT_SECRET: "a".repeat(32),
+        TRUST_PROXY: "not-a-cidr",
+      }),
+    ).toThrowError(/TRUST_PROXY/);
+  });
+
+  it("issue #163 (review): rejects an out-of-range IPv4 address", () => {
+    expect(() =>
+      loadEnv({
+        DATABASE_URL: "postgresql://u:p@h:5432/db",
+        JWT_SECRET: "a".repeat(32),
+        TRUST_PROXY: "999.999.999.999",
+      }),
+    ).toThrowError(/TRUST_PROXY/);
+  });
+
+  it("issue #163 (review): rejects a CIDR prefix length beyond the address family's max (IPv4 /33)", () => {
+    expect(() =>
+      loadEnv({
+        DATABASE_URL: "postgresql://u:p@h:5432/db",
+        JWT_SECRET: "a".repeat(32),
+        TRUST_PROXY: "10.0.0.0/33",
+      }),
+    ).toThrowError(/TRUST_PROXY/);
+  });
+
+  it("issue #163 (review): rejects the list if any single entry is malformed, even when the others are valid", () => {
+    expect(() =>
+      loadEnv({
+        DATABASE_URL: "postgresql://u:p@h:5432/db",
+        JWT_SECRET: "a".repeat(32),
+        TRUST_PROXY: "10.0.0.0/8, not-a-cidr",
+      }),
+    ).toThrowError(/TRUST_PROXY/);
   });
 
   it("IDT-03: OTP_RATE_LIMIT defaults to strict", () => {

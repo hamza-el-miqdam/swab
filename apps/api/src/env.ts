@@ -1,4 +1,37 @@
+import net from "node:net";
 import { z } from "zod";
+
+// The three range names @fastify/proxy-addr (and thus fastify's `trustProxy`
+// option) recognizes as presets, expanding to well-known private/link-local
+// ranges — see its IP_RANGES table. Accepting them here keeps env.ts's
+// validation in sync with what fastify will actually accept at boot.
+const TRUST_PROXY_PRESETS = new Set(["loopback", "linklocal", "uniquelocal"]);
+
+/** One comma-separated `TRUST_PROXY` entry: a preset name, a bare IP, or an IP/prefix CIDR range. */
+function isValidTrustProxyEntry(rawEntry: string): boolean {
+  const entry = rawEntry.trim();
+  if (entry.length === 0) return false;
+  if (TRUST_PROXY_PRESETS.has(entry)) return true;
+
+  const slash = entry.lastIndexOf("/");
+  const address = slash === -1 ? entry : entry.slice(0, slash);
+  const family = net.isIP(address);
+  if (family === 0) return false;
+  if (slash === -1) return true;
+
+  const prefix = entry.slice(slash + 1);
+  if (!/^\d+$/.test(prefix)) return false;
+  const prefixLength = Number(prefix);
+  const maxPrefix = family === 4 ? 32 : 128;
+  return prefixLength > 0 && prefixLength <= maxPrefix;
+}
+
+// Mirrors how fastify itself parses `trustProxy` when given a string
+// (`tp.split(',').map(it => it.trim())`, fastify/lib/request.js) — so a value
+// that passes here is guaranteed to also parse cleanly at `Fastify({ trustProxy })`.
+function isValidTrustProxyList(value: string): boolean {
+  return value.split(",").every(isValidTrustProxyEntry);
+}
 
 const envSchema = z
   .object({
@@ -8,11 +41,29 @@ const envSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     // POC (OQ-IDT-1): echo the OTP code in the response. Fail-closed: off unless explicitly enabled.
     OTP_DEV_CODE: z.enum(["enabled", "disabled"]).default("disabled"),
-    // Number of trusted reverse-proxy hops in front of the API (0 = directly
-    // exposed). Fail-closed default: `X-Forwarded-For` is ignored (and thus
-    // unspoofable) until an operator explicitly names how many hops to trust
-    // (IDT-03 — per-IP throttling is meaningless without this behind an ALB).
-    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
+    // Comma-separated CIDR/IP allowlist of trusted reverse proxies in front
+    // of the API (e.g. "10.0.0.0/8" for an ALB's subnet). Fastify checks the
+    // *immediate peer's* address against this list before trusting anything
+    // it says about `X-Forwarded-For`, and walks the header back only while
+    // each entry it crosses is itself in the allowlist (`@fastify/proxy-addr`
+    // under the hood). Fail-closed default: unset → `false` → the header is
+    // never trusted, from any peer (IDT-03).
+    //
+    // issue #163: this replaces a hop-count design (`TRUST_PROXY_HOPS`) that
+    // Fastify 5.12.1 deliberately disabled — a hop count can't validate the
+    // immediate peer, so a directly-connected client could forge enough XFF
+    // entries to mint itself a fresh OTP rate-limit bucket. A CIDR allowlist
+    // checks *who* is talking, not just *how many* headers they claim to add.
+    TRUST_PROXY: z
+      .string()
+      .trim()
+      .min(1, "must not be empty — omit the variable instead")
+      .refine(isValidTrustProxyList, {
+        message:
+          'must be a comma-separated list of IP addresses, CIDR ranges (e.g. "10.0.0.0/8"), ' +
+          'and/or the presets "loopback", "linklocal", "uniquelocal"',
+      })
+      .optional(),
     // IDT-03's strict per-IP OTP throttle (10/min) trips constantly in local
     // dev and on-device/E2E runs (issue #128, PR #138) where many scripted
     // requests share one IP in a short window. "relaxed" lifts it to a
