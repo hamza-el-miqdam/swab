@@ -87,7 +87,7 @@ Nine open questions (OQ-PRO-1..9) are listed in the ADR. Two are load-bearing an
 
 ---
 
-## Phase 1 — IDT-03 trust-proxy security fix ✅ DONE 2026-08-29 (branch `fix/163-idt03-trust-proxy-cidr`, not yet pushed)
+## Phase 1 — IDT-03 trust-proxy security fix ✅ DONE 2026-08-29 (branch `fix/163-idt03-trust-proxy-cidr`, PR #164)
 
 **This was found by investigating why PR #158 was red, and it is not a dependency chore.**
 
@@ -123,7 +123,7 @@ And [apps/api/CHANGELOG.md:109](../apps/api/CHANGELOG.md#L109) records the now-f
 - **Spec check:** IDT-03 in [FS-07:15](specs/FS-07-identity-vault.md#L15) says only *"throttled per phoneHash and per IP"* — it does not mandate hop counts, so **no spec amendment is needed**. Confirm before assuming otherwise.
 - **Sequencing:** do this as its own `area:api` PR. Do **not** bundle it into the Dependabot PR.
 
-**Outcome:** implemented as designed — `TRUST_PROXY` (CIDR/IP allowlist) replaces `TRUST_PROXY_HOPS` in `env.ts`/`app.ts`, tests rewritten TDD-first, `apps/api/CHANGELOG.md` corrected via a new dated entry, `SUG-API-005` marked superseded. One deviation from the acceptance line above: **fastify was left at 5.12.0**, not bumped to 5.12.1 — the `?? false` fix (required anyway, for `exactOptionalPropertyTypes`) resolves the same `trustProxy` typing issue at the current version, so the bump is no longer a prerequisite; it can proceed as a plain dependency bump whenever Phase 2 gets to it. Full gate (`pnpm turbo run lint typecheck test build`) green locally with a real Postgres. Not yet pushed/opened as a PR pending review.
+**Outcome:** implemented as designed — `TRUST_PROXY` (CIDR/IP allowlist) replaces `TRUST_PROXY_HOPS` in `env.ts`/`app.ts`, tests rewritten TDD-first, `apps/api/CHANGELOG.md` corrected via a new dated entry, `SUG-API-005` marked superseded. One deviation from the acceptance line above: **fastify was left at 5.12.0**, not bumped to 5.12.1 — the `?? false` fix (required anyway, for `exactOptionalPropertyTypes`) resolves the same `trustProxy` typing issue at the current version, so the bump is no longer a prerequisite; it can proceed as a plain dependency bump whenever Phase 2 gets to it. Full gate (`pnpm turbo run lint typecheck test build`) green locally with a real Postgres. Review (2026-08-29) also flagged `TRUST_PROXY`'s Zod schema as only checking non-empty, not CIDR/IP syntax — fixed with an explicit format validator in `env.ts` (`isValidTrustProxyList`, mirrors fastify's own `split(',').map(trim)` parsing) plus regression tests for malformed/out-of-range entries, so a typo now fails boot with a named `TRUST_PROXY` error instead of an unowned `@fastify/proxy-addr` `TypeError`.
 
 ---
 
