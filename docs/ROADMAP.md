@@ -72,14 +72,14 @@ In order: `product-overview.md` law 1 (law 4 loses only the four words « reveal
 
 | # | Plan | Scope | Gate |
 |---|---|---|---|
-| 0c.1 | [SUG-SPEC-015](../suggestions/specs/SUG-SPEC-015-adr002-product-overview-laws.md) | Law 1 rewrite, law 4's four words, §1/§3/§6, glossary (`envie`/`portée`/`match`), root `README.md` | needs 014 |
+| 0c.1 | [SUG-SPEC-015](../suggestions/specs/SUG-SPEC-015-adr002-product-overview-laws.md) | Law 1 rewrite, law 4's four words, §1/§3/§6, glossary (`envie`/`portée`/`match`), root `README.md` | ✅ done (#162) |
 | 0c.2 | [SUG-SPEC-016](../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md) | FS-05 full rewrite, `ENV-* → PRO-*` disposition table, seam sketch, `area:db` + spec-kit handoffs | 🚦 **OQ-PRO-6 + OQ-PRO-1 must be answered first** |
-| 0c.3 | [SUG-SPEC-017](../suggestions/specs/SUG-SPEC-017-adr002-fs04-amendment.md) | FS-04 amendment — manual CRUD, FCA→suggestion, the server-vs-device persistence split | needs 014 |
+| 0c.3 | [SUG-SPEC-017](../suggestions/specs/SUG-SPEC-017-adr002-fs04-amendment.md) | FS-04 amendment — manual CRUD, FCA→suggestion, the server-vs-device persistence split | ✅ done (PR pending — branch `docs/adr002-phase0c3-fs04-amendment`) |
 | 0c.4 | [SUG-SPEC-018](../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md) | FS-06 survive/narrow/retire — three options, recommendation (B), founder decides | 🚦 **OQ-PRO-7** |
 
 Two findings surfaced while writing the plans, both recorded in them:
 - **OQ-PRO-10 (new)** — the amended G1(d) says *"no decline action anywhere"*, but FS-05's **« Passer cette fois »** is a decline that emits zero signal. Reconcilable, but the founder must say so; if it survives, G1(d) needs *"no decline action **that the proposer can observe**"*.
-- **The FS-04 persistence split** — `OQ-SGR-2` says the FCA lattice is never persisted; ADR-002 says `Group`/`GroupMember` are server rows. Both are true, of *different objects*. If FS-04 doesn't say so explicitly, the next implementer will contradict one of them.
+- ~~**The FS-04 persistence split**~~ — **Resolved by 0c.3.** `OQ-SGR-2` says the FCA lattice is never persisted; ADR-002 says `Group`/`GroupMember` are server rows. Both are true, of *different objects*, and FS-04's new `SGR-15` now states this explicitly in one place, with an OQ-SGR-2 addendum confirming it is not reopened.
 
 Nine open questions (OQ-PRO-1..9) are listed in the ADR. Two are load-bearing and should be answered with the founder *before* FS-05 is authored, not during:
 - **OQ-PRO-6** — with no per-slot counters (law 5) and anonymous accepters allowed, what does a recipient actually see that lets the group converge on a time and place? If there is no good answer, group propositions need a narrower shape.
@@ -87,7 +87,11 @@ Nine open questions (OQ-PRO-1..9) are listed in the ADR. Two are load-bearing an
 
 ---
 
-## Phase 1 — IDT-03 trust-proxy security fix 🔴 HIGHEST PRIORITY
+## Phase 1 — IDT-03 trust-proxy security fix ✅ DONE 2026-08-29
+
+**Landed** via issue #163 / PR [#164](https://github.com/hamza-el-miqdam/swab/pull/164), branch `fix/163-trust-proxy-cidr-allowlist`. `TRUST_PROXY_HOPS` (hop count) is replaced by `TRUST_PROXY`, a comma-separated CIDR/IP allowlist checked against the immediate peer; fail-closed default unchanged (unset → `false`). Fastify stays pinned at `^5.12.0` in `package.json` — the type/lint fallout was from the trust-proxy shape, not the fastify version, so no bump was needed. Full detail: `apps/api/CHANGELOG.md` 2026-08-29 entry. Unblocks Phase 2's PR #158.
+
+**Plan card — Phase 1 (for reference / precedent)**
 
 **This was found by investigating why PR #158 was red, and it is not a dependency chore.**
 
