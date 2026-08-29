@@ -26,7 +26,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 
 ## 4. MVP scope
 
-**In:** phone-OTP signup (⚠️ ASSUMPTION), contact import + invite, radial onboarding calibration, relationship map, contact card with 4 axes + history, on-device FCA subgroups (pin/rename/hide), 3-level filter rules, proposition emission with transparent filtering, silent pass, encrypted vault sync. Web = landing + invite + account only.
+**In:** phone-OTP signup (⚠️ ASSUMPTION), contact import + invite, radial onboarding calibration, relationship map, contact card with 4 axes + history, on-device FCA subgroups (pin/rename/hide), 3-level filter rules, proposition emission with transparent filtering, silent pass, server-synced classification data (device cache, per-record last-write-wins). Web = landing + invite + account only.
 
 **Out (POC):** group envies (>2-person matches), chat/messaging, semantic verb matching, media, web relationship map, social graph suggestions, any analytics beyond aggregate page counts, monetization.
 
@@ -43,7 +43,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 | **filtrage** | filtering | Send-time exclusion by rules: veto absolu / exclu par défaut / priorité basse |
 | ~~**match**~~ | ~~match~~ | **RETIRE** — see [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md). No matching engine; mutual reveal is gone. The word still appears in the schema and older specs as a historical artifact. |
 | **passer cette fois** | soft pass | Declining a proposition invisibly to the counterpart |
-| **vault** | vault | On-device encrypted store of all classification data; server holds an opaque blob |
+| ~~**vault**~~ | ~~vault~~ | **RETIRE** — see [ADR-001](decisions/ADR-001-server-side-classification-data.md). Classification data lives server-side in Postgres (single source of truth); devices hold a cache, not an opaque encrypted blob. The word may still appear in code/migration docs as a historical artifact. |
 
 ## 6. Standing assumptions (Hamza to confirm/override)
 

@@ -26,7 +26,7 @@ These principles are non-negotiable and enforced in code review:
 
 ## 📋 MVP Scope & Glossary
 
-**In:** phone-OTP signup, contact import + invite, relationship map with radial visualization, contact card with 4 axes (Intimité / Rôles·contexte / État / Ressenti), on-device FCA subgroups, 3-level filter rules, proposition emission with transparent filtering, silent pass, encrypted vault sync.
+**In:** phone-OTP signup, contact import + invite, relationship map with radial visualization, contact card with 4 axes (Intimité / Rôles·contexte / État / Ressenti), on-device FCA subgroups, 3-level filter rules, proposition emission with transparent filtering, silent pass, server-synced classification data (device cache, per-record last-write-wins).
 
 **Out (POC):** group envies (>2-person), chat/messaging, semantic verb matching, media, web relationship map, social graph suggestions.
 
@@ -40,7 +40,7 @@ These principles are non-negotiable and enforced in code review:
 | **sous-groupe** | subgroup | FCA-detected cluster usable as a scope; pin/rename/hide only |
 | **filtrage** | filtering | Send-time exclusion by rules: absolute veto / excluded by default / low priority |
 | ~~**match**~~ | ~~match~~ | **RETIRE** — see [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md). No matching engine; mutual reveal is gone. |
-| **vault** | vault | On-device encrypted store of all classification data; server holds opaque blob |
+| ~~**vault**~~ | ~~vault~~ | **RETIRE** — see [ADR-001](docs/decisions/ADR-001-server-side-classification-data.md). Classification data lives server-side in Postgres (single source of truth); devices hold a cache, not an opaque encrypted blob. |
 
 ## 🏗️ Architecture & Development Model
 
