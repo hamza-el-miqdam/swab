@@ -26,7 +26,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 
 ## 4. MVP scope
 
-**In:** phone-OTP signup (⚠️ ASSUMPTION), contact import + invite, radial onboarding calibration, relationship map, contact card with 4 axes + history, on-device FCA subgroups (pin/rename/hide), 3-level filter rules, proposition emission with transparent filtering, silent pass, server-synced classification data (device cache, per-record last-write-wins). Web = landing + invite + account only.
+**In:** phone-OTP signup (⚠️ ASSUMPTION), contact import + invite, radial onboarding calibration, relationship map, contact card with 4 axes + history, manually created groups + on-device FCA subgroup suggestions (pin/rename/hide/accept), 3-level filter rules, proposition emission with transparent filtering, silent pass, server-synced classification data (device cache, per-record last-write-wins). Web = landing + invite + account only.
 
 **Out (POC):** group envies (>2-person matches), chat/messaging, semantic verb matching, media, web relationship map, social graph suggestions, any analytics beyond aggregate page counts, monetization.
 
@@ -39,7 +39,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 | **carte des relations** | relationship map | Radial view: « moi » center, contacts on intimacy rings |
 | **fiche contact** | contact card | Per-relation detail: 4 axes + history feed |
 | **les quatre axes** | the four axes | Intimité (ring), Rôles·contexte, État, Ressenti — declared, private, asymmetric |
-| **sous-groupe** | subgroup | FCA-detected cluster usable as a scope; pin/rename/hide only |
+| **sous-groupe** | subgroup | A group you name and manage yourself — create, rename, edit membership, delete; FCA also suggests candidate subgroups you can pin, rename, hide, or accept ([ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) commitment 3) |
 | **filtrage** | filtering | Send-time exclusion by rules: veto absolu / exclu par défaut / priorité basse |
 | ~~**match**~~ | ~~match~~ | **RETIRE** — see [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md). No matching engine; mutual reveal is gone. The word still appears in the schema and older specs as a historical artifact. |
 | **passer cette fois** | soft pass | Declining a proposition invisibly to the counterpart |

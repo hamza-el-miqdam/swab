@@ -1,6 +1,6 @@
 # FS-04 — Subgroups (Sous-groupes)
 
-**Status:** Approved · **Amended 2026-08-29** (`docs/decisions/ADR-002-envie-becomes-a-proposition.md`, commitment 3 — groups stay owner-private but become manual by default; FCA is demoted to an opt-in suggestion) · **Agents:** iOS + Android (sole — FCA runs on-device over the local cache, see OQ-SGR-2) · **Depends on:** FS-03 (tags), FS-07 (ADR-001 storage/sync model), feeds FS-05 · **Blueprint:** `swab - Sous-groupes (standalone)`
+**Status:** Approved · **Amended 2026-08-29** (`docs/decisions/ADR-002-envie-becomes-a-proposition.md`, commitment 3 — groups stay owner-private but become manual by default; FCA is demoted to an opt-in suggestion) · **Agents:** iOS + Android (group UI + on-device FCA over the local cache, see OQ-SGR-2) + Backend (owner-scoped `Group`/`GroupMember` storage, SGR-15a) · **Depends on:** FS-03 (tags), FS-07 (ADR-001 storage/sync model), feeds FS-05 · **Blueprint:** `swab - Sous-groupes (standalone)`
 
 ## Purpose
 
