@@ -9,7 +9,9 @@ export const testEnv: Env = {
   PORT: 3001,
   NODE_ENV: "test",
   OTP_DEV_CODE: "enabled",
-  TRUST_PROXY_HOPS: 0,
+  // Unset by default (fail-closed): X-Forwarded-For is ignored unless a test
+  // opts in via an override (issue #163 — TRUST_PROXY_HOPS retired).
+  TRUST_PROXY: undefined,
   OTP_RATE_LIMIT: "strict",
 };
 

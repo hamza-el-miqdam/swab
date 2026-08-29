@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-08-29, issue #163):** the `TRUST_PROXY_HOPS` design below (step 1-2, a numeric hop count) was implemented as proposed, but Fastify 5.12.1 deliberately removed `number` from `trustProxy`'s type: a hop count can't validate the *immediate peer*, so a directly-connected client could forge enough `X-Forwarded-For` entries to mint itself a fresh OTP rate-limit bucket — the exact class of bypass this suggestion set out to close. It has been replaced by a `TRUST_PROXY` CIDR/IP allowlist (`apps/api/src/env.ts`) that checks *who* the immediate peer is, not just how many headers they claim to add. See `apps/api/CHANGELOG.md` (2026-08-29 entry) for the fix. The per-route OTP rate-limit tier (step 3 below) is unaffected and remains as implemented. Left in place, not deleted, as the historical record of the original (now-superseded) proposal.
+
 # SUG-API-005 — Per-IP rate limiting breaks behind any proxy: `trustProxy` unset, and OTP routes lack a stricter per-IP tier
 
 - **Area:** backend

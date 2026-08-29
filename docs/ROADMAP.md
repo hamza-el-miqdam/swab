@@ -87,7 +87,7 @@ Nine open questions (OQ-PRO-1..9) are listed in the ADR. Two are load-bearing an
 
 ---
 
-## Phase 1 — IDT-03 trust-proxy security fix 🔴 HIGHEST PRIORITY
+## Phase 1 — IDT-03 trust-proxy security fix ✅ DONE 2026-08-29 (branch `fix/163-idt03-trust-proxy-cidr`, not yet pushed)
 
 **This was found by investigating why PR #158 was red, and it is not a dependency chore.**
 
@@ -123,6 +123,8 @@ And [apps/api/CHANGELOG.md:109](../apps/api/CHANGELOG.md#L109) records the now-f
 - **Spec check:** IDT-03 in [FS-07:15](specs/FS-07-identity-vault.md#L15) says only *"throttled per phoneHash and per IP"* — it does not mandate hop counts, so **no spec amendment is needed**. Confirm before assuming otherwise.
 - **Sequencing:** do this as its own `area:api` PR. Do **not** bundle it into the Dependabot PR.
 
+**Outcome:** implemented as designed — `TRUST_PROXY` (CIDR/IP allowlist) replaces `TRUST_PROXY_HOPS` in `env.ts`/`app.ts`, tests rewritten TDD-first, `apps/api/CHANGELOG.md` corrected via a new dated entry, `SUG-API-005` marked superseded. One deviation from the acceptance line above: **fastify was left at 5.12.0**, not bumped to 5.12.1 — the `?? false` fix (required anyway, for `exactOptionalPropertyTypes`) resolves the same `trustProxy` typing issue at the current version, so the bump is no longer a prerequisite; it can proceed as a plain dependency bump whenever Phase 2 gets to it. Full gate (`pnpm turbo run lint typecheck test build`) green locally with a real Postgres. Not yet pushed/opened as a PR pending review.
+
 ---
 
 ## Phase 2 — Dependency queue ∥
@@ -131,7 +133,7 @@ Clear after Phase 1 lands, since #158 depends on the trust-proxy fix.
 
 | PR | Change | Assessment |
 |---|---|---|
-| #158 | eslint 10.8.1→10.9.0, turbo 2.10.10→2.10.11, **fastify 5.12.0→5.12.1**, pglite 0.5.5→0.5.7 | ⚠️ Blocked on Phase 1. The other three are trivial; fastify is the security item. Consider rebasing after the fix so it merges green. |
+| #158 | eslint 10.8.1→10.9.0, turbo 2.10.10→2.10.11, **fastify 5.12.0→5.12.1**, pglite 0.5.5→0.5.7 | Phase 1 landed (locally) — `app.ts`'s `trustProxy` is no longer numeric, so the 9-error `TS2345`/`TS2769` cascade should be gone once #158 rebases onto the fix. Not yet re-verified against an actual 5.12.1 install; rebase and re-run the gate before merging. |
 | #131 | `@types/node` 22.20.0 → **26.2.0** | Major. Relates to issue #57 (Node 26 base image) — sequence them together, not separately. |
 | #130 | `typescript` 5.8.3 → **6.0.3** | Major, on a strict-TS repo with type-aware ESLint. Expect fallout; own branch, full gate. |
 | #123 | adminer 5 → 6 | Low risk — local dev tooling only. |

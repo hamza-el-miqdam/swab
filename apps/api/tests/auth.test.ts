@@ -213,8 +213,8 @@ describe("POST /auth/otp/* — per-IP rate limit tier (SUG-API-005, IDT-03)", ()
     expect(eleventh.headers["content-type"]).toContain("application/problem+json");
   });
 
-  it("TRUST_PROXY_HOPS=0 (default): X-Forwarded-For is ignored — rotating it does not evade the shared bucket", async () => {
-    const { app } = await makeApp({ env: { ...testEnv, TRUST_PROXY_HOPS: 0 } });
+  it("TRUST_PROXY unset (default): X-Forwarded-For is ignored — rotating it does not evade the shared bucket", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, TRUST_PROXY: undefined } });
 
     for (let i = 0; i < 10; i += 1) {
       const res = await app.inject({
@@ -235,8 +235,8 @@ describe("POST /auth/otp/* — per-IP rate limit tier (SUG-API-005, IDT-03)", ()
     expect(eleventh.statusCode).toBe(429);
   });
 
-  it("TRUST_PROXY_HOPS=1: X-Forwarded-For is honored — two distinct client IPs get independent buckets", async () => {
-    const { app } = await makeApp({ env: { ...testEnv, TRUST_PROXY_HOPS: 1 } });
+  it("issue #163: peer inside the trusted CIDR — X-Forwarded-For is honored, two distinct client IPs get independent buckets", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, TRUST_PROXY: "10.0.0.0/8" } });
 
     for (const clientIp of ["203.0.113.10", "203.0.113.20"]) {
       for (let i = 0; i < 10; i += 1) {
@@ -244,11 +244,45 @@ describe("POST /auth/otp/* — per-IP rate limit tier (SUG-API-005, IDT-03)", ()
           method: "POST",
           url: "/auth/otp/request",
           payload: { phoneHash: phoneHash(i + (clientIp === "203.0.113.10" ? 0 : 10)) },
+          // The load balancer's own address — inside the trusted CIDR, so its
+          // X-Forwarded-For claim about the real client is believed.
+          remoteAddress: "10.1.2.3",
           headers: { "x-forwarded-for": clientIp },
         });
         expect(res.statusCode).toBe(200);
       }
     }
+  });
+
+  it("issue #163: peer NOT in the trusted CIDR — a forged X-Forwarded-For cannot mint a fresh bucket", async () => {
+    const { app } = await makeApp({ env: { ...testEnv, TRUST_PROXY: "10.0.0.0/8" } });
+
+    // Directly-connected, untrusted caller. Under the retired hop-count
+    // design, supplying one more forged XFF hop than TRUST_PROXY_HOPS bought
+    // a fresh rate-limit bucket every time — exactly the spoof this CIDR
+    // allowlist closes. The peer address itself is checked against the
+    // allowlist first; since it isn't a member, XFF is ignored outright and
+    // every request below shares one bucket keyed on the real peer IP.
+    for (let i = 0; i < 10; i += 1) {
+      const res = await app.inject({
+        method: "POST",
+        url: "/auth/otp/request",
+        payload: { phoneHash: phoneHash(i) },
+        remoteAddress: "198.51.100.7",
+        headers: { "x-forwarded-for": `203.0.113.${i}` }, // forged, different every request
+      });
+      expect(res.statusCode).toBe(200);
+    }
+
+    const eleventh = await app.inject({
+      method: "POST",
+      url: "/auth/otp/request",
+      payload: { phoneHash: phoneHash(10) },
+      remoteAddress: "198.51.100.7",
+      headers: { "x-forwarded-for": "203.0.113.99" }, // yet another forged value
+    });
+    expect(eleventh.statusCode).toBe(429);
+    expect(eleventh.headers["content-type"]).toContain("application/problem+json");
   });
 });
 

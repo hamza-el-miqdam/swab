@@ -8,11 +8,20 @@ const envSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     // POC (OQ-IDT-1): echo the OTP code in the response. Fail-closed: off unless explicitly enabled.
     OTP_DEV_CODE: z.enum(["enabled", "disabled"]).default("disabled"),
-    // Number of trusted reverse-proxy hops in front of the API (0 = directly
-    // exposed). Fail-closed default: `X-Forwarded-For` is ignored (and thus
-    // unspoofable) until an operator explicitly names how many hops to trust
-    // (IDT-03 — per-IP throttling is meaningless without this behind an ALB).
-    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
+    // Comma-separated CIDR/IP allowlist of trusted reverse proxies in front
+    // of the API (e.g. "10.0.0.0/8" for an ALB's subnet). Fastify checks the
+    // *immediate peer's* address against this list before trusting anything
+    // it says about `X-Forwarded-For`, and walks the header back only while
+    // each entry it crosses is itself in the allowlist (`@fastify/proxy-addr`
+    // under the hood). Fail-closed default: unset → `false` → the header is
+    // never trusted, from any peer (IDT-03).
+    //
+    // issue #163: this replaces a hop-count design (`TRUST_PROXY_HOPS`) that
+    // Fastify 5.12.1 deliberately disabled — a hop count can't validate the
+    // immediate peer, so a directly-connected client could forge enough XFF
+    // entries to mint itself a fresh OTP rate-limit bucket. A CIDR allowlist
+    // checks *who* is talking, not just *how many* headers they claim to add.
+    TRUST_PROXY: z.string().trim().min(1, "must not be empty — omit the variable instead").optional(),
     // IDT-03's strict per-IP OTP throttle (10/min) trips constantly in local
     // dev and on-device/E2E runs (issue #128, PR #138) where many scripted
     // requests share one IP in a short window. "relaxed" lifts it to a
