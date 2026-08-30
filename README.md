@@ -26,7 +26,7 @@ These principles are non-negotiable and enforced in code review:
 
 ## 📋 MVP Scope & Glossary
 
-**In:** phone-OTP signup, contact import + invite, relationship map with radial visualization, contact card with 4 axes (Intimité / Rôles·contexte / État / Ressenti), on-device FCA subgroups, 3-level filter rules, proposition emission with transparent filtering, silent pass, server-synced classification data (device cache, per-record last-write-wins).
+**In:** phone-OTP signup, contact import + invite, relationship map with radial visualization, contact card with 4 axes (Intimité / Rôles·contexte / État / Ressenti), manually created groups + on-device FCA subgroup suggestions, 3-level filter rules, proposition emission with transparent filtering, silent pass, server-synced classification data (device cache, per-record last-write-wins).
 
 **Out (POC):** group envies (>2-person), chat/messaging, semantic verb matching, media, web relationship map, social graph suggestions.
 
@@ -37,7 +37,7 @@ These principles are non-negotiable and enforced in code review:
 | **carte des relations** | relationship map | Radial view: me at center, contacts on intimacy rings |
 | **fiche contact** | contact card | Per-relation detail: 4 axes + history feed |
 | **les quatre axes** | the four axes | Intimité / Rôles·contexte / État / Ressenti — declared, private, asymmetric |
-| **sous-groupe** | subgroup | FCA-detected cluster usable as a scope; pin/rename/hide only |
+| **sous-groupe** | subgroup | A group you name and manage yourself — create, rename, edit membership, delete; FCA also suggests candidate subgroups you can pin, rename, hide, or accept ([ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md) commitment 3) |
 | **filtrage** | filtering | Send-time exclusion by rules: absolute veto / excluded by default / low priority |
 | ~~**match**~~ | ~~match~~ | **RETIRE** — see [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md). No matching engine; mutual reveal is gone. |
 | ~~**vault**~~ | ~~vault~~ | **RETIRE** — see [ADR-001](docs/decisions/ADR-001-server-side-classification-data.md). Classification data lives server-side in Postgres (single source of truth); devices hold a cache, not an opaque encrypted blob. |
