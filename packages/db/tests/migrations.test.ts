@@ -243,25 +243,30 @@ describe("cascades", () => {
 });
 
 describe("VLT-08 delta-pull index", () => {
-  // #168: the strict keyset cursor key moved from (ownerId, updatedAt) to
-  // (ownerId, syncSeq) — updatedAt keeps its display/CAS role but is no
-  // longer the index lead, and the old index is dropped, not left behind.
-  it("has the (owner, syncSeq) index the cursor pull depends on, and no longer the old (owner, updatedAt) one", async () => {
+  // #168 added the future keyset key (ownerId, syncSeq) / (contactLinkId,
+  // syncSeq) for the not-yet-done cursor.ts rewrite. PR #171 review found
+  // that the FIRST version of this migration also dropped the OLD
+  // (ownerId, updatedAt) / (contactLinkId, updatedAt) indexes in the same
+  // change — but the LIVE `GET /contacts` handler
+  // (`prisma-contacts-repo.ts`'s `listContactsSince`) still sorts by
+  // `updated_at` and depends on that old index today. Both index pairs must
+  // coexist until the cursor.ts follow-up ships and drops the old ones.
+  it("has both the new (owner, syncSeq) index AND the old (owner, updatedAt) index the live GET /contacts handler still depends on", async () => {
     const idx = await db.query<{ indexname: string }>(
       `select indexname from pg_indexes where tablename = 'contact_links'`,
     );
     const names = idx.rows.map((r) => r.indexname);
     expect(names).toContain("contact_links_owner_id_sync_seq_idx");
-    expect(names).not.toContain("contact_links_owner_id_updated_at_idx");
+    expect(names).toContain("contact_links_owner_id_updated_at_idx");
   });
 
-  it("has the (contactLinkId, syncSeq) index on contact_roles, and no longer the old (contactLinkId, updatedAt) one", async () => {
+  it("has both the new (contactLinkId, syncSeq) index AND the old (contactLinkId, updatedAt) index on contact_roles", async () => {
     const idx = await db.query<{ indexname: string }>(
       `select indexname from pg_indexes where tablename = 'contact_roles'`,
     );
     const names = idx.rows.map((r) => r.indexname);
     expect(names).toContain("contact_roles_contact_link_id_sync_seq_idx");
-    expect(names).not.toContain("contact_roles_contact_link_id_updated_at_idx");
+    expect(names).toContain("contact_roles_contact_link_id_updated_at_idx");
   });
 });
 

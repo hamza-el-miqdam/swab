@@ -161,9 +161,17 @@ model ContactLink {
   // Query pattern: resolve pending invites when a new user registers (IDT-07).
   @@index([invitedPhoneHash])
   // Query pattern: cursor delta pull — "everything of mine that changed since X"
-  // (VLT-08). Replaces (ownerId, updatedAt): syncSeq is now the strict keyset
-  // key (#168); updatedAt keeps display/CAS duty but is no longer the index lead.
+  // (VLT-08). syncSeq is the strict keyset key for the future cursor.ts
+  // rewrite (#168).
   @@index([ownerId, syncSeq])
+  // TEMPORARY, coexists with the index above (review finding on PR #171):
+  // `apps/api/src/prisma-contacts-repo.ts`'s `listContactsSince` (the LIVE
+  // `GET /contacts` handler) still sorts `ORDER BY updated_at ASC, id ASC` —
+  // `cursor.ts`'s rewrite onto syncSeq is a separate area:api follow-up, not
+  // yet done. Dropping this index in the same PR that adds syncSeq would
+  // regress that live query's plan to a filter + sort/seqscan today. Keep
+  // both until the cursor.ts follow-up ships and drops this one.
+  @@index([ownerId, updatedAt])
   // Query pattern: deletion cascade on the target FK; "who links to me" resolution (IDT-07).
   @@index([targetId])
   @@map("contact_links")
@@ -187,9 +195,12 @@ model ContactRole {
   deletedAt     DateTime?    @map("deleted_at") @db.Timestamptz(3)
 
   @@id([contactLinkId, role])
-  // Query pattern: cursor delta pull of a contact's tags (VLT-08). Replaces
-  // (contactLinkId, updatedAt): syncSeq is now the strict keyset key (#168).
+  // Query pattern: cursor delta pull of a contact's tags (VLT-08). syncSeq is
+  // the strict keyset key for the future cursor.ts rewrite (#168).
   @@index([contactLinkId, syncSeq])
+  // TEMPORARY, coexists with the index above — same reasoning as
+  // ContactLink.@@index([ownerId, updatedAt]) above (PR #171 review finding).
+  @@index([contactLinkId, updatedAt])
   @@map("contact_roles")
 }
 
