@@ -225,20 +225,19 @@ async function main(): Promise<void> {
   });
 
   // FilterRule seed — covers FilterAxis and FilterLevel enums so a developer
-  // can see all four axes and two levels without hand-writing SQL.
+  // can see both axes and all three levels without hand-writing SQL.
   // FilterRule is the only new model in this PR (FLT-01..08, VLT-01..03,
   // VLT-07..09, IDT-08), so it needs its own seed fixture.
-  // FilterAxis only has ETAT and RESSENTI — the four axes in the seed are
-  // mapped to these: CONTACT_LINK → ETAT, MATCH → RESSENTI, ENVIE → ETAT,
-  // USER → RESSENTI. This is intentional: the seed demonstrates both axes
-  // with both level types, not one row per axis.
-  // FilterLevel uses VETO, EXCLUDED_DEFAULT, and LOW_PRIORITY to demonstrate
-  // all three priority levels.
+  // Per FLT-01/FCH-09, `value` must be the FS-03 identifier for the row's
+  // axis — ETAT's are Etat's @map() values (available/busy/away/paused),
+  // RESSENTI's are Ressenti's (positive/ambivalent/negative). Values are
+  // picked to echo the ContactLink seed above where it tells a coherent
+  // story (e.g. amina already reads chirine's état as `paused`).
   await prisma.filterRule.create({
     data: {
       ownerId: amina.id,
       axis: FilterAxis.ETAT,
-      value: "contact_link",
+      value: "paused",
       level: FilterLevel.VETO,
       createdAt: T0,
       updatedAt: T0,
@@ -248,7 +247,7 @@ async function main(): Promise<void> {
     data: {
       ownerId: bilal.id,
       axis: FilterAxis.RESSENTI,
-      value: "match",
+      value: "negative",
       level: FilterLevel.EXCLUDED_DEFAULT,
       createdAt: T0,
       updatedAt: T0,
@@ -258,7 +257,7 @@ async function main(): Promise<void> {
     data: {
       ownerId: chirine.id,
       axis: FilterAxis.ETAT,
-      value: "envie",
+      value: "away",
       level: FilterLevel.VETO,
       createdAt: T0,
       updatedAt: T0,
@@ -268,7 +267,7 @@ async function main(): Promise<void> {
     data: {
       ownerId: daoud.id,
       axis: FilterAxis.RESSENTI,
-      value: "user",
+      value: "ambivalent",
       level: FilterLevel.EXCLUDED_DEFAULT,
       createdAt: T0,
       updatedAt: T0,
@@ -280,7 +279,7 @@ async function main(): Promise<void> {
     data: {
       ownerId: farid.id,
       axis: FilterAxis.ETAT,
-      value: "low_priority",
+      value: "busy",
       level: FilterLevel.LOW_PRIORITY,
       createdAt: T0,
       updatedAt: T0,

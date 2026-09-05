@@ -804,12 +804,12 @@ describe("FLT-01..08 FilterRule schema", () => {
     await db.exec(`insert into users (id, phone_hash, display_name) values ('u-fr-ov','h-fr-ov','O')`);
     await db.exec(
       `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
-         values ('link-fr', 'u-fr', 'hash-fr', now())`,
+         values ('link-fr', 'u-fr-ov', 'hash-fr', now())`,
     );
     await expect(
       db.query(
         `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values
-           ('fr-ov-ok','u-fr','link-fr','VETO',now())`,
+           ('fr-ov-ok','u-fr-ov','link-fr','VETO',now())`,
       ),
     ).resolves.toBeDefined();
   });
@@ -819,7 +819,7 @@ describe("FLT-01..08 FilterRule schema", () => {
     await expect(
       db.query(
         `insert into filter_rules (id, owner_id, level, updated_at) values
-           ('fr-neither','u-fr','EXCLUDED_DEFAULT',now())`,
+           ('fr-neither','u-fr-neither','EXCLUDED_DEFAULT',now())`,
       ),
     ).rejects.toThrow();
   });
@@ -828,12 +828,12 @@ describe("FLT-01..08 FilterRule schema", () => {
     await db.exec(`insert into users (id, phone_hash, display_name) values ('u-fr-both','h-fr-both','B')`);
     await db.exec(
       `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
-         values ('link-fr-both', 'u-fr', 'hash-fr-both', now())`,
+         values ('link-fr-both', 'u-fr-both', 'hash-fr-both', now())`,
     );
     await expect(
       db.query(
         `insert into filter_rules (id, owner_id, axis, value, contact_link_id, level, updated_at) values
-           ('fr-both','u-fr','ETAT','paused','link-fr-both','VETO',now())`,
+           ('fr-both','u-fr-both','ETAT','paused','link-fr-both','VETO',now())`,
       ),
     ).rejects.toThrow();
   });
