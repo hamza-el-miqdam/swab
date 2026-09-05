@@ -33,7 +33,6 @@ import {
   EnvieStatus,
   FilterAxis,
   FilterLevel,
-  FilterRule,
   MatchState,
   Platform,
   PrismaClient,
@@ -242,22 +241,16 @@ async function main(): Promise<void> {
       value: "contact_link",
       level: FilterLevel.VETO,
       createdAt: T0,
-      // Field-level LWW timestamps (VLT-09) start at the seed clock, so a
-      // dev's first real edit always wins over seeded data.
-      axisUpdatedAt: T0,
-      lastAxisChangeAt: T0,
       updatedAt: T0,
     },
   });
   await prisma.filterRule.create({
     data: {
       ownerId: bilal.id,
-      axis: FilterAxis.RESENTI,
+      axis: FilterAxis.RESSENTI,
       value: "match",
       level: FilterLevel.EXCLUDED_DEFAULT,
       createdAt: T0,
-      axisUpdatedAt: T0,
-      lastAxisChangeAt: T0,
       updatedAt: T0,
     },
   });
@@ -268,20 +261,16 @@ async function main(): Promise<void> {
       value: "envie",
       level: FilterLevel.VETO,
       createdAt: T0,
-      axisUpdatedAt: T0,
-      lastAxisChangeAt: T0,
       updatedAt: T0,
     },
   });
   await prisma.filterRule.create({
     data: {
       ownerId: daoud.id,
-      axis: FilterAxis.RESENTI,
+      axis: FilterAxis.RESSENTI,
       value: "user",
       level: FilterLevel.EXCLUDED_DEFAULT,
       createdAt: T0,
-      axisUpdatedAt: T0,
-      lastAxisChangeAt: T0,
       updatedAt: T0,
     },
   });
@@ -294,10 +283,6 @@ async function main(): Promise<void> {
       value: "low_priority",
       level: FilterLevel.LOW_PRIORITY,
       createdAt: T0,
-      // Field-level LWW timestamps (VLT-09) start at the seed clock, so a
-      // dev's first real edit always wins over seeded data.
-      axisUpdatedAt: T0,
-      lastAxisChangeAt: T0,
       updatedAt: T0,
     },
   });

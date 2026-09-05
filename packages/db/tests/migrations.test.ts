@@ -723,28 +723,11 @@ describe("SUG-DB-013 string caps (defense in depth vs. the API contract)", () =>
 
 describe("FLT-01..08 FilterRule schema", () => {
   /**
-   * Fresh rule per test. Case-rule half: (owner, axis, value) with
-   * contact_link_id = NULL. Override half: (owner, contact_link_id) with
-   * axis/value = NULL. We use raw SQL inserts (no Prisma client) because
-   * the enum/NULL shape is easier to express directly.
+   * Case-rule half: (owner, axis, value) with contact_link_id = NULL.
+   * Override half: (owner, contact_link_id) with axis/value = NULL. We use
+   * raw SQL inserts (no Prisma client) because the enum/NULL shape is
+   * easier to express directly.
    */
-  let seq = 0;
-  async function newCaseRule(owner: string, axis: string, value: string): Promise<string> {
-    const id = `fr-${++seq}`;
-    await db.query(
-      `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values ($1, $2, $3, $4, 'EXCLUDED_DEFAULT', now())`,
-      [id, owner, axis, value],
-    );
-    return id;
-  }
-  async function newOverrideRule(owner: string, contactLinkId: string): Promise<string> {
-    const id = `fr-ov-${++seq}`;
-    await db.query(
-      `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values ($1, $2, $3, 'VETO', now())`,
-      [id, owner, contactLinkId],
-    );
-    return id;
-  }
 
   it("stores the FilterAxis enum with exactly ETAT and RESSENTI", async () => {
     const enums = await db.query<{ typname: string; values: string }>(
@@ -795,14 +778,14 @@ describe("FLT-01..08 FilterRule schema", () => {
       ]),
     );
     // owner_id not null, level not null, sync_seq not null
-    expect(cols.owner_id.nullable).toBe(false);
-    expect(cols.level.nullable).toBe(false);
-    expect(cols.sync_seq.nullable).toBe(false);
+    expect(cols.owner_id?.nullable).toBe(false);
+    expect(cols.level?.nullable).toBe(false);
+    expect(cols.sync_seq?.nullable).toBe(false);
     // axis, value, contact_link_id, deleted_at nullable
-    expect(cols.axis.nullable).toBe(true);
-    expect(cols.value.nullable).toBe(true);
-    expect(cols.contact_link_id.nullable).toBe(true);
-    expect(cols.deleted_at.nullable).toBe(true);
+    expect(cols.axis?.nullable).toBe(true);
+    expect(cols.value?.nullable).toBe(true);
+    expect(cols.contact_link_id?.nullable).toBe(true);
+    expect(cols.deleted_at?.nullable).toBe(true);
   });
 
   it("accepts a case rule (axis + value, contact_link_id = NULL)", async () => {

@@ -128,7 +128,7 @@ describe("SUG-DB-014 seed enum-state coverage", () => {
   // The seed fixture creates four FilterRule rows, one per axis.
   it("references every FilterAxis member", () => {
     expect(seedSource).toContain("FilterAxis.ETAT");
-    expect(seedSource).toContain("FilterAxis.RESENTI");
+    expect(seedSource).toContain("FilterAxis.RESSENTI");
   });
 
   it("references every FilterLevel member", () => {
