@@ -721,6 +721,252 @@ describe("SUG-DB-013 string caps (defense in depth vs. the API contract)", () =>
   });
 });
 
+describe("FLT-01..08 FilterRule schema", () => {
+  /**
+   * Case-rule half: (owner, axis, value) with contact_link_id = NULL.
+   * Override half: (owner, contact_link_id) with axis/value = NULL. We use
+   * raw SQL inserts (no Prisma client) because the enum/NULL shape is
+   * easier to express directly.
+   */
+
+  it("stores the FilterAxis enum with exactly ETAT and RESSENTI", async () => {
+    const enums = await db.query<{ typname: string; values: string }>(
+      `select t.typname, string_agg(e.enumlabel, ',' order by e.enumsortorder) as values
+         from pg_type t join pg_enum e on e.enumtypid = t.oid
+        where t.typname = 'filter_axis'
+        group by t.typname`,
+    );
+    expect(enums.rows[0]?.values).toBe("ETAT,RESSENTI");
+  });
+
+  it("stores the FilterLevel enum with exactly VETO, EXCLUDED_DEFAULT, LOW_PRIORITY", async () => {
+    const enums = await db.query<{ typname: string; values: string }>(
+      `select t.typname, string_agg(e.enumlabel, ',' order by e.enumsortorder) as values
+         from pg_type t join pg_enum e on e.enumtypid = t.oid
+        where t.typname = 'filter_level'
+        group by t.typname`,
+    );
+    expect(enums.rows[0]?.values).toBe("VETO,EXCLUDED_DEFAULT,LOW_PRIORITY");
+  });
+
+  it("has the expected column shape — all columns exist with the right types", async () => {
+    const res = await db.query<{
+      column_name: string;
+      data_type: string;
+      is_nullable: string;
+    }>(
+      `select column_name, data_type, is_nullable
+         from information_schema.columns
+        where table_name = 'filter_rules'
+        order by ordinal_position`,
+    );
+    const cols = Object.fromEntries(
+      res.rows.map((r) => [r.column_name, { type: r.data_type, nullable: r.is_nullable === "YES" }]),
+    );
+    expect(Object.keys(cols)).toEqual(
+      expect.arrayContaining([
+        "id",
+        "owner_id",
+        "axis",
+        "value",
+        "contact_link_id",
+        "level",
+        "created_at",
+        "updated_at",
+        "deleted_at",
+        "sync_seq",
+      ]),
+    );
+    // owner_id not null, level not null, sync_seq not null
+    expect(cols.owner_id?.nullable).toBe(false);
+    expect(cols.level?.nullable).toBe(false);
+    expect(cols.sync_seq?.nullable).toBe(false);
+    // axis, value, contact_link_id, deleted_at nullable
+    expect(cols.axis?.nullable).toBe(true);
+    expect(cols.value?.nullable).toBe(true);
+    expect(cols.contact_link_id?.nullable).toBe(true);
+    expect(cols.deleted_at?.nullable).toBe(true);
+  });
+
+  it("accepts a case rule (axis + value, contact_link_id = NULL)", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-fr','h-fr','F')`,
+    );
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+           ('fr-case-ok','u-fr','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("accepts an override rule (contact_link_id set, axis/value NULL)", async () => {
+    await db.exec(`insert into users (id, phone_hash, display_name) values ('u-fr-ov','h-fr-ov','O')`);
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('link-fr', 'u-fr-ov', 'hash-fr', now())`,
+    );
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values
+           ('fr-ov-ok','u-fr-ov','link-fr','VETO',now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects neither half — axis, value, and contact_link_id all NULL", async () => {
+    await db.exec(`insert into users (id, phone_hash, display_name) values ('u-fr-neither','h-fr-neither','N')`);
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, level, updated_at) values
+           ('fr-neither','u-fr-neither','EXCLUDED_DEFAULT',now())`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("rejects both halves — axis + value and contact_link_id all set", async () => {
+    await db.exec(`insert into users (id, phone_hash, display_name) values ('u-fr-both','h-fr-both','B')`);
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('link-fr-both', 'u-fr-both', 'hash-fr-both', now())`,
+    );
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, axis, value, contact_link_id, level, updated_at) values
+           ('fr-both','u-fr-both','ETAT','paused','link-fr-both','VETO',now())`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("partial unique — case rule: two live rows for the same (owner, axis, value) rejected", async () => {
+    await db.exec(`insert into users (id, phone_hash, display_name) values ('u-fr-pu','h-fr-pu','P')`);
+    await db.query(
+      `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+         ('fr-pu-1','u-fr-pu','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+    );
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+           ('fr-pu-2','u-fr-pu','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("partial unique — case rule: re-creating after tombstone succeeds", async () => {
+    await db.exec(`update filter_rules set deleted_at = now() where id = 'fr-pu-1'`);
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+           ('fr-pu-3','u-fr-pu','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("partial unique — override: two live rows for the same (owner, contact_link_id) rejected", async () => {
+    await db.exec(`insert into users (id, phone_hash, display_name) values ('u-fr-pu-ov','h-fr-pu-ov','Q')`);
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('link-fr-pu-1', 'u-fr', 'hash-fr-pu-1', now())`,
+    );
+    await db.query(
+      `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values
+         ('fr-pu-ov-1','u-fr-pu-ov','link-fr-pu-1','VETO',now())`,
+    );
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values
+           ('fr-pu-ov-2','u-fr-pu-ov','link-fr-pu-1','VETO',now())`,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("partial unique — override: re-creating after tombstone succeeds", async () => {
+    await db.exec(`update filter_rules set deleted_at = now() where id = 'fr-pu-ov-1'`);
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values
+           ('fr-pu-ov-3','u-fr-pu-ov','link-fr-pu-1','VETO',now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("different owners can have the same case rule — uniqueness is per-owner", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-fr-oa','h-fr-oa','A'),('u-fr-ob','h-fr-ob','B')`,
+    );
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+           ('fr-oa','u-fr-oa','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      db.query(
+        `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+           ('fr-ob','u-fr-ob','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("FK cascade on ContactLink: deleting the link removes the override rule", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-fr-casc','h-fr-casc','K')`,
+    );
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('link-fr-casc', 'u-fr-casc', 'hash-fr-casc', now())`,
+    );
+    await db.query(
+      `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values
+         ('fr-casc','u-fr-casc','link-fr-casc','VETO',now())`,
+    );
+    await db.exec(`delete from contact_links where id = 'link-fr-casc'`);
+    const left = await db.query<{ n: number }>(
+      `select count(*)::int as n from filter_rules where contact_link_id = 'link-fr-casc'`,
+    );
+    expect(left.rows[0]?.n).toBe(0);
+  });
+
+  it("FK cascade on User: deleting the owner removes their filter rules", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-fr-deletion','h-fr-deletion','D')`,
+    );
+    // Create a fresh link for the override rule — the previous test deleted
+    // link-fr-casc, so we need a new one.
+    await db.exec(
+      `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+         values ('link-fr-deletion','u-fr-deletion','hash-fr-deletion', now())`,
+    );
+    await db.exec(
+      `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+         ('fr-deletion','u-fr-deletion','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+    );
+    await db.exec(
+      `insert into filter_rules (id, owner_id, contact_link_id, level, updated_at) values
+         ('fr-deletion-ov','u-fr-deletion','link-fr-deletion','VETO',now())`,
+    );
+    await db.exec(`delete from users where id = 'u-fr-deletion'`);
+    const orphans = await db.query<{ n: number }>(
+      `select count(*)::int as n from filter_rules where owner_id = 'u-fr-deletion'`,
+    );
+    expect(orphans.rows[0]?.n).toBe(0);
+  });
+
+  it("has the (owner_id, sync_seq) index for delta-pull", async () => {
+    const idx = await db.query<{ indexname: string }>(
+      `select indexname from pg_indexes where tablename = 'filter_rules'`,
+    );
+    expect(idx.rows.map((r) => r.indexname)).toContain("filter_rules_owner_id_sync_seq_idx");
+  });
+
+  it("has the (contact_link_id) index for override lookup", async () => {
+    const idx = await db.query<{ indexname: string }>(
+      `select indexname from pg_indexes where tablename = 'filter_rules'`,
+    );
+    expect(idx.rows.map((r) => r.indexname)).toContain("filter_rules_contact_link_id_idx");
+  });
+});
+
 describe("SUG-DB-015 updatedAt on stateful models", () => {
   /** @updatedAt is Prisma-client-managed, not a DB trigger — raw SQL sweeps
    * (expiry cron, etc.) must set updated_at = now() explicitly, same as the

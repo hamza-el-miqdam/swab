@@ -26,6 +26,7 @@ model User {
   proposals        Proposal[]
   envieRecipientOf EnvieRecipient[] @relation("envieRecipient")
   clientMutations  ClientMutation[]
+  filterRules      FilterRule[]
 
   @@map("users")
 }
@@ -115,6 +116,7 @@ model ContactLink {
   etat        Etat?
   ressenti    Ressenti?
   roles       ContactRole[]
+  filterRules FilterRule[]
 
   // --- FCH-05 staleness nudge. Server-side now, so the 30-day timer survives a device change.
   lastAxisChangeAt      DateTime? @map("last_axis_change_at") @db.Timestamptz(3)
@@ -169,6 +171,59 @@ model ContactRole {
   // Query pattern: cursor delta pull of a contact's tags (VLT-08).
   @@index([contactLinkId, updatedAt])
   @@map("contact_roles")
+}
+
+/// FilterRule stores either a case rule (axis + value, e.g. ETAT/paused) or
+/// a per-contact override (contactLinkId), never both — enforced by a
+/// hand-written CHECK in the migration (Prisma cannot express it; same
+/// precedent as ContactLink's resolved-or-pending CHECK). The XOR rule is
+/// the storage-level equivalent of "one way to filter, no way to not filter".
+///
+/// **Directionality is the privacy model (IDT-08), not a modelling detail.**
+/// A row says how `owner` filters a contact. There is no reverse read:
+/// `contactLinkId` alone must never be used to reach classification data.
+///
+/// Sync (VLT-07..09): `updatedAt` drives cursor pulls, `deletedAt` tombstones
+/// deletes, `syncSeq` is the delta-pull cursor.
+model FilterRule {
+  id            String       @id @default(cuid())
+  ownerId       String       @map("owner_id")
+  owner         User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // --- Case rule half (FLT-01): axis + value, e.g. (ETAT, "paused").
+  axis          FilterAxis?
+  /// FCH-09 stable identifier (`^[a-z][a-z0-9_]*$`, ASCII, <=32 chars), never
+  /// the French label — validated against that axis's vocabulary at the API
+  /// layer, not here.
+  value         String?      @db.VarChar(32)
+
+  // --- Per-contact override half (FLT-07): applies to one contact directly,
+  // wins over any case rule that would otherwise match them.
+  contactLinkId String?      @map("contact_link_id")
+  contactLink   ContactLink? @relation(fields: [contactLinkId], references: [id], onDelete: Cascade)
+
+  level         FilterLevel
+
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// Tombstone, not a hard delete (VLT-09).
+  deletedAt     DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  /// Delta-pull cursor (VLT-08). This table adopts syncSeq from day one per
+  /// issue #168's convention for new tables — no backfill needed, it has no
+  /// pre-existing rows.
+  syncSeq       BigInt       @default(autoincrement()) @map("sync_seq")
+
+  // Exactly one of (axis+value) or contactLinkId is set — enforced by a CHECK
+  // in the migration (Prisma can't express it; mirrors ContactLink's own
+  // resolved-or-pending CHECK).
+  // Partial unique indexes (migration, hand-written):
+  //   one live case rule per (owner_id, axis, value) WHERE deleted_at IS NULL AND contact_link_id IS NULL
+  //   one live override per (owner_id, contact_link_id) WHERE deleted_at IS NULL AND contact_link_id IS NOT NULL
+
+  @@index([ownerId, syncSeq])    // delta pull (VLT-08)
+  @@index([contactLinkId])      // FLT-07 override lookup for a specific contact
+  @@map("filter_rules")
 }
 
 /// VLT-07 idempotency ledger. Every client mutation carries a client-generated
@@ -371,4 +426,23 @@ enum ProposalState {
   LAPSED
 
   @@map("proposal_state")
+}
+
+enum FilterAxis {
+  ETAT
+  RESSENTI
+
+  // Additive only — a new axis is a spec amendment (FS-06) first, migration
+  // second, same convention as FCH-09. Do not add ROLE speculatively; that's
+  // an open question (OQ-FLT-1-adjacent) flagged in issue #169, not decided.
+
+  @@map("filter_axis")
+}
+
+enum FilterLevel {
+  VETO             // L1 — jamais inclus, même forcé
+  EXCLUDED_DEFAULT // L2 — révocable à l'envoi
+  LOW_PRIORITY     // L3 — inclus, en retrait
+
+  @@map("filter_level")
 }
