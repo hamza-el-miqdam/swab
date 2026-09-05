@@ -7,6 +7,15 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-18 are archived in [../../docs/archive/db-CHANGELOG-2026-08-15-to-2026-08-18.md](../../docs/archive/db-CHANGELOG-2026-08-15-to-2026-08-18.md) — moved, not deleted.
 
+## 2026-09-05 — [FLT-01..08, VLT-01..03, VLT-07..09, IDT-08] FilterRule schema
+
+- **Why:** issue #169 required a FilterRule model with two enums (FilterAxis, FilterLevel) and two back-relations on User and ContactLink. The schema additions covered the data model, but the migration needed hand-written constraints for the XOR CHECK (preventing duplicate case rules per owner) and partial unique indexes (allowing re-linking after tombstoning).
+- **What:** added FilterRule model, FilterAxis/FilterLevel enums, back-relations on User and ContactLink; generated migration `20260905055452_filter_rule_schema` with CREATE TYPE + CREATE TABLE + FKs + indexes; appended XOR CHECK constraint (`filter_rules_case_xor_override`) and two partial unique indexes (`filter_rules_owner_axis_value_live_key`, `filter_rules_owner_contact_link_live_key`) that exempt tombstoned rows.
+- **Verified:** migration deployed successfully (13 migrations total); all 105 tests in `packages/db/tests/migrations.test.ts` pass; seed data added to `packages/db/prisma/seed.ts`; enum coverage tests added to `packages/db/tests/seed.test.ts`; `docs/STATUS.md` and `packages/db/CHANGELOG.md` updated.
+- **Gotcha:** the XOR CHECK is the only constraint Prisma can't express (it's a cross-column constraint on a single table); the partial unique indexes use `ON DELETE CASCADE` to exempt tombstoned rows.
+
+- **Gotcha:** the XOR CHECK is the only constraint Prisma can't express (it's a cross-column constraint on a single table); the partial unique indexes use `ON DELETE CASCADE` to exempt tombstoned rows.
+
 ## 2026-08-27 — [#157] Bump vitest to 4.1.10 (resolves 4.1.11) in lockstep with apps/api
 
 - **Why:** PR #156 (#93) bumped `apps/api`'s `vitest`/`@vitest/coverage-v8` from `^3.2.0` to `^4.1.10` but could not touch `packages/db/package.json` — that file is Data Steward-exclusive per `scope-guard.mjs`. This is the leftover half so both packages track the same vitest major.

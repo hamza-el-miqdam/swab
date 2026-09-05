@@ -31,6 +31,9 @@ import { pathToFileURL } from "node:url";
 import {
   Etat,
   EnvieStatus,
+  FilterAxis,
+  FilterLevel,
+  FilterRule,
   MatchState,
   Platform,
   PrismaClient,
@@ -219,6 +222,83 @@ async function main(): Promise<void> {
       createdAt: T0,
       updatedAt: T0,
       deletedAt: T0,
+    },
+  });
+
+  // FilterRule seed — covers FilterAxis and FilterLevel enums so a developer
+  // can see all four axes and two levels without hand-writing SQL.
+  // FilterRule is the only new model in this PR (FLT-01..08, VLT-01..03,
+  // VLT-07..09, IDT-08), so it needs its own seed fixture.
+  // FilterAxis only has ETAT and RESSENTI — the four axes in the seed are
+  // mapped to these: CONTACT_LINK → ETAT, MATCH → RESSENTI, ENVIE → ETAT,
+  // USER → RESSENTI. This is intentional: the seed demonstrates both axes
+  // with both level types, not one row per axis.
+  // FilterLevel uses VETO, EXCLUDED_DEFAULT, and LOW_PRIORITY to demonstrate
+  // all three priority levels.
+  await prisma.filterRule.create({
+    data: {
+      ownerId: amina.id,
+      axis: FilterAxis.ETAT,
+      value: "contact_link",
+      level: FilterLevel.VETO,
+      createdAt: T0,
+      // Field-level LWW timestamps (VLT-09) start at the seed clock, so a
+      // dev's first real edit always wins over seeded data.
+      axisUpdatedAt: T0,
+      lastAxisChangeAt: T0,
+      updatedAt: T0,
+    },
+  });
+  await prisma.filterRule.create({
+    data: {
+      ownerId: bilal.id,
+      axis: FilterAxis.RESENTI,
+      value: "match",
+      level: FilterLevel.EXCLUDED_DEFAULT,
+      createdAt: T0,
+      axisUpdatedAt: T0,
+      lastAxisChangeAt: T0,
+      updatedAt: T0,
+    },
+  });
+  await prisma.filterRule.create({
+    data: {
+      ownerId: chirine.id,
+      axis: FilterAxis.ETAT,
+      value: "envie",
+      level: FilterLevel.VETO,
+      createdAt: T0,
+      axisUpdatedAt: T0,
+      lastAxisChangeAt: T0,
+      updatedAt: T0,
+    },
+  });
+  await prisma.filterRule.create({
+    data: {
+      ownerId: daoud.id,
+      axis: FilterAxis.RESENTI,
+      value: "user",
+      level: FilterLevel.EXCLUDED_DEFAULT,
+      createdAt: T0,
+      axisUpdatedAt: T0,
+      lastAxisChangeAt: T0,
+      updatedAt: T0,
+    },
+  });
+  // LOW_PRIORITY is the least restrictive level; seed it as a case rule
+  // on the ETAT axis to demonstrate the full priority spectrum.
+  await prisma.filterRule.create({
+    data: {
+      ownerId: farid.id,
+      axis: FilterAxis.ETAT,
+      value: "low_priority",
+      level: FilterLevel.LOW_PRIORITY,
+      createdAt: T0,
+      // Field-level LWW timestamps (VLT-09) start at the seed clock, so a
+      // dev's first real edit always wins over seeded data.
+      axisUpdatedAt: T0,
+      lastAxisChangeAt: T0,
+      updatedAt: T0,
     },
   });
 
