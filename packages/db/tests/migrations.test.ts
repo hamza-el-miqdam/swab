@@ -243,11 +243,199 @@ describe("cascades", () => {
 });
 
 describe("VLT-08 delta-pull index", () => {
-  it("has the (owner, updatedAt) index the cursor pull depends on", async () => {
+  // #168 added the future keyset key (ownerId, syncSeq) / (contactLinkId,
+  // syncSeq) for the not-yet-done cursor.ts rewrite. PR #171 review found
+  // that the FIRST version of this migration also dropped the OLD
+  // (ownerId, updatedAt) / (contactLinkId, updatedAt) indexes in the same
+  // change — but the LIVE `GET /contacts` handler
+  // (`prisma-contacts-repo.ts`'s `listContactsSince`) still sorts by
+  // `updated_at` and depends on that old index today. Both index pairs must
+  // coexist until the cursor.ts follow-up ships and drops the old ones.
+  it("has both the new (owner, syncSeq) index AND the old (owner, updatedAt) index the live GET /contacts handler still depends on", async () => {
     const idx = await db.query<{ indexname: string }>(
       `select indexname from pg_indexes where tablename = 'contact_links'`,
     );
-    expect(idx.rows.map((r) => r.indexname)).toContain("contact_links_owner_id_updated_at_idx");
+    const names = idx.rows.map((r) => r.indexname);
+    expect(names).toContain("contact_links_owner_id_sync_seq_idx");
+    expect(names).toContain("contact_links_owner_id_updated_at_idx");
+  });
+
+  it("has both the new (contactLinkId, syncSeq) index AND the old (contactLinkId, updatedAt) index on contact_roles", async () => {
+    const idx = await db.query<{ indexname: string }>(
+      `select indexname from pg_indexes where tablename = 'contact_roles'`,
+    );
+    const names = idx.rows.map((r) => r.indexname);
+    expect(names).toContain("contact_roles_contact_link_id_sync_seq_idx");
+    expect(names).toContain("contact_roles_contact_link_id_updated_at_idx");
+  });
+});
+
+describe("#168 monotonic sync sequence (VLT-08 follow-up)", () => {
+  async function columnInfo(
+    table: string,
+    column: string,
+  ): Promise<{ data_type: string; is_nullable: string; column_default: string | null }> {
+    const res = await db.query<{
+      data_type: string;
+      is_nullable: string;
+      column_default: string | null;
+    }>(
+      `select data_type, is_nullable, column_default from information_schema.columns
+        where table_name = $1 and column_name = $2`,
+      [table, column],
+    );
+    return (
+      res.rows[0] ?? { data_type: "", is_nullable: "", column_default: null }
+    );
+  }
+
+  it("contact_links.sync_seq is a NOT NULL bigint backed by a sequence default", async () => {
+    const col = await columnInfo("contact_links", "sync_seq");
+    expect(col.data_type).toBe("bigint");
+    expect(col.is_nullable).toBe("NO");
+    expect(col.column_default).toMatch(/nextval/);
+  });
+
+  it("contact_roles.sync_seq is a NOT NULL bigint backed by a sequence default", async () => {
+    const col = await columnInfo("contact_roles", "sync_seq");
+    expect(col.data_type).toBe("bigint");
+    expect(col.is_nullable).toBe("NO");
+    expect(col.column_default).toMatch(/nextval/);
+  });
+
+  it("assigns a strictly increasing syncSeq to each newly inserted contact_links row", async () => {
+    const a = await newLink();
+    const b = await newLink();
+    const rows = await db.query<{ id: string; sync_seq: string }>(
+      `select id, sync_seq from contact_links where id in ($1, $2)`,
+      [a, b],
+    );
+    const seqs = Object.fromEntries(rows.rows.map((r) => [r.id, BigInt(r.sync_seq)]));
+    expect(seqs[b]).toBeGreaterThan(seqs[a] ?? 0n);
+  });
+
+  /**
+   * The retrofit case (#168's whole reason for existing): ContactLink and
+   * ContactRole are already-shipped, already-migrated tables, so the backfill
+   * must assign syncSeq from EXISTING rows' `(updatedAt, id)` relative order —
+   * not from insertion/physical order, which a naive `ADD COLUMN ... BIGSERIAL`
+   * would silently use instead. Applies migrations only up to (not including)
+   * the monotonic-sync-sequence one, inserts rows in an order deliberately
+   * scrambled relative to their `updated_at`/`id`, THEN applies the new
+   * migration and asserts syncSeq sorts identically to `(updated_at, id)` —
+   * today's own tie-break (see `listContactsSince`'s `orderBy` in
+   * `apps/api/src/prisma-contacts-repo.ts`).
+   */
+  describe("backfill ordering preservation", () => {
+    const dirs = migrationDirs();
+    const targetIndex = dirs.findIndex((d) => d.endsWith("_monotonic_sync_sequence"));
+
+    it("the migration under test exists in the migrations directory", () => {
+      expect(targetIndex).toBeGreaterThan(-1);
+    });
+
+    it("test_VLT08_backfill_preserves_updated_at_id_order: contact_links syncSeq sorts identically to (updated_at, id)", async () => {
+      const partial = await PGlite.create();
+      for (const dir of dirs.slice(0, targetIndex)) {
+        await partial.exec(readFileSync(join(migrationsDir, dir, "migration.sql"), "utf8"));
+      }
+      await partial.exec(
+        `insert into users (id, phone_hash, display_name) values ('bfu1','bfh1','A')`,
+      );
+
+      // (id, updatedAt) pairs; `c-1`/`c-2` share a millisecond to exercise the
+      // id tie-break. Expected relative order by (updated_at, id): c-3, c-1, c-2, c-4.
+      const rows = [
+        { id: "c-3", updatedAt: "2026-01-01T00:00:00.000Z" },
+        { id: "c-1", updatedAt: "2026-01-02T00:00:00.000Z" },
+        { id: "c-2", updatedAt: "2026-01-02T00:00:00.000Z" },
+        { id: "c-4", updatedAt: "2026-01-03T00:00:00.000Z" },
+      ];
+      // Inserted in an order that matches NEITHER the expected order NOR a
+      // sorted one — proves the backfill isn't riding physical/insert order.
+      for (const r of [rows[3]!, rows[0]!, rows[2]!, rows[1]!]) {
+        await partial.query(
+          `insert into contact_links (id, owner_id, invited_phone_hash, updated_at) values ($1, 'bfu1', $2, $3)`,
+          [r.id, `hash-${r.id}`, r.updatedAt],
+        );
+      }
+
+      await partial.exec(readFileSync(join(migrationsDir, dirs[targetIndex]!, "migration.sql"), "utf8"));
+
+      const result = await partial.query<{ id: string }>(
+        `select id from contact_links order by sync_seq asc`,
+      );
+      expect(result.rows.map((r) => r.id)).toEqual(["c-3", "c-1", "c-2", "c-4"]);
+    });
+
+    it("test_VLT08_backfill_preserves_updated_at_id_order: contact_roles syncSeq sorts identically to (updated_at, contactLinkId, role) — its own PK tie-break", async () => {
+      const partial = await PGlite.create();
+      for (const dir of dirs.slice(0, targetIndex)) {
+        await partial.exec(readFileSync(join(migrationsDir, dir, "migration.sql"), "utf8"));
+      }
+      await partial.exec(
+        `insert into users (id, phone_hash, display_name) values ('bfu2','bfh2','B')`,
+      );
+      await partial.exec(
+        `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+           values ('bf-link','bfu2','hash-bf-link', now())`,
+      );
+
+      // No standalone id on ContactRole — the PK (contactLinkId, role) is the
+      // tie-break in place of ContactLink's id. Both rows share contactLinkId
+      // here, so role alone breaks the tie within the shared millisecond.
+      const rows = [
+        { role: "neighbor", updatedAt: "2026-01-03T00:00:00.000Z" },
+        { role: "family", updatedAt: "2026-01-01T00:00:00.000Z" },
+        { role: "colleague", updatedAt: "2026-01-02T00:00:00.000Z" },
+        { role: "cohort", updatedAt: "2026-01-02T00:00:00.000Z" },
+      ];
+      // Scrambled insertion order again.
+      for (const r of [rows[0]!, rows[3]!, rows[1]!, rows[2]!]) {
+        await partial.query(
+          `insert into contact_roles (contact_link_id, role, updated_at) values ('bf-link', $1, $2)`,
+          [r.role, r.updatedAt],
+        );
+      }
+
+      await partial.exec(readFileSync(join(migrationsDir, dirs[targetIndex]!, "migration.sql"), "utf8"));
+
+      const result = await partial.query<{ role: string }>(
+        `select role from contact_roles order by sync_seq asc`,
+      );
+      // family (2026-01-01) < {colleague, cohort} (2026-01-02, role tie-break
+      // uses the role_contexte enum's declared order: family, partner,
+      // colleague, cohort, community, neighbor — so colleague before cohort)
+      // < neighbor (2026-01-03).
+      expect(result.rows.map((r) => r.role)).toEqual(["family", "colleague", "cohort", "neighbor"]);
+    });
+
+    it("future inserts after the retrofit continue past the highest backfilled value, never colliding with it", async () => {
+      const partial = await PGlite.create();
+      for (const dir of dirs.slice(0, targetIndex)) {
+        await partial.exec(readFileSync(join(migrationsDir, dir, "migration.sql"), "utf8"));
+      }
+      await partial.exec(
+        `insert into users (id, phone_hash, display_name) values ('bfu3','bfh3','C')`,
+      );
+      await partial.exec(
+        `insert into contact_links (id, owner_id, invited_phone_hash, updated_at) values
+           ('bf-a','bfu3','hash-bf-a', now()), ('bf-b','bfu3','hash-bf-b', now())`,
+      );
+      await partial.exec(readFileSync(join(migrationsDir, dirs[targetIndex]!, "migration.sql"), "utf8"));
+
+      const before = await partial.query<{ max: string }>(
+        `select max(sync_seq)::text as max from contact_links`,
+      );
+      await partial.exec(
+        `insert into contact_links (id, owner_id, invited_phone_hash, updated_at)
+           values ('bf-c','bfu3','hash-bf-c', now())`,
+      );
+      const after = await partial.query<{ sync_seq: string }>(
+        `select sync_seq from contact_links where id = 'bf-c'`,
+      );
+      expect(BigInt(after.rows[0]!.sync_seq)).toBeGreaterThan(BigInt(before.rows[0]!.max));
+    });
   });
 });
 

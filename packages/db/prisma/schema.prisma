@@ -82,8 +82,11 @@ model Device {
 /// this codebase may select classification columns filtered by `target_id`
 /// alone. B never learns they are in A's circle.
 ///
-/// Sync (VLT-07..10): `updatedAt` drives cursor pulls, `deletedAt` tombstones
-/// deletes, and the four `*UpdatedAt` columns carry field-level LWW.
+/// Sync (VLT-07..10): `syncSeq` drives cursor pulls (#168 — a monotonic
+/// bigserial keyset key, replacing `updatedAt` there to remove the
+/// same-millisecond tie-break `apps/api/src/contacts/cursor.ts` used to need),
+/// `deletedAt` tombstones deletes, and the four `*UpdatedAt` columns carry
+/// field-level LWW. `updatedAt` itself is unchanged — display + VLT-09 CAS.
 ///
 /// Why per-field timestamps, when a plain PATCH already only touches one
 /// column: the offline outbox (VLT-10) replays *stale* mutations. Device B
@@ -126,6 +129,17 @@ model ContactLink {
   etatUpdatedAt        DateTime? @map("etat_updated_at") @db.Timestamptz(3)
   ressentiUpdatedAt    DateTime? @map("ressenti_updated_at") @db.Timestamptz(3)
   updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// Monotonic cursor ordering key (#168, VLT-08 follow-up). Compiles to a
+  /// plain Postgres `bigserial` — no trigger, vanilla-Postgres-portable — and
+  /// is strictly increasing by construction, so a keyset pull on this column
+  /// needs no same-millisecond re-send/afterId tie-break the way `updatedAt`
+  /// did. `updatedAt` is UNCHANGED and keeps its own display/VLT-09-CAS role;
+  /// this column exists ONLY to be the cursor key. The retrofit migration
+  /// backfilled existing rows preserving their current `(updatedAt, id)`
+  /// relative order (see `monotonic_sync_sequence`). `apps/api/src/contacts/
+  /// cursor.ts`'s rewrite to a strict `syncSeq > cursor` keyset is a
+  /// follow-up (`area:api`), not done in the migration PR.
+  syncSeq              BigInt    @default(autoincrement()) @map("sync_seq")
   /// Tombstone, not a hard delete (VLT-09): a stale device replaying a
   /// pre-deletion update must not resurrect the contact.
   deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(3)
@@ -146,7 +160,17 @@ model ContactLink {
   // produce exactly the both-null row shape the CHECK forbids.
   // Query pattern: resolve pending invites when a new user registers (IDT-07).
   @@index([invitedPhoneHash])
-  // Query pattern: cursor delta pull — "everything of mine that changed since X" (VLT-08).
+  // Query pattern: cursor delta pull — "everything of mine that changed since X"
+  // (VLT-08). syncSeq is the strict keyset key for the future cursor.ts
+  // rewrite (#168).
+  @@index([ownerId, syncSeq])
+  // TEMPORARY, coexists with the index above (review finding on PR #171):
+  // `apps/api/src/prisma-contacts-repo.ts`'s `listContactsSince` (the LIVE
+  // `GET /contacts` handler) still sorts `ORDER BY updated_at ASC, id ASC` —
+  // `cursor.ts`'s rewrite onto syncSeq is a separate area:api follow-up, not
+  // yet done. Dropping this index in the same PR that adds syncSeq would
+  // regress that live query's plan to a filter + sort/seqscan today. Keep
+  // both until the cursor.ts follow-up ships and drops this one.
   @@index([ownerId, updatedAt])
   // Query pattern: deletion cascade on the target FK; "who links to me" resolution (IDT-07).
   @@index([targetId])
@@ -162,11 +186,20 @@ model ContactRole {
   role          RoleContexte
   createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// Monotonic cursor ordering key, same treatment as ContactLink.syncSeq
+  /// above (#168). Backfill tie-break for equal `updatedAt`: this model has
+  /// no standalone `id`, so the composite PK `(contactLinkId, role)` — its
+  /// own row identity — is the tie-break, in place of ContactLink's `id`.
+  syncSeq       BigInt       @default(autoincrement()) @map("sync_seq")
   /// Tombstoned like its parent — removing a role is a sync event, not a gap.
   deletedAt     DateTime?    @map("deleted_at") @db.Timestamptz(3)
 
   @@id([contactLinkId, role])
-  // Query pattern: cursor delta pull of a contact's tags (VLT-08).
+  // Query pattern: cursor delta pull of a contact's tags (VLT-08). syncSeq is
+  // the strict keyset key for the future cursor.ts rewrite (#168).
+  @@index([contactLinkId, syncSeq])
+  // TEMPORARY, coexists with the index above — same reasoning as
+  // ContactLink.@@index([ownerId, updatedAt]) above (PR #171 review finding).
   @@index([contactLinkId, updatedAt])
   @@map("contact_roles")
 }
