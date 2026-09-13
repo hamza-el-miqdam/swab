@@ -11,6 +11,22 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-13 — [FLT-02, FLT-09] FS-06 review fix pass — reword FLT-02, fix drop/visibility/directionality
+
+- **What:** fixed every finding from #182's review. Reworded `FLT-02` to stand alone under the current
+  model (dropped "L1"/FS-05-revocable-list references — founder's chosen path, not the reviewer's
+  "keep + footnote" option). Clarified veto is outgoing-only (blocks the owner's sends, never blocks
+  the vetoed contact's sends to the owner — that's FS-05 `PRO-08`) and that the owner still sees their
+  own vetoed contacts (hidden only from sends/other parties). Unified `FLT-09` and its acceptance
+  criteria on "silently dropped, `201`", removing the contradicting "rejected" wording. Fixed the law-2
+  misquote, three broken links in `suggestions/done/specs/SUG-SPEC-018-*.md`, and leaked PR text in
+  `suggestions/README.md`.
+- **Why:** the review found FLT-02 unreadable alone, a silent-drop/rejected contradiction, and an
+  owner-visibility ambiguity — founder-approved fixes, applied verbatim per the review comment.
+- **Also:** filed 4 follow-ups the review asked for: #185 (`area:db`, slim `FilterRule`, linked from
+  `FLT-09`), #186 (`area:specs`, stale `product-overview.md` copy), #187/#188 (`area:ios`/`area:android`,
+  shipped comments citing retired `FLT-01`). Did not touch `schema.prisma` (data-steward only, #185).
+
 ## 2026-09-13 — [docs-hygiene] Archive 2026-08-25/26 entries; shorten OQ-PRO-1..11 entry
 
 - **What:** review on PR #179 found this branch's own new entry ran 16 lines (G5 cap is ≤15) and,
@@ -25,10 +41,11 @@
 ## 2026-09-13 — [FLT-02, FLT-09, OQ-PRO-7, OQ-FLT-2] FS-06 narrowed to standing personal boundaries (outcome B)
 
 - **What:** executed [SUG-SPEC-018](suggestions/done/specs/SUG-SPEC-018-adr002-fs06-survival.md)'s "If (B)" path.
-  `docs/specs/FS-06-filtering.md` rewritten around veto absolu: `FLT-02` kept **verbatim**; the L1-L3
-  rule-level/priority machinery (`FLT-01`, `03`–`08`) is retired via a disposition table, replaced by a
-  single new `FLT-09` (server-side storage + enforcement, silent-drop on send, non-retroactive). `OQ-FLT-2`
-  re-resolved server-side (was on-device 2026-08-22, argued about a broadcast model ADR-002 retired).
+  `docs/specs/FS-06-filtering.md` rewritten around veto absolu: `FLT-02` kept (reworded in the fix-pass
+  entry above); the L1-L3 rule-level/priority machinery (`FLT-01`, `03`–`08`) is retired via a
+  disposition table, replaced by a single new `FLT-09` (server-side storage + enforcement, silent-drop
+  on send, non-retroactive). `OQ-FLT-2` re-resolved server-side (was on-device 2026-08-22, argued about
+  a broadcast model ADR-002 retired).
 - **Why:** ADR-002's hand-assembled groups made silent rule-based subtraction from a broadcast incoherent;
   only the one standing per-contact boundary with real user protection behind it survives.
 - **Also:** `docs/STATUS.md` FS-06 row, ADR-002's spec table + `OQ-PRO-7` row (executed note), `docs/ROADMAP.md`

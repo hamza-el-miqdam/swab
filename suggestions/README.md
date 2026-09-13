@@ -26,7 +26,7 @@ Each suggestion is one self-contained markdown file with a fixed template: probl
 | Review agent | [2](review/) | — | review-specialist |
 | **Total** | **34** | **87** | |
 
-> **`specs/SUG-SPEC-014..018` are the ADR-002 pivot plans (2026-08-27)** — they are sequenced, not independent: 014 (amend G1(d), **blocking** — nothing else may start first) → 015 (product laws) → 016 (FS-05 rewrite, gated on OQ-PRO-6 + OQ-PRO-1) → 017 (FS-04 amendment) → 018 (FS-06 survival decision, **done 2026-09-13** — outcome (B), see [done/specs/SUG-SPEC-018](done/specs/SUG-SPEC-018-adr002-fs06-survival.md)). 015/017 are marked done in [ROADMAP.md](../docs/ROADMAP.md) but their files/counts weren't moved when they landed; this PR only reconciles 018's own bookkeeping, not the whole batch. See ROADMAP.md Phase 0b/0c.
+> **`specs/SUG-SPEC-014..018` are the ADR-002 pivot plans (2026-08-27)** — they are sequenced, not independent: 014 (amend G1(d), **blocking** — nothing else may start first) → 015 (product laws) → 016 (FS-05 rewrite, gated on OQ-PRO-6 + OQ-PRO-1) → 017 (FS-04 amendment) → 018 (FS-06 survival decision, **done 2026-09-13** — outcome (B), see [done/specs/SUG-SPEC-018](done/specs/SUG-SPEC-018-adr002-fs06-survival.md)). 015/017 are marked done in [ROADMAP.md](../docs/ROADMAP.md) but their files/counts weren't moved when they landed. See ROADMAP.md Phase 0b/0c.
 
 Original wave/dependency plan and model assignments (Haiku/Sonnet/Opus split): see [execution-order.md](execution-order.md).
 

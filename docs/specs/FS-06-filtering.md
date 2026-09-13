@@ -21,19 +21,28 @@ A veto is a boolean standing rule, per (owner, contact) pair, authored from the 
 contact is excluded from every proposal the owner ever sends, in every group, forever — not overridable in the send
 flow, not surfaced anywhere as a "filtered" or "revocable" item, and invisible to the vetoed contact and to every
 other recipient. The only filter that still touches recipient resolution, and it is user-authored, so product law 2
-("rien ne disparaît en silence") holds: nothing is hidden from the person who set the rule, only from everyone else.
+(« Rien n'est masqué en silence. ») holds: nothing is hidden from the person who set the rule, only from everyone
+else — see Visibility below for exactly what that does and doesn't cover.
+
+**Directionality:** a veto is outgoing-only. It blocks propositions the owner sends *to* the vetoed contact; it has
+no effect on propositions the vetoed contact sends *to* the owner — that is a separate, already-specified mechanism
+(FS-05's `PRO-08` per-proposer mute).
+
+**Visibility:** the veto hides the vetoed contact from sends and from every other party — never from the owner. The
+vetoed contact stays visible, unmarked as missing, in the owner's own contact list and group-membership lists; FLT-02
+only removes them from `recipientIds` at send time and from what other recipients or observers can infer.
 
 ## Functional requirements
 
 | ID | Requirement |
 |---|---|
-| FLT-02 | L1 semantics are absolute: never in resolution output, never overridable at send, never surfaced in the FS-05 revocable list. |
-| FLT-09 | Veto records are the single source of truth **server-side** (ADR-001; existing `FilterRule` storage, scoped to the L1/veto row only per this narrowing — retiring the now-unused L2/L3 columns is an `area:db` follow-up, not decided here). Enforcement is server-side and authoritative: at group-membership time and at every proposal-resolution/send, the server silently drops a vetoed contact from `recipientIds` before it ever reaches a response — mirroring the "silent accept-and-drop" pattern `OQ-PRO-1` established, and never trusting client state to have filtered correctly (G1). Clients proactively hide vetoed contacts from add-to-group and recipient pickers as a UX courtesy, but this is never the enforcement boundary — an attempted client-side bypass must be rejected server-side, not merely hidden client-side. A veto change (on or off) takes effect on the next proposal only; an in-flight or already-sent proposal is never retroactively re-resolved. This resolves `OQ-FLT-2` below and retires FLT-06's on-device `applyFilters` contract — there is no multi-level rule set left to resolve, so no offline evaluator is needed. |
+| FLT-02 | Veto absolu: a standing personal boundary the owner sets once, per contact, from the contact card. Once set, that contact never appears in `recipientIds` for anything the owner sends, in any group — no override at send time, no exception, no signal to anyone (other than the owner) that a veto exists. |
+| FLT-09 | Veto records are the single source of truth **server-side** (ADR-001; existing `FilterRule` storage, scoped to the veto row only per this narrowing — retiring the now-unused L2/L3 columns and case-rule columns is issue #185, filed against `area:db`). Enforcement is server-side and authoritative: whenever recipients are resolved for a send, the server silently drops a vetoed contact from `recipientIds` before a response is ever returned — the send still succeeds (`201`) for the remaining valid recipients, mirroring the "silent accept-and-drop" pattern `OQ-PRO-1` established (and FS-05's `PRO-07`), and never trusting client state to have filtered correctly (G1). Clients proactively hide vetoed contacts from add-to-group and recipient pickers as a UX courtesy, but this is never the enforcement boundary — a forced client-side bypass is silently dropped server-side exactly like any other resolution, never rejected with an error. This enforcement never touches the owner's own view of their own contact list or group membership (see Visibility above) — only what leaves the server toward a recipient or a send response. A veto change (on or off) takes effect on the next proposal only; an in-flight or already-sent proposal is never retroactively re-resolved. This resolves `OQ-FLT-2` below and retires FLT-06's on-device `applyFilters` contract — there is no multi-level rule set left to resolve, so no offline evaluator is needed. |
 
 ## Acceptance criteria (key)
 
-- **Given** a veto absolu on contact X, **when** X is a member of any group or a candidate recipient of any proposal, **then** X never appears in `recipientIds` returned to or accepted from the API, and no client picker offers X as selectable — including after any UI manipulation (a forced client-side bypass must be rejected server-side, not just hidden).
-- **Given** a veto toggled on for a contact already in an existing group, **when** the next proposal is sent to that group, **then** the vetoed contact is silently absent from `recipientIds` and from every list surfaced to the proposer — no visible "1 fewer recipient" signal or count discrepancy anywhere (mirrors `OQ-PRO-1`'s silent accept-and-drop).
+- **Given** a veto absolu on contact X, **when** X is a member of any group or a candidate recipient of any proposal, **then** X never appears in `recipientIds` returned by or accepted by the API, and no client picker offers X as selectable — including after any UI manipulation (a forced client-side bypass is silently dropped server-side, `201` for the remaining recipients, never rejected with an error).
+- **Given** a veto toggled on for a contact already in an existing group, **when** the next proposal is sent to that group, **then** the vetoed contact is silently absent from that proposal's `recipientIds` — no visible "1 fewer recipient" signal or count discrepancy to any other recipient or observer (mirrors `OQ-PRO-1`'s silent accept-and-drop). This does not touch the owner's own group-membership list: the vetoed contact stays visible there, unmarked as missing — the owner set the boundary and stays able to see it (Visibility, above).
 - **Given** a veto toggle change in either direction, **when** it is made, **then** it takes effect on the next proposal only; active/in-flight proposals are never retroactively re-resolved (carries FLT-08's guarantee forward).
 - **Given** any attempt by a client to query or infer another user's veto list, **when** the API handles it, **then** no response field, ordering, or error message distinguishes a vetoed contact from one who was simply never a group member (IDT-08 — link direction stays private).
 
@@ -42,7 +51,7 @@ other recipient. The only filter that still touches recipient resolution, and it
 | Old | Disposition | Note |
 |---|---|---|
 | FLT-01 | VOID | Case-based (axis, value) default-rule authoring is retired — veto absolu is a manual per-contact toggle, not derived from état/ressenti. |
-| FLT-02 | Carries verbatim | Unchanged — see Functional requirements above. |
+| FLT-02 | Carries, reworded | Substance unchanged (still veto absolu — never sent, no override, invisible to everyone but the owner); reworded to stand on its own under the current model — dropped the "L1" label and the reference to an FS-05 revocable list, neither of which exists any more. See Functional requirements above. |
 | FLT-03 | VOID | The L2 "excluded by default, revocable at send" tier is retired; there is no revocable tier left — a contact is either vetoed (never sent, ever) or not filtered at all. |
 | FLT-04 | VOID | The L3 "included, de-emphasized" tier is retired along with the whole priority/level machinery. |
 | FLT-05 | VOID | The live rule-effect preview UI existed to preview L1–L3 case-rule authoring; nothing is left to preview beyond a per-contact boolean toggle (covered by FS-03's contact-card affordance). |
