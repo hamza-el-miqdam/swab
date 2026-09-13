@@ -6,6 +6,12 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/api-CHANGELOG-pre-2026-08-15.md](../../docs/archive/api-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-09-13 — [#130] TypeScript 5.8 → 6.0.3 (workspace-wide)
+
+- Dependabot #130 bumps `typescript` to `^6.0.3` in root, `apps/api`, `packages/db`, `packages/ui`. The only fallout was two `TS2322` errors in `prisma-repo.ts`'s `upsertVault`: TS 6 treats `ArrayBuffer` and `SharedArrayBuffer` as distinct, so a Node `Buffer` (`Uint8Array<ArrayBufferLike>`) no longer satisfies Prisma's `Bytes` input (`Uint8Array<ArrayBuffer>`).
+- Fix: `upsertVault` copies the incoming `Buffer` into `new Uint8Array(buf)` once before both writes. The `VaultRepository` interface still takes `Buffer`; vault blobs are capped at 1 MB, so the copy is negligible — and the vault is deprecated (ADR-001) anyway.
+- Gotcha: any new code passing a `Buffer` straight into a Prisma `Bytes` field will hit the same error — convert at the repo boundary.
+
 ## 2026-08-29 — [IDT-03] issue #163 — `trustProxy` moves from hop-count to a CIDR/IP allowlist
 
 - Fastify 5.12.1 fails closed on numeric `trustProxy` ("hop-count-only trust cannot validate the immediate peer") and dropped `number` from the type — this is what made PR #158's dependency bump red. It was right to: a directly-connected client could forge extra `X-Forwarded-For` hops to mint itself a fresh OTP rate-limit bucket, defeating IDT-03.
