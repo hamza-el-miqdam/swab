@@ -9,6 +9,18 @@
 > Entries from 2026-08-17 are archived in [docs/archive/CHANGELOG-2026-08-17.md](docs/archive/CHANGELOG-2026-08-17.md) — moved, not deleted.
 > Entries from 2026-08-18 to 2026-08-19 are archived in [docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md](docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md) — moved, not deleted.
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
+> Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
+
+## 2026-09-13 — [docs-hygiene] Archive 2026-08-25/26 entries; shorten OQ-PRO-1..11 entry
+
+- **What:** review on PR #179 found this branch's own new entry ran 16 lines (G5 cap is ≤15) and,
+  combined with sibling PRs #182/#184's own root-CHANGELOG entries, the file would exceed the 40,000-char
+  `docs-hygiene-lint.mjs` cap once all three merge. Moved the eleven 2026-08-25/26 entries verbatim into
+  a new `docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md` (same convention as the four existing
+  archives) and trimmed the OQ-PRO-1..11 entry's wording without losing content.
+- **Why:** archiving once here, ahead of #182/#184, unblocks both — each rebases onto this fix rather
+  than archiving redundantly in its own branch.
+- **Result:** 39,191 → 26,096 chars. `node scripts/docs-hygiene-lint.mjs` → PASS.
 
 ## 2026-09-13 — [FLT-02, FLT-09, OQ-PRO-7, OQ-FLT-2] FS-06 narrowed to standing personal boundaries (outcome B)
 
@@ -28,19 +40,18 @@
 ## 2026-09-13 — [OQ-PRO-1..11] ADR-002 open questions resolved by founder; Phase 0c gates cleared
 
 - **What:** all nine `OQ-PRO-*` questions in [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md),
-  plus two more found while drafting the Phase 0c execution plans (`OQ-PRO-10`, and `OQ-PRO-11` —
-  renumbered off an ID collision with `OQ-PRO-1` in SUG-SPEC-016), are answered. ADR-002 carries the
-  full resolution table; SUG-SPEC-016 (FS-05 rewrite) and SUG-SPEC-018 (FS-06 survival) had their gates
-  marked cleared/decided; `docs/ROADMAP.md` Phase 0c section, table, and mermaid diagram updated to match.
+  plus `OQ-PRO-10`/`OQ-PRO-11` found while drafting the Phase 0c plans, are answered. ADR-002 carries
+  the full resolution table; SUG-SPEC-016 (FS-05 rewrite) and SUG-SPEC-018 (FS-06 survival) gates marked
+  cleared/decided; `docs/ROADMAP.md` Phase 0c section, table, and mermaid diagram updated to match.
 - **Why:** both plans were blocked on founder product decisions (silent accept/drop, group convergence
   cues, FS-06's fate, individual-vs-group targeting, etc.) — G4 forbids guessing product behavior.
 - **Headline decisions:** OQ-PRO-6 convergence → named revealers + vague non-numeric cue for anonymous
   accepters, never a count (law 5). OQ-PRO-7 (FS-06) → **(B)**, narrowed to standing personal boundaries;
-  veto absolu (`FLT-02`) survives verbatim, rule-priority machinery retired. OQ-PRO-10 → « Passer cette
-  fois » reframed as a local hide, not a decline; G1(d) needs no amendment.
+  veto absolu (`FLT-02`) survives, rule-priority machinery retired. OQ-PRO-10 → « Passer cette fois »
+  reframed as a local hide, not a decline; G1(d) needs no amendment.
 - **Gotcha:** SUG-SPEC-016's disposition table had reused `OQ-PRO-1` for an unrelated question
-  (individual-vs-group targeting); that's now `OQ-PRO-11` everywhere. Next: hand SUG-SPEC-016/018 to
-  spec-specialist for execution, each its own issue/branch/PR (G4).
+  (individual-vs-group targeting); now `OQ-PRO-11`. Next: spec-specialist executes 016/018, each its
+  own issue/branch/PR (G4).
 
 ## 2026-09-13 — ROADMAP Phase 2: dependency queue cleared
 
@@ -132,68 +143,3 @@
 - **What changed:** `docs/specs/FS-03-contact-card.md` FCH-04 rewritten with the file's existing ⚠️ Transitional (ADR-001) Current/After convention (matches FCH-01, FCH-09). It now acknowledges the device-side 12-month history trim (`Vault.recordAxisEdit`, Android PR #108/SUG-AND-013, iOS PR #107) as a deliberate interim stopgap — founder decision 2026-08-21 — driven by the live 1MB vault cap (`MAX_VAULT_BYTES`, `apps/api/src/routes/vault.ts:13` + DB `CHECK`), records the clock-skew corroboration guard both platforms now carry (Android from the start, iOS via #137/issue #113), and states the removal condition: deleted once server-side retention ships as part of ADR-001 Stage 3 (history slice), tracked in issue #110.
 - **Why:** the spec previously read as though server-side retention already existed; it did not, and code-reality (device-side trim, live on both platforms) had diverged from spec text since #107/#108 landed.
 - **Not in this PR:** #110's code-removal sub-tasks (deleting the trims from `Vault.kt`/`Vault.swift`, fixing the stale `VLT-03` label in `apps/api/src/routes/vault.ts:13`) — blocked on ADR-001 Stage 3 history landing, tracked separately in #110. `docs/specs/.notion-sync.json`'s FS-03 mirror is now further behind current English; resync is notion-liaison-specialist's job, not done here.
-
-## 2026-08-26 — gitleaks: allowlist swift-security skill's fabricated example secrets
-
-- **What changed:** added the three `.claude/skills/swift-security/references/*.md` doc paths (`credential-storage-patterns.md`, `common-anti-patterns.md`, `compliance-owasp-mapping.md`) to `.gitleaks.toml`'s allowlist, same pattern as the existing `vault-test-vectors.json` entries.
-- **Why:** those docs (added 2026-08-25) intentionally show fabricated secrets (`sk_live_51ABC...`, fake Firebase keys) as anti-pattern examples for an installed Claude Code skill. Push/PR gitleaks runs scan incrementally and never re-touch that commit's diff, so this looked green everywhere — but a full-history scan (fresh clone, `workflow_dispatch`, security audit) fails on them indefinitely without an explicit waiver. Found during the item-6 GitHub Actions scheduling investigation in `.claude/plans/pr-144-146-148-fixes.md`.
-- **Gotcha:** this is a waiver for *verified* non-secrets per the file's own rule — re-verify with `gitleaks detect --redact -v` before adding further paths, never widen this into a blanket rule disable.
-
-## 2026-08-26 — [#147] scope-guard: area:specs covers docs/agent-playbook.md + docs/decisions/; sre/devops covers agents/
-
-- **What changed:** (1) added `"docs/agent-playbook.md"` and `"docs/decisions/"` to `AREA_PREFIXES["area:specs"]`, mirrored in `agents/spec-specialist.md`'s Scope section (narrow: process-doc/ADR corrections only when an issue explicitly directs it). (2) Added `"agents/"` to `area:sre`/`area:devops` — hit directly while landing (1), since editing `agents/spec-specialist.md`'s Scope section is itself a mapping-sync commit only sre/devops was set up to make. Both were the two concrete gaps the script's own header comment named as unmapped cross-cutting debt; the header now records issue #147 closed them. 6 new table-driven cases in `scope-guard.test.mjs`. Regenerated `.github/instructions/specs.instructions.md` via `node scripts/render-agents.mjs` (`.claude/agents/*.md` are `@`-import wrappers, unaffected).
-- **Why:** PRs #145/#146 — both closing `area:specs`-labeled issues (#116, #115/#132) the founder filed — were failing scope-guard for touching exactly the first set of paths; fixing that then failed scope-guard on this very PR for touching `agents/spec-specialist.md`.
-- **Gotcha:** `"agents/"` under sre/devops covers *mapping-sync* edits (keeping `AREA_PREFIXES` and a Scope section in agreement), not persona/behavior authorship — that judgment call stays with each area in review. `docs/decisions/ADR-001-*` stays append-only (dated correction notes, never a silent rewrite) per `agents/review-specialist.md`'s founder-attention flag.
-
-## 2026-08-26 — [ONB-05, IDT-08, IDT-01] Privacy-audit wire-audit step rewritten for post-ADR-001 reality
-
-- **What changed:** `docs/agent-playbook.md` §6 steps 1–2. Step 2 (wire audit) no longer requires classification data to appear only inside `POST /vault` opaque bytes, but — per review (PR #145) — it does not claim `/vault` is retired either: `/vault` is still live in production pre-stage-4, so step 2 is now explicitly transitional (same Current/After convention as `FS-01-onboarding.md:32`, `FS-03-contact-card.md:84`), instructing the auditor to inspect *live* `/vault` traffic today — verifying data only reaches the owner's own endpoint (IDT-08), reveal stays strictly mutual (ENV-11), the G3 forbidden list holds, and phone numbers stay salted hashes (IDT-01) — with an explicit switch to the typed `/contacts` endpoints once stage 4 cuts the clients over. Step 1 (DB audit) similarly flips — classification columns holding plaintext are now expected, the check is ownership scoping, not absence.
-- **Why:** #116 — ADR-001 (2026-08-16) retired the opaque-blob *privacy invariant*, but not the `/vault` route itself (`apps/api/src/routes/contacts.ts:21-23`: it "stays in place until stage 4 cuts the clients over"; both mobile clients still call it). An earlier draft of step 2 stated `/vault` "is retired," which would have had the audit — the one gate whose job is catching exactly this — inspect a channel with zero live traffic while the real channel went unchecked.
-- **Gotcha:** the audit is still not wired as CI (`privacy-audit.yml` not yet built) — this PR only fixes what the procedure says to check, not automation. Step 2's "switch to `/contacts`" instruction must be re-verified, not assumed, once stage 4 actually lands.
-
-## 2026-08-26 — [ENV-05, OQ-SGR-2, OQ-FLT-2] ADR-001 Enabling section corrected — FS-04/05/06 stay on-device
-
-- **What changed:** `docs/decisions/ADR-001-server-side-classification-data.md`'s "Enabling" bullet claiming matching/filtering/subgroups "can be computed server-side instead of on-device" gets a dated correction note (kept, not rewritten, per the issue's instruction — an ADR is a record of what was believed at decision time). The note retracts the claim and points at the three resolutions that supersede it: `FS-04` `OQ-SGR-2`, `FS-05` `ENV-05`, `FS-06` `OQ-FLT-2` (all on-device).
-- **Why:** #115 — this bullet over-generalised from *filter rules* (server-stored) to *subgroup membership and match/filter resolution* (derived on-device, never persisted per `SGR-07`/`VLT-01`). It is exactly the stale premise `OQ-FLT-2` (#114) had to correct, and ADR-001 is cited as live guidance from `CLAUDE.md` and three specs — leaving it uncorrected would keep misleading the next reader on all three specs, not just FS-06.
-- **Reviewed but unchanged:** the rest of the ADR for similar drift (per the issue's suggestion) — no other statement was found stale; stage 3's "server-side matching on `category` only" bullet is unaffected (it describes match-pair computation, not scope→recipients resolution, which `ENV-05` already correctly scopes on-device).
-
-## 2026-08-26 — [VLT-09] FS-07: amend conflict resolution to compare-and-swap, specify stale-edit UX
-
-- **What changed:** `docs/specs/FS-07-identity-vault.md` VLT-09 no longer says "field-level LWW by server `updatedAt`" — it now describes the shipped compare-and-swap semantics: wire shape `{ value, baseUpdatedAt }`, applied iff the stored field timestamp equals the client's base (`null` == `null`), otherwise the stored value wins and the field returns in `staleFields`. VLT-08's cursor wording gained a clarifying sentence (opaque, inclusive-of-millisecond, re-send-not-skip). Added a "Stale-edit UX" section (⚠️ ASSUMPTION default: surface the winning value inline, keep the user's rejected edit available to knowingly re-apply, never auto-retry/auto-overwrite) plus a new acceptance criterion and `OQ-VLT-3` tracking founder/design sign-off on the actual copy.
-- **Why:** #132 — the API (#124, `apps/api/src/prisma-contacts-repo.ts:209-230`) never implemented wall-clock LWW because VLT-08 forbids trusting client clocks, so there was no second timestamp to compare against. The spec text was unbuildable as written and, per the issue, would have led a Stage-4 client implementer to send the wrong wire shape or misuse `baseUpdatedAt`.
-- **Gotcha:** the stale-edit UX mechanism is a buildable default, not frozen French copy — do not ship it as final microcopy; `OQ-VLT-3` needs an explicit founder/design answer before FS-01/FS-03 Stage 4 work locks it in.
-- **Follow-up (review-specialist, same PR):** two other docs still described the retired "last-write-wins" wording — `docs/specs/FS-03-contact-card.md`'s VLT-07/VLT-09 acceptance criterion and `docs/qa/e2e-coverage.json`'s VLT-09 `title` field. Both now say field-level CAS, consistent with the FS-07 rewrite above.
-
-## 2026-08-26 — [#65] scope-guard: fix stale-PR false positives from the merge-ref checkout
-
-- **What changed:** `.github/workflows/scope-guard.yml` now checks out `github.event.pull_request.head.sha` directly (falls back to `github.ref` for `workflow_dispatch`), instead of `actions/checkout`'s default `refs/pull/N/merge`.
-- **Why:** the merge ref is the PR head merged with main's *current* tip, but `BASE` (`pull_request.base.sha`) stays pinned to main as it was when the PR last synced. `base...HEAD` then included every commit merged to main since, wrongly blaming an open PR for files it never touched — the `schema.prisma` hard gate failed loudly; the escaping check failed the same way and could also wrongly *allow* a PR whose apparent scope widened.
-- **How:** `scripts/scope-guard.mjs`'s `getChangedFiles` was untested — the bug lived entirely in what HEAD the workflow handed it, not its diff logic. Exported it with an optional `{ cwd }` for testing and added two `scope-guard.test.mjs` cases against a throwaway temp git repo: one reproduces the merge-ref leak, one confirms a plain head-SHA checkout excludes it.
-- **Gotcha:** `ci.yml`'s `changes` job has the same shape of staleness in its two-dot path-filter diff, but a false positive there only triggers an extra native test suite — left as a follow-up, out of scope for #65.
-
-## 2026-08-26 — [#141] scope-guard: shared docker-compose.yml + fail-closed unlabeled PRs
-
-- **What changed:** (1) `docker-compose.yml` added to `SHARED_ALLOWED_PREFIXES` — a backend-owned change (e.g. an env var) can now touch it without also carrying an `area:sre`/`area:devops` label. (2) Removed the SUG-OPS-002 step 3 warn-and-pass grace period: an unlabeled PR now fails closed (`process.exitCode = 1`), with a message naming every valid `area:*` label.
-- **Why:** #139's backend-owned `OTP_RATE_LIMIT` change only passed scope-guard by carrying two labels, discovered by trial (#140/#141). Separately, the ~2026-08-17 bake-in week for the grace period lapsed unflipped — PR #138 merged fully unlabeled with scope-guard silently reporting SUCCESS.
-- **How:** extracted `describeResult(labels, changedFiles)` as a pure decision function (exit code + message) out of `main()`, so both new behaviours are unit-testable without shelling out to git. `suggestions/done/devops/SUG-OPS-002-codeowners-scope-guard.md` records step 3 as complete.
-- **Closes:** #141; #140 closed as a duplicate.
-
-## 2026-08-25 — [docs-hygiene] Archive 2026-08-15/16 entries out of root `CHANGELOG.md`
-
-- **What changed:** moved the 11 entries dated 2026-08-15 and 2026-08-16 (contiguous block at the bottom of the file) verbatim into a new `docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md`, same pattern as the existing pre-2026-08-15 archive. Live file's header gets a second pointer line.
-- **Why:** 31,131 / 40,000 chars (78%) of `docs-hygiene-lint.mjs`'s whole-file cap, growing ~1.7 entries/day — closest of any changelog to tripping `MAX_CHANGELOG_CHARS`. Pre-emptive, not a fix for a live break.
-- **Result:** 31,131 → 13,586 chars (34% of cap). Nothing deleted — archived entries stay verbatim in git and in the new file; the ADR-001 "retire E2EE" decision they include stays separately durable in `docs/decisions/ADR-001-server-side-classification-data.md`. `node scripts/docs-hygiene-lint.mjs` → PASS.
-
-## 2026-08-25 — [docs-hygiene] Trim `docs/STATUS.md` CI and Design system rows
-
-- **What changed:** trimmed the CI row (448/450 chars) and Design system row (434/450 chars) in `docs/STATUS.md` — dropped prose/mechanism detail already recorded elsewhere, kept the outcome facts.
-- **Why:** both were within single-digit chars of `docs-hygiene-lint.mjs`'s 450-char row cap; any future PR appending even a short clause would trip CI. Pre-emptive, not a fix for a live break.
-- **Result:** CI row 448→270 chars, Design system row 434→329 chars. `node scripts/docs-hygiene-lint.mjs` → PASS.
-
-## 2026-08-25 — Repo hygiene: prune stale worktrees, split `suggestions/README.md`
-
-- **What changed:** (1) removed 3 stale `.claude/worktrees/*` subagent worktrees whose branches had already merged to `main` (`android/sug-and-001-vlt04-sync-triggers` #126, `feat/api-vlt-07-09-typed-contact-classification-api` #124, `ios/sug-ios-002-vlt04-sync-triggers` #125) — reclaimed 1.5GB, verified each was clean (`git status --short`) before `git worktree remove --force`. (2) Extracted the one-time "Execution order — dependency graph & model assignments" section (mermaid wave/track plan from the 2026-07-20 audit triage) out of `suggestions/README.md` into a new `suggestions/execution-order.md`, byte-identical content, replaced with a 1-line pointer.
-- **Why:** both were pure context/token-hygiene cost reduction — the worktrees were dead weight on every repo-root `find`/`grep`; the execution-order section was read-whole on every `suggestions/README.md` load (5× in one session) despite being one-time planning narrative, not the day-to-day per-area lookup tables.
-- **Result:** `suggestions/README.md` drops from 38,151 → 24,477 chars. Open/done counts (30/86) unchanged since 2026-08-21 — verified, not re-derived.
-- **Gotcha:** worktree branch names looked like they matched `git branch --merged main` only because they were currently checked out there (`+` prefix); recent merge commits (`aad1380`, `09bae9f`, `9f086e2`) confirmed all three landed before removal.
-
