@@ -168,8 +168,8 @@ completely unaffected and remains the highest-priority work.**
 ## Open questions — RESOLVED 2026-09-13 (founder)
 
 All nine original questions, plus two surfaced while drafting the FS-05 rewrite plan
-([SUG-SPEC-016](../../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md)), are answered below.
-This unblocks Phase 0c.2 ([SUG-SPEC-016](../../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md))
+([SUG-SPEC-016](../../suggestions/done/specs/SUG-SPEC-016-adr002-fs05-rewrite.md)), are answered below.
+This unblocks Phase 0c.2 ([SUG-SPEC-016](../../suggestions/done/specs/SUG-SPEC-016-adr002-fs05-rewrite.md))
 and Phase 0c.4 ([SUG-SPEC-018](../../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md)).
 
 **ID-collision fix:** `SUG-SPEC-016` reused `OQ-PRO-1` for a second, unrelated question ("is a group
