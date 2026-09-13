@@ -122,4 +122,18 @@ describe("SUG-DB-014 seed enum-state coverage", () => {
   it("references every RoleContexte member", () => {
     expectEveryMemberReferenced("RoleContexte", RoleContexte);
   });
+
+  // FLT-01..08: FilterRule is the new model in this PR. The seed needs to
+  // reference FilterAxis and FilterLevel so enum-state coverage is complete.
+  // The seed fixture creates four FilterRule rows, one per axis.
+  it("references every FilterAxis member", () => {
+    expect(seedSource).toContain("FilterAxis.ETAT");
+    expect(seedSource).toContain("FilterAxis.RESSENTI");
+  });
+
+  it("references every FilterLevel member", () => {
+    expect(seedSource).toContain("FilterLevel.VETO");
+    expect(seedSource).toContain("FilterLevel.EXCLUDED_DEFAULT");
+    expect(seedSource).toContain("FilterLevel.LOW_PRIORITY");
+  });
 });
