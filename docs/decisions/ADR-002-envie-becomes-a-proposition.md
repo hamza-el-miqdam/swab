@@ -6,6 +6,9 @@
   accept) were rewritten after the founder corrected the group model. The original text described
   groups as shared objects whose members see each other; that is void. Recorded here rather than
   silently overwritten because the first version was already pushed to `main`.
+  **2026-09-13** — all nine open questions resolved by the founder, plus two more found while drafting
+  SUG-SPEC-016/018 (`OQ-PRO-10`, `OQ-PRO-11`; the latter renumbered off a collision with `OQ-PRO-1`).
+  See the "Open questions — RESOLVED" section below. This clears the gate on Phase 0c.2 and 0c.4.
 - **Decider:** Hamza (founder/product owner)
 - **Supersedes:** product law 1 (« Mutual reveal only ») in `docs/product-overview.md`, and **only the four words « reveal is strictly mutual »** inside law 4 — the rest of law 4 (no other user sees your classement, links are one-directional per IDT-08, refusal is indistinguishable from silence) survives verbatim, as do laws 2, 3 and 5; G1(d) in `agents/_global-directives.md`; the app description in `CLAUDE.md`; FS-05 `ENV-02`..`ENV-05`, `ENV-08`..`ENV-12`, `ENV-17`, `ENV-20`; FS-04's « tu ne définis jamais un groupe à la main »
 - **Resolves / dissolves:** FS-05 `OQ-ENV-1` (category taxonomy), `OQ-ENV-2` (expiry anchor), `OQ-ENV-3` (recipient subset check), and the `ENV-17` / `ENV-19` pending assumptions — all five presupposed a matching engine that will not be built
@@ -162,19 +165,31 @@ holds, and the observation that the FS-05 backend could start in parallel (which
 is void. Re-sequence after the spec rewrites. **Phase 1 (the IDT-03 trust-proxy security fix) is
 completely unaffected and remains the highest-priority work.**
 
-## Open questions
+## Open questions — RESOLVED 2026-09-13 (founder)
 
-| ID | Question |
-|---|---|
-| OQ-PRO-1 | How does the API refuse a proposition to a non-mutual contact **without leaking** that the recipient hasn't added the proposer? Accept-and-silently-drop, or an explicit error? An error re-creates exactly the disclosure IDT-08 exists to prevent. |
-| OQ-PRO-2 | Counter-proposal semantics: does a counter **replace** the original option or add a parallel one? How many can coexist before the group can no longer read the thread? |
-| OQ-PRO-3 | Does a group proposition still die at 48h once some members have already accepted? What happens to agreement already given — is a partially-agreed proposition lost? |
-| OQ-PRO-4 | Largely dissolved by commitment 3 — a private group is administered by its owner alone, nobody can leave what they don't know they're in, and removal notifies no one. What remains: may a *recipient* opt out of future propositions from a given proposer, and how, without that being a visible decline? |
-| OQ-PRO-5 | Does a proposition still carry a `category`? Matching no longer needs one; FCH-04's relationship history may still want it. |
-| OQ-PRO-6 | **Sharpened by commitments 4 and 5, and now the hardest open problem.** If Swab may not show a count per slot (law 5) and some accepters are anonymous, *what does a recipient actually see* that lets the group converge on a time and place? Named revealers alone? A qualitative cue? Nothing but the proposer's own summary? Answer this before FS-05 is written — commitment 7 says Swab must not decide, but the group still has to. |
-| OQ-PRO-7 | Does FS-06 survive at all (see the spec table above)? |
-| OQ-PRO-8 | Anonymity has no expiry (commitment 5), so a proposition can be accepted, agreed, and scheduled with participants nobody but the proposer can name. Is that the intended experience for the other recipients — and does the proposer get a way to say « je préfère que tout le monde se connaisse » without it becoming a decline-by-proxy? |
-| OQ-PRO-9 | A recipient learns « quelques autres personnes » on every proposition from the same proposer. Does repeated exposure let them infer a stable group's existence and size over time, and does that matter? |
+All nine original questions, plus two surfaced while drafting the FS-05 rewrite plan
+([SUG-SPEC-016](../../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md)), are answered below.
+This unblocks Phase 0c.2 ([SUG-SPEC-016](../../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md))
+and Phase 0c.4 ([SUG-SPEC-018](../../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md)).
+
+**ID-collision fix:** `SUG-SPEC-016` reused `OQ-PRO-1` for a second, unrelated question ("is a group
+the only target, or can you propose to one person?"). That question never had its own ID in this ADR.
+It is renumbered **`OQ-PRO-11`** here; `SUG-SPEC-016`'s references to it should be corrected to match
+when that PR lands.
+
+| ID | Question | Resolution |
+|---|---|---|
+| OQ-PRO-1 | How does the API refuse a proposition to a non-mutual contact **without leaking** that the recipient hasn't added the proposer? | **Silent accept-and-drop.** The call succeeds normally; the ineligible recipient is quietly excluded. The proposer never learns who was dropped or that anyone was — indistinguishable from that person not having answered yet. No explicit-error variant. |
+| OQ-PRO-2 | Counter-proposal semantics: replace the original option, or add a parallel one? | **Add as a parallel option, capped.** Multiple live time/place options can coexist (cap TBD by spec-specialist, propose 3) and recipients respond to whichever they prefer. Supersedes `ENV-14`'s "no negotiation threads" assumption — note this explicitly in the FS-05 rewrite. |
+| OQ-PRO-3 | Does a group proposition still die at 48h once some members have already accepted? What happens to agreement already given? | **Acceptances persist past expiry.** At 48h the proposition stops accepting new responses/counter-proposals, but anyone who already accepted keeps that as a standing confirmed record — it does not evaporate. |
+| OQ-PRO-4 | May a recipient opt out of future propositions from a given proposer, without that being a visible decline? | **Yes — silent per-proposer mute.** Reuses the OQ-PRO-1 mechanism: future propositions from a muted proposer are silently dropped for that recipient, indistinguishable from non-response. |
+| OQ-PRO-5 | Does a proposition still carry a `category`, separate from the free-text verb? | **Yes, kept — narrowly.** A lightweight category is retained, used only to group/filter the recipient's own relationship-history view (FCH-04). Never used for matching (none exists) and never a factor in delivery. Reopens `OQ-ENV-1`'s taxonomy in that narrow scope only — spec-specialist to propose a small fixed set. |
+| OQ-PRO-6 | What does a recipient actually see that lets the group converge on a time and place, given no per-slot counters and possibly-anonymous accepters? | **Named revealers + a vague cue for anonymous accepters.** Recipients see the display names of anyone who revealed and accepted, plus a non-numeric line (e.g. « et d'autres personnes ont accepté ») if unrevealed accepters exist — never a count. The proposer's own view is unaffected (commitment 5: they always see everyone). |
+| OQ-PRO-7 | Does FS-06 survive at all? | **(B) Narrowed to standing personal boundaries.** `FLT-02` (veto absolu) survives verbatim; the rule-level/priority machinery and the pre-send "Filtrés par tes règles" column are retired. Execute per [SUG-SPEC-018](../../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md) outcome (B). |
+| OQ-PRO-8 | Does the proposer get a way to prefer a fully-named gathering, without it becoming a decline-by-proxy? | **No such feature.** Anonymity stays entirely the recipient's call in every case, unconstrained by proposer preference. |
+| OQ-PRO-9 | Does repeated « et quelques autres personnes » exposure let a recipient infer a stable group's size over time? | **Accepted as a known, low-priority residual risk.** No design change; recorded here as accepted rather than mitigated (mitigation — randomized phrasing or throttled proposal frequency — was judged not worth the added complexity for an indirect, size-only inference). |
+| OQ-PRO-10 *(new, found drafting SUG-SPEC-016)* | G1(d) says "no decline action anywhere," but FS-05's planned « Passer cette fois » is a decline that emits zero signal. Reconcile. | **Reframed as "hide", not "decline" — G1(d) needs no amendment.** « Passer cette fois » is list-management: it removes the card from the recipient's own view only and sends nothing to anyone, so it was never the kind of "decline" G1(d) governs (which is about signals reaching the proposer). FS-05's copy/spec text must describe it this way explicitly, so a future reader doesn't reclassify it as a decline action. |
+| OQ-PRO-11 *(new, was miscited as OQ-PRO-1 in SUG-SPEC-016)* | Is a saved group required to propose, or can you propose to a single person directly? | **Individual is the base case; a group is optional.** You can propose to one person with no group involved — a saved group is a shortcut for addressing several people at once. Confirms the existing `docs/ROADMAP.md` line under FS-04 rather than contradicting it. |
 
 ## Risks accepted
 

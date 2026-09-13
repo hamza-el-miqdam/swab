@@ -34,12 +34,12 @@ Everything **outside** the product surface — the IDT-03 security fix (Phase 1)
 graph LR
   Z["Phase 0b<br/>amend G1(d) + re-render agents"] --> Y["Phase 0c<br/>rewrite product-overview · FS-05 · FS-04"]
   Y --> A["FS-07 stage 3<br/>history · groups · display names"]
-  Y --> Q{"OQ-PRO-7<br/>does FS-06 survive?"}
+  Y --> Q["OQ-PRO-7 decided (B)<br/>FS-06 narrowed to veto absolu"]
   A --> P["Propositions<br/>backend + mobile"]
   Q -.-> P
   style Z fill:#dc2626,color:#fff
   style Y fill:#7c3aed,color:#fff
-  style Q fill:#b45309,color:#fff
+  style Q fill:#dc2626,color:#fff
 ```
 
 The new path is **provisional** — it firms up only once FS-05 is rewritten. Phase 0b is done: the binding directives now permit this work. Phase 0c (the spec rewrites) is next.
@@ -66,24 +66,33 @@ The five parked FS-05 questions (OQ-ENV-1/2/3, ENV-17, ENV-19) are **dissolved, 
 
 ### Phase 0c — rewrite the specs (`area:specs`)
 
-In order: `product-overview.md` law 1 (law 4 loses only the four words « reveal is strictly mutual »; laws 2, 3, 5 are untouched) → **FS-05** (full rewrite, new requirement IDs) → **FS-04** (*amend*, don't rewrite — groups stay owner-private, so only manual creation + the FCA demotion change) → decide **FS-06**'s fate (OQ-PRO-7).
+In order: `product-overview.md` law 1 (law 4 loses only the four words « reveal is strictly mutual »; laws 2, 3, 5 are untouched) → **FS-05** (full rewrite, new requirement IDs) → **FS-04** (*amend*, don't rewrite — groups stay owner-private, so only manual creation + the FCA demotion change) → execute **FS-06**'s decided fate (OQ-PRO-7 → (B), narrowed to standing personal boundaries).
 
 📋 **Executable plans, one per step — each is its own issue/branch/PR (G4):**
 
 | # | Plan | Scope | Gate |
 |---|---|---|---|
 | 0c.1 | [SUG-SPEC-015](../suggestions/specs/SUG-SPEC-015-adr002-product-overview-laws.md) | Law 1 rewrite, law 4's four words, §1/§3/§6, glossary (`envie`/`portée`/`match`), root `README.md` | ✅ done (#162) |
-| 0c.2 | [SUG-SPEC-016](../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md) | FS-05 full rewrite, `ENV-* → PRO-*` disposition table, seam sketch, `area:db` + spec-kit handoffs | 🚦 **OQ-PRO-6 + OQ-PRO-1 must be answered first** |
+| 0c.2 | [SUG-SPEC-016](../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md) | FS-05 full rewrite, `ENV-* → PRO-*` disposition table, seam sketch, `area:db` + spec-kit handoffs | ✅ **gate cleared 2026-09-13** — ready to author |
 | 0c.3 | [SUG-SPEC-017](../suggestions/specs/SUG-SPEC-017-adr002-fs04-amendment.md) | FS-04 amendment — manual CRUD, FCA→suggestion, the server-vs-device persistence split | ✅ done (#167) |
-| 0c.4 | [SUG-SPEC-018](../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md) | FS-06 survive/narrow/retire — three options, recommendation (B), founder decides | 🚦 **OQ-PRO-7** |
+| 0c.4 | [SUG-SPEC-018](../suggestions/specs/SUG-SPEC-018-adr002-fs06-survival.md) | FS-06 survive/narrow/retire — three options, recommendation (B), founder decides | ✅ **decided (B) 2026-09-13** — ready to execute |
 
-Two findings surfaced while writing the plans, both recorded in them:
-- **OQ-PRO-10 (new)** — the amended G1(d) says *"no decline action anywhere"*, but FS-05's **« Passer cette fois »** is a decline that emits zero signal. Reconcilable, but the founder must say so; if it survives, G1(d) needs *"no decline action **that the proposer can observe**"*.
-- ~~**The FS-04 persistence split**~~ — **Resolved by 0c.3.** `OQ-SGR-2` says the FCA lattice is never persisted; ADR-002 says `Group`/`GroupMember` are server rows. Both are true, of *different objects*, and FS-04's new `SGR-15` now states this explicitly in one place, with an OQ-SGR-2 addendum confirming it is not reopened.
+All nine `OQ-PRO-*` open questions, plus two found while drafting these plans (`OQ-PRO-10`, and
+`OQ-PRO-11` — a renumbering of a question SUG-SPEC-016 had miscited as `OQ-PRO-1`), are **resolved**.
+Full text and resolutions: [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md#open-questions--resolved-2026-09-13-founder).
+Headline ones:
+- **OQ-PRO-6 (convergence)** — named revealers, plus a vague non-numeric cue for anonymous accepters.
+- **OQ-PRO-1 (non-mutual refusal)** — silent accept-and-drop, no explicit error.
+- **OQ-PRO-7 (FS-06 fate)** — **(B)** narrowed to standing personal boundaries (veto absolu only).
+- **OQ-PRO-10 (decline collision)** — « Passer cette fois » is a local hide, not a decline; G1(d) needs no amendment.
 
-Nine open questions (OQ-PRO-1..9) are listed in the ADR. Two are load-bearing and should be answered with the founder *before* FS-05 is authored, not during:
-- **OQ-PRO-6** — with no per-slot counters (law 5) and anonymous accepters allowed, what does a recipient actually see that lets the group converge on a time and place? If there is no good answer, group propositions need a narrower shape.
-- **OQ-PRO-1** — refusing a proposition to a non-mutual contact leaks that they haven't added you, which is exactly what IDT-08 exists to prevent.
+~~**The FS-04 persistence split**~~ — **Resolved by 0c.3.** `OQ-SGR-2` says the FCA lattice is never
+persisted; ADR-002 says `Group`/`GroupMember` are server rows. Both are true, of *different objects*,
+and FS-04's new `SGR-15` now states this explicitly in one place, with an OQ-SGR-2 addendum confirming
+it is not reopened.
+
+**Next action:** hand 0c.2 (SUG-SPEC-016) and 0c.4 (SUG-SPEC-018) to the spec-specialist — both are
+unblocked and can run as separate PRs.
 
 ---
 
