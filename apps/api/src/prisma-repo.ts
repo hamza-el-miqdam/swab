@@ -64,7 +64,12 @@ export function prismaRepository(client: PrismaClient = prisma): Repository {
       };
     },
 
-    async upsertVault(userId, blob, baseVersion): Promise<VaultWriteResult> {
+    async upsertVault(userId, buf, baseVersion): Promise<VaultWriteResult> {
+      // Prisma's `Bytes` input is `Uint8Array<ArrayBuffer>`; a Node `Buffer` is
+      // `Uint8Array<ArrayBufferLike>` (may be SharedArrayBuffer-backed), which
+      // TypeScript 6 no longer accepts. Copy into an ArrayBuffer-backed view —
+      // vault blobs are capped at 1 MB, so the copy is negligible.
+      const blob = new Uint8Array(buf);
       if (baseVersion === 0) {
         try {
           const created = await client.vault.create({
