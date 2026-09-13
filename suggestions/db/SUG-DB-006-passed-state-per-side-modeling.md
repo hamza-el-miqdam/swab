@@ -1,5 +1,12 @@
 # SUG-DB-006 — Single shared `Match.state` cannot represent per-side PASSED (ENV-15)
 
+> **VOID (superseded by ADR-002)** — `Match.state` and the per-side PASSED problem it describes belong
+> to the retired matching engine; [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md)
+> and the rewritten `docs/specs/FS-05-envie-match.md` (issue [#180](https://github.com/hamza-el-miqdam/swab/issues/180))
+> replace it with per-recipient `EnvieRecipient` rows, which have no shared-state race to begin with.
+> Left here, not moved to `done/`, since no implementation happened — it simply no longer applies.
+> `area:db` issue [#183](https://github.com/hamza-el-miqdam/swab/issues/183) tracks the schema cleanup.
+
 - **Area:** db
 - **Topic:** privacy
 - **Impact:** medium

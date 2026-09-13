@@ -10,6 +10,23 @@
 > Entries from 2026-08-18 to 2026-08-19 are archived in [docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md](docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md) — moved, not deleted.
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 
+## 2026-09-13 — [PRO-01..25] FS-05 rewritten as the proposition flow, ENV-* retired
+
+- **What:** `docs/specs/FS-05-envie-match.md` fully rewritten (issue #180, stacked on unmerged #179):
+  replaces the retired mutual-match engine with a directed, visible proposition model — `PRO-01..25`
+  across emission (mobile), delivery/eligibility (backend), and response/convergence (both). All 11
+  `OQ-PRO-*` founder resolutions from ADR-002 written in, not just the two the plan originally gated on.
+  `ENV-01..20` retired via an in-file disposition table (old → new/VOID), per `docs/README.md`'s
+  traceability convention. `specs/001-envie-match/` (spec-kit artifacts for the old model) marked
+  superseded, not hand-edited.
+- **Why:** SUG-SPEC-016's gate cleared once the founder answered every open question (ADR-002,
+  2026-09-13); this is Phase 0c.2 of the ADR-002 rollout.
+- **Gotchas:** `docs/STATUS.md`'s FS-05 row updated (still ⚪ Not started — spec only, no code yet);
+  new `area:db` schema-cleanup issue #183 opened (Match/MatchState → proposition + EnvieRecipient
+  schema) — implementation is blocked on it. New open question `OQ-PRO-12` (accept-mode button copy)
+  needs design-specialist + founder before implementation. `suggestions/db/SUG-DB-003` and `SUG-DB-006`
+  marked VOID (their fixes target the now-retired `Match` model).
+
 ## 2026-09-13 — [OQ-PRO-1..11] ADR-002 open questions resolved by founder; Phase 0c gates cleared
 
 - **What:** all nine `OQ-PRO-*` questions in [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md),

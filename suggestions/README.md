@@ -22,11 +22,11 @@ Each suggestion is one self-contained markdown file with a fixed template: probl
 | Database (packages/db) | [13](db/) | [2](done/db/) | data-steward |
 | DevOps / CI | — | [19](done/devops/) | devops-specialist |
 | Design system | — | [15](done/design/) | design-specialist (+ platform agents where noted) |
-| Specs / QA docs | [5](specs/) | [13](done/specs/) | spec-specialist |
+| Specs / QA docs | [4](specs/) | [14](done/specs/) | spec-specialist |
 | Review agent | [2](review/) | — | review-specialist |
-| **Total** | **35** | **86** | |
+| **Total** | **34** | **87** | |
 
-> **`specs/SUG-SPEC-014..018` are the ADR-002 pivot plans (2026-08-27)** — they are sequenced, not independent: 014 (amend G1(d), **blocking** — nothing else may start first) → 015 (product laws) → 016 (FS-05 rewrite, gated on OQ-PRO-6 + OQ-PRO-1) → 017 (FS-04 amendment) → 018 (FS-06 survival decision). See [ROADMAP.md](../docs/ROADMAP.md) Phase 0b/0c.
+> **`specs/SUG-SPEC-014..018` are the ADR-002 pivot plans (2026-08-27)** — they are sequenced, not independent: 014 (amend G1(d), **blocking** — nothing else may start first) → 015 (product laws) → 016 (FS-05 rewrite — **done 2026-09-13**, [#180](https://github.com/hamza-el-miqdam/swab/issues/180)) → 017 (FS-04 amendment) → 018 (FS-06 survival decision). See [ROADMAP.md](../docs/ROADMAP.md) Phase 0b/0c.
 
 Original wave/dependency plan and model assignments (Haiku/Sonnet/Opus split): see [execution-order.md](execution-order.md).
 

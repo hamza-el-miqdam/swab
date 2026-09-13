@@ -5,7 +5,7 @@
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 > **What is *next*, in what order, and how — see [ROADMAP.md](ROADMAP.md).**
 
-_Last updated: 2026-08-27_
+_Last updated: 2026-09-13_
 
 > **Native migration complete.** Mobile is native `apps/ios` + `apps/android`; RN knowledge in `docs/migration/` (see its README for what is still binding). Both E2E suites are a hard DoD gate (`scripts/e2e-{ios,android}.sh`). Open: FS-03 on-device walkthrough, E2E not in CI.
 
@@ -18,7 +18,7 @@ _Last updated: 2026-08-27_
 | FS-02 | Relationship Map | 🟢⚠️ | Mobile | Radial map + list fallback from the local cache, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). **ADR-001:** reads move vault→cache; behaviour unchanged, lowest-impact spec. |
 | FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04); FCH-09 stored identifiers done both platforms — stage-2 unblocked. |
 | FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) amendment landed (SUG-SPEC-017).** Groups stay **private to their owner**; manual CRUD (`SGR-10..15`) is now the default, FCA is an opt-in suggestion only. Next: `area:db` issue [#166](https://github.com/hamza-el-miqdam/swab/issues/166) — `Group`/`GroupMember` (owner-scoped); implementation blocked on it. |
-| FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — full rewrite required, new requirement IDs.** Directed proposition (accept / counter-propose / ignore); identity reveals per-recipient choice; no matching engine. G1(d) amended 2026-08-27, Phase 0b done — see [ROADMAP.md](ROADMAP.md). OQ-PRO-6 still open before authoring. |
+| FS-05 | Envie & Proposition | ⚪ Not started | Mobile + Backend | **Spec rewritten 2026-09-13** ([#180](https://github.com/hamza-el-miqdam/swab/issues/180), per [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md)) — `docs/specs/FS-05-envie-match.md` now defines `PRO-01`..`PRO-25` (directed, visible proposition: accept-without-revealing / accept-and-reveal / counter-propose capped at 3 / silent ignore). Old `ENV-01`..`ENV-20` retired via a disposition table in the same file. All 11 OQ-PRO-* resolved by the founder; one new open question (`OQ-PRO-12`, accept-mode button copy) awaits design. `specs/001-envie-match/` marked superseded. Not yet implemented — `area:db` schema-cleanup issue [#183](https://github.com/hamza-el-miqdam/swab/issues/183) (Match/MatchState → proposition + EnvieRecipient schema) open, blocking authoring. |
 | FS-06 | Filtering rules | ⚪ Not started | Mobile + Backend | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — survival undecided (OQ-PRO-7).** Silent filtering is incoherent when you propose to a named group; may survive only to feed FS-04 suggestions. Prior notes (rules server-side, on-device evaluation per OQ-FLT-2) assume the retired broadcast model. |
 
 Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance tests green) · 🟢⚠️ Implemented against a superseded design (green, but needs rework — see the note) · 🔵 Hardened (privacy audit passed)

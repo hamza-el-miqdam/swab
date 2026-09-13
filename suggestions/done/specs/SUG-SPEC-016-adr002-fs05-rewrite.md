@@ -1,17 +1,23 @@
 # SUG-SPEC-016 — Phase 0c.2: rewrite FS-05 as the proposition flow (ENV-* → PRO-*)
 
+> **DONE 2026-09-13** — `docs/specs/FS-05-envie-match.md` rewritten per this plan; issue
+> [#180](https://github.com/hamza-el-miqdam/swab/issues/180). All 11 OQ-PRO-* resolutions (not just the
+> two gating ones) are written into the rewrite; ENV-01…ENV-20 disposition table lives at the bottom of
+> the new FS-05. `specs/001-envie-match/` marked superseded, not hand-edited. Moved here from
+> `suggestions/specs/`.
+
 - **Area:** specs
 - **Topic:** full spec rewrite + requirement-ID renumbering
 - **Impact:** highest — FS-05 is the core loop; everything downstream of it is currently written against a retired model
 - **Effort:** L (the only spec that is rewritten rather than amended; expect its own PR, alone)
 - **Implementing agent:** spec-specialist
-- **Depends on:** [SUG-SPEC-014](SUG-SPEC-014-adr002-amend-binding-directives.md) **and** [SUG-SPEC-015](SUG-SPEC-015-adr002-product-overview-laws.md)
-- **Related:** [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md), [FS-05](../../docs/specs/FS-05-envie-match.md)
+- **Depends on:** [SUG-SPEC-014](../../specs/SUG-SPEC-014-adr002-amend-binding-directives.md) **and** [SUG-SPEC-015](../../specs/SUG-SPEC-015-adr002-product-overview-laws.md)
+- **Related:** [ADR-002](../../../docs/decisions/ADR-002-envie-becomes-a-proposition.md), [FS-05](../../../docs/specs/FS-05-envie-match.md)
 
 ## ✅ Gate cleared 2026-09-13 — resolutions recorded in ADR-002
 
 All open questions this plan depended on are answered by the founder; see
-[ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md)'s "Open questions — RESOLVED"
+[ADR-002](../../../docs/decisions/ADR-002-envie-becomes-a-proposition.md)'s "Open questions — RESOLVED"
 section for the full text. Summary for this plan's two gating questions (plus an ID fix):
 
 1. **OQ-PRO-6 — how does a group converge?** **Named revealers + a vague, non-numeric cue for
@@ -58,7 +64,7 @@ needs. Do not delete it later.
 |---|---|---|
 | ENV-01 | **Carries** (verb) / conditional (category) | Free-text present-tense verb survives whole. The `category` half lives or dies with §6. |
 | ENV-02 | **VOID** | « Une portée, pas une personne » is explicitly retired by ADR-002. Replaced by the OQ-PRO-11 answer. |
-| ENV-03 | **Reframe** | Pre-send review survives as « rien n'est masqué en silence » (law 2), but the « Filtrés par tes règles » column depends on FS-06 (OQ-PRO-7 — see [SUG-SPEC-018](SUG-SPEC-018-adr002-fs06-survival.md)). |
+| ENV-03 | **Reframe** | Pre-send review survives as « rien n'est masqué en silence » (law 2), but the « Filtrés par tes règles » column depends on FS-06 (OQ-PRO-7 — see [SUG-SPEC-018](../../specs/SUG-SPEC-018-adr002-fs06-survival.md)). |
 | ENV-04 | **Reframe** | Same dependency as ENV-03. |
 | ENV-05 | **VOID as written** | On-device resolution was justified by "the server doesn't store membership". Under ADR-002 `Group`/`GroupMember` **are** server rows (owner-scoped), so the server resolves. Rewrite, and state the owner-scoping as an authorization rule. |
 | ENV-06 | **Carries verbatim** | « C'est parti, doucement. » + no delivery status, no seen-by, no pending counter. **Now doubly binding** — it is the client half of G1(d)'s silence clause. |

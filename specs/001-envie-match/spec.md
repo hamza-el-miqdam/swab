@@ -4,11 +4,11 @@
 
 **Created**: 2026-07-09
 
-**Status**: Draft
+**Status**: Draft — **SUPERSEDED 2026-09-13.** [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md) retires the matching-engine model this spec-kit artifact describes; `docs/specs/FS-05-envie-match.md` has been rewritten whole around a directed proposition flow (new `PRO-*` requirement IDs, ENV-* IDs retired with a forwarding table). This file is left as-is below — do not hand-edit it to match the rewrite. Re-run `/speckit-specify` against the new FS-05 when this feature is next planned; until then, treat every requirement below as historical.
 
 **Input**: User description: "Envie & Match flow — the core loop of Swab. Source material: docs/specs/FS-05-envie-match.md (already approved). Emission, matching, and post-match proposal loop as detailed in that spec — see full text below."
 
-**Source of truth**: `docs/specs/FS-05-envie-match.md` (Approved). This spec-kit artifact restates it in spec-kit's format for `/speckit-plan` and `/speckit-tasks` — it does not supersede FS-05. Original requirement IDs (ENV-01…ENV-16) are quoted alongside each FR below for traceability; if the two ever diverge, FS-05 is authoritative and this file must be re-synced.
+**Source of truth**: `docs/specs/FS-05-envie-match.md` (now the rewritten proposition-flow spec, not the version this file was generated from). This spec-kit artifact restates the *retired* matching model in spec-kit's format for `/speckit-plan` and `/speckit-tasks` — it does not supersede FS-05 and, per the note above, is itself superseded. Original requirement IDs (ENV-01…ENV-16) below are quoted as they were at generation time; FS-05's disposition table is now the authoritative ENV-*→PRO-* mapping.
 
 ## User Scenarios & Testing *(mandatory)*
 
