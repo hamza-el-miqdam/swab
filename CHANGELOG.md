@@ -10,6 +10,21 @@
 > Entries from 2026-08-18 to 2026-08-19 are archived in [docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md](docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md) — moved, not deleted.
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 
+## 2026-09-13 — [FLT-02, FLT-09, OQ-PRO-7, OQ-FLT-2] FS-06 narrowed to standing personal boundaries (outcome B)
+
+- **What:** executed [SUG-SPEC-018](suggestions/done/specs/SUG-SPEC-018-adr002-fs06-survival.md)'s "If (B)" path.
+  `docs/specs/FS-06-filtering.md` rewritten around veto absolu: `FLT-02` kept **verbatim**; the L1-L3
+  rule-level/priority machinery (`FLT-01`, `03`–`08`) is retired via a disposition table, replaced by a
+  single new `FLT-09` (server-side storage + enforcement, silent-drop on send, non-retroactive). `OQ-FLT-2`
+  re-resolved server-side (was on-device 2026-08-22, argued about a broadcast model ADR-002 retired).
+- **Why:** ADR-002's hand-assembled groups made silent rule-based subtraction from a broadcast incoherent;
+  only the one standing per-contact boundary with real user protection behind it survives.
+- **Also:** `docs/STATUS.md` FS-06 row, ADR-002's spec table + `OQ-PRO-7` row (executed note), `docs/ROADMAP.md`
+  0c.4 row, and `suggestions/README.md` counts (018 moved to `done/specs/`) updated to match. FS-05's header
+  already agreed (still depends on FS-06) — no edit needed there; its body rewrite is a separate, parallel PR
+  (SUG-SPEC-016) which owns dropping the "Filtrés par tes règles" column from `PRO-03`/`PRO-04`.
+- **Gotcha:** stacked on unmerged #179 — this diff includes files #179 already touches.
+
 ## 2026-09-13 — [OQ-PRO-1..11] ADR-002 open questions resolved by founder; Phase 0c gates cleared
 
 - **What:** all nine `OQ-PRO-*` questions in [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md),
