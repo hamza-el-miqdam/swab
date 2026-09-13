@@ -22,22 +22,19 @@
   than archiving redundantly in its own branch.
 - **Result:** 39,191 → 26,096 chars. `node scripts/docs-hygiene-lint.mjs` → PASS.
 
-## 2026-09-13 — [PRO-01..25] FS-05 rewritten as the proposition flow, ENV-* retired
+## 2026-09-13 — [PRO-01..26] FS-05 rewritten as the proposition flow, ENV-* retired
 
 - **What:** `docs/specs/FS-05-envie-match.md` fully rewritten (issue #180, stacked on unmerged #179):
-  replaces the retired mutual-match engine with a directed, visible proposition model — `PRO-01..25`
-  across emission (mobile), delivery/eligibility (backend), and response/convergence (both). All 11
-  `OQ-PRO-*` founder resolutions from ADR-002 written in, not just the two the plan originally gated on.
-  `ENV-01..20` retired via an in-file disposition table (old → new/VOID), per `docs/README.md`'s
-  traceability convention. `specs/001-envie-match/` (spec-kit artifacts for the old model) marked
-  superseded, not hand-edited.
-- **Why:** SUG-SPEC-016's gate cleared once the founder answered every open question (ADR-002,
-  2026-09-13); this is Phase 0c.2 of the ADR-002 rollout.
-- **Gotchas:** `docs/STATUS.md`'s FS-05 row updated (still ⚪ Not started — spec only, no code yet);
-  new `area:db` schema-cleanup issue #183 opened (Match/MatchState → proposition + EnvieRecipient
-  schema) — implementation is blocked on it. New open question `OQ-PRO-12` (accept-mode button copy)
-  needs design-specialist + founder before implementation. `suggestions/db/SUG-DB-003` and `SUG-DB-006`
-  marked VOID (their fixes target the now-retired `Match` model).
+  replaces the retired mutual-match engine with a directed, visible proposition model — `PRO-01..26`
+  across emission (mobile), delivery/eligibility (backend), and response/convergence (both), plus an
+  in-file `ENV-* → PRO-*`/VOID disposition table. `specs/001-envie-match/` marked superseded.
+- **Why:** SUG-SPEC-016's gate cleared once the founder answered every ADR-002 open question
+  (2026-09-13); Phase 0c.2 of the ADR-002 rollout. This PR's own review pass then added `PRO-26`
+  (group-invite disclosure, `OQ-PRO-9`) and fixed dead links/cross-references.
+- **Gotchas:** `docs/STATUS.md`'s FS-05 row updated (still ⚪ Not started — spec only). New `area:db`
+  issue #183 blocks implementation. Two open questions need design + founder: `OQ-PRO-12`
+  (accept-mode button copy), `OQ-PRO-13` (group-invite hint wording). `suggestions/db/SUG-DB-003`/
+  `SUG-DB-006` marked VOID (target the retired `Match` model).
 
 ## 2026-09-13 — [OQ-PRO-1..11] ADR-002 open questions resolved by founder; Phase 0c gates cleared
 
