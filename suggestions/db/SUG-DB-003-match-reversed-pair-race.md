@@ -1,5 +1,11 @@
 # SUG-DB-003 — `@@unique([envieAId, envieBId])` does not arbitrate the reversed pair (B,A)
 
+> **VOID (superseded by ADR-002)** — the `Match`/reversed-pair race this suggestion fixes belongs to the
+> retired matching engine; [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md) and the
+> rewritten `docs/specs/FS-05-envie-match.md` (issue [#180](https://github.com/hamza-el-miqdam/swab/issues/180))
+> remove pairs and matches entirely. Left here, not moved to `done/`, since no implementation happened —
+> it simply no longer applies. `area:db` issue [#183](https://github.com/hamza-el-miqdam/swab/issues/183) tracks removing the dead `Match` model.
+
 - **Area:** db
 - **Topic:** integrity
 - **Impact:** high

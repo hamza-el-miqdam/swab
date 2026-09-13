@@ -4,6 +4,11 @@
 **Created**: 2026-07-09
 **Feature**: [spec.md](../spec.md)
 
+> **SUPERSEDED 2026-09-13** — checked against the retired matching-engine spec. See the superseded
+> note at the top of [spec.md](../spec.md); `docs/specs/FS-05-envie-match.md` has since been rewritten
+> per [ADR-002](../../../docs/decisions/ADR-002-envie-becomes-a-proposition.md). Not re-run against the
+> rewrite — do so when this feature is next planned via `/speckit-specify`.
+
 ## Content Quality
 
 - [x] No implementation details (languages, frameworks, APIs)

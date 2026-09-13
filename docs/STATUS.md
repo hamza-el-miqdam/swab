@@ -5,7 +5,7 @@
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 > **What is *next*, in what order, and how — see [ROADMAP.md](ROADMAP.md).**
 
-_Last updated: 2026-08-27_
+_Last updated: 2026-09-13_
 
 > **Native migration complete.** Mobile is native `apps/ios` + `apps/android`; RN knowledge in `docs/migration/` (see its README for what is still binding). Both E2E suites are a hard DoD gate (`scripts/e2e-{ios,android}.sh`). Open: FS-03 on-device walkthrough, E2E not in CI.
 
@@ -18,7 +18,7 @@ _Last updated: 2026-08-27_
 | FS-02 | Relationship Map | 🟢⚠️ | Mobile | Radial map + list fallback from the local cache, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). **ADR-001:** reads move vault→cache; behaviour unchanged, lowest-impact spec. |
 | FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04); FCH-09 stored identifiers done both platforms — stage-2 unblocked. |
 | FS-04 | Subgroups (FCA) | ⚪ Not started | Mobile | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) amendment landed (SUG-SPEC-017).** Groups stay **private to their owner**; manual CRUD (`SGR-10..15`) is now the default, FCA is an opt-in suggestion only. Next: `area:db` issue [#166](https://github.com/hamza-el-miqdam/swab/issues/166) — `Group`/`GroupMember` (owner-scoped); implementation blocked on it. |
-| FS-05 | Envie & Match | ⚪ Not started | Mobile + Backend | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — full rewrite required, new requirement IDs.** Directed proposition (accept / counter-propose / ignore); identity reveals per-recipient choice; no matching engine. G1(d) amended 2026-08-27, Phase 0b done — see [ROADMAP.md](ROADMAP.md). OQ-PRO-6 still open before authoring. |
+| FS-05 | Envie & Proposition | ⚪ Not started | Mobile + Backend | **Rewritten 2026-09-13** ([#180](https://github.com/hamza-el-miqdam/swab/issues/180), ADR-002) — `PRO-01`..`PRO-26`, directed visible proposition model; `ENV-*` retired via disposition table, `specs/001-envie-match/` superseded. Open: `OQ-PRO-12/13` (design). Blocked on `area:db` [#183](https://github.com/hamza-el-miqdam/swab/issues/183). |
 | FS-06 | Standing personal boundaries (veto absolu) | ⚪ Not started | Mobile + Backend | **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) OQ-PRO-7 — decided (B), narrowed 2026-09-13.** Rule-level machinery retired; `FLT-02` (veto absolu) survives as a per-contact, outgoing-only boundary — enforced server-side (`FLT-09`), hidden only from sends, not from the owner. See [FS-06](specs/FS-06-filtering.md). |
 
 Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance tests green) · 🟢⚠️ Implemented against a superseded design (green, but needs rework — see the note) · 🔵 Hardened (privacy audit passed)
@@ -36,7 +36,7 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 | Lint (repo-wide ESLint) | 🟢 | Flat config: root `eslint.config.mjs` (type-aware typescript-eslint). All packages run `eslint .`. |
 | Design system (« Nuit ») | 🟡 | Token SSOT `packages/ui/tokens/tokens.json` → native tokens (`generate.mjs`, `--check` in CI); both platforms consume Color/Typography/Radius. Contract: `docs/design-system.md`. **Open:** 39 off-scale spacing values; new components missing from the DS page; postal fields need `area:db`. |
 | Agents (AIDD) | 🟢 | Source of truth in `agents/`; `node scripts/render-agents.mjs` renders Copilot (`.github/`) + Claude Code (`.claude/agents/`) copies (`--check` for CI). Areas: ios, android, backend, web, db, devops, design, specs, notion-liaison. 2026-07-19: spec-specialist (area:specs) added — owns `docs/specs/FS-*.md` authoring + spec-kit pipeline. |
-| Spec ↔ Notion sync (French mirror) | 🟡 | All 7 specs mirrored in French under Notion "Swab — Spécifications (FS-*)" for the non-dev co-founder. `docs/specs/.notion-sync.json` tracks snapshots; re-diffed on every liaison invocation. Code stays canonical; conflicts flagged, never auto-resolved. **Stale since 2026-08-16 (ADR-001):** re-sync deferred until the spec review (#64) settles. |
+| Spec ↔ Notion sync (French mirror) | 🟡 | All 7 specs mirrored in French under Notion "Swab — Spécifications (FS-*)" for the non-dev co-founder. `docs/specs/.notion-sync.json` tracks snapshots; re-diffed on every liaison invocation. Code stays canonical; conflicts flagged, never auto-resolved. **Stale since 2026-08-16:** re-sync deferred until #64 settles. **FS-05 (#184) is a full rewrite** — replace that page, don't diff it. |
 | SMS provider (OTP) | ⚪ | Dev mode returns the code in the response; provider selection is an open question. |
 | Privacy audit (playbook §6) | ⚪ | Must run before any external tester and after every schema/API change. |
 

@@ -11,6 +11,20 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-13 — [PRO-01..26] FS-05 rewritten as the proposition flow, ENV-* retired
+
+- **What:** `docs/specs/FS-05-envie-match.md` fully rewritten (issue #180, stacked on unmerged #179):
+  replaces the retired mutual-match engine with a directed, visible proposition model — `PRO-01..26`
+  across emission (mobile), delivery/eligibility (backend), and response/convergence (both), plus an
+  in-file `ENV-* → PRO-*`/VOID disposition table. `specs/001-envie-match/` marked superseded.
+- **Why:** SUG-SPEC-016's gate cleared once the founder answered every ADR-002 open question
+  (2026-09-13); Phase 0c.2 of the ADR-002 rollout. This PR's own review pass then added `PRO-26`
+  (group-invite disclosure, `OQ-PRO-9`) and fixed dead links/cross-references.
+- **Gotchas:** `docs/STATUS.md`'s FS-05 row updated (still ⚪ Not started — spec only). New `area:db`
+  issue #183 blocks implementation. Two open questions need design + founder: `OQ-PRO-12`
+  (accept-mode button copy), `OQ-PRO-13` (group-invite hint wording). `suggestions/db/SUG-DB-003`/
+  `SUG-DB-006` marked VOID (target the retired `Match` model).
+
 ## 2026-09-13 — [FLT-02, FLT-09] FS-06 review fix pass — reword FLT-02, fix drop/visibility/directionality
 
 - **What:** fixed every finding from #182's review. Reworded `FLT-02` to stand alone under the current
