@@ -64,7 +64,7 @@ needs. Do not delete it later.
 |---|---|---|
 | ENV-01 | **Carries** (verb) / conditional (category) | Free-text present-tense verb survives whole. The `category` half lives or dies with §6. |
 | ENV-02 | **VOID** | « Une portée, pas une personne » is explicitly retired by ADR-002. Replaced by the OQ-PRO-11 answer. |
-| ENV-03 | **Reframe** | Pre-send review survives as « rien n'est masqué en silence » (law 2), but the « Filtrés par tes règles » column depends on FS-06 (OQ-PRO-7 — see [SUG-SPEC-018](../../specs/SUG-SPEC-018-adr002-fs06-survival.md)). |
+| ENV-03 | **Reframe** | Pre-send review survives as « rien n'est masqué en silence » (law 2), but the « Filtrés par tes règles » column depends on FS-06 (OQ-PRO-7 — see [SUG-SPEC-018](./SUG-SPEC-018-adr002-fs06-survival.md)). |
 | ENV-04 | **Reframe** | Same dependency as ENV-03. |
 | ENV-05 | **VOID as written** | On-device resolution was justified by "the server doesn't store membership". Under ADR-002 `Group`/`GroupMember` **are** server rows (owner-scoped), so the server resolves. Rewrite, and state the owner-scoping as an authorization rule. |
 | ENV-06 | **Carries verbatim** | « C'est parti, doucement. » + no delivery status, no seen-by, no pending counter. **Now doubly binding** — it is the client half of G1(d)'s silence clause. |
@@ -163,7 +163,9 @@ update `suggestions/README.md` counts.
 - Every `PRO-*` ID appears exactly once as a definition and is referenced by ≥ 1 acceptance criterion.
 - The spec contains zero unqualified « anonyme » and zero digit-valued recipient counts.
 - The words `match`, `mutual`, `mutuel`, `réciproque` appear only in the disposition table and
-  retirement notes.
+  retirement notes — **except** `PRO-07`'s "mutual contact" eligibility rule, which is ADR-002
+  commitment 2's own live term for the new model, not a leftover from the retired matching engine; a
+  future re-run of this check should not flag it.
 - `docs/README.md`'s traceability paragraph still describes a chain that resolves — an old ENV-* issue
   number leads a reader to the disposition table, not to nothing.
 

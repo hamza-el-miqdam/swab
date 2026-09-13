@@ -2,7 +2,7 @@
 
 114 improvement suggestions produced by a read-only audit of the whole monorepo (2026-07-20), run by the seven area specialist agents. 2 later additions (`review/`) and 5 ADR-002 pivot plans (`specs/SUG-SPEC-014..018`, 2026-08-27) bring the total to 121 — the audit set is closed, but the folder stays the home for improvement work that is planned rather than done.
 
-**Layout (reorganised 2026-08-16):** implemented suggestions move to `done/<area>/`; `<area>/` holds only what is still open. Nothing is ever deleted — a completed suggestion stays as the audit record of why the change was made. **86 done, 35 open.** Links throughout this file point at wherever the file now lives.
+**Layout (reorganised 2026-08-16):** implemented suggestions move to `done/<area>/`; `<area>/` holds only what is still open. Nothing is ever deleted — a completed suggestion stays as the audit record of why the change was made. **87 done, 34 open.** Links throughout this file point at wherever the file now lives.
 
 > Counts reconciled 2026-08-21: `SUG-IOS-004/005/007/009/012` and `SUG-AND-010/012` had all shipped but were still filed as open. Moving the file is each PR's own bookkeeping and the scope guard explicitly permits it on any area's PR (`SHARED_ALLOWED_PREFIXES` includes `suggestions/`) — do it in the implementing PR so these counts stay honest.
 
