@@ -10,6 +10,12 @@
 > Entries from 2026-08-18 to 2026-08-19 are archived in [docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md](docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md) — moved, not deleted.
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 
+## 2026-09-13 — ROADMAP Phase 2: dependency queue cleared
+
+- **What:** `docs/ROADMAP.md` Phase 2 now records what happened to each queued PR. Merged: #174 (it superseded #158), #175, #176, #123, #130, #120 (espresso 3.7.0, Android E2E 38/38 on API 34), plus the #177 Trivy fix. Closed into issues: #121/#122 → #56 (Android toolchain), #131 → #57 (Node 26).
+- **Why:** ROADMAP is the sequencing source of truth. A stale "blocked" table would send the next session re-triaging closed PRs.
+- **Gotcha:** the deferred bumps now live in issues #56/#57 (Phase 4 rows). Do them as part of those uplifts; don't reopen the Dependabot PRs.
+
 ## 2026-09-13 — [SUG-OPS-007] API prod image: `apt-get upgrade` to clear pcre2 HIGH CVEs in the Trivy gate
 
 - **What:** the `prod` stage of `apps/api/Dockerfile` now runs `apt-get upgrade` before installing openssl. Archived the 2026-08-21/22 root entries to `docs/archive/` to stay under the 40,000-char cap.

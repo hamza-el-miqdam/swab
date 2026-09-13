@@ -131,17 +131,17 @@ And [apps/api/CHANGELOG.md:109](../apps/api/CHANGELOG.md#L109) records the now-f
 
 ## Phase 2 — Dependency queue ∥
 
-Clear after Phase 1 lands, since #158 depends on the trust-proxy fix.
+**Cleared 2026-09-13.** Merged: #174, #175, #176, #123, #130, plus #177 (a Trivy base-image fix #130 needed). Deferred into issues: #121/#122 → #56, #131 → #57. The table keeps the original assessments with outcomes.
 
-| PR | Change | Assessment |
+| PR | Change | Assessment → outcome |
 |---|---|---|
-| #158 | eslint 10.8.1→10.9.0, turbo 2.10.10→2.10.11, **fastify 5.12.0→5.12.1**, pglite 0.5.5→0.5.7 | ⚠️ Blocked on Phase 1. The other three are trivial; fastify is the security item. Consider rebasing after the fix so it merges green. |
-| #131 | `@types/node` 22.20.0 → **26.2.0** | Major. Relates to issue #57 (Node 26 base image) — sequence them together, not separately. |
-| #130 | `typescript` 5.8.3 → **6.0.3** | Major, on a strict-TS repo with type-aware ESLint. Expect fallout; own branch, full gate. |
-| #123 | adminer 5 → 6 | Low risk — local dev tooling only. |
-| #120 | espresso-core 3.6.1 → 3.7.0 | ⚠️ Verify against issue #56 first — the E2E suite needs an **API 34** emulator (API 35+ breaks Espresso). |
-| #121 | kotlinx-coroutines-android 1.8.1 → 1.11.0 | Batch with #122; run `./gradlew test` + the Android E2E gate. |
-| #122 | kotlinx-serialization-json 1.7.1 → 1.11.0 | Batch with #121. |
+| #158 | eslint 10.8.1→10.9.0, turbo 2.10.10→2.10.11, **fastify 5.12.0→5.12.1**, pglite 0.5.5→0.5.7 | ✅ **Superseded.** Dependabot closed it once #174 shipped the same group, bumped further (fastify 5.12.3, eslint 10.10.0, turbo 2.10.12, pglite 0.5.8) along with the fast-uri CVE fix. |
+| #131 | `@types/node` 22.20.0 → **26.2.0** | ⏸ **Closed into issue #57.** Bump it together with the Node 26 base image, not on its own. |
+| #130 | `typescript` 5.8.3 → **6.0.3** | ✅ **Merged.** Only fallout: TS 6 no longer accepts a Node `Buffer` as a Prisma `Bytes` value, so `upsertVault` now copies it with `new Uint8Array(buf)` (see `apps/api/CHANGELOG.md`). |
+| #123 | adminer 5 → 6 | ✅ **Merged.** |
+| #120 | espresso-core 3.6.1 → 3.7.0 | ✅ **Merged.** Full Android E2E gate PASS (38/38, no drift) on an API 34 emulator with the current AGP 8.5.2 / Kotlin 2.0.21. It never depended on #56. |
+| #121 | kotlinx-coroutines-android 1.8.1 → 1.11.0 | ⏸ **Closed into issue #56.** Crashes the Kotlin 2.0.21 compiler. Needs the Kotlin uplift first. |
+| #122 | kotlinx-serialization-json 1.7.1 → 1.11.0 | ⏸ **Closed into issue #56**, same blocker as #121. |
 
 **Known trap (all Dependabot PRs):** the `scope` check fails with *"no recognized `area:*` label"* — Dependabot never labels its PRs. Apply the right `area:*` label manually before expecting green. Schema-touching PRs **hard-fail** without `area:db`.
 
@@ -213,8 +213,8 @@ Parallelizable with Phase 3; none of it blocks the product.
 
 | Item | Notes |
 |---|---|
-| Issue #57 — Node 26 base image | Corepack removal + toolchain alignment. Sequence **with** PR #131 (`@types/node` 26). |
-| Issue #56 — Android toolchain | AGP 9, Kotlin 2.4, compileSdk 36. **Constraint:** E2E needs an API 34 emulator; API 35+ breaks Espresso. Gates PR #120. |
+| Issue #57 — Node 26 base image | Corepack removal + toolchain alignment. Bump `@types/node` to 26 in the same PR (Dependabot #131 was closed into this issue 2026-09-13). |
+| Issue #56 — Android toolchain | AGP 9, Kotlin 2.4, compileSdk 36. **Constraint:** E2E needs an API 34 emulator; API 35+ breaks Espresso. Also absorbs kotlinx-coroutines 1.11 / kotlinx-serialization 1.11 (Dependabot #121/#122, closed 2026-09-13), which crash the Kotlin 2.0.21 compiler. |
 | Issue #92 — Prisma 7 | Move datasource url to `prisma.config.ts`. `area:db`, data-steward only. |
 | Issue #70 — DEVELOPMENT.md | Still documents the removed Expo/RN app. Violates G5 ("code and docs never disagree on `main`"). Small, satisfying, do it any time. |
 | Issue #110 — FCH-04 trim removal | **Blocked** on 3a's history slice. Not actionable alone. |
