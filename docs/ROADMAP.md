@@ -75,7 +75,7 @@ In order: `product-overview.md` law 1 (law 4 loses only the four words « reveal
 | 0c.1 | [SUG-SPEC-015](../suggestions/specs/SUG-SPEC-015-adr002-product-overview-laws.md) | Law 1 rewrite, law 4's four words, §1/§3/§6, glossary (`envie`/`portée`/`match`), root `README.md` | ✅ done (#162) |
 | 0c.2 | [SUG-SPEC-016](../suggestions/specs/SUG-SPEC-016-adr002-fs05-rewrite.md) | FS-05 full rewrite, `ENV-* → PRO-*` disposition table, seam sketch, `area:db` + spec-kit handoffs | ✅ **gate cleared 2026-09-13** — ready to author |
 | 0c.3 | [SUG-SPEC-017](../suggestions/specs/SUG-SPEC-017-adr002-fs04-amendment.md) | FS-04 amendment — manual CRUD, FCA→suggestion, the server-vs-device persistence split | ✅ done (#167) |
-| 0c.4 | [SUG-SPEC-018](../suggestions/done/specs/SUG-SPEC-018-adr002-fs06-survival.md) | FS-06 survive/narrow/retire — three options, recommendation (B), founder decides | ✅ **done (B) 2026-09-13** — [FS-06](specs/FS-06-filtering.md) rewritten, `FLT-02` kept verbatim |
+| 0c.4 | [SUG-SPEC-018](../suggestions/done/specs/SUG-SPEC-018-adr002-fs06-survival.md) | FS-06 survive/narrow/retire — three options, recommendation (B), founder decides | ✅ **done (B) 2026-09-13** — [FS-06](specs/FS-06-filtering.md) rewritten, `FLT-02` reworded |
 
 All nine `OQ-PRO-*` open questions, plus two found while drafting these plans (`OQ-PRO-10`, and
 `OQ-PRO-11` — a renumbering of a question SUG-SPEC-016 had miscited as `OQ-PRO-1`), are **resolved**.
