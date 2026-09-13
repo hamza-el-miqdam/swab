@@ -8,6 +8,13 @@
 > Entries from 2026-08-15 to 2026-08-16 are archived in [docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md](docs/archive/CHANGELOG-2026-08-15-to-2026-08-16.md) — moved, not deleted.
 > Entries from 2026-08-17 are archived in [docs/archive/CHANGELOG-2026-08-17.md](docs/archive/CHANGELOG-2026-08-17.md) — moved, not deleted.
 > Entries from 2026-08-18 to 2026-08-19 are archived in [docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md](docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md) — moved, not deleted.
+> Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
+
+## 2026-09-13 — [SUG-OPS-007] API prod image: `apt-get upgrade` to clear pcre2 HIGH CVEs in the Trivy gate
+
+- **What:** the `prod` stage of `apps/api/Dockerfile` now runs `apt-get upgrade` before installing openssl. Archived the 2026-08-21/22 root entries to `docs/archive/` to stay under the 40,000-char cap.
+- **Why:** `trivy-api-image` began failing every PR touching `apps/api`/`packages/db` (#130, #173) on `libpcre2-8-0` 10.42-1 (CVE-2026-86145, CVE-2026-89161, both HIGH, fixed in 10.42-1+deb12u1). The pinned `node:22-slim` digest — and the latest upstream tag — still ship 10.42-1, so a digest bump alone doesn't fix it.
+- **Gotcha:** the job is skipped on pushes to `main` unless API image inputs changed, so a new base-image CVE surfaces first on an unrelated PR. Only the prod stage upgrades; `base`/`dev`/`build` are never scanned or deployed.
 
 ## 2026-08-30 — [ADR-002] Phase 0c.3 — PR #167 re-review fixes: glossary wording + FS-04 Agents header (SUG-SPEC-017)
 
@@ -151,22 +158,4 @@
 - **Why:** both were pure context/token-hygiene cost reduction — the worktrees were dead weight on every repo-root `find`/`grep`; the execution-order section was read-whole on every `suggestions/README.md` load (5× in one session) despite being one-time planning narrative, not the day-to-day per-area lookup tables.
 - **Result:** `suggestions/README.md` drops from 38,151 → 24,477 chars. Open/done counts (30/86) unchanged since 2026-08-21 — verified, not re-derived.
 - **Gotcha:** worktree branch names looked like they matched `git branch --merged main` only because they were currently checked out there (`+` prefix); recent merge commits (`aad1380`, `09bae9f`, `9f086e2`) confirmed all three landed before removal.
-
-## 2026-08-22 — [OQ-FLT-2] Filter evaluation site is settled: on-device, two implementations
-
-- **What changed:** `docs/specs/FS-06-filtering.md` records **OQ-FLT-2 as RESOLVED — on-device**. Also drops the two now-dead conditionals it left behind: FLT-06's "and mirrored server-side if resolution runs there (ENV-05)", and the header's Backend scope "evaluation if resolution runs server-side" (Backend is rule storage only). `docs/STATUS.md`'s FS-06 note updated to match.
-- **Why:** bookkeeping, not a new decision. FS-05 `ENV-05` was corrected on 2026-08-16 to mandate on-device resolution; OQ-FLT-2 still carried the retracted premise that "ENV-05 now permits either". The structural reason is that the server stores filter rules (FLT-06) but **not** subgroup membership — the lattice is derived on-device and never persisted (SGR-07, OQ-SGR-2, VLT-01) — so it cannot resolve a portée on its own.
-- **Consequence for implementers:** `applyFilters` needs **exactly two** implementations, Swift + Kotlin. **No TypeScript evaluator.** The shared cross-platform test vectors are still required and must lock both — in a **new** file; `docs/migration/vault-test-vectors.json` is historical per ADR-001 and MUST NOT be extended.
-- **FS-06 stays ⚪ Not started** — the ambiguity is removed, the feature is not begun.
-- **Gotcha:** ADR-001's "Enabling" section still says filtering/subgroups/matching *can* be computed server-side. That bullet is the over-generalisation ENV-05's correction note retracts; it was left as-is (ADRs are historical records) — read ENV-05 and OQ-FLT-2 as the current rule, not that line.
-- **Not done here:** OQ-FLT-1 (which cases ship default rules) is still genuinely open. The French Notion mirror was not re-synced — deferred until the ADR-001 spec review settles, per `docs/STATUS.md`.
-
-## 2026-08-21 — Reconcile `suggestions/` open-vs-done bookkeeping
-
-- **What changed:** moved seven shipped suggestions into `done/<area>/` — `SUG-IOS-004` (#105), `SUG-IOS-005` (#103), `SUG-IOS-007` (#107), `SUG-IOS-009` (#111), `SUG-IOS-012` (#104), `SUG-AND-010` (#109), `SUG-AND-012` (#102) — and updated `suggestions/README.md`: iOS 6 open/12 done, Android 2 open/16 done, **32 open / 84 done** (116 total, unchanged). Also fixed two `SUG-AND-013` links left pointing at its old path by #108.
-- **Why:** all seven had shipped with changelog entries but were still filed as open, so the README overstated remaining work by seven and several links 404'd. The drift was flagged in #108; this is the sweep it asked for.
-- **Resolution notes** added to `SUG-IOS-009` and `SUG-AND-010`, the two reviewed in depth at merge time. The other five were merged in earlier sessions and were moved without back-filling notes rather than inventing detail — the shipped behaviour is recorded in their area changelogs.
-- **Gotcha for future PRs:** moving the file is the *implementing* PR's own bookkeeping, and the scope guard permits it from any area (`SHARED_ALLOWED_PREFIXES` includes `suggestions/`). Skipping it is what caused this drift; a sweep like this should not be needed again.
-
-
 
