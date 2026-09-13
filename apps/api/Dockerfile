@@ -116,8 +116,14 @@ RUN cd node_modules/.pnpm && rm -rf \
 # ── prod ─────────────────────────────────────────────────────────────────
 FROM node:22-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 AS prod
 
-# OpenSSL is required by Prisma's query engine on slim images
+# OpenSSL is required by Prisma's query engine on slim images.
+# `apt-get upgrade` pulls Debian security fixes newer than the pinned digest:
+# the Trivy gate (security.yml, ignore-unfixed) fails as soon as Debian ships a
+# fix the base image doesn't have yet — e.g. libpcre2-8-0 10.42-1 →
+# 10.42-1+deb12u1 (CVE-2026-86145, CVE-2026-89161) while node:22-slim still
+# shipped 10.42-1. Prod stage only: it is the scanned, deployed image.
 RUN apt-get update -y \
+ && apt-get upgrade -y --no-install-recommends \
  && apt-get install -y --no-install-recommends openssl \
  && rm -rf /var/lib/apt/lists/*
 
