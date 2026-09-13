@@ -25,6 +25,11 @@ One clause almost certainly survives regardless: **`FLT-02`'s veto absolu** — 
 involving this person, ever, invisibly". That is not a filter on a broadcast; it is a standing
 personal boundary, and it is the one rule that still makes sense when you are hand-picking recipients.
 
+## ✅ Decided 2026-09-13 (founder): **(B)**
+
+Recorded in [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md) under `OQ-PRO-7`.
+Execute per the "If (B)" steps below.
+
 ## The decision (founder's — present these three, do not pick one)
 
 - **(A) Retire FS-06 entirely.** Manual group construction *is* the filtering. Veto absolu migrates

@@ -10,6 +10,23 @@
 > Entries from 2026-08-18 to 2026-08-19 are archived in [docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md](docs/archive/CHANGELOG-2026-08-18-to-2026-08-19.md) — moved, not deleted.
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 
+## 2026-09-13 — [OQ-PRO-1..11] ADR-002 open questions resolved by founder; Phase 0c gates cleared
+
+- **What:** all nine `OQ-PRO-*` questions in [ADR-002](docs/decisions/ADR-002-envie-becomes-a-proposition.md),
+  plus two more found while drafting the Phase 0c execution plans (`OQ-PRO-10`, and `OQ-PRO-11` —
+  renumbered off an ID collision with `OQ-PRO-1` in SUG-SPEC-016), are answered. ADR-002 carries the
+  full resolution table; SUG-SPEC-016 (FS-05 rewrite) and SUG-SPEC-018 (FS-06 survival) had their gates
+  marked cleared/decided; `docs/ROADMAP.md` Phase 0c section, table, and mermaid diagram updated to match.
+- **Why:** both plans were blocked on founder product decisions (silent accept/drop, group convergence
+  cues, FS-06's fate, individual-vs-group targeting, etc.) — G4 forbids guessing product behavior.
+- **Headline decisions:** OQ-PRO-6 convergence → named revealers + vague non-numeric cue for anonymous
+  accepters, never a count (law 5). OQ-PRO-7 (FS-06) → **(B)**, narrowed to standing personal boundaries;
+  veto absolu (`FLT-02`) survives verbatim, rule-priority machinery retired. OQ-PRO-10 → « Passer cette
+  fois » reframed as a local hide, not a decline; G1(d) needs no amendment.
+- **Gotcha:** SUG-SPEC-016's disposition table had reused `OQ-PRO-1` for an unrelated question
+  (individual-vs-group targeting); that's now `OQ-PRO-11` everywhere. Next: hand SUG-SPEC-016/018 to
+  spec-specialist for execution, each its own issue/branch/PR (G4).
+
 ## 2026-09-13 — ROADMAP Phase 2: dependency queue cleared
 
 - **What:** `docs/ROADMAP.md` Phase 2 now records what happened to each queued PR. Merged: #174 (it superseded #158), #175, #176, #123, #130, #120 (espresso 3.7.0, Android E2E 38/38 on API 34), plus the #177 Trivy fix. Closed into issues: #121/#122 → #56 (Android toolchain), #131 → #57 (Node 26).

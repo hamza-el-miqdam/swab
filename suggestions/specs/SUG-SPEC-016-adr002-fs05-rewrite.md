@@ -8,21 +8,31 @@
 - **Depends on:** [SUG-SPEC-014](SUG-SPEC-014-adr002-amend-binding-directives.md) **and** [SUG-SPEC-015](SUG-SPEC-015-adr002-product-overview-laws.md)
 - **Related:** [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md), [FS-05](../../docs/specs/FS-05-envie-match.md)
 
-## 🚦 Gate — do not start authoring until these two are answered by the founder
+## ✅ Gate cleared 2026-09-13 — resolutions recorded in ADR-002
 
-Both are recorded in ADR-002's open questions. They are not drafting details; each one changes the
-shape of the spec, so guessing violates G4 (« if a spec is ambiguous, comment and stop »).
+All open questions this plan depended on are answered by the founder; see
+[ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md)'s "Open questions — RESOLVED"
+section for the full text. Summary for this plan's two gating questions (plus an ID fix):
 
-1. **OQ-PRO-6 — how does a group converge?** With no per-slot counters (product law 5) and accepters
-   who may stay unnamed to each other, it is not defined what a recipient *sees* that lets three
-   people land on the same Thursday. ADR-002 calls this "the hardest open problem". FS-05's entire
-   post-acceptance section is unwritable until it is answered.
-2. **OQ-PRO-1 — is the group the only target, or can a proposition go to individuals?** ADR-002
-   retired « une portée, pas une personne », but did not replace it with a rule. This decides whether
-   `PRO-02` describes one target type or two, and whether the API takes a `groupId` or a recipient list.
+1. **OQ-PRO-6 — how does a group converge?** **Named revealers + a vague, non-numeric cue for
+   anonymous accepters** (e.g. « et d'autres personnes ont accepté »). Never a count.
+2. ~~**OQ-PRO-1**~~ **renumbered `OQ-PRO-11`** — this question ("is the group the only target, or can
+   a proposition go to individuals?") was never actually `OQ-PRO-1` in the ADR; that ID already named a
+   different question (the non-mutual-contact refusal leak). Every reference to "OQ-PRO-1" below in
+   this file should read **`OQ-PRO-11`**. Resolution: **individual is the base case, a saved group is
+   optional** — `PRO-02` describes one target type (a recipient list); a group is just a convenience
+   for populating it, not a separate API shape.
 
-Secondary, answer alongside: **§6 categories** (settled in SUG-SPEC-015 step 6) — if categories died
-with the matching engine, `ENV-01`'s category half and `OQ-ENV-1` die with them.
+Also now resolved and binding on the rewrite: **OQ-PRO-1** (silent accept-and-drop, no explicit error),
+**OQ-PRO-2** (counter-proposals are parallel options, capped — not a replace), **OQ-PRO-3** (acceptances
+persist past 48h expiry, only new responses close), **OQ-PRO-4** (silent per-proposer mute), **OQ-PRO-5**
+(category kept, narrowly, for history browsing only), **OQ-PRO-8** (no "prefer everyone named" feature),
+**OQ-PRO-10** (« Passer cette fois » is a local hide, not a decline — no G1(d) amendment needed, but say
+so explicitly in the spec text). Write all of these into the rewrite, not just the two headline ones.
+
+Secondary, answer alongside: **§6 categories** (settled in SUG-SPEC-015 step 6, and now OQ-PRO-5 above)
+— if categories died with the matching engine, `ENV-01`'s category half survives narrowly per OQ-PRO-5;
+`OQ-ENV-1`'s full taxonomy question stays dead.
 
 ## Problem
 
@@ -47,7 +57,7 @@ needs. Do not delete it later.
 | Old | Disposition | Note for the rewrite |
 |---|---|---|
 | ENV-01 | **Carries** (verb) / conditional (category) | Free-text present-tense verb survives whole. The `category` half lives or dies with §6. |
-| ENV-02 | **VOID** | « Une portée, pas une personne » is explicitly retired by ADR-002. Replaced by the OQ-PRO-1 answer. |
+| ENV-02 | **VOID** | « Une portée, pas une personne » is explicitly retired by ADR-002. Replaced by the OQ-PRO-11 answer. |
 | ENV-03 | **Reframe** | Pre-send review survives as « rien n'est masqué en silence » (law 2), but the « Filtrés par tes règles » column depends on FS-06 (OQ-PRO-7 — see [SUG-SPEC-018](SUG-SPEC-018-adr002-fs06-survival.md)). |
 | ENV-04 | **Reframe** | Same dependency as ENV-03. |
 | ENV-05 | **VOID as written** | On-device resolution was justified by "the server doesn't store membership". Under ADR-002 `Group`/`GroupMember` **are** server rows (owner-scoped), so the server resolves. Rewrite, and state the owner-scoping as an authorization rule. |
@@ -58,11 +68,11 @@ needs. Do not delete it later.
 | ENV-10 | **Reframe** | Outbox survives as a mechanism; « both parties in the same logical operation » is void (delivery is one-way, to N recipients). |
 | ENV-11 | **Carries, transformed — the most important one** | "Non-matches are absolutely unobservable" becomes: **ignoring a proposition is absolutely unobservable**. No API response, timing signature, or push behaviour may differ between "hasn't answered", "never opened it", and "doesn't use the app". This is the direct ancestor of the amended G1(d); write it with at least the old requirement's rigour. |
 | ENV-12 | **Carries, reworded** | Withdrawn/expired propositions can no longer be *accepted*; acceptances already made survive. |
-| ENV-13 | **Rewrite + ⚠️ see OQ-PRO-10 below** | The action set changes: accept-without-revealing, accept-and-reveal, counter-propose, ignore. **Proposer un lieu** / **Proposer une heure** likely survive; **« Passer cette fois »** is in tension with the amended G1(d) — resolve before writing. |
+| ENV-13 | **Rewrite** | The action set changes: accept-without-revealing, accept-and-reveal, counter-propose (parallel, capped — OQ-PRO-2), ignore. **Proposer un lieu** / **Proposer une heure** survive; **« Passer cette fois »** survives too, reframed per OQ-PRO-10 (§2 below) as a local hide, not a decline. |
 | ENV-14 | **Reframe** | The single-proposal loop becomes N-recipient; « no negotiation threads » should be re-confirmed, not assumed. The `422` on an empty proposal survives. |
 | ENV-15 | **Carries, generalised** | Bit-identical counterpart responses generalise from "the counterpart" to "the proposer and every other recipient". |
 | ENV-16 | **Carries verbatim** | No « match ! », no counters, ever. Law 5, untouched by ADR-002. |
-| ENV-17 | **Carries, adapted** | Server-side Zod validation (G1) survives entirely; the `recipientIds` clause is rewritten per OQ-PRO-1. N=150 stays ⚠️ PROPOSED. |
+| ENV-17 | **Carries, adapted** | Server-side Zod validation (G1) survives entirely; the `recipientIds` clause is rewritten per OQ-PRO-11. N=150 stays ⚠️ PROPOSED. |
 | ENV-18 | **Carries verbatim** | `idempotencyKey` unique per author, retry returns the original `200`. Drop only the "never a recomputed match" sub-clause. |
 | ENV-19 | **Reframe** | The relationship event fires on **acceptance**, not on match. Grain `{date, category}` stays ⚠️ PROPOSED and depends on §6. Never the verb. |
 | ENV-20 | **Carries, new rationale** | Verb stays opaque server-side. The old justification (keeping ADR-001 option B reachable) still holds, but the verb is now shown to recipients **by design** — say so explicitly so nobody reads ENV-20 as a confidentiality claim it never made. |
@@ -73,17 +83,17 @@ with server-side group resolution the server sees more, so re-argue both sides r
 the pivot settled it · `OQ-ENV-4` and `OQ-ENV-5` are RESOLVED; carry their resolutions forward as
 frozen copy, do not reopen them.
 
-### 2. ⚠️ Surface OQ-PRO-10 before authoring — the « Passer cette fois » collision
+### 2. ✅ OQ-PRO-10 resolved — the « Passer cette fois » collision
 
 SUG-SPEC-014's G1(d) wording says *"There is no decline action anywhere; expiry is the only exit"*.
 FS-05 `ENV-13`/`ENV-15` give the recipient **« Passer cette fois »**, a decline that emits **zero**
-signal to anyone. These are reconcilable — a purely local dismissal is indistinguishable from silence,
-which is exactly what the clause protects — but the directive as written reads as forbidding it.
+signal to anyone.
 
-Raise this with the founder as **OQ-PRO-10**. If « Passer cette fois » survives, SUG-SPEC-014's clause
-needs one qualifier: *"no decline action **that the proposer can observe**"*. Do not resolve it by
-drafting; a global directive and a spec disagreeing on `main` is exactly the failure Phase 0b exists
-to prevent.
+**Resolution (ADR-002, 2026-09-13): reframed as a local "hide", not a "decline" — G1(d) needs no
+amendment.** « Passer cette fois » removes the card from the recipient's own view only and sends
+nothing to anyone, so it was never the kind of decline G1(d) governs (signals reaching the proposer).
+Write the FS-05 copy/spec text to say this explicitly — describe the action as list-management
+(archiving), not as a response type — so a future reader doesn't reclassify it as a decline.
 
 ### 3. Rewrite the file
 
