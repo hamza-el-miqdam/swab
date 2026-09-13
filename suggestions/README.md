@@ -22,11 +22,11 @@ Each suggestion is one self-contained markdown file with a fixed template: probl
 | Database (packages/db) | [13](db/) | [2](done/db/) | data-steward |
 | DevOps / CI | — | [19](done/devops/) | devops-specialist |
 | Design system | — | [15](done/design/) | design-specialist (+ platform agents where noted) |
-| Specs / QA docs | [4](specs/) | [14](done/specs/) | spec-specialist |
+| Specs / QA docs | [3](specs/) | [15](done/specs/) | spec-specialist |
 | Review agent | [2](review/) | — | review-specialist |
-| **Total** | **34** | **87** | |
+| **Total** | **33** | **88** | |
 
-> **`specs/SUG-SPEC-014..018` are the ADR-002 pivot plans (2026-08-27)** — they are sequenced, not independent: 014 (amend G1(d), **blocking** — nothing else may start first) → 015 (product laws) → 016 (FS-05 rewrite — **done 2026-09-13**, [#180](https://github.com/hamza-el-miqdam/swab/issues/180)) → 017 (FS-04 amendment) → 018 (FS-06 survival decision). See [ROADMAP.md](../docs/ROADMAP.md) Phase 0b/0c.
+> **`specs/SUG-SPEC-014..018` are the ADR-002 pivot plans (2026-08-27)** — they are sequenced, not independent: 014 (amend G1(d), **blocking** — nothing else may start first) → 015 (product laws) → 016 (FS-05 rewrite, **done 2026-09-13**, [#180](https://github.com/hamza-el-miqdam/swab/issues/180), see [done/specs/SUG-SPEC-016](done/specs/SUG-SPEC-016-adr002-fs05-rewrite.md)) → 017 (FS-04 amendment) → 018 (FS-06 survival decision, **done 2026-09-13** — outcome (B), see [done/specs/SUG-SPEC-018](done/specs/SUG-SPEC-018-adr002-fs06-survival.md)). 015/017 are marked done in [ROADMAP.md](../docs/ROADMAP.md) but their files/counts weren't moved when they landed. See ROADMAP.md Phase 0b/0c.
 
 Original wave/dependency plan and model assignments (Haiku/Sonnet/Opus split): see [execution-order.md](execution-order.md).
 

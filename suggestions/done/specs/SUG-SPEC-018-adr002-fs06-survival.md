@@ -7,7 +7,7 @@
 - **Implementing agent:** spec-specialist — **the decision itself is the founder's**
 - **Depends on:** [SUG-SPEC-016](SUG-SPEC-016-adr002-fs05-rewrite.md) is easier if this lands first,
   but it can also land second with FS-05 leaving `PRO-03`/`PRO-04` provisional
-- **Related:** [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md) OQ-PRO-7, [FS-06](../../docs/specs/FS-06-filtering.md)
+- **Related:** [ADR-002](../../../docs/decisions/ADR-002-envie-becomes-a-proposition.md) OQ-PRO-7, [FS-06](../../../docs/specs/FS-06-filtering.md)
 
 ## Problem
 
@@ -27,7 +27,7 @@ personal boundary, and it is the one rule that still makes sense when you are ha
 
 ## ✅ Decided 2026-09-13 (founder): **(B)**
 
-Recorded in [ADR-002](../../docs/decisions/ADR-002-envie-becomes-a-proposition.md) under `OQ-PRO-7`.
+Recorded in [ADR-002](../../../docs/decisions/ADR-002-envie-becomes-a-proposition.md) under `OQ-PRO-7`.
 Execute per the "If (B)" steps below.
 
 ## The decision (founder's — present these three, do not pick one)
