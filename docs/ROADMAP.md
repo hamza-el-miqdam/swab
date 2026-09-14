@@ -35,19 +35,24 @@ graph LR
   G --> H["#170<br/>HistoryEvent"]
   H --> S["#183<br/>proposition schema"]
   T --> C["#189<br/>cursor → syncSeq"]
-  C --> R["backend slices<br/>veto · groups · history"]
-  F -.-> R
-  G -.-> R
-  H -.-> R
+  C --> V["veto slice"]
+  C --> GS["groups slice"]
+  C --> HS["history slice"]
+  F -.-> V
+  G -.-> GS
+  H -.-> HS
+  O["outbox table<br/>area:db · not filed"] -.-> P
   D["founder sign-offs<br/>OQ-PRO-12 · PRO-03 · PRO-25"] --> S
   S --> P["propositions<br/>backend"]
-  R --> P
+  V --> P
+  GS --> P
   P --> M["propositions<br/>mobile"]
   style T fill:#dc2626,color:#fff
+  style O fill:#dc2626,color:#fff
   style D fill:#7c3aed,color:#fff
 ```
 
-Solid arrows are hard order. Dotted arrows mean each backend slice needs only *its own* schema item — the veto slice can start as soon as #185 and #189 land, without waiting for #183. Red is the next action; purple is the founder's.
+Solid arrows are hard order. Dotted arrows mean each backend slice needs only *its own* schema item — the veto slice can start as soon as #185 and #189 land, without waiting for #183. The history slice feeds nothing else on this path: propositions needs veto + groups + the outbox table (not filed, same as the trigger), but **not** history — `HistoryEvent` (#170) sits on the schema queue only because `PRO-25` might extend it (see 3a.3's caveat), not because propositions reads it. Red is the next action; purple is the founder's.
 
 ---
 
@@ -183,13 +188,15 @@ Every item edits `schema.prisma`, `seed.ts`, `packages/db/tests/migrations.test.
 
 | # | Issue | Change | Why this position |
 |---|---|---|---|
-| 3a.0 | ⚠️ **not filed** | `sync_seq` advances on UPDATE: a vanilla-Postgres `BEFORE UPDATE` trigger on `contact_links`/`contact_roles`, reusable by every later delta-pulled table. | Migration `20260830000000_monotonic_sync_sequence` makes `sync_seq` a column `DEFAULT`, so it only advances on INSERT. Every contact edit, tombstone, and role change is an UPDATE. #189 cannot land without this, and tables added after it get the trigger from day one. |
+| 3a.0 | ⚠️ **not filed** | `sync_seq` advances on UPDATE: a vanilla-Postgres `BEFORE UPDATE` trigger on `contact_links`, `contact_roles`, **and `filter_rules`** (all three already carry `syncSeq`), reusable by every later delta-pulled table. | Migration `20260830000000_monotonic_sync_sequence` makes `sync_seq` a column `DEFAULT`, so it only advances on INSERT. Every contact edit, tombstone, role change, and filter-rule edit is an UPDATE. #189 cannot land without this, and tables added after it get the trigger from day one. |
 | 3a.1 | [#185](https://github.com/hamza-el-miqdam/swab/issues/185) | `FilterRule` slimmed to the veto-only shape (`FLT-09`). | Smallest item. It unblocks the veto slice, which proposition delivery needs. |
 | 3a.2 | [#166](https://github.com/hamza-el-miqdam/swab/issues/166) | `Group`/`GroupMember`, owner-scoped (`SGR-10..15`). | Needed for `PRO-09`'s server-side group resolution. |
-| 3a.3 | [#170](https://github.com/hamza-el-miqdam/swab/issues/170) | `HistoryEvent`, with `syncSeq` from day one and a 12-month retention sweep (`FCH-04`). | Goes before #183 so that `PRO-25`'s acceptance event extends `HistoryEvent` instead of starting a parallel table. Unblocks #110. |
+| 3a.3 | [#170](https://github.com/hamza-el-miqdam/swab/issues/170) | `HistoryEvent`, with `syncSeq` from day one and a 12-month retention sweep (`FCH-04`). | Goes before #183 so that *if* `PRO-25`'s acceptance event ends up extending `HistoryEvent`, the table already exists — **not yet decided**: #170's own body defers proposition/match events to "a separate future `area:db` issue", and #183 currently scopes the acceptance-event schema as new work of its own, with no reference back to #170. Settle this when #183 is drafted; until then, treat the ordering as a hedge, not a commitment. Unblocks #110. |
 | 3a.4 | [#183](https://github.com/hamza-el-miqdam/swab/issues/183) | Proposition schema; retires `Match`/`MatchState`. | Last, because it waits on the 3e sign-offs. It breaks `seed.ts`, and the issue says so. |
 
 **Gap not covered by any issue:** `PRO-10` requires an outbox, and no outbox table exists — the only "outbox" in `schema.prisma` is a comment about the client-side VLT-10 queue. #183 does not mention one. Amend #183 or file a sibling issue before 3a.4 starts.
+
+**After 3a.4:** [#92](https://github.com/hamza-el-miqdam/swab/issues/92) (Prisma 7 — move `datasource.url` out of `schema.prisma` into `prisma.config.ts`) touches the same schema-adjacent, single-writer surface as this queue, even though it changes config rather than models. It was previously filed under Phase 4 as "parallelizable" — that's wrong for the same reason parallel 3a branches would conflict: queue it behind 3a.4 rather than running it alongside the product work.
 
 **Agent:** data-steward. PRs **must** carry the `area:db` label or CI hard-fails.
 
@@ -274,13 +281,12 @@ None of these block 3a.0–3a.3 or their slices. The first three block 3a.4 (#18
 
 ## Phase 4 — Infrastructure hardening ∥
 
-Parallelizable with Phase 3; none of it blocks the product.
+Parallelizable with Phase 3; none of it blocks the product. **Exception:** Issue #92 (Prisma 7 `datasource.url` → `prisma.config.ts`) moved into the 3a schema queue, immediately after 3a.4 — it shares the queue's single-writer constraint, so it isn't actually parallel.
 
 | Item | Notes |
 |---|---|
 | Issue #57 — Node 26 base image | Corepack removal + toolchain alignment. Bump `@types/node` to 26 in the same PR (Dependabot #131 was closed into this issue 2026-09-13). |
 | Issue #56 — Android toolchain | AGP 9, Kotlin 2.4, compileSdk 36. **Constraint:** E2E needs an API 34 emulator; API 35+ breaks Espresso. Also absorbs kotlinx-coroutines 1.11 / kotlinx-serialization 1.11 (Dependabot #121/#122, closed 2026-09-13), which crash the Kotlin 2.0.21 compiler. |
-| Issue #92 — Prisma 7 | Move datasource url to `prisma.config.ts`. `area:db`, data-steward only. |
 | Issue #70 — DEVELOPMENT.md | Still documents the removed Expo/RN app. Violates G5 ("code and docs never disagree on `main`"). Small, satisfying, do it any time. |
 | Issue #110 — FCH-04 trim removal | **Blocked** on #170 + the 3c history slice. Not actionable alone. |
 | E2E in CI | STATUS gap. Currently a local, agent-enforced gate only. |
