@@ -4,7 +4,7 @@
 > Companion to [STATUS.md](STATUS.md): STATUS says *what is done*, this file says *what is next and in what order*.
 > Update this file whenever a task here starts, completes, or is re-sequenced. Detail per change still goes to the area changelogs (G5).
 
-_Last reviewed: 2026-08-27 (against `main` @ `f07f0d2`)_
+_Last reviewed: 2026-09-14 (against `main` @ `c5039c6`)_
 
 ## How to use this file (read this first, every session)
 
@@ -18,37 +18,42 @@ _Last reviewed: 2026-08-27 (against `main` @ `f07f0d2`)_
 
 ## Where we are
 
-FS-01/02/03 are implemented but flagged 🟢⚠️ — green against the **retired** E2EE/vault design that [ADR-001](decisions/ADR-001-server-side-classification-data.md) superseded on 2026-08-16. FS-07 is mid-migration (ADR-001 stage 3): contacts CRUD and role routes have landed; **filter rules, subgroups, and history storage have not**.
+FS-01/02/03 are implemented but flagged 🟢⚠️ — green against the **retired** E2EE/vault design that [ADR-001](decisions/ADR-001-server-side-classification-data.md) superseded on 2026-08-16. FS-07 is mid-migration (ADR-001 stage 3): contacts CRUD and role routes have landed; **veto, group, and history storage have not**.
 
-The three unstarted specs (FS-04, FS-05, FS-06) are the actual product. Nothing shipped so far lets a user express an envie or receive a match — the core loop does not exist yet.
+The three unstarted specs (FS-04, FS-05, FS-06) are the actual product. Nothing shipped so far lets a user propose seeing someone — the core loop does not exist yet.
 
-**The bottleneck is no longer technical — it is [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md).** On 2026-08-27 the product pivoted: an envie is now a *proposition*, directed and visible, answered by a group. FS-05 must be rewritten, FS-04 amended, FS-06's survival decided. Phase 0b — amending `agents/_global-directives.md` G1(d) so this is legal — is **done** (issue [#160](https://github.com/hamza-el-miqdam/swab/issues/160)); Phase 0c, the spec rewrites, is next and unblocked.
+**The spec gate is cleared.** [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) pivoted the product on 2026-08-27: an envie is a directed, visible proposition. Phase 0b made that legal; Phase 0c rewrote the specs — FS-05 as `PRO-01..26` (#184), FS-04 amended (#167), FS-06 narrowed to veto absolu (#182). Phases 1 and 2 are done too.
 
-Everything **outside** the product surface — the IDT-03 security fix (Phase 1), the dependency queue (Phase 2), the infra work (Phase 4) — is untouched by the pivot and is where to spend time while the specs are rewritten.
+**The bottleneck is now the schema queue (Phase 3a).** Four `area:db` issues, plus one not yet filed, all edit `schema.prisma`, `seed.ts`, and `packages/db/CHANGELOG.md` through a single writer — they land one at a time, and each backend slice waits on its own item. Founder sign-offs (Phase 3e) gate the last one. Phase 4 runs alongside throughout.
 
 ### Critical path
 
-⚠️ **Superseded 2026-08-27 by [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md).** The old path (FS-07 → FS-04 ∥ FS-06 → FS-05) assumed a matching engine, and the "FS-05 backend can start in parallel" insight rested on ENV-05, which is void. Do not sequence from it.
-
 ```mermaid
 graph LR
-  Z["Phase 0b<br/>amend G1(d) + re-render agents"] --> Y["Phase 0c<br/>rewrite product-overview · FS-05 · FS-04"]
-  Y --> A["FS-07 stage 3<br/>history · groups · display names"]
-  Y --> Q["OQ-PRO-7 decided (B)<br/>FS-06 narrowed to veto absolu"]
-  A --> P["Propositions<br/>backend + mobile"]
-  Q -.-> P
-  style Z fill:#dc2626,color:#fff
-  style Y fill:#7c3aed,color:#fff
-  style Q fill:#dc2626,color:#fff
+  T["sync_seq advances on UPDATE<br/>area:db · not filed"] --> F["#185<br/>FilterRule → veto only"]
+  F --> G["#166<br/>Group · GroupMember"]
+  G --> H["#170<br/>HistoryEvent"]
+  H --> S["#183<br/>proposition schema"]
+  T --> C["#189<br/>cursor → syncSeq"]
+  C --> R["backend slices<br/>veto · groups · history"]
+  F -.-> R
+  G -.-> R
+  H -.-> R
+  D["founder sign-offs<br/>OQ-PRO-12 · PRO-03 · PRO-25"] --> S
+  S --> P["propositions<br/>backend"]
+  R --> P
+  P --> M["propositions<br/>mobile"]
+  style T fill:#dc2626,color:#fff
+  style D fill:#7c3aed,color:#fff
 ```
 
-The new path is **provisional** — it firms up only once FS-05 is rewritten. Phase 0b is done: the binding directives now permit this work. Phase 0c (the spec rewrites) is next.
+Solid arrows are hard order. Dotted arrows mean each backend slice needs only *its own* schema item — the veto slice can start as soon as #185 and #189 land, without waiting for #183. Red is the next action; purple is the founder's.
 
 ---
 
 ## Phase 0 — Founder decision gate ✅ RESOLVED 2026-08-27 → became a product pivot
 
-The five parked FS-05 questions (OQ-ENV-1/2/3, ENV-17, ENV-19) are **dissolved, not answered**: all five presupposed a matching engine that will not be built.
+The five parked FS-05 questions (OQ-ENV-1/2/3, ENV-17, ENV-19) are **dissolved, not answered**: all five presupposed a matching engine that will not be built. *(One exception surfaced in the 0c.2 rewrite: OQ-ENV-2's expiry-semantics half — 48h vs same-day midnight — carries into FS-05; see Phase 3e.)*
 
 **[ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) — an envie is now a proposition.** It is directed at people who see it, names what/when/where, and is answered by accept / counter-propose / ignore. Mutual reveal is gone. Groups stay **private to their owner**; a recipient learns only that the proposer wants to see them and that a few others are invited — never who, never how many — and reveals their own identity to the others only by choosing to. Swab shows responses but never decides. Read the ADR before touching FS-04, FS-05, FS-06, or `product-overview.md`. *(The ADR was revised the same day it was written — commitments 3–5 are the corrected group model; anything you remember about "shared groups" is void.)*
 
@@ -91,9 +96,9 @@ persisted; ADR-002 says `Group`/`GroupMember` are server rows. Both are true, of
 and FS-04's new `SGR-15` now states this explicitly in one place, with an OQ-SGR-2 addendum confirming
 it is not reopened.
 
-**Next action:** Phase 0c is complete — 0c.1 (#162), 0c.2 (#184), 0c.3 (#167), and 0c.4 (#182) are all
-done. FS-05 implementation is blocked on the new `area:db` issue #183 (`Match`-model retirement);
-FS-06's `FLT-09` implementation likewise needs its own `area:db` follow-up (#185).
+**Next action:** none here — Phase 0c is complete (0c.1 #162, 0c.2 #184, 0c.3 #167, 0c.4 #182).
+Implementation sequencing, including the `area:db` issues blocking FS-05 (#183) and FS-06 (#185),
+lives in Phase 3.
 
 ---
 
@@ -161,59 +166,109 @@ And [apps/api/CHANGELOG.md:109](../apps/api/CHANGELOG.md#L109) records the now-f
 
 ## Phase 3 — The product (critical path)
 
-> ⚠️ **Sections 3b–3e below are superseded by [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) and kept only for the parts that survive the pivot.** 3b's match engine will not be built; 3c/3d/3e describe flows that no longer exist. **3a is still valid** (its history slice survives; its subgroup slice changes shape). Rewrite this whole section once Phase 0c lands FS-05. Requirement-level detail here is now unreliable — re-read the specs.
+**Rewritten 2026-09-14, after Phase 0c.** The previous 3a–3e sequenced the retired match engine, 3-tier filters, and name-only subgroups; they live in this file's git history, not in any current spec. **Requirement IDs below are pointers, not quotations — re-read the spec before implementing.**
 
-### 3a. FS-07 stage 3 — finish the ADR-001 migration 🔑 UNBLOCKER
+Five tracks, plus a side list:
 
-**Plan card**
-- **Goal:** land the three remaining server-side slices — **filter rules**, **subgroups** (names/pins/hidden only), **history**.
-- **Why first:** FS-04 and FS-06 both declare `Depends on: FS-07 (ADR-001 storage/sync model)`. Nothing downstream can start cleanly without it.
-- **Boundary to respect:** subgroup *membership* is **never** persisted server-side — the lattice is derived on-device (SGR-07, OQ-SGR-2). Only names, pins, and hidden flags are stored. ENV-05 depends on this being true.
-- **Known db prerequisite:** the open `area:db` request for a monotonic sync sequence (`bigserial`) so the delta-pull cursor is a strict keyset — see `apps/api/CHANGELOG.md` 2026-08-22. Resolve this **before** adding more delta-pulled tables, or every new slice inherits the weak cursor.
-- **Unblocks on completion:** issue #110 (remove the device-side history trim, once server-side retention exists), FS-04, FS-06.
-- **Agents:** backend-specialist + data-steward (schema is `area:db`, one writer only).
+- **3a** — the schema queue: serial, one writer.
+- **3b** — the cursor fix: runs in parallel once 3a.0 lands.
+- **3c** — backend slices: each starts when its own schema item lands.
+- **3d** — mobile slices: iOS and Android in parallel, each after its backend slice.
+- **3e** — founder decisions.
+- **3f** — spec/code drift to clear on the side.
 
-### 3b. FS-05 backend — envies, match engine, proposals ∥ (parallel with 3a)
+### 3a. Schema queue — `area:db`, strictly serial 🔑 UNBLOCKER
 
-**Plan card**
-- **Goal:** `POST /envies` + the match engine + the proposal loop. Runs in parallel with 3a because it consumes a client-supplied `recipientIds` list (ENV-05) and is agnostic to how that list was derived.
-- **Blocked by:** Phase 0 only.
-- **Head start — the schema is already largely in place.** [schema.prisma](../packages/db/prisma/schema.prisma) already has `Envie`, `EnvieRecipient`, `Match`, `Proposal`, `EnvieStatus`, `MatchState`, `ProposalState`, plus `@@unique([envieAId, envieBId])` (ENV-09 race arbiter), the canonical-ordering CHECK, and per-side `passedByAAt`/`passedByBAt` pass markers (ENV-15). STATUS.md understates this as *"users, envies + seed"* — **fix that line** when this starts.
-- **Real db gap:** there is **no outbox table**. ENV-10 requires the outbox pattern so both parties are notified in one logical operation. This needs an `area:db` proposal.
-- **Hardest requirements — treat as first-class test targets, not afterthoughts:**
-  - **ENV-11** — non-matches must be *absolutely* unobservable: no response, **timing**, or push difference between "hasn't reciprocated" and "doesn't use the feature". This constrains implementation shape, not just output.
-  - **ENV-15 bit-identity** — the counterpart's payload must be byte-identical whether or not the other side passed. The schema already carries a HAZARD note: `updatedAt` ticks when a pass marker is written, so **never** serialize `updatedAt` to a counterpart or it becomes a covert pass-signal.
-  - **ENV-20** — `verb` stays opaque: never split, normalised, indexed, or full-text-searched, and never read by any server-side feature. Matching is category equality only.
-  - **ENV-09** — match creation atomic in one serializable transaction; sort the pair before insert to satisfy the canonical-order CHECK.
-  - **ENV-18** — `idempotencyKey` unique per author; retry returns the original envie (`200`, not `201`), with no second match and no second outbox notification.
-- **First step:** draft the OpenAPI seam (`/envies`, `/matches`, `/proposals`) — the spec calls the API contract section "the seam" between backend and both mobile agents. No OpenAPI document exists in the repo yet; see `suggestions/backend/SUG-API-007-openapi-zod-typeprovider.md` for the intended Zod-typeprovider approach.
-- **Acceptance:** ENV-08..12, ENV-17..20 covered by integration tests against real Postgres (G2 — no mocking Prisma).
+Every item edits `schema.prisma`, `seed.ts`, `packages/db/tests/migrations.test.ts`, and `packages/db/CHANGELOG.md`. Parallel branches would conflict on all four, and the schema has one writer (G4). Land them one at a time, in this order:
 
-### 3c. FS-06 — filtering rules (after 3a)
+| # | Issue | Change | Why this position |
+|---|---|---|---|
+| 3a.0 | ⚠️ **not filed** | `sync_seq` advances on UPDATE: a vanilla-Postgres `BEFORE UPDATE` trigger on `contact_links`/`contact_roles`, reusable by every later delta-pulled table. | Migration `20260830000000_monotonic_sync_sequence` makes `sync_seq` a column `DEFAULT`, so it only advances on INSERT. Every contact edit, tombstone, and role change is an UPDATE. #189 cannot land without this, and tables added after it get the trigger from day one. |
+| 3a.1 | [#185](https://github.com/hamza-el-miqdam/swab/issues/185) | `FilterRule` slimmed to the veto-only shape (`FLT-09`). | Smallest item. It unblocks the veto slice, which proposition delivery needs. |
+| 3a.2 | [#166](https://github.com/hamza-el-miqdam/swab/issues/166) | `Group`/`GroupMember`, owner-scoped (`SGR-10..15`). | Needed for `PRO-09`'s server-side group resolution. |
+| 3a.3 | [#170](https://github.com/hamza-el-miqdam/swab/issues/170) | `HistoryEvent`, with `syncSeq` from day one and a 12-month retention sweep (`FCH-04`). | Goes before #183 so that `PRO-25`'s acceptance event extends `HistoryEvent` instead of starting a parallel table. Unblocks #110. |
+| 3a.4 | [#183](https://github.com/hamza-el-miqdam/swab/issues/183) | Proposition schema; retires `Match`/`MatchState`. | Last, because it waits on the 3e sign-offs. It breaks `seed.ts`, and the issue says so. |
 
-**Plan card**
-- **Goal:** rule authoring UI + on-device evaluation; rules stored server-side.
-- **Settled:** OQ-FLT-2 resolved 2026-08-22 — evaluation is **Swift + Kotlin only, no TS evaluator**. Do not build one.
-- **Feeds:** ENV-03's "Inclus / Filtrés par tes règles" pre-send review, with the responsible rule level visible per person.
-- **Watch:** FLT-02 — L1 *veto absolu* members appear in **neither** review list, not in a "filtered" list.
-- **Agents:** ios-specialist ∥ android-specialist (+ backend for rule storage).
+**Gap not covered by any issue:** `PRO-10` requires an outbox, and no outbox table exists — the only "outbox" in `schema.prisma` is a comment about the client-side VLT-10 queue. #183 does not mention one. Amend #183 or file a sibling issue before 3a.4 starts.
 
-### 3d. FS-04 — subgroups (after 3a) ∥ with 3c
+**Agent:** data-steward. PRs **must** carry the `area:db` label or CI hard-fails.
 
-**Plan card**
-- **Goal:** ~~automatic subgroup detection (FCA) on-device~~ → **ADR-002:** manual group CRUD is the base case; FCA is demoted to an opt-in suggestion. Groups remain **private to their owner** — that part is unchanged.
-- ~~**Product law:** « tu ne définis jamais un groupe à la main » — no manual group creation, ever.~~ **Void (ADR-002).** Do not cite this line.
-- **Feeds:** ~~ENV-02's scope picker, which lists FS-04 subgroups **only** — no individual selection~~ → proposing to a single person is now the base case.
-- **Agents:** ios-specialist ∥ android-specialist (sole — no backend beyond FS-07's name/pin/hidden storage).
+### 3b. Delta-pull cursor → `syncSeq` — `area:backend` ∥
 
-### 3e. FS-05 mobile — emission + reception UI (last)
+- **Issue:** [#189](https://github.com/hamza-el-miqdam/swab/issues/189). **Blocked on 3a.0:** a naive `syncSeq > cursor` against today's INSERT-only column silently drops every edit.
+- **Why now:** every delta-pulled route added in 3c inherits whatever cursor exists, so #189 should land before the first new one.
+- **Residual gap:** sequence allocation order ≠ commit order, so a pull that runs between two concurrent commits can skip a row.
+  - This is not introduced by #189 — the current `updatedAt` cursor has the same gap.
+  - #189 records the decision. A per-owner `pg_advisory_xact_lock` on writes closes the gap if it proves necessary.
+- **When it lands:** drop the temporary `updatedAt` cursor indexes (`area:db`) and amend FS-07 `VLT-08` (see 3f).
+- **Agent:** backend-specialist.
 
-**Plan card**
-- **Blocked by:** 3a + 3b + 3c + 3d. This is genuinely last.
-- **Scope:** verb input (ENV-01), scope picker (ENV-02), transparent pre-send review (ENV-03/04), calm post-send state (ENV-06), match surface + proposal loop (ENV-13/14/15).
-- **Frozen French copy — verbatim, no paraphrase:** « Elle expire dans 48 heures. » · « Accepter la proposition » · « Passer cette fois » · « C'est parti, doucement. » · « Vous voulez vous proposer un truc ? »
-- **Product law 5:** no « match ! » celebration, no counters, no delivery status, no seen-by, no pending counter — anywhere.
-- **DoD:** full on-device E2E suite via `scripts/e2e-ios.sh` / `scripts/e2e-android.sh`, PASS with zero drift-guard failures, report pasted into the PR (G2).
+### 3c. Backend slices — `area:backend`, each after its own schema item
+
+| Slice | Needs | Scope | Notes |
+|---|---|---|---|
+| Veto | 3a.1 + 3b | FS-06 `FLT-02`, `FLT-09` | CRUD on the per-contact veto. Enforcement — silently dropping vetoed contacts from `recipientIds` — belongs to the propositions slice. |
+| Groups | 3a.2 + 3b | FS-04 `SGR-10..15`(a) | Owner-scoping is a query-layer authorization rule: no endpoint returns a group, its name, or its membership to anyone but its owner. The FCA lattice stays on-device (`SGR-15`(b)). |
+| History | 3a.3 + 3b | FS-03 `FCH-04` | Server-side retention; after it, #110 removes the device-side trim. |
+| **Propositions** | 3a.4 + veto + groups + outbox | FS-05 `PRO-07..16`, plus the server half of `PRO-17..26` | The most sensitive data path, and the last backend slice. |
+
+**Propositions — treat these as first-class test targets, not afterthoughts:**
+- **`PRO-11`** — ignoring must be absolutely unobservable. No response, timing, or push behaviour may differ across the six cases the spec lists. This constrains the implementation's shape, not just its output.
+- **`PRO-23`** — the proposer's and every other recipient's views stay bit-identical whatever a single recipient does, except through the `PRO-21` convergence surface. The old ENV-15 hazard carries over: never serialize a timestamp that ticks on a recipient's action to anyone else.
+- **`PRO-07` / `PRO-08`** — ineligible and muted recipients are silently accept-and-dropped (`201`). There is no error variant, ever.
+- **`PRO-09`** — group → recipients resolution runs server-side, and no response ever names the group.
+- **`PRO-15`** — `idempotencyKey` is unique per author. A retry returns the original with `200`, and never sends a second outbox notification.
+- **`PRO-16`** — `verb` is opaque server-side: never split, normalised, indexed, searched, or read by any feature.
+
+**First step:** the OpenAPI seam. FS-05's "API contract" section is only a sketch, and no OpenAPI document exists yet. The intended approach is [SUG-API-007](../suggestions/backend/SUG-API-007-openapi-zod-typeprovider.md); this also gives Phase 4's OpenAPI diff gate its first input.
+
+**Acceptance:** integration tests against real Postgres (G2 — no mocking Prisma), named with their `PRO-*` IDs.
+
+### 3d. Mobile slices — ios-specialist ∥ android-specialist
+
+Each row follows its backend slice. **DoD for every row:**
+- The full on-device E2E suite passes with zero drift-guard failures, and the report is pasted into the PR.
+- Scenarios and the manifest are updated (G2).
+
+| Slice | After | Scope |
+|---|---|---|
+| Veto toggle on the contact card | 3c veto | FS-06 `FLT-02` |
+| Manual groups: create, edit membership, rename, delete | 3c groups | FS-04 `SGR-10..13`; accepting FCA suggestions (`SGR-14`) can follow |
+| History reads, then #110's trim removal | 3c history | FS-03 `FCH-04` |
+| Proposition emission | 3c propositions | FS-05 `PRO-01..06` |
+| Proposition reception and response | 3c propositions + 3e copy | FS-05 `PRO-17..26` |
+
+- **French copy:** take it from FS-05 at implementation time, never from this file. Two strings don't exist yet (see 3e).
+- **Product law 5:** no « match ! », no counters, no delivery status, no « vu » — anywhere.
+- **Not yet planned: the ADR-001 client stage.**
+  - FS-01/02/03 are 🟢⚠️, built on the retired vault; STATUS notes what changes per spec.
+  - The rework has no issue or plan card.
+  - It touches the same local cache these slices read from, so plan it before the first mobile slice starts.
+
+### 3e. Founder decisions — Hamza (+ design-specialist for copy)
+
+None of these block 3a.0–3a.3 or their slices. The first three block 3a.4 (#183).
+
+| Decision | Blocks | Where |
+|---|---|---|
+| `OQ-PRO-12` — button copy for the two accept modes | #183 (accept-mode naming), reception UI | FS-05 Open questions |
+| `PRO-03` — the v0 category list | #183, emission UI | FS-05 `PRO-03`, `OQ-ENV-1` |
+| `PRO-25` — acceptance-event grain, proposed `{date, category}` | #183; check against #170's shape | FS-05 `PRO-25` |
+| `OQ-PRO-13` — French wording of the group-invite hint | reception UI | FS-05 `PRO-26` |
+| `OQ-ENV-2` — fixed 48h vs same-day-midnight expiry | the propositions slice's `expiresAt` check | FS-05 `PRO-14`, Open questions |
+| `PRO-14` — recipient cap, proposed N=150 | the propositions slice's validation | FS-05 `PRO-14` |
+
+### 3f. Spec ↔ code drift — clear on the side
+
+**Filed:**
+- [#186](https://github.com/hamza-el-miqdam/swab/issues/186) — `product-overview.md` still describes the retired 3-tier filter system (`area:specs`).
+- [#187](https://github.com/hamza-el-miqdam/swab/issues/187) — iOS `FicheFilterConsequence.swift` cites the retired FLT-01 (`area:ios`).
+- [#188](https://github.com/hamza-el-miqdam/swab/issues/188) — Android `Fr.kt` cites the retired FLT-01 (`area:android`).
+
+**Not filed** (all FS-07, `area:specs`):
+- **`VLT-01`** stores subgroup state as "names, pins, hidden flags" only. FS-04 `SGR-15`(a) now persists manual groups, *with membership*, server-side.
+- **`IDT-08`** says "until a match reveals a specific shared envie", which is the retired match model.
+- **`VLT-08`** specifies the `updatedAt` cursor. Amend it when #189 lands.
 
 ---
 
@@ -227,13 +282,13 @@ Parallelizable with Phase 3; none of it blocks the product.
 | Issue #56 — Android toolchain | AGP 9, Kotlin 2.4, compileSdk 36. **Constraint:** E2E needs an API 34 emulator; API 35+ breaks Espresso. Also absorbs kotlinx-coroutines 1.11 / kotlinx-serialization 1.11 (Dependabot #121/#122, closed 2026-09-13), which crash the Kotlin 2.0.21 compiler. |
 | Issue #92 — Prisma 7 | Move datasource url to `prisma.config.ts`. `area:db`, data-steward only. |
 | Issue #70 — DEVELOPMENT.md | Still documents the removed Expo/RN app. Violates G5 ("code and docs never disagree on `main`"). Small, satisfying, do it any time. |
-| Issue #110 — FCH-04 trim removal | **Blocked** on 3a's history slice. Not actionable alone. |
+| Issue #110 — FCH-04 trim removal | **Blocked** on #170 + the 3c history slice. Not actionable alone. |
 | E2E in CI | STATUS gap. Currently a local, agent-enforced gate only. |
-| Privacy audit (playbook §6) | ⚪ Not started. **Required before any external tester** and after every schema/API change. Schedule after 3b — that's the most sensitive data path. Branch `specs/116-privacy-audit-wire-audit-post-adr001` exists. |
+| Privacy audit (playbook §6) | ⚪ Not started. **Required before any external tester** and after every schema/API change. Schedule after the 3c propositions slice — the most sensitive data path. Its wire-audit step was rewritten for ADR-001 (#145, merged); check it still fits ADR-002 before running it. |
 | Coverage enforcement in CI | G2 mandates 80% on changed packages; not currently enforced repo-wide. |
-| OpenAPI diff gate | Only meaningful once 3b produces an OpenAPI document. |
+| OpenAPI diff gate | Only meaningful once an OpenAPI document exists — the 3c propositions slice is its natural first producer. |
 | Notion spec re-sync | Stale since ADR-001 (2026-08-16). Deferred until the spec review (#64) settles. notion-liaison-specialist owns it. |
-| Repo hygiene | Stale `.claude/worktrees/agent-*` directories are tracked in the working tree; several `origin/*` branches are merged-but-undeleted. |
+| Repo hygiene | 24 `origin/*` branches are fully merged but undeleted (`git branch -r --merged origin/main`). `origin/chore/157-db-vitest4` shows unmerged though #157's change is in `packages/db/CHANGELOG.md` — confirm before deleting. `.claude/worktrees/` is gitignored, **not** tracked: the three leftover `agent-*` dirs are local clutter only (`git worktree list` → `git worktree remove`). |
 
 ---
 

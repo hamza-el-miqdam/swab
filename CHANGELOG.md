@@ -11,6 +11,20 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-14 — ROADMAP Phase 3 re-sequenced after ADR-002; #189 filed
+
+- **What:** `docs/ROADMAP.md` Phase 3 rewritten:
+  - a serial `area:db` queue: sync_seq trigger → #185 → #166 → #170 → #183
+  - the cursor fix (#189), plus backend and mobile slices keyed to each schema item
+  - founder sign-offs and a spec/code drift list
+
+  Also refreshed: "Where we are", the critical-path diagram, the 0c next action, and four Phase 4 rows. `docs/STATUS.md` now links #189.
+- **Why:** Phase 3 still sequenced the retired match engine and 3-tier filters, though Phase 0c finished on 2026-09-13.
+- **Gotchas:**
+  - `sync_seq` (#168) is a column `DEFAULT`, so it advances only on INSERT. Moving the cursor onto it as-is would silently drop edits, tombstones and role changes. #189 needs an `area:db` BEFORE UPDATE trigger first, and that issue is **not filed**.
+  - No outbox table exists for PRO-10.
+  - `.claude/worktrees/` is gitignored, not tracked as the old Phase 4 row claimed.
+
 ## 2026-09-13 — [PRO-01..26] FS-05 rewritten as the proposition flow, ENV-* retired
 
 - **What:** `docs/specs/FS-05-envie-match.md` fully rewritten (issue #180, stacked on unmerged #179):
