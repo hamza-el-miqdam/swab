@@ -5,7 +5,7 @@
 > Detail per change lives in the area changelogs (see [Changelogs](#changelogs)); this file stays a summary.
 > **What is *next*, in what order, and how — see [ROADMAP.md](ROADMAP.md).**
 
-_Last updated: 2026-09-13_
+_Last updated: 2026-09-14_
 
 > **Native migration complete.** Mobile is native `apps/ios` + `apps/android`; RN knowledge in `docs/migration/` (see its README for what is still binding). Both E2E suites are a hard DoD gate (`scripts/e2e-{ios,android}.sh`). Open: FS-03 on-device walkthrough, E2E not in CI.
 
@@ -13,7 +13,7 @@ _Last updated: 2026-09-13_
 
 | Spec | Module | Status | Lead | Notes |
 |---|---|---|---|---|
-| FS-07 | Identity & Vault | 🟡 In progress | Backend | Auth (phone-OTP, JWT sessions), `/health` + `/ready`. **ADR-001 stage 3:** slice 1 typed `/contacts` CRUD + delta pull; slice 2 role routes + #153 roles read-path fix (VLT-05 restoration) — closes #117. `Vault` deprecated, still served. Next: filter rules, subgroups, history. Missing: refresh rotation, deletion, discovery, invites. |
+| FS-07 | Identity & Vault | 🟡 In progress | Backend | Auth (phone-OTP, JWT sessions), `/health` + `/ready`. **ADR-001 stage 3:** slice 1 typed `/contacts` CRUD + delta pull; slice 2 role routes + #153 roles read-path fix (VLT-05 restoration) — closes #117. `Vault` deprecated, still served. Next: veto, groups, history ([ROADMAP](ROADMAP.md) Phase 3). Missing: refresh rotation, deletion, discovery, invites. |
 | FS-01 | Onboarding | 🟢⚠️ | Mobile | Signup (phone → OTP), contact import + skip path, radial calibration, completion. Dev-mode OTP returned in API response (no SMS provider yet). **ADR-001:** built on the retired vault; ONB-02/05 change in the client-stage migration. |
 | FS-02 | Relationship Map | 🟢⚠️ | Mobile | Radial map + list fallback from the local cache, 3-tab nav, peek sheet, pan/zoom. MAP-01..09 tests green; clustering deferred (OQ-MAP-1). **ADR-001:** reads move vault→cache; behaviour unchanged, lowest-impact spec. |
 | FS-03 | Contact Card | 🟢⚠️ | Mobile | Four tap-editable axes, 12-month history, staleness nudge, pending contacts. FCH-01..08 green; vocab + `en pause` resolved 2026-08-09 (#15, #16); FCH-04 match events await FS-04/05. **ADR-001:** per-edit write model changes (FCH-01/04); FCH-09 stored identifiers done both platforms — stage-2 unblocked. |
@@ -28,7 +28,7 @@ Legend: ⚪ Not started · 🟡 In progress · 🟢 Implemented (spec acceptance
 | Item | Status | Notes |
 |---|---|---|
 | Monorepo (Turborepo + pnpm, strict TS) | 🟢 | `apps/api`, `packages/db`, `packages/ui` (design tokens only — see below). `apps/ios` + `apps/android` are deliberately outside the turbo/pnpm pipeline (`xcrun swift test` / `./gradlew test` directly). `apps/web`, `packages/api-client`, `tools/orchestrator` not created yet. |
-| Database schema v0.1 | 🟡 | `users`; FS-05 envie/match models + seed; ADR-001 classification columns on `contact_links`/`contact_roles` + `client_mutations` ledger (2026-08-17). `vaults` deprecated, not dropped. `syncSeq` bigserial on `contact_links`/`contact_roles` (#168, 2026-08-30) — `area:api` follow-up open to move `cursor.ts` onto it. **FLT-01..08:** FilterRule model + seed + XOR check + partial unique indexes (2026-09-05). |
+| Database schema v0.1 | 🟡 | `users`; FS-05 envie/match models + seed; ADR-001 classification columns on `contact_links`/`contact_roles` + `client_mutations` ledger (2026-08-17). `vaults` deprecated, not dropped. `syncSeq` on both tables (#168) — INSERT-only today; #189 moves `cursor.ts` onto it once it also advances on UPDATE. **FilterRule (FLT-09, ex-FLT-01..08):** full L1-L3 shape, seeded (2026-09-05); #185 slims it to veto-only. |
 | DB migrations | 🟢 | Baseline migration exists; both `docker-compose.yml` and CI run `prisma migrate deploy` — no `db push` anywhere in the pipeline. Postgres integration tests: `apps/api/tests/prisma-repo.test.ts` + `apps/api/tests/contacts-repo.postgres.test.ts` (both require a reachable Postgres and fail loudly without one). |
 | Local dev stack | 🟢 | `docker compose up --build` → Postgres :5432, API :3001, Adminer :8080. API boot now runs `prisma migrate deploy` (was `db push`). |
 | CI | 🟡 | `ci.yml`: scope-guard, Postgres + `prisma migrate deploy`, native unit tests (path-filtered). `security.yml`: gitleaks + Trivy on `prod` image — green (zero HIGH/CRITICAL). Missing: E2E in CI, privacy-audit job, coverage enforcement, OpenAPI diff gate. |

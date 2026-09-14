@@ -11,6 +11,31 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-14 — ROADMAP Phase 3 re-sequenced after ADR-002; #189 filed
+
+- **What:** `docs/ROADMAP.md` Phase 3 rewritten:
+  - a serial `area:db` queue: sync_seq trigger → #185 → #166 → #170 → #183
+  - the cursor fix (#189), plus backend and mobile slices keyed to each schema item
+  - founder sign-offs and a spec/code drift list
+
+  Also refreshed: "Where we are", the critical-path diagram, the 0c next action, and four Phase 4 rows. `docs/STATUS.md` now links #189.
+- **Why:** Phase 3 still sequenced the retired match engine and 3-tier filters, though Phase 0c finished on 2026-09-13.
+- **Gotchas:**
+  - `sync_seq` (#168) is a column `DEFAULT`, so it advances only on INSERT. Moving the cursor onto it as-is would silently drop edits, tombstones and role changes. #189 needs an `area:db` BEFORE UPDATE trigger first, and that issue is **not filed**.
+  - No outbox table exists for PRO-10.
+  - `.claude/worktrees/` is gitignored, not tracked as the old Phase 4 row claimed.
+
+## 2026-09-14 — ROADMAP Phase 3 review fix pass (PR #190 review)
+
+- **What:** fixes from an independent review of the 2026-09-14 Phase 3 rewrite:
+  - 3a.0's trigger row now names all three `syncSeq` tables (`contact_links`, `contact_roles`, **`filter_rules`** — it was missing).
+  - 3a.3's #170-before-#183 rationale is now marked a hedge, not a settled fact — neither issue commits to `PRO-25` extending `HistoryEvent`.
+  - #92 (Prisma 7) moved out of "parallelizable" Phase 4 into the 3a queue (after 3a.4) — it shares the single-writer schema constraint.
+  - Critical-path diagram: split the aggregated "backend slices" node so propositions no longer visually depends on history (3c never required it); added the missing outbox node.
+  - `docs/STATUS.md`'s DB schema row no longer cites `FLT-01..08` as if current — FS-06 voided six of those eight IDs; reworded to `FLT-09, ex-FLT-01..08`.
+- **Why:** the rewrite shipped ahead of its own review; these were the review's confirmed findings.
+- **Not changed:** the changelog title convention nitpick — `## 2026-09-13 — ROADMAP Phase 2...` and `## 2026-08-27 — docs/ROADMAP.md: sequencing SSOT...` show pure-planning entries already omit `[REQ-IDs]` here.
+
 ## 2026-09-13 — [PRO-01..26] FS-05 rewritten as the proposition flow, ENV-* retired
 
 - **What:** `docs/specs/FS-05-envie-match.md` fully rewritten (issue #180, stacked on unmerged #179):
