@@ -439,6 +439,86 @@ describe("#168 monotonic sync sequence (VLT-08 follow-up)", () => {
   });
 });
 
+/**
+ * #196 (VLT-08 follow-up, Phase 3a.0 unblocker) — the gap the block above
+ * doesn't cover: #168's `sync_seq` columns only ever advanced on INSERT
+ * (a plain `DEFAULT nextval(...)`), but every real write to these three
+ * tables (contact patch/tombstone, role revive/tombstone, filter-rule edit)
+ * is an UPDATE. `bump_sync_seq_on_update` adds a `BEFORE UPDATE FOR EACH ROW`
+ * trigger (`bump_sync_seq()`) to `contact_links`, `contact_roles`, and
+ * `filter_rules` so a keyset cursor on `syncSeq` (#189, not yet switched
+ * over) would actually see these edits. Each case below updates a row and
+ * asserts its new `sync_seq` strictly exceeds the table-wide max that existed
+ * immediately before the UPDATE — the same "past the previous max" shape as
+ * the INSERT case above, proven for UPDATE instead.
+ */
+describe("#196 sync_seq advances on UPDATE (VLT-08 follow-up)", () => {
+  it("contact_links.sync_seq advances past the previous table-wide max on UPDATE", async () => {
+    const id = await newLink();
+    const before = await db.query<{ max: string }>(
+      `select max(sync_seq)::text as max from contact_links`,
+    );
+    await db.query(`update contact_links set display_name = 'renamed-196' where id = $1`, [id]);
+    const after = await db.query<{ sync_seq: string }>(
+      `select sync_seq from contact_links where id = $1`,
+      [id],
+    );
+    expect(BigInt(after.rows[0]!.sync_seq)).toBeGreaterThan(BigInt(before.rows[0]!.max));
+  });
+
+  it("contact_roles.sync_seq advances past the previous table-wide max on UPDATE (e.g. tombstoning a role)", async () => {
+    const link = await newLink();
+    await db.query(
+      `insert into contact_roles (contact_link_id, role, updated_at) values ($1, 'family', now())`,
+      [link],
+    );
+    const before = await db.query<{ max: string }>(
+      `select max(sync_seq)::text as max from contact_roles`,
+    );
+    await db.query(
+      `update contact_roles set deleted_at = now() where contact_link_id = $1 and role = 'family'`,
+      [link],
+    );
+    const after = await db.query<{ sync_seq: string }>(
+      `select sync_seq from contact_roles where contact_link_id = $1 and role = 'family'`,
+      [link],
+    );
+    expect(BigInt(after.rows[0]!.sync_seq)).toBeGreaterThan(BigInt(before.rows[0]!.max));
+  });
+
+  it("filter_rules.sync_seq advances past the previous table-wide max on UPDATE (e.g. changing a rule's level)", async () => {
+    await db.exec(
+      `insert into users (id, phone_hash, display_name) values ('u-196-fr','h-196-fr','T')`,
+    );
+    await db.query(
+      `insert into filter_rules (id, owner_id, axis, value, level, updated_at) values
+         ('fr-196-1','u-196-fr','ETAT','paused','EXCLUDED_DEFAULT',now())`,
+    );
+    const before = await db.query<{ max: string }>(
+      `select max(sync_seq)::text as max from filter_rules`,
+    );
+    await db.query(`update filter_rules set level = 'VETO' where id = 'fr-196-1'`);
+    const after = await db.query<{ sync_seq: string }>(
+      `select sync_seq from filter_rules where id = 'fr-196-1'`,
+    );
+    expect(BigInt(after.rows[0]!.sync_seq)).toBeGreaterThan(BigInt(before.rows[0]!.max));
+  });
+
+  it("does not fire on INSERT — the column DEFAULT alone assigns sync_seq to a freshly inserted row", async () => {
+    const before = await db.query<{ max: string }>(
+      `select max(sync_seq)::text as max from contact_links`,
+    );
+    const id = await newLink();
+    const row = await db.query<{ sync_seq: string }>(
+      `select sync_seq from contact_links where id = $1`,
+      [id],
+    );
+    // A single INSERT with no subsequent UPDATE still only consumes one
+    // nextval() — exactly the pre-#196 (INSERT-only) behaviour, unchanged.
+    expect(BigInt(row.rows[0]!.sync_seq)).toBeGreaterThan(BigInt(before.rows[0]!.max));
+  });
+});
+
 describe("SUG-DB-007 FK indexes", () => {
   /** Postgres never auto-indexes FK columns; Prisma only creates what's declared. */
   async function indexNames(table: string): Promise<string[]> {

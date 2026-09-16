@@ -7,6 +7,13 @@
 > Entries before 2026-08-15 are archived in [../../docs/archive/db-CHANGELOG-pre-2026-08-15.md](../../docs/archive/db-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 > Entries from 2026-08-15 to 2026-08-18 are archived in [../../docs/archive/db-CHANGELOG-2026-08-15-to-2026-08-18.md](../../docs/archive/db-CHANGELOG-2026-08-15-to-2026-08-18.md) — moved, not deleted.
 
+## 2026-09-16 — [VLT-08] sync_seq advances on UPDATE — BEFORE UPDATE trigger (#196)
+
+- **Why:** #168's `sync_seq` columns on `contact_links`/`contact_roles` (plain `BIGSERIAL DEFAULT nextval(...)`) and `filter_rules`'s own `BIGSERIAL` only ever advance on INSERT. Every real write to these tables (contact patch/tombstone, role revive/tombstone, parent bump on role writes, any filter-rule edit) is an UPDATE — so `sync_seq` was silently frozen after insert. Flagged while scoping #189 (delta-pull cursor → `syncSeq`), which is blocked on this landing first.
+- **What:** new migration `20260916000000_bump_sync_seq_on_update` adds one reusable vanilla-Postgres trigger function, `bump_sync_seq()`, that sets `NEW.sync_seq = nextval(TG_ARGV[0])`; attached as `BEFORE UPDATE FOR EACH ROW` to `contact_links`, `contact_roles`, and `filter_rules`, each passing its own backing sequence name as the trigger argument. No extension, no Neon-specific SQL. `schema.prisma` gets comments only on the three `syncSeq` fields (Prisma can't model triggers) — no model shape change.
+- **Tests:** new `#196 sync_seq advances on UPDATE` block in `migrations.test.ts` proves `sync_seq` strictly exceeds the prior table-wide max on UPDATE for all three tables, plus an INSERT-still-single-nextval sanity check. `packages/db` 119/119 green (PGlite); `pnpm --filter @repo/api test` 194/194 green against a real Postgres 17 with the new migration applied (no regression on contact/role write paths); full `pnpm turbo run lint typecheck test build` green.
+- **Gotcha:** one function body serves all three tables via `TG_ARGV[0]` (their backing sequences have different names) rather than three near-identical functions. Unblocks #189 (`area:api`, cursor.ts → `syncSeq > cursor`) and gives #185/#166/#170/#183 a trigger to attach from their first migration instead of retrofitting.
+
 ## 2026-09-05 — [FLT-01..08, VLT-01..03, VLT-07..09, IDT-08] FilterRule schema
 
 - **Why:** issue #169 required a FilterRule model with two enums (FilterAxis, FilterLevel) and two back-relations on User and ContactLink. The schema additions covered the data model, but the migration needed hand-written constraints for the XOR CHECK (preventing duplicate case rules per owner) and partial unique indexes (allowing re-linking after tombstoning).

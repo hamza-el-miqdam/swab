@@ -141,6 +141,12 @@ model ContactLink {
   /// relative order (see `monotonic_sync_sequence`). `apps/api/src/contacts/
   /// cursor.ts`'s rewrite to a strict `syncSeq > cursor` keyset is a
   /// follow-up (`area:api`), not done in the migration PR.
+  /// #196 (VLT-08 follow-up): a `BEFORE UPDATE FOR EACH ROW` trigger
+  /// (`bump_sync_seq()`, migration `bump_sync_seq_on_update`) now re-assigns
+  /// this column's `nextval(...)` on every UPDATE too, not just INSERT —
+  /// Prisma has no way to model a DB trigger, so this comment is the only
+  /// trace of it in this file. Every real write to this table is an UPDATE,
+  /// so without the trigger `sync_seq` was frozen at its insert-time value.
   syncSeq              BigInt    @default(autoincrement()) @map("sync_seq")
   /// Tombstone, not a hard delete (VLT-09): a stale device replaying a
   /// pre-deletion update must not resurrect the contact.
@@ -192,6 +198,8 @@ model ContactRole {
   /// above (#168). Backfill tie-break for equal `updatedAt`: this model has
   /// no standalone `id`, so the composite PK `(contactLinkId, role)` — its
   /// own row identity — is the tie-break, in place of ContactLink's `id`.
+  /// #196: same `bump_sync_seq()` BEFORE UPDATE trigger as ContactLink.syncSeq
+  /// above — see that field's comment.
   syncSeq       BigInt       @default(autoincrement()) @map("sync_seq")
   /// Tombstoned like its parent — removing a role is a sync event, not a gap.
   deletedAt     DateTime?    @map("deleted_at") @db.Timestamptz(3)
@@ -245,6 +253,8 @@ model FilterRule {
   /// Delta-pull cursor (VLT-08). This table adopts syncSeq from day one per
   /// issue #168's convention for new tables — no backfill needed, it has no
   /// pre-existing rows.
+  /// #196: same `bump_sync_seq()` BEFORE UPDATE trigger as ContactLink.syncSeq
+  /// above — this table's `BIGSERIAL` default only ever fired on INSERT.
   syncSeq       BigInt       @default(autoincrement()) @map("sync_seq")
 
   // Exactly one of (axis+value) or contactLinkId is set — enforced by a CHECK
