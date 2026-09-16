@@ -11,6 +11,13 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-16 — [FCH-06] void the FS-06 filter-consequence clause of FCH-06 (closes #201)
+
+- **What:** `docs/specs/FS-03-contact-card.md`'s `FCH-06` no longer requires the fiche to show a FS-06 "filter consequence" for the current état. That clause (e.g. "en pause → exclu par défaut à l'envoi") is struck through and marked VOID in place, with a note — the ID is not renumbered or deleted. The surviving half of FCH-06 (that `en pause` is a valid état value) is unchanged.
+- **Why:** FS-06's 2026-09-13 narrowing (PR #182, ADR-002 `OQ-PRO-7` outcome B) retired `FLT-01`, the case-based état/ressenti default-rule system FCH-06 depended on. Only `FLT-02` veto absolu survives, and it's an explicit manual per-contact toggle set from the contact card — independent of état/ressenti. État now has zero automatic filtering consequence, so the displayed copy asserting one ("en pause → exclu par défaut") is false product copy, not just a stale doc comment.
+- **Checked, no change needed:** `FS-06-filtering.md` doesn't reference FCH-06's consequence-display example anywhere, so no reciprocal edit there.
+- **Follow-ups, not in this PR:** the live false string in `apps/ios/Sources/SwabCore/L10n/Fr.swift` (`ficheEtatPausedConsequence`) and `FicheFilterConsequence.swift` needs an area:ios PR; the identical string in Android's `Fr.kt` (`FICHE_ETAT_PAUSED_CONSEQUENCE`) needs a twin area:android issue + PR — a prior PR (#200) only fixed Android's doc-comment `FLT-01` citation, not the displayed string. `docs/qa/e2e-scenarios.md` / `e2e-coverage.json`'s FCH-06 entries (still quoting the old example) update in whichever implementing PR lands the code change.
+
 ## 2026-09-16 — [#186] docs(specs): retired 3-tier filter language in product-overview.md
 
 - **What:** law 2's English gloss (line 16) no longer promises a "revocable at send" filter tier — reworded to describe the veto absolu as a standing, owner-managed boundary, matching FS-06's FLT-02. The `filtrage` glossary row (line 43) dropped the retired `exclu par défaut` / `priorité basse` tiers, now reads "Standing personal exclusion: veto absolu".
