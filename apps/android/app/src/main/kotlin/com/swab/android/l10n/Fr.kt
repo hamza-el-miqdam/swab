@@ -65,7 +65,7 @@ object Fr {
     const val ETAT_BUSY: String = "occupé"
     const val ETAT_AWAY: String = "ailleurs"
     // OQ-FCH-2 (RESOLVED 2026-08-09, issue #16): "en pause" is a 4th état
-    // value — moved off Ressenti, État is canonical per FS-03 FCH-06/FLT-01.
+    // value — moved off Ressenti, État is canonical per FS-03 FCH-06.
     const val ETAT_PAUSED: String = "en pause"
     // OQ-FCH-1 (RESOLVED 2026-08-09, issue #15): the léger/précieux placeholder
     // pair is fully replaced — verbatim from the blueprint's embedded VALENCES
