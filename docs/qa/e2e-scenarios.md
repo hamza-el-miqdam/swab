@@ -160,10 +160,11 @@ French UI copy in the steps is normative (quoted from the specs verbatim).
 - **Then** a discreet, non-modal, non-blocking prompt offers exactly « C'est toujours ça » (re-confirms, resets timer) and « À revoir plus tard » (dismisses quietly, re-eligible after 30 days); nothing is logged server-side.
 - Verification note: requires clock manipulation — covered at the unit level (staleness logic), not driveable end-to-end without a time-travel hook.
 
-### FCH-06 — « en pause » état + filter consequence
+### FCH-06 — « en pause » état vocabulary
 - **Given** a contact whose état is « en pause »,
 - **When** the fiche renders,
-- **Then** the état vocabulary includes « en pause » and the fiche shows the FS-06 filter consequence for the current état (e.g. « en pause → exclu par défaut à l'envoi »).
+- **Then** the état vocabulary includes « en pause ».
+- ~~the fiche shows the FS-06 filter consequence for the current état (e.g. « en pause → exclu par défaut à l'envoi »)~~ — **VOID 2026-09-16** (issue #201), matching `docs/specs/FS-03-contact-card.md`'s FCH-06 row: FS-06's 2026-09-13 narrowing retired `FLT-01`, the case-based état/ressenti default-rule system this clause depended on; état now carries no automatic filtering consequence, so there is nothing truthful left to render or to verify here. iOS deleted the copy and its view-model property outright (`FicheFilterConsequence.swift` + tests, `filterConsequenceText`, `Fr.swift`'s `ficheEtatPausedConsequence` — PR #204). Android twin removal tracked in issue #203.
 - Edge cases: the état-vs-ressenti axis ambiguity for « en pause » (flagged in Wave 3) is RESOLVED (2026-08-09, issue #16) — état is canonical; both apps fixed to stop checking Ressenti.
 
 ### FCH-07 — Back to map preserves position

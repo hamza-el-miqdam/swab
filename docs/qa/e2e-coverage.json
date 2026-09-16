@@ -1,5 +1,5 @@
 {
-  "$comment": "FS requirement → E2E verification manifest. Joined against on-device test results by scripts/e2e-report.mjs. Statuses: automated (named tests must run — drift guard), unit-covered, api-integration, manual, not-e2e-verifiable. Scenarios: docs/qa/e2e-scenarios.md. Update in the same PR as any user-facing requirement change (G2 E2E gate).",
+  "$comment": "FS requirement → E2E verification manifest. Joined against on-device test results by scripts/e2e-report.mjs. Statuses: automated (named tests must run — drift guard), unit-covered, api-integration, manual, not-e2e-verifiable, void (the spec clause this scenario verified was retired — see the requirement's spec row and notes; entry kept, not deleted, per G2's 'honest classification, never silently dropped'). Scenarios: docs/qa/e2e-scenarios.md. Update in the same PR as any user-facing requirement change (G2 E2E gate).",
   "requirements": {
     "ONB-01": {
       "fs": "FS-01",
@@ -354,14 +354,14 @@
     },
     "FCH-06": {
       "fs": "FS-03",
-      "title": "« en pause » état + FS-06 filter consequence shown",
+      "title": "« en pause » état + FS-06 filter consequence shown — filter-consequence clause VOID 2026-09-16 (issue #201)",
       "ios": {
-        "status": "unit-covered"
+        "status": "void"
       },
       "android": {
-        "status": "unit-covered"
+        "status": "void"
       },
-      "notes": "Vocabulary + consequence rendering covered in view-model unit tests. État-vs-ressenti axis ambiguity for « en pause » RESOLVED 2026-08-09 (issue #16) — état is canonical, apps fixed. E2E once FS-06 lands."
+      "notes": "FS-06's 2026-09-13 narrowing retired FLT-01 (docs/specs/FS-06-filtering.md); docs/specs/FS-03-contact-card.md's FCH-06 row struck the filter-consequence clause and marked it VOID — état now has no automatic filtering consequence, so there is nothing left to verify e2e for that half of this requirement. iOS deleted the copy and its view-model property outright (FicheFilterConsequence.swift + tests, filterConsequenceText, Fr.swift's ficheEtatPausedConsequence — PR #204); Android still carries the now-false string pending issue #203. The surviving half of FCH-06 (« en pause » remains a valid état value) has no dedicated scenario — it's incidental coverage inside other état-vocabulary tests. État-vs-ressenti axis ambiguity for « en pause » RESOLVED 2026-08-09 (issue #16) — état is canonical, apps fixed."
     },
     "FCH-07": {
       "fs": "FS-03",
