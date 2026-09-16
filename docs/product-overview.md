@@ -13,7 +13,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 ## 2. The five product laws (non-negotiable, enforced in code review)
 
 1. **A proposition is directed, never broadcast.** You propose to people you chose, and they know it is you. No one receives a proposition « de quelqu'un ».
-2. **Nothing hidden silently.** Every filter applied at send time is shown to the sender and revocable in place. (« Rien n'est masqué en silence. »)
+2. **Nothing hidden silently.** The veto absolu is a standing personal boundary the owner sets and manages explicitly — never a mechanism applied without the owner's knowledge. (« Rien n'est masqué en silence. »)
 3. **You declare, Swab never guesses.** Relationship classification is user-declared, asymmetric, and private. No inference, no suggestions based on behavior.
 4. **Privacy is structural, not a setting — but it is privacy *from other users*, not from us.** Revised 2026-08-16 (`docs/decisions/ADR-001-server-side-classification-data.md`): classification data is stored server-side and the service can technically read it, so the « ni eux, ni nous » promise no longer holds and must not be used. What is structural and unchanged: no other user ever sees your classement, links are one-directional (IDT-08), and refusal is indistinguishable from silence. Say this plainly — never imply end-to-end encryption.
 5. **Calm by design.** No counters, badges, streaks, celebrations, urgency, or gamification. Soft language everywhere; graceful exits (« Passer cette fois ») that the other side never sees.
@@ -40,7 +40,7 @@ The honest consequence: **Swab can technically read your classification data; ot
 | **fiche contact** | contact card | Per-relation detail: 4 axes + history feed |
 | **les quatre axes** | the four axes | Intimité (ring), Rôles·contexte, État, Ressenti — declared, private, asymmetric |
 | **sous-groupe** | subgroup | A group you name and manage yourself — create, rename, edit membership, delete; FCA also suggests candidate subgroups you can pin, rename, hide, or accept ([ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) commitment 3) |
-| **filtrage** | filtering | Send-time exclusion by rules: veto absolu / exclu par défaut / priorité basse |
+| **filtrage** | filtering | Standing personal exclusion: veto absolu |
 | ~~**match**~~ | ~~match~~ | **RETIRE** — see [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md). No matching engine; mutual reveal is gone. The word still appears in the schema and older specs as a historical artifact. |
 | **passer cette fois** | soft pass | Declining a proposition invisibly to the counterpart |
 | ~~**vault**~~ | ~~vault~~ | **RETIRE** — see [ADR-001](decisions/ADR-001-server-side-classification-data.md). Classification data lives server-side in Postgres (single source of truth); devices hold a cache, not an opaque encrypted blob. The word may still appear in code/migration docs as a historical artifact. |
