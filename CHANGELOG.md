@@ -11,6 +11,12 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-16 — [#186] docs(specs): retired 3-tier filter language in product-overview.md
+
+- **What:** law 2's English gloss (line 16) no longer promises a "revocable at send" filter tier — reworded to describe the veto absolu as a standing, owner-managed boundary, matching FS-06's FLT-02. The `filtrage` glossary row (line 43) dropped the retired `exclu par défaut` / `priorité basse` tiers, now reads "Standing personal exclusion: veto absolu".
+- **Why:** FS-06 was narrowed 2026-09-13 (PR #182, ADR-002 `OQ-PRO-7` outcome B) to veto-absolu-only; this doc still described the retired three-tier system (finding 8 from #182's review, out of that PR's scope). Tracked as issue #186.
+- **Gotcha:** drafted by a local model (qwen3.8, via `ollama-router`'s `spec-and-ambiguity` profile) as a text-only proposal, then verified against the current file and FS-06's FLT-02 wording directly before applying — the model has no file-edit tools, so nothing lands automatically from that workflow.
+
 ## 2026-09-16 — [#196] docs: refresh ROADMAP.md after #196 merge
 
 - **What:** `docs/ROADMAP.md`'s "last reviewed" line, critical-path diagram, and schema-queue table updated to reflect #196 (sync_seq UPDATE trigger) landing via PR #197 — 3a.0 marked done, 3a.1 (#185) and 3b (#189) marked unblocked.
