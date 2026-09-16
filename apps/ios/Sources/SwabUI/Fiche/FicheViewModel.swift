@@ -50,12 +50,6 @@ public final class FicheViewModel {
         )
     }
 
-    /// FCH-06: informational filter-consequence text for the current état
-    /// (nil when there's nothing to say).
-    public var filterConsequenceText: String? {
-        FicheFilterConsequence.text(etat: contact.etatValue, ressenti: contact.ressentiValue)
-    }
-
     public func refresh() async {
         do {
             contact = try await vault.getContact(id: contact.id) ?? contact

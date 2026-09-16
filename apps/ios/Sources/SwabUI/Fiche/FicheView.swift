@@ -18,7 +18,6 @@ public struct FicheView: View {
                 header
                 stalenessNudge
                 axes
-                filterConsequence
                 pendingNotice
                 reciprocityFooter
                 historyFeed
@@ -159,17 +158,6 @@ public struct FicheView: View {
                 .swabType(DesignTokens.Typography.title, relativeTo: .headline)
                 .foregroundStyle(Color(hex: CarteTheme.text))
             content()
-        }
-    }
-
-    // MARK: - FCH-06 filter consequence (informational only)
-
-    @ViewBuilder
-    private var filterConsequence: some View {
-        if let text = viewModel.filterConsequenceText {
-            Text(text)
-                .swabType(DesignTokens.Typography.subtitle, relativeTo: .footnote)
-                .foregroundStyle(Color(hex: CarteTheme.textDim))
         }
     }
 
