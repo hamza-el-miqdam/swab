@@ -4,6 +4,12 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/android-CHANGELOG-pre-2026-08-15.md](../../docs/archive/android-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-09-16 — [FCH-06] Drop retired FLT-01 citation from Fr.kt
+
+- **What changed:** `Fr.kt`'s comment above `ETAT_PAUSED` no longer cites `FLT-01` — only `FS-03`/`FCH-06` remain. No string value or other line changed.
+- **Why:** `docs/specs/FS-06-filtering.md`'s 2026-09-13 narrowing (PR #182, ADR-002 `OQ-PRO-7` outcome (B)) retired `FLT-01`; the case-based default-rule system it named is gone, only `FLT-02` (veto-absolu) survives. Closes #188.
+- **Provenance:** drafted by `gemma4:26b-a4b-it-qat` via ollama-router's fast-draft profile, independently re-verified line-by-line against the real file before applying — no out-of-scope edits found.
+
 ## 2026-08-26 — [ONB-02, IDT-03, MAP-01, MAP-09, SUG-DES-011] issue #128 E2E flakiness: 429 observability + gate back to green
 
 - **Root cause (issue #128):** `/auth/otp/request` and `/auth/otp/verify` share IDT-03's per-IP rate limit (10/60s, `apps/api/src/routes/auth.ts`). Every `signUpThroughOtp()` spends 3 calls on that one bucket, so a full suite (~16 onboarding call sites, ~48 calls) exhausted it part-way through. The 429 left `SignupViewModel` silently in `otpError`, and `waitUntilContentDescriptionExists` then polled 20s before throwing `ComposeTimeoutException` — a timeout that never named its real cause.
