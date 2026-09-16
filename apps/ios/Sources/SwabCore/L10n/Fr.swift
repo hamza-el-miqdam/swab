@@ -101,7 +101,7 @@ public enum I18nKey: String, CaseIterable, Sendable {
 
     // FS-03 — fiche contact. Copy below is original (not blueprint-quoted,
     // same status as `carte.empty`) except where the spec gives literal
-    // French wording (ficheStaleConfirm/ficheStaleLater/ficheEtatPausedConsequence/
+    // French wording (ficheStaleConfirm/ficheStaleLater/
     // ficheNoMetrics — quoted verbatim from FS-03's requirement rows).
     case ficheSubtitle = "fiche.subtitle"
     case ficheAxisIntimite = "fiche.axis.intimite"
@@ -116,7 +116,6 @@ public enum I18nKey: String, CaseIterable, Sendable {
     case ficheStaleTitle = "fiche.stale.title"
     case ficheStaleConfirm = "fiche.stale.confirm"
     case ficheStaleLater = "fiche.stale.later"
-    case ficheEtatPausedConsequence = "fiche.etat.pausedConsequence"
     case fichePendingHint = "fiche.pending.hint"
     case ficheEnvieInactive = "fiche.envie.inactive"
 }
@@ -223,7 +222,6 @@ public enum Fr {
         .ficheStaleTitle: "Est-ce que ça a bougé ?",
         .ficheStaleConfirm: "C’est toujours ça",
         .ficheStaleLater: "À revoir plus tard",
-        .ficheEtatPausedConsequence: "en pause → exclu par défaut à l’envoi",
         .fichePendingHint: "Cette personne n’a pas encore rejoint swab.",
         .ficheEnvieInactive: "Envie indisponible tant qu’elle n’a pas rejoint swab.",
     ]
