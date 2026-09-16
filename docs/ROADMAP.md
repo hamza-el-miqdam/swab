@@ -4,7 +4,7 @@
 > Companion to [STATUS.md](STATUS.md): STATUS says *what is done*, this file says *what is next and in what order*.
 > Update this file whenever a task here starts, completes, or is re-sequenced. Detail per change still goes to the area changelogs (G5).
 
-_Last reviewed: 2026-09-14 (against `main` @ `c5039c6`)_
+_Last reviewed: 2026-09-16 (against `main` @ `05c9750`)_
 
 ## How to use this file (read this first, every session)
 
@@ -24,13 +24,13 @@ The three unstarted specs (FS-04, FS-05, FS-06) are the actual product. Nothing 
 
 **The spec gate is cleared.** [ADR-002](decisions/ADR-002-envie-becomes-a-proposition.md) pivoted the product on 2026-08-27: an envie is a directed, visible proposition. Phase 0b made that legal; Phase 0c rewrote the specs — FS-05 as `PRO-01..26` (#184), FS-04 amended (#167), FS-06 narrowed to veto absolu (#182). Phases 1 and 2 are done too.
 
-**The bottleneck is now the schema queue (Phase 3a).** Four `area:db` issues, plus one not yet filed, all edit `schema.prisma`, `seed.ts`, and `packages/db/CHANGELOG.md` through a single writer — they land one at a time, and each backend slice waits on its own item. Founder sign-offs (Phase 3e) gate the last one. Phase 4 runs alongside throughout.
+**The bottleneck is now the schema queue (Phase 3a).** #196 (the `sync_seq` UPDATE trigger) landed 2026-09-16 via PR [#197](https://github.com/hamza-el-miqdam/swab/pull/197) — it was 3a.0, the queue's first item, and it unblocks both 3a.1 (#185) and 3b (#189), which can now both proceed. Three more `area:db` issues, plus one not yet filed, all still edit `schema.prisma`, `seed.ts`, and `packages/db/CHANGELOG.md` through a single writer — they land one at a time, and each backend slice waits on its own item. Founder sign-offs (Phase 3e) gate the last one. Phase 4 runs alongside throughout.
 
 ### Critical path
 
 ```mermaid
 graph LR
-  T["#196<br/>sync_seq advances on UPDATE"] --> F["#185<br/>FilterRule → veto only"]
+  T["#196<br/>sync_seq advances on UPDATE ✅"] --> F["#185<br/>FilterRule → veto only"]
   F --> G["#166<br/>Group · GroupMember"]
   G --> H["#170<br/>HistoryEvent"]
   H --> S["#183<br/>proposition schema"]
@@ -47,12 +47,14 @@ graph LR
   V --> P
   GS --> P
   P --> M["propositions<br/>mobile"]
-  style T fill:#dc2626,color:#fff
+  style T fill:#16a34a,color:#fff
+  style F fill:#dc2626,color:#fff
+  style C fill:#dc2626,color:#fff
   style O fill:#dc2626,color:#fff
   style D fill:#7c3aed,color:#fff
 ```
 
-Solid arrows are hard order. Dotted arrows mean each backend slice needs only *its own* schema item — the veto slice can start as soon as #185 and #189 land, without waiting for #183. The history slice feeds nothing else on this path: propositions needs veto + groups + the outbox table (not filed, same as the trigger), but **not** history — `HistoryEvent` (#170) sits on the schema queue only because `PRO-25` might extend it (see 3a.3's caveat), not because propositions reads it. Red is the next action; purple is the founder's.
+Solid arrows are hard order. Dotted arrows mean each backend slice needs only *its own* schema item — the veto slice can start as soon as #185 and #189 land, without waiting for #183. The history slice feeds nothing else on this path: propositions needs veto + groups + the outbox table (not filed, same as the trigger), but **not** history — `HistoryEvent` (#170) sits on the schema queue only because `PRO-25` might extend it (see 3a.3's caveat), not because propositions reads it. Green is done; red are the two next actions (#185 is data-steward's serial queue, #189 is backend's parallel track — both now unblocked); purple is the founder's.
 
 ---
 
@@ -188,7 +190,7 @@ Every item edits `schema.prisma`, `seed.ts`, `packages/db/tests/migrations.test.
 
 | # | Issue | Change | Why this position |
 |---|---|---|---|
-| 3a.0 | [#196](https://github.com/hamza-el-miqdam/swab/issues/196) | `sync_seq` advances on UPDATE: a vanilla-Postgres `BEFORE UPDATE` trigger on `contact_links`, `contact_roles`, **and `filter_rules`** (all three already carry `syncSeq`), reusable by every later delta-pulled table. | Migration `20260830000000_monotonic_sync_sequence` makes `sync_seq` a column `DEFAULT`, so it only advances on INSERT. Every contact edit, tombstone, role change, and filter-rule edit is an UPDATE. #189 cannot land without this, and tables added after it get the trigger from day one. |
+| 3a.0 | [#196](https://github.com/hamza-el-miqdam/swab/issues/196) | ✅ **done 2026-09-16** (PR [#197](https://github.com/hamza-el-miqdam/swab/pull/197)) — `sync_seq` advances on UPDATE: a vanilla-Postgres `BEFORE UPDATE` trigger on `contact_links`, `contact_roles`, **and `filter_rules`** (all three already carry `syncSeq`), reusable by every later delta-pulled table. | Migration `20260830000000_monotonic_sync_sequence` made `sync_seq` a column `DEFAULT`, so it only advanced on INSERT. Every contact edit, tombstone, role change, and filter-rule edit is an UPDATE. Unblocked #189 and gives #185/#166/#170/#183 a trigger to attach to instead of retrofitting. |
 | 3a.1 | [#185](https://github.com/hamza-el-miqdam/swab/issues/185) | `FilterRule` slimmed to the veto-only shape (`FLT-09`). | Smallest item. It unblocks the veto slice, which proposition delivery needs. |
 | 3a.2 | [#166](https://github.com/hamza-el-miqdam/swab/issues/166) | `Group`/`GroupMember`, owner-scoped (`SGR-10..15`). | Needed for `PRO-09`'s server-side group resolution. |
 | 3a.3 | [#170](https://github.com/hamza-el-miqdam/swab/issues/170) | `HistoryEvent`, with `syncSeq` from day one and a 12-month retention sweep (`FCH-04`). | Goes before #183 so that *if* `PRO-25`'s acceptance event ends up extending `HistoryEvent`, the table already exists — **not yet decided**: #170's own body defers proposition/match events to "a separate future `area:db` issue", and #183 currently scopes the acceptance-event schema as new work of its own, with no reference back to #170. Settle this when #183 is drafted; until then, treat the ordering as a hedge, not a commitment. Unblocks #110. |
@@ -202,7 +204,7 @@ Every item edits `schema.prisma`, `seed.ts`, `packages/db/tests/migrations.test.
 
 ### 3b. Delta-pull cursor → `syncSeq` — `area:backend` ∥
 
-- **Issue:** [#189](https://github.com/hamza-el-miqdam/swab/issues/189). **Blocked on 3a.0:** a naive `syncSeq > cursor` against today's INSERT-only column silently drops every edit.
+- **Issue:** [#189](https://github.com/hamza-el-miqdam/swab/issues/189). **Unblocked 2026-09-16** — 3a.0 (#196) landed; a naive `syncSeq > cursor` against the old INSERT-only column would have silently dropped every edit. Actionable now.
 - **Why now:** every delta-pulled route added in 3c inherits whatever cursor exists, so #189 should land before the first new one.
 - **Residual gap:** sequence allocation order ≠ commit order, so a pull that runs between two concurrent commits can skip a row.
   - This is not introduced by #189 — the current `updatedAt` cursor has the same gap.
