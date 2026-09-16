@@ -4,6 +4,11 @@
 
 > Entries before 2026-08-15 are archived in [../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md](../../docs/archive/ios-CHANGELOG-pre-2026-08-15.md) — moved, not deleted.
 
+## 2026-09-17 — [FCH-06] Drop retired FLT-01 citation from FicheFilterConsequence (closes #187)
+
+- **What:** `FicheFilterConsequence.swift`'s doc comment now cites only `FCH-06`, and quotes product law 2 correctly (« Rien n'est masqué en silence », `docs/product-overview.md`) instead of the misquote « rien ne disparaît en silence ». Comment-only, no code or string change.
+- **Why:** FS-06's 2026-09-13 narrowing (PR #182) voided `FLT-01`. Android's twin citation was dropped in #200.
+- **Gotcha:** PR #204 deletes this whole file (FCH-06 consequence copy removed). Whichever PR merges second gets a modify/delete conflict; resolve it by keeping the deletion.
 
 ## 2026-08-25 — [FCH-04] History pruning gains a clock-skew guard (issue #113)
 
