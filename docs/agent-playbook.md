@@ -45,7 +45,7 @@ Every issue carries: title `[FS-05][PRO-15] Race-safe proposition creation`, lab
 ## 5. Definition of Ready / Done (gate checklist)
 
 **Ready:** requirement ID exists in an Approved spec · dependencies Implemented or stubbed · seam contract agreed (if cross-agent) · acceptance criteria present.
-**Done:** acceptance tests green · coverage ≥80% changed · scope guard green · **mobile E2E gate green (`scripts/e2e-ios.sh` / `scripts/e2e-android.sh` → `test-results/e2e/e2e-report.md` PASS, no drift; summary pasted in the PR — see G2)** · spec status updated if the module completed · required checks (per agent DoD) green · PR ≤400 lines · human review passed.
+**Done:** acceptance tests green · coverage ≥80% changed · no scope-guard schema violation (the only hard gate; area-boundary drift is advisory) · **mobile E2E gate green (`scripts/e2e-ios.sh` / `scripts/e2e-android.sh` → `test-results/e2e/e2e-report.md` PASS, no drift; summary pasted in the PR — see G2)** · spec status updated if the module completed · required checks (per agent DoD) green · PR ≤400 lines · human review passed.
 
 ## 6. The privacy audit (recurring, blocking)
 

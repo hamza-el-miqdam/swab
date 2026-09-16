@@ -35,8 +35,8 @@ Swab (صواب) — an app to propose seeing your friends: a directed « envie �
 
 ## G4 — Workflow rules (all agents)
 
-- Stay inside your declared file scope (see your agent file). A PR touching paths outside scope will be auto-rejected by the scope guard.
-- `packages/db/prisma/schema.prisma` has exactly ONE writer: the Data & Schema Steward (`area:db`). Every other agent — Backend included — requests changes by opening an `area:db` issue with a proposed model diff and the query patterns motivating it.
+- Stay inside your declared file scope (see your agent file). The scope guard warns (advisory, non-blocking, since 2026-09-16 — solo-maintained repo, no coordination problem to solve) when a PR touches paths outside its declared area(s); treat the warning as a prompt to double-check scope or add the right `area:*` label(s), not a merge blocker.
+- `packages/db/prisma/schema.prisma` has exactly ONE writer: the Data & Schema Steward (`area:db`). Every other agent — Backend included — requests changes by opening an `area:db` issue with a proposed model diff and the query patterns motivating it. This is the one boundary the scope guard still hard-fails on — it guards real correctness risk (concurrent/conflicting schema edits), not organizational overhead.
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`...). One issue = one branch = one PR. Keep PRs under ~400 changed lines; split otherwise.
 - No new dependencies without justification in the PR description (bundle/attack-surface cost). No Vercel-proprietary APIs (KV/Blob/Edge Config) and no Neon-specific SQL anywhere in app code — AWS portability is a hard requirement.
 - If a spec is ambiguous, comment on the issue and stop — do not guess product behavior. Product ethos to preserve in every decision: no counters, no gamification, no dark patterns, nothing hidden silently.

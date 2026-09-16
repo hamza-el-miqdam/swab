@@ -11,6 +11,12 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-16 — scope-guard: area-boundary checks downgraded to advisory (G4)
+
+- **What:** `scripts/scope-guard.mjs` no longer exits 1 for an unlabeled PR or files outside the declared `area:*` scope — both now print a warning and exit 0. The `schema.prisma`-without-`area:db` hard gate is unchanged (still exits 1). `agents/_global-directives.md` (G4), `agents/devops-infrastructure-specialist.md`, `docs/agent-playbook.md` (DoD), and `docs/ROADMAP.md` updated to match; `scripts/scope-guard.test.mjs` updated for the new exit codes.
+- **Why:** the repo is solo-maintained — cross-area PR blocking (opening an `area:db`-style proposal issue to yourself, splitting PRs purely to stay inside one area) was solving a multi-agent coordination problem that doesn't exist here. The `schema.prisma` single-writer gate stays hard, since it guards a real correctness risk (conflicting concurrent schema edits), not an organizational one.
+- **Gotcha:** `.github/copilot-instructions.md` is a rendered verbatim copy of `agents/_global-directives.md` and is now stale (still has the old "auto-rejected" wording) — run `node scripts/render-agents.mjs` before this lands; CI's render-check (`ci.yml`) will fail otherwise. `.claude/agents/*` don't need regen (they `@`-import `_global-directives.md` at runtime, not a verbatim copy).
+
 ## 2026-09-14 — ROADMAP Phase 3 re-sequenced after ADR-002; #189 filed
 
 - **What:** `docs/ROADMAP.md` Phase 3 rewritten:

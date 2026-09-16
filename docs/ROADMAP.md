@@ -309,4 +309,4 @@ Parallelizable with Phase 3; none of it blocks the product. **Exception:** Issue
 - The Postgres gates do not need Docker: the API repo is an injected seam — use `pnpm --filter @repo/api dev:local`.
 - Android E2E requires an **API 34** emulator (API 35+ breaks Espresso — issue #56).
 - Android `executeShellCommand` has no shell behind it: `Runtime.exec` tokenises and ignores quotes, silently no-oping `sh -c '...'`. Use `executeShellCommandRw("sh")` + stdin.
-- Dependabot PRs need a manual `area:*` label or the scope guard fails closed.
+- Scope guard is advisory since 2026-09-16 — an unlabeled Dependabot PR now just warns instead of failing closed; the only label it still requires is `area:db` on a `packages/db/prisma/schema.prisma` diff.

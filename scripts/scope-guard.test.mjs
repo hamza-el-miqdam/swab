@@ -289,38 +289,37 @@ for (const { name, labels, changedFiles, expect } of cases) {
 }
 
 // describeResult() is the pure decision layer main() delegates to (side
-// effects — console + process.exitCode — live only in main()). Covers
-// issue #141 gap 2: an unlabeled PR must now fail closed, not warn-and-pass.
-test("describeResult: unlabeled PR fails closed (issue #141 gap 2 — grace period is over)", () => {
+// effects — console + process.exitCode — live only in main()). Policy
+// update 2026-09-16: area-boundary drift and missing area:* labels are
+// advisory only (exit 0) for a solo-maintained repo — see file header.
+// The schema.prisma hard gate is the sole case still exiting 1.
+test("describeResult: unlabeled PR warns but passes", () => {
   const result = describeResult([], ["apps/ios/Sources/SwabCore/App.swift", "apps/api/src/routes/auth.ts"]);
-  assert.equal(result.exitCode, 1);
-  assert.equal(result.level, "error");
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.level, "warn");
   // Message must name the valid area:* labels so an agent can self-correct.
   for (const label of Object.keys(AREA_PREFIXES)) {
     assert.ok(result.message.includes(label), `expected message to name ${label}`);
   }
-  // The old warn-and-pass / bake-in-week language must be gone.
-  assert.ok(!/warn-and-pass/i.test(result.message));
-  assert.ok(!/bake-in/i.test(result.message));
 });
 
-test("describeResult: unlabeled PR with zero changed files still fails closed", () => {
+test("describeResult: unlabeled PR with zero changed files also warns but passes", () => {
   const result = describeResult([], []);
-  assert.equal(result.exitCode, 1);
-  assert.equal(result.level, "error");
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.level, "warn");
 });
 
-test("describeResult: schema violation still takes priority and fails", () => {
+test("describeResult: schema violation still takes priority and fails — the one hard gate left", () => {
   const result = describeResult(["area:backend"], ["packages/db/prisma/schema.prisma"]);
   assert.equal(result.exitCode, 1);
   assert.equal(result.level, "error");
   assert.match(result.message, /schema/i);
 });
 
-test("describeResult: escaping paths fail with a labeled PR", () => {
+test("describeResult: escaping paths warn but pass with a labeled PR", () => {
   const result = describeResult(["area:ios"], ["apps/api/src/routes/auth.ts"]);
-  assert.equal(result.exitCode, 1);
-  assert.equal(result.level, "error");
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.level, "warn");
   assert.match(result.message, /apps\/api\/src\/routes\/auth\.ts/);
 });
 

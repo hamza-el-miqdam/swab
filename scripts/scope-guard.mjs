@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 /**
- * scope-guard — enforces G4: "A PR touching paths outside scope will be
- * auto-rejected by the scope guard." (agents/_global-directives.md)
+ * scope-guard — enforces G4 for a single hard boundary (the schema.prisma
+ * single-writer rule) and gives advisory feedback for everything else
+ * (area-boundary drift, missing area:* label). Policy update 2026-09-16:
+ * for a solo-maintained repo, blocking the PR red over a crossed area
+ * boundary was pure overhead with no coordination problem to solve —
+ * dropped to a warning. schema.prisma stays hard-blocking: it guards a
+ * real correctness risk (concurrent/conflicting schema edits), not an
+ * organizational one, so it's the one case that still fails the PR.
  *
  * Path-prefix mapping is derived from each agents/*-specialist.md "Scope"
  * section — keep AREA_PREFIXES in sync when a Scope section changes; this
@@ -28,9 +34,9 @@
  * Usage (as invoked by .github/workflows/scope-guard.yml):
  *   LABELS="area:ios" BASE=<sha> node scripts/scope-guard.mjs
  *
- * Exit codes: 0 = pass, 1 = fail — including an unlabeled PR (fail-closed
- * since issue #141; the prior warn-and-pass grace period from SUG-OPS-002
- * step 3 ended after its one-week bake-in and has been removed).
+ * Exit codes: 0 = pass or advisory warning, 1 = fail — fail is now reserved
+ * for the schema.prisma hard gate only. An unlabeled PR or one with files
+ * outside its declared area(s) prints a warning and still exits 0.
  */
 import { execFileSync } from "node:child_process";
 
@@ -279,25 +285,23 @@ export function describeResult(labels, changedFiles) {
   }
 
   if (unlabeled) {
-    // Fail-closed since issue #141: the SUG-OPS-002 step 3 bake-in week
-    // (tuned ~2026-08-17) is long over. An unlabeled PR used to warn and
-    // silently skip the scope check entirely (see PR #138) — that gap is
-    // closed as of here.
+    // Advisory since 2026-09-16 (see file header): no coordination problem
+    // to solve solo, so this no longer blocks the PR.
     return {
-      exitCode: 1,
-      level: "error",
+      exitCode: 0,
+      level: "warn",
       message:
-        "scope-guard: FAIL — no recognized area:* label on this PR; scope cannot be checked.\n" +
+        "scope-guard: WARN — no recognized area:* label on this PR; scope was not checked.\n" +
         `Add one (or more, for cross-cutting PRs) of: ${Object.keys(AREA_PREFIXES).join(", ")}.`,
     };
   }
 
   if (escaping.length > 0) {
     return {
-      exitCode: 1,
-      level: "error",
+      exitCode: 0,
+      level: "warn",
       message:
-        `scope-guard: FAIL — diff touches paths outside the declared area(s) (${labels.join(", ")}):\n` +
+        `scope-guard: WARN — diff touches paths outside the declared area(s) (${labels.join(", ")}):\n` +
         escaping.map((path) => `  - ${path}`).join("\n") +
         `\n\nEither narrow the PR to its declared scope, or add the area:* label(s) that cover these paths.`,
     };
