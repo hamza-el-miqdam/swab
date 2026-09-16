@@ -11,6 +11,11 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-16 — [#196] docs: refresh ROADMAP.md after #196 merge
+
+- **What:** `docs/ROADMAP.md`'s "last reviewed" line, critical-path diagram, and schema-queue table updated to reflect #196 (sync_seq UPDATE trigger) landing via PR #197 — 3a.0 marked done, 3a.1 (#185) and 3b (#189) marked unblocked.
+- **Why:** the file's own header requires updating it whenever a tracked task starts, completes, or is re-sequenced (G5) — no separate issue, routine roadmap housekeeping.
+
 ## 2026-09-16 — review-specialist: posting findings to the PR is mandatory, not conditional
 
 - **What:** `agents/review-specialist.md` now states explicitly that running `gh pr comment` is a required last step of every review, regardless of how the agent was invoked — handing findings back only as text to the caller does not satisfy the Definition of Done.
