@@ -11,6 +11,14 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-17 — [#70] docs: rewrite DEVELOPMENT.md around the native apps
+
+- **What:** the local-dev guide no longer documents the deleted Expo app (`apps/mobile`, `npx expo run:*`, `EXPO_PUBLIC_API_URL`). Quick Start now covers the two API routes (`pnpm --filter @repo/api dev:local`, no database, vs `docker compose up --build`), installing/running the native apps (`./gradlew installDebug`, the `SwabApp` scheme in Xcode), a new E2E-gate section for `scripts/e2e-{ios,android}.sh`, and a Configuration table keyed on `BuildConfig.API_BASE_URL` / `SWAB_API_BASE_URL`. The old "Testing Flows" and "Privacy Verification" sections are gone — both described retired behaviour, including a `vaults.blob`-is-ciphertext claim that ADR-001 retired.
+- **Why:** issue #70 — the guide's first Quick Start command failed for anyone following it since the RN app was removed on 2026-07-19.
+- **Gotchas:** Android E2E needs an **API 34** image (API 35+ breaks the pinned Espresso, issue #56) and `ANDROID_HOME` exported, since `scripts/e2e-android.sh` otherwise looks in the macOS default SDK path. Docker is now only a prerequisite for the Postgres route; Neon/Vercel CLIs are not used locally at all.
+- **Provenance:** skeleton drafted by `gemma4:26b-a4b-it-qat` via ollama-router's `fast-draft` profile, then verified line-by-line against the real repo before applying; the draft invented nothing but omitted about half the supplied facts (the compose `api` service, the `10.0.2.2` explanation, the E2E script options, `pnpm install`), which this entry's author restored by hand. The privacy/product sections were never delegated.
+- **Follow-up:** `README.md`, `ANDROID_SETUP.md`, `scripts/README.md` and `scripts/run-{android,ios}.sh` carry the same Expo-era content — tracked in #206 with file:line evidence, kept out of this PR to stay under the G4 size limit.
+
 ## 2026-09-16 — [#186] docs(specs): retired 3-tier filter language in product-overview.md
 
 - **What:** law 2's English gloss (line 16) no longer promises a "revocable at send" filter tier — reworded to describe the veto absolu as a standing, owner-managed boundary, matching FS-06's FLT-02. The `filtrage` glossary row (line 43) dropped the retired `exclu par défaut` / `priorité basse` tiers, now reads "Standing personal exclusion: veto absolu".
