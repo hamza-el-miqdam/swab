@@ -11,6 +11,12 @@
 > Entries from 2026-08-21 to 2026-08-22 are archived in [docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md](docs/archive/CHANGELOG-2026-08-21-to-2026-08-22.md) — moved, not deleted.
 > Entries from 2026-08-25 to 2026-08-26 are archived in [docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md](docs/archive/CHANGELOG-2026-08-25-to-2026-08-26.md) — moved, not deleted.
 
+## 2026-09-16 — review-specialist: posting findings to the PR is mandatory, not conditional
+
+- **What:** `agents/review-specialist.md` now states explicitly that running `gh pr comment` is a required last step of every review, regardless of how the agent was invoked — handing findings back only as text to the caller does not satisfy the Definition of Done.
+- **Why:** a review run this session produced a full verdict (PR #197 blocked by a failing `scope-guard` check) but returned it only as a report to the invoking session instead of posting it to the PR; nothing was recorded on the PR itself until posted by hand afterward.
+- **Gotcha:** `.claude/agents/review-specialist.md` needs no regen — it `@`-imports `agents/review-specialist.md` at runtime. Ran `node scripts/render-agents.mjs` anyway to confirm (no diff produced for rendered files).
+
 ## 2026-09-16 — scope-guard: area-boundary checks downgraded to advisory (G4)
 
 - **What:** `scripts/scope-guard.mjs` no longer exits 1 for an unlabeled PR or files outside the declared `area:*` scope — both now print a warning and exit 0. The `schema.prisma`-without-`area:db` hard gate is unchanged (still exits 1). `agents/_global-directives.md` (G4), `agents/devops-infrastructure-specialist.md`, `docs/agent-playbook.md` (DoD), and `docs/ROADMAP.md` updated to match; `scripts/scope-guard.test.mjs` updated for the new exit codes.

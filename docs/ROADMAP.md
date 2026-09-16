@@ -30,7 +30,7 @@ The three unstarted specs (FS-04, FS-05, FS-06) are the actual product. Nothing 
 
 ```mermaid
 graph LR
-  T["sync_seq advances on UPDATE<br/>area:db · not filed"] --> F["#185<br/>FilterRule → veto only"]
+  T["#196<br/>sync_seq advances on UPDATE"] --> F["#185<br/>FilterRule → veto only"]
   F --> G["#166<br/>Group · GroupMember"]
   G --> H["#170<br/>HistoryEvent"]
   H --> S["#183<br/>proposition schema"]
@@ -188,7 +188,7 @@ Every item edits `schema.prisma`, `seed.ts`, `packages/db/tests/migrations.test.
 
 | # | Issue | Change | Why this position |
 |---|---|---|---|
-| 3a.0 | ⚠️ **not filed** | `sync_seq` advances on UPDATE: a vanilla-Postgres `BEFORE UPDATE` trigger on `contact_links`, `contact_roles`, **and `filter_rules`** (all three already carry `syncSeq`), reusable by every later delta-pulled table. | Migration `20260830000000_monotonic_sync_sequence` makes `sync_seq` a column `DEFAULT`, so it only advances on INSERT. Every contact edit, tombstone, role change, and filter-rule edit is an UPDATE. #189 cannot land without this, and tables added after it get the trigger from day one. |
+| 3a.0 | [#196](https://github.com/hamza-el-miqdam/swab/issues/196) | `sync_seq` advances on UPDATE: a vanilla-Postgres `BEFORE UPDATE` trigger on `contact_links`, `contact_roles`, **and `filter_rules`** (all three already carry `syncSeq`), reusable by every later delta-pulled table. | Migration `20260830000000_monotonic_sync_sequence` makes `sync_seq` a column `DEFAULT`, so it only advances on INSERT. Every contact edit, tombstone, role change, and filter-rule edit is an UPDATE. #189 cannot land without this, and tables added after it get the trigger from day one. |
 | 3a.1 | [#185](https://github.com/hamza-el-miqdam/swab/issues/185) | `FilterRule` slimmed to the veto-only shape (`FLT-09`). | Smallest item. It unblocks the veto slice, which proposition delivery needs. |
 | 3a.2 | [#166](https://github.com/hamza-el-miqdam/swab/issues/166) | `Group`/`GroupMember`, owner-scoped (`SGR-10..15`). | Needed for `PRO-09`'s server-side group resolution. |
 | 3a.3 | [#170](https://github.com/hamza-el-miqdam/swab/issues/170) | `HistoryEvent`, with `syncSeq` from day one and a 12-month retention sweep (`FCH-04`). | Goes before #183 so that *if* `PRO-25`'s acceptance event ends up extending `HistoryEvent`, the table already exists — **not yet decided**: #170's own body defers proposition/match events to "a separate future `area:db` issue", and #183 currently scopes the acceptance-event schema as new work of its own, with no reference back to #170. Settle this when #183 is drafted; until then, treat the ordering as a hedge, not a commitment. Unblocks #110. |

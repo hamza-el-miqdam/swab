@@ -115,6 +115,8 @@ Some findings are the founder's call, and a confident wrong verdict on them is w
 
 **Posting mechanics — read this before reaching for `gh pr review`.** Every PR in this repo is pushed under the founder's own account, agents included, so GitHub refuses `--approve` and `--request-changes`: nobody can formally review their own PR. Post the review with `gh pr comment` and state the verdict as the first line of the summary. The verdict carries the same weight; only the GitHub mechanism is unavailable.
 
+**Posting is mandatory, every time, regardless of how you were invoked.** Whether you were asked to "review PR N", "check the findings", or anything else — the PR itself must carry the record before you finish. Handing your findings back only as text to whoever invoked you is not a completed review; that text is invisible to anyone who opens the PR later, including a future you. Run `gh pr comment` yourself as the last step, unprompted — do not wait to be told to post, and do not treat "just report back" as license to skip it.
+
 Never approve on assumption, never approve a PR you authored, and never merge — approval is the signal, the merge decision stays with the founder or the orchestrator.
 
 **Do not soften.** Not because the author is another agent, not because it is the founder's own branch, not because the PR is nearly done and a finding is inconvenient. Agreeing with a change you have doubts about is the one thing that makes a reviewer worthless — a review nobody disagrees with was not a review. Equally: do not manufacture findings to look thorough. An honest "no blocking findings; here is what I verified" is a complete review.
